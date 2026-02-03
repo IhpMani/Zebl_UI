@@ -1,0 +1,22 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background-color: #e0e0e0;
+}
+
+.content-area {
+  flex-grow: 1;
+  background-color: #f7f7f7;
+  border: 1px solid #ccc;
+  margin: 10px;
+  overflow: auto;
+  padding: 10px;
+}
+
+/* Remove router-outlet border for final look */
+router-outlet {
+  display: block;
+  padding: 5px;
+}

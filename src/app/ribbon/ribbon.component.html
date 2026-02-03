@@ -1,0 +1,89 @@
+<div class="ribbon-container">
+  <div class="menu-bar">
+    <nav>
+      <div class="menu-item" (click)="goToHome()">Home</div>
+      <div class="menu-item">Electronic Billing</div>
+      <div class="menu-item">Tools</div>
+      <div class="menu-item">Support</div>
+      <div class="menu-item">Info</div>
+    </nav>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button" (click)="goToHome()"><img src="assets/icons/Home.png" alt="Home">Home</button>
+        <button class="toolbar-button"><img src="assets/icons/print.png" alt="Print">Print</button>
+        <button class="toolbar-button"><img src="assets/icons/save.png" alt="Save">Save</button>
+        <button class="toolbar-button"><img src="assets/icons/close.png" alt="Close">Close</button>
+        <button class="toolbar-button"><img src="assets/icons/delete.png" alt="Delete">Delete</button>
+      </div>
+      <div class="toolbar-label">File</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button"><img src="assets/icons/copy.png" alt="Copy">Copy</button>
+        <button class="toolbar-button"><img src="assets/icons/cut.png" alt="Cut">Cut</button>
+        <button class="toolbar-button"><img src="assets/icons/paste.png" alt="Paste">Paste</button>
+        <button class="toolbar-button"><img src="assets/icons/undo.png" alt="Undo">Undo</button>
+        <button class="toolbar-button"><img src="assets/icons/select-all.png" alt="Select All">Select All</button>
+        <button class="toolbar-button"><img src="assets/icons/clear.png" alt="Clear">Clear</button>
+      </div>
+      <div class="toolbar-label">Edit</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <div class="dropdown-wrapper">
+          <button class="toolbar-button dropdown" [class.active]="showFindDropdown" (click)="toggleFindDropdown($event)">
+            <img src="assets/icons/find.png" alt="Find">Find
+          </button>
+          <div class="dropdown-content" [class.show]="showFindDropdown">
+            <a (click)="findOptionSelected('Find Patient')"><img src="assets/icons/patient.png" alt="Find Patient">Find Patient</a>
+            <a (click)="findOptionSelected('Find Claim')"><img src="assets/icons/claim.png" alt="Find Claim">Find Claim</a>
+            <a (click)="findOptionSelected('Find Service')"><img src="assets/icons/service.png" alt="Find Service">Find Service</a>
+            <a (click)="findOptionSelected('Find Payment')"><img src="assets/icons/payment.png" alt="Find Payment">Find Payment</a>
+            <a (click)="findOptionSelected('Find Task')"><img src="assets/icons/task.png" alt="Find Task">Find Task</a>
+            <a (click)="findOptionSelected('Find Adjustment')"><img src="assets/icons/adjustment.png" alt="Find Adjustment">Find Adjustment</a>
+            <a (click)="findOptionSelected('Find Payer')"><img src="assets/icons/payer.png" alt="Find Payer">Find Payer</a>
+            <a (click)="findOptionSelected('Find Physician')"><img src="assets/icons/physician.png" alt="Find Physician">Find Physician</a>
+            <a (click)="findOptionSelected('Find Disbursement')"><img src="assets/icons/disbursement.png" alt="Find Disbursement">Find Disbursement</a>
+            <a (click)="findOptionSelected('Find Claim Note')"><img src="assets/icons/claim-note.png" alt="Find Claim Note">Find Claim Note</a>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar-label">Find</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button"><img src="assets/icons/patient.png" alt="Patient">Patient</button>
+        <button class="toolbar-button"><img src="assets/icons/claim.png" alt="Claim">Claim</button>
+        <button class="toolbar-button"><img src="assets/icons/payment.png" alt="Payment">Payment</button>
+        <button class="toolbar-button"><img src="assets/icons/task.png" alt="Task">Task</button>
+        <button class="toolbar-button"><img src="assets/icons/statement.png" alt="Statement">Statement</button>
+        <button class="toolbar-button"><img src="assets/icons/payer.png" alt="Payer">Payer</button>
+        <button class="toolbar-button"><img src="assets/icons/physician.png" alt="Physician">Physician</button>
+        <button class="toolbar-button"><img src="assets/icons/libraries.png" alt="Libraries">Libraries</button>
+      </div>
+      <div class="toolbar-label">New</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button"><img src="assets/icons/edi-reports.png" alt="EDI Reports">EDI Reports (5237 NEW)</button>
+        <button class="toolbar-button"><img src="assets/icons/reminders.png" alt="Reminders">Reminders</button>
+      </div>
+      <div class="toolbar-label">Alerts</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button"><img src="assets/icons/review-incoming.png" alt="Review Incoming">Review Incoming</button>
+      </div>
+      <div class="toolbar-label">Incoming</div>
+    </div>
+    <div class="toolbar-section">
+      <div class="toolbar-group">
+        <button class="toolbar-button"><img src="assets/icons/help-topics.png" alt="Help Topics">Help Topics</button>
+        <button class="toolbar-button"><img src="assets/icons/ticket.png" alt="Ticket">Ticket</button>
+      </div>
+      <div class="toolbar-label">Support</div>
+    </div>
+  </div>
+</div>

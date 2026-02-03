@@ -1,0 +1,102 @@
+<div class="claim-list-container">
+  <h2>Claim List</h2>
+
+  <div *ngIf="loading" class="loading">Loading claims...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error">
+    <table class="claims-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of visibleColumns">
+            <div class="header-cell">
+              <span>{{ col.label }}</span>
+              <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+            </div>
+            <div class="filter-row">
+              <input
+                type="text"
+                [(ngModel)]="col.filterValue"
+                (input)="onFilterChange()"
+                placeholder="Filter..."
+              />
+              <button class="clear-filter-btn" *ngIf="col.filterValue" (click)="clearFilter(col.key, $event)" title="Clear filter">✕</button>
+            </div>
+          </th>
+          <th class="add-column-header">
+            <div class="header-cell">
+              <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">
+                Add Column <span class="arrow">▼</span>
+              </button>
+            </div>
+            <div class="filter-row">
+              <div class="filter-placeholder"></div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let claim of filteredClaims">
+          <td *ngFor="let col of visibleColumns">
+            <ng-container [ngSwitch]="col.key">
+              <span *ngSwitchCase="'claDateTimeCreated'">
+                {{ claim.claDateTimeCreated | date:'short' }}
+              </span>
+              <span *ngSwitchCase="'claTotalChargeTRIG'">
+                {{ claim.claTotalChargeTRIG | number:'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claTotalBalanceCC'">
+                {{ claim.claTotalBalanceCC | number:'1.2-2' }}
+              </span>
+              <span *ngSwitchDefault>
+                {{ getCellValue(claim, col.key) }}
+              </span>
+            </ng-container>
+          </td>
+          <td></td>
+        </tr>
+        <tr *ngIf="filteredClaims.length === 0">
+          <td [attr.colspan]="visibleColumns.length + 1" class="no-data">No claims found</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="meta" class="pagination-info">
+      Showing {{ filteredClaims.length }} of {{ meta.totalCount }} claims
+      (Page {{ meta.page }} of {{ getTotalPages() }})
+    </div>
+  </div>
+
+  <!-- Customization Dialog -->
+  <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
+    <div class="customization-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h3>Customization</h3>
+        <button class="close-btn" (click)="closeCustomizationDialog()">×</button>
+      </div>
+      <div class="dialog-search">
+        <input
+          type="text"
+          [(ngModel)]="columnSearchText"
+          placeholder="Search for a column..."
+          class="search-input"
+        />
+      </div>
+      <div class="dialog-content">
+        <div class="column-list">
+          <label *ngFor="let col of filteredColumnsForDialog" class="column-item">
+            <input
+              type="checkbox"
+              [checked]="col.visible"
+              (change)="toggleColumnVisibility(col.key)"
+            />
+            <span>{{ col.label }}</span>
+          </label>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
