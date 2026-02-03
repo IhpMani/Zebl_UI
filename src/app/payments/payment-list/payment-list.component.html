@@ -1,0 +1,142 @@
+<div class="claim-list-container">
+  <h2>Payment List</h2>
+  <div *ngIf="loading" class="loading">Loading payments...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  <div *ngIf="!loading && !error">
+    <table class="claims-table">
+      <thead>
+        <tr>
+          <th class="action-col add-column-header">
+            <div class="header-cell">
+              <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">Add Column <span class="arrow">▼</span></button>
+            </div>
+            <div class="filter-row"><div class="filter-placeholder"></div></div>
+          </th>
+          <th *ngFor="let col of visibleColumns">
+            <div class="header-cell">
+              <span>{{ col.label }}</span>
+              <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+            </div>
+            <div class="filter-row">
+              <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">Filter <span class="arrow">▼</span></button>
+              <button class="clear-filter-btn" *ngIf="columnValueFilters[col.key]" (click)="clearFilter(col.key, $event)" title="Clear filter">✕</button>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let payment of filteredPayments" (click)="onRowClick(payment)" class="claim-row">
+          <td class="action-col"><button class="open-btn" (click)="$event.stopPropagation(); onRowClick(payment)">Open</button></td>
+          <td *ngFor="let col of visibleColumns">
+            <ng-container [ngSwitch]="col.key">
+              <span *ngSwitchCase="'pmtDateTimeCreated'">{{ payment.pmtDateTimeCreated | date:'short' }}</span>
+              <span *ngSwitchCase="'pmtDate'">{{ payment.pmtDate | date:'shortDate' }}</span>
+              <span *ngSwitchCase="'pmtAmount'">{{ payment.pmtAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtRemainingCC'">{{ payment.pmtRemainingCC | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtDisbursedTRIG'">{{ payment.pmtDisbursedTRIG | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchDefault>{{ getCellValue(payment, col.key) }}</span>
+            </ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="filteredPayments.length === 0 && !loading"><td [attr.colspan]="visibleColumns.length + 1" class="no-data">No payments found</td></tr>
+      </tbody>
+    </table>
+    <div *ngIf="meta" class="pagination-container">
+      <div class="pagination-info">Showing {{ filteredPayments.length }} of {{ meta.totalCount }} payments (Page {{ meta.page }} of {{ getTotalPages() }})</div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" (click)="onPageChange(1)" [disabled]="meta.page === 1 || loading" title="First page">««</button>
+        <button class="pagination-btn" (click)="onPageChange(meta.page - 1)" [disabled]="meta.page === 1 || loading" title="Previous page">‹</button>
+        <span class="page-info">Page {{ meta.page }} of {{ getTotalPages() }}</span>
+        <button class="pagination-btn" (click)="onPageChange(meta.page + 1)" [disabled]="meta.page >= getTotalPages() || loading" title="Next page">›</button>
+        <button class="pagination-btn" (click)="onPageChange(getTotalPages())" [disabled]="meta.page >= getTotalPages() || loading" title="Last page">»»</button>
+        <select class="page-size-select" [value]="pageSize" (change)="onPageSizeChange(+$any($event.target).value)" [disabled]="loading">
+          <option value="10">10 per page</option><option value="25">25 per page</option><option value="50">50 per page</option><option value="100">100 per page</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="filter-popup-overlay" *ngIf="showFilterPopup" (click)="closeFilterPopup($event)">
+    <div class="filter-popup" (click)="$event.stopPropagation()" [style.top.px]="filterPopupPosition.topPx" [style.left.px]="filterPopupPosition.leftPx">
+      <div class="filter-popup-tabs"><button class="tab active">Values</button></div>
+      
+      <!-- Text/Numeric Input for numeric columns -->
+      <div *ngIf="activeFilterColumnKey && isNumericColumn(activeFilterColumnKey)" class="filter-popup-input">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">{{ getColumnLabel(activeFilterColumnKey) }}</label>
+        <input type="text" [(ngModel)]="popupTextFilter" [placeholder]="activeFilterColumnKey === 'pmtID' ? 'Enter Payment ID (e.g., 123456 or 123,456,789)' : activeFilterColumnKey === 'pmtAmount' ? 'Enter Amount(s), comma-separated' : activeFilterColumnKey === 'pmtPatFID' ? 'Enter Patient ID' : 'Enter value(s), comma-separated'" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" (keyup.enter)="applyValueFilterAndClose()" />
+        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">
+          <span *ngIf="activeFilterColumnKey === 'pmtID'">Enter one or more Payment IDs, separated by commas</span>
+          <span *ngIf="activeFilterColumnKey === 'pmtAmount'">Enter one or more amounts, separated by commas</span>
+          <span *ngIf="activeFilterColumnKey === 'pmtPatFID'">Enter Patient ID</span>
+          <span *ngIf="activeFilterColumnKey !== 'pmtID' && activeFilterColumnKey !== 'pmtAmount' && activeFilterColumnKey !== 'pmtPatFID'">Enter one or more values, separated by commas</span>
+        </div>
+      </div>
+
+      <!-- Checkbox-based filter for non-numeric columns -->
+      <div *ngIf="!activeFilterColumnKey || !isNumericColumn(activeFilterColumnKey)">
+        <div class="filter-popup-search"><input type="text" [(ngModel)]="filterPopupSearchText" placeholder="Enter text to search..." /></div>
+        <div class="filter-popup-values">
+          <label class="value-item"><input type="checkbox" [checked]="isPopupAllSelected()" (change)="onPopupAllChange($event)" /><span>(All)</span></label>
+          <label *ngFor="let v of getFilterValuesForActiveColumn()" class="value-item">
+            <input type="checkbox" [checked]="isPopupValueChecked(v)" (change)="onPopupValueChange(v, $event)" /><span>{{ v }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-popup-actions">
+        <button class="btn-secondary" (click)="clearActiveColumnFilter()">Clear Filter</button>
+        <button class="btn-primary" (click)="applyValueFilterAndClose()">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
+    <div class="customization-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header"><h3>Customization</h3><button class="close-btn" (click)="closeCustomizationDialog()">×</button></div>
+      <div class="dialog-search"><input type="text" [(ngModel)]="columnSearchText" placeholder="Search for a column..." class="search-input" /></div>
+      <div class="dialog-content">
+        <!-- Standard Payment Columns -->
+        <div class="column-section">
+          <h4>Standard Payment Columns</h4>
+          <div class="column-list">
+            <label *ngFor="let col of getStandardColumns()" class="column-item">
+              <input type="checkbox" [checked]="col.visible" (change)="toggleColumnVisibility(col.key)" /><span>{{ col.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Related Columns from Other Tables -->
+        <div class="column-section" *ngIf="availableRelatedColumns && availableRelatedColumns.length > 0">
+          <h4>Add Columns from Related Tables</h4>
+          <div *ngFor="let tableGroup of getRelatedColumnsByTable() | keyvalue" class="table-group">
+            <h5>{{ tableGroup.key }} Table</h5>
+            <div class="column-list">
+              <div 
+                *ngFor="let col of tableGroup.value" 
+                class="column-item related-column-option" 
+                style="cursor: pointer; user-select: none; display: flex; align-items: center;"
+                (click)="toggleRelatedColumn(col.key, col.label, col.table); $event.stopPropagation()"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="isRelatedColumnSelected(col.key)"
+                  (change)="onRelatedColumnToggle(col.key, col.label, col.table, $event)"
+                  (click)="$event.stopPropagation()"
+                  style="cursor: pointer; pointer-events: auto; margin-right: 10px;"
+                />
+                <span style="cursor: pointer; flex: 1;">
+                  {{ col.label }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!availableRelatedColumns || availableRelatedColumns.length === 0" class="column-section">
+          <p style="color: #999; font-size: 0.9em; padding: 8px;">
+            <span *ngIf="availableRelatedColumns && availableRelatedColumns.length === 0">No related columns available</span>
+            <span *ngIf="!availableRelatedColumns">Loading related columns...</span>
+          </p>
+        </div>
+      </div>
+      <div class="dialog-footer"><button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button></div>
+    </div>
+  </div>
+</div>

@@ -27,40 +27,31 @@ export class RibbonComponent {
         this.router.navigate(['claims/find-claim']);
         break;
       case 'Find Patient':
-        console.log('Navigating to Find Patient');
-        // this.router.navigate(['patients/find-patient']);
+        this.router.navigate(['patients/find-patient']);
         break;
       case 'Find Service':
-        console.log('Navigating to Find Service');
-        // this.router.navigate(['services/find-service']);
+        this.router.navigate(['services/find-service']);
         break;
       case 'Find Payment':
-        console.log('Navigating to Find Payment');
-        // this.router.navigate(['payments/find-payment']);
+        this.router.navigate(['payments/find-payment']);
         break;
       case 'Find Task':
-        console.log('Navigating to Find Task');
-        // this.router.navigate(['tasks/find-task']);
+        console.log('Find Task - Not implemented yet');
         break;
       case 'Find Adjustment':
-        console.log('Navigating to Find Adjustment');
-        // this.router.navigate(['adjustments/find-adjustment']);
+        this.router.navigate(['adjustments/find-adjustment']);
         break;
       case 'Find Payer':
-        console.log('Navigating to Find Payer');
-        // this.router.navigate(['payers/find-payer']);
+        this.router.navigate(['payers/find-payer']);
         break;
       case 'Find Physician':
-        console.log('Navigating to Find Physician');
-        // this.router.navigate(['physicians/find-physician']);
+        this.router.navigate(['physicians/find-physician']);
         break;
       case 'Find Disbursement':
-        console.log('Navigating to Find Disbursement');
-        // this.router.navigate(['disbursements/find-disbursement']);
+        this.router.navigate(['disbursements/find-disbursement']);
         break;
       case 'Find Claim Note':
-        console.log('Navigating to Find Claim Note');
-        // this.router.navigate(['claim-notes/find-claim-note']);
+        this.router.navigate(['claim-notes/find-claim-note']);
         break;
       default:
         console.log(`Navigating to ${option}`);

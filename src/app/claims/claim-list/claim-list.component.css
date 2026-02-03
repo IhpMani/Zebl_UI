@@ -42,6 +42,25 @@ h2 {
   border-bottom: 2px solid #ddd;
 }
 
+.action-col {
+  width: 120px;
+  min-width: 120px;
+  max-width: 140px;
+}
+
+.open-btn {
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.open-btn:hover {
+  background: #f5f5f5;
+}
+
 .claims-table td {
   padding: 10px 12px;
   border-bottom: 1px solid #eee;
@@ -49,6 +68,14 @@ h2 {
 
 .claims-table tbody tr:hover {
   background-color: #f9f9f9;
+}
+
+.claim-row {
+  cursor: pointer;
+}
+
+.claim-row:hover {
+  background-color: #e8f4f8 !important;
 }
 
 .claims-table tbody tr:last-child td {
@@ -125,12 +152,28 @@ h2 {
   margin-top: 4px;
 }
 
-.filter-row input {
+.filter-popup-btn {
   width: 100%;
-  padding: 3px 4px;
-  font-size: 0.8em;
   border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  padding: 3px 6px;
+  font-size: 0.8em;
   border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: #333;
+}
+
+.filter-popup-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.filter-popup-btn .arrow {
+  font-size: 0.7em;
+  color: #666;
 }
 
 .clear-filter-btn {
@@ -144,6 +187,122 @@ h2 {
 
 .clear-filter-btn:hover {
   color: #c00;
+}
+
+/* Filter Popup (Excel-like) */
+.filter-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 1100;
+}
+
+.filter-popup {
+  position: fixed;
+  width: 260px;
+  background: #fff;
+  border: 1px solid #bfbfbf;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.filter-popup-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background: #f5f5f5;
+}
+
+.filter-popup-tabs .tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+  color: #333;
+}
+
+.filter-popup-tabs .tab.active {
+  background: #fff;
+  border-bottom: 2px solid #4a90e2;
+  font-weight: 600;
+}
+
+.filter-popup-tabs .tab:disabled {
+  cursor: not-allowed;
+  color: #999;
+}
+
+.filter-popup-search {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.filter-popup-search input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.85em;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+}
+
+.filter-popup-values {
+  max-height: 260px;
+  overflow: auto;
+  padding: 6px 8px;
+}
+
+.value-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 0.85em;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+.value-item input {
+  cursor: pointer;
+}
+
+.filter-popup-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid #ddd;
+  background: #f9f9f9;
+}
+
+.btn-secondary,
+.btn-primary {
+  padding: 6px 10px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #f1f1f1;
+}
+
+.btn-primary {
+  border-color: #4a90e2;
+  background: #4a90e2;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #3b7ac6;
 }
 
 /* Customization Dialog Styles */
@@ -250,6 +409,55 @@ h2 {
   flex: 1;
   font-size: 0.9em;
   color: #333;
+}
+
+.column-section {
+  margin-bottom: 20px;
+}
+
+.column-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 1em;
+  color: #333;
+  font-weight: 600;
+}
+
+.column-section h5 {
+  margin: 10px 0 5px 0;
+  font-size: 0.9em;
+  color: #666;
+  font-weight: 500;
+}
+
+.table-group {
+  margin-bottom: 15px;
+  padding-left: 10px;
+}
+
+.related-column-option {
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.related-column-option:hover {
+  background-color: #e8f4f8 !important;
+}
+
+.related-column-option input[type="checkbox"] {
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.related-column-option span {
+  pointer-events: none;
+}
+
+.dialog-content {
+  position: relative;
+  z-index: 1;
 }
 
 .dialog-footer {

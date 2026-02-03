@@ -1,0 +1,365 @@
+<div class="claim-details-wrapper">
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading">Loading claim data…</div>
+  </div>
+
+  <div *ngIf="error" class="error-panel">
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="goBackToList()">Back to List</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && claim">
+    <header class="claim-header">
+      <div>
+        <p class="claim-context">Claim {{ claim.claID }} · {{ claim.claStatus || 'Unknown status' }}</p>
+        <h1>{{ getPatientName() }}</h1>
+        <p class="dos">DOS {{ formatDate(claim.claFirstDateTRIG) || 'N/A' }}</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="save()">Save</button>
+        <button class="btn-primary ghost" (click)="saveAndClose()">Save &amp; Close</button>
+        <button class="btn-secondary" (click)="close()">Close</button>
+        <button class="btn-secondary" (click)="deleteClaim()">Delete</button>
+        <button class="btn-secondary" (click)="scrub()">Scrub</button>
+      </div>
+    </header>
+
+    <div class="claim-panels">
+      <aside class="left-panel">
+        <section class="panel-card">
+          <header>
+            <h3>Prior Authorization &amp; Diagnosis</h3>
+          </header>
+          <div class="diag-grid">
+            <div class="diag-row" *ngFor="let diag of diagnosisFields">
+              <label>{{ diag.label }}</label>
+              <input type="text" [(ngModel)]="claim[diag.field]" />
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <header>
+            <h3>Calendar</h3>
+          </header>
+          <label>Date Received</label>
+          <input type="date" [(ngModel)]="claim.claBillDate" />
+          <label>First DOS</label>
+          <input type="date" [(ngModel)]="claim.claFirstDateTRIG" />
+          <label>Last DOS</label>
+          <input type="date" [(ngModel)]="claim.claLastDateTRIG" />
+        </section>
+
+        <section class="panel-card">
+          <header>
+            <h3>Claim Template</h3>
+          </header>
+          <select [(ngModel)]="claim.claSubmissionMethod">
+            <option *ngFor="let template of claimTemplates" [value]="template.id">
+              {{ template.label }}
+            </option>
+          </select>
+        </section>
+      </aside>
+
+      <section class="right-panel">
+        <div class="sections-stack">
+          <article class="section-card">
+            <header (click)="toggleSection('claimInfo')">
+              <h3>Claim Information</h3>
+              <button type="button">{{ sectionsState.claimInfo ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.claimInfo">
+              <div class="field-row">
+                <label>Bill Date</label>
+                <input type="date" [(ngModel)]="claim.claBillDate" />
+              </div>
+              <div class="field-row">
+                <label>Bill To</label>
+              <select [(ngModel)]="claim.claBillTo">
+                <option [ngValue]="0">Patient</option>
+                <option [ngValue]="1">Primary</option>
+                <option [ngValue]="2">Final (F/2)</option>
+              </select>
+              </div>
+              <div class="field-row">
+                <label>Status</label>
+                <input [value]="claim.claStatus" disabled />
+              </div>
+              <div class="field-row">
+                <label>Locked</label>
+                <input type="checkbox" [(ngModel)]="claim.claLocked" />
+              </div>
+              <div class="field-row">
+                <label>Total Charge</label>
+                <input [value]="formatCurrency(claim.claTotalChargeTRIG)" disabled />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header (click)="toggleSection('physician')">
+              <h3>Physician / Facility Information</h3>
+              <button type="button">{{ sectionsState.physician ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.physician">
+              <div class="field-row">
+                <label>Rendering Provider</label>
+                <input [value]="claim.renderingPhysician?.phyName" disabled />
+              </div>
+              <div class="field-row">
+                <label>Referring Provider</label>
+                <input [value]="claim.referringPhysician?.phyName" disabled />
+              </div>
+              <div class="field-row">
+                <label>Billing Provider</label>
+                <input [value]="claim.billingPhysician?.phyName" disabled />
+              </div>
+              <div class="field-row">
+                <label>Service Facility</label>
+                <input [value]="claim.facilityPhysician?.phyName" disabled />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header (click)="toggleSection('dates')">
+              <h3>Date Information</h3>
+              <button type="button">{{ sectionsState.dates ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.dates">
+              <div class="field-row">
+                <label>Admitted Date</label>
+                <input type="date" [(ngModel)]="claim.claAdmittedDate" />
+              </div>
+              <div class="field-row">
+                <label>Discharged Date</label>
+                <input type="date" [(ngModel)]="claim.claDischargedDate" />
+              </div>
+              <div class="field-row">
+                <label>Date Last Seen</label>
+                <input type="date" [(ngModel)]="claim.claDateLastSeen" />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header (click)="toggleSection('misc')">
+              <h3>Misc Information</h3>
+              <button type="button">{{ sectionsState.misc ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.misc">
+              <div class="field-row">
+                <label>EDI Notes</label>
+                <textarea [(ngModel)]="claim.claEDINotes"></textarea>
+              </div>
+              <div class="field-row">
+                <label>Condition Related</label>
+                <input
+                  type="checkbox"
+                  [checked]="claim.claRelatedTo === 1"
+                  (change)="claim.claRelatedTo = $any($event.target).checked ? 1 : 0" />
+              </div>
+              <div class="field-row">
+                <label>Auto Accident State</label>
+                <input [(ngModel)]="claim.claRelatedToState" />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header (click)="toggleSection('resubmission')">
+              <h3>Resubmission Information</h3>
+              <button type="button">{{ sectionsState.resubmission ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.resubmission">
+              <div class="field-row">
+                <label>Original Ref Number</label>
+                <input [(ngModel)]="claim.claOriginalRefNo" />
+              </div>
+              <div class="field-row">
+                <label>Delay Code</label>
+                <input [(ngModel)]="claim.claDelayCode" />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header (click)="toggleSection('paperwork')">
+              <h3>Paperwork Information</h3>
+              <button type="button">{{ sectionsState.paperwork ? 'Collapse' : 'Expand' }}</button>
+            </header>
+            <div class="section-body" [hidden]="!sectionsState.paperwork">
+              <div class="field-row">
+                <label>Transmission Code</label>
+                <input [(ngModel)]="claim.claPaperWorkTransmissionCode" />
+              </div>
+              <div class="field-row">
+                <label>Control Number</label>
+                <input [(ngModel)]="claim.claPaperWorkControlNumber" />
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <section class="service-lines-section">
+      <div class="section-header">
+        <h2>Service Lines</h2>
+        <div class="service-actions">
+          <button class="btn-secondary" (click)="addServiceLine()" [disabled]="serviceLoading">Add</button>
+          <button class="btn-secondary" [disabled]="!selectedServiceLineId">Edit</button>
+          <button class="btn-danger" [disabled]="!selectedServiceLineId">Delete</button>
+        </div>
+      </div>
+      <div class="service-lines-table-wrapper">
+        <table class="service-lines-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Procedure</th>
+              <th>Charges</th>
+              <th>Units</th>
+              <th>Paid</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let line of serviceLines; trackBy: trackByServiceLine"
+              [class.selected]="line.srvID === selectedServiceLineId"
+              (click)="selectServiceLine(line)">
+              <td>{{ formatDate(line.srvFromDate) }}</td>
+              <td>{{ line.srvProcedureCode || line.srvDesc || '—' }}</td>
+              <td>{{ formatCurrency(line.srvCharges) }}</td>
+              <td>{{ line.srvUnits ?? '—' }}</td>
+              <td>{{ formatCurrency(line.srvTotalAmtPaidCC) }}</td>
+              <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2"><strong>{{ serviceLines.length }} line(s)</strong></td>
+              <td><strong>{{ formatCurrency(getServiceTotalCharges()) }}</strong></td>
+              <td></td>
+              <td><strong>{{ formatCurrency(getServiceTotalPaid()) }}</strong></td>
+              <td><strong>{{ formatCurrency(getServiceTotalBalance()) }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="secondary-section">
+      <div class="secondary-tabs">
+        <button [class.active]="secondaryTab === 'payments'" (click)="onSecondaryTabChange('payments')">Payments</button>
+        <button [class.active]="secondaryTab === 'adjustments'" (click)="onSecondaryTabChange('adjustments')">Adjustments</button>
+        <button [class.active]="secondaryTab === 'disbursements'" (click)="onSecondaryTabChange('disbursements')">Disbursements</button>
+      </div>
+
+      <div class="secondary-panel" *ngIf="secondaryTab === 'payments'">
+        <p *ngIf="loadingPayments">Loading payments…</p>
+        <p *ngIf="!loadingPayments && payments.length === 0">No payments for this claim.</p>
+        <table *ngIf="!loadingPayments && payments.length > 0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of payments">
+              <td>{{ payment.pmtID }}</td>
+              <td>{{ formatDate(payment.pmtDate) }}</td>
+              <td>{{ formatCurrency(payment.pmtAmount) }}</td>
+              <td>{{ payment.pmtMethod }}</td>
+              <td>{{ payment.pmtNote || payment.pmt835Ref }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="secondary-panel" *ngIf="secondaryTab === 'adjustments'">
+        <p *ngIf="loadingAdjustments">Loading adjustments…</p>
+        <p *ngIf="!loadingAdjustments && adjustments.length === 0">No adjustments for this claim.</p>
+        <table *ngIf="!loadingAdjustments && adjustments.length > 0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Group</th>
+              <th>Reason</th>
+              <th>Amount</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let adj of adjustments">
+              <td>{{ adj.AdjID }}</td>
+              <td>{{ adj.AdjGroupCode }}</td>
+              <td>{{ adj.AdjReasonCode }}</td>
+              <td>{{ formatCurrency(adj.AdjAmount) }}</td>
+              <td>{{ formatDate(adj.AdjDateTimeCreated) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="secondary-panel" *ngIf="secondaryTab === 'disbursements'">
+        <p *ngIf="loadingDisbursements">Loading disbursements…</p>
+        <p *ngIf="!loadingDisbursements && disbursements.length === 0">No disbursements for this claim.</p>
+        <table *ngIf="!loadingDisbursements && disbursements.length > 0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Code</th>
+              <th>Amount</th>
+              <th>Note</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let disb of disbursements">
+              <td>{{ disb.DisbID }}</td>
+              <td>{{ disb.DisbCode }}</td>
+              <td>{{ formatCurrency(disb.DisbAmount) }}</td>
+              <td>{{ disb.DisbNote }}</td>
+              <td>{{ formatDate(disb.DisbDateTimeCreated) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="notes-section">
+      <header>
+        <h3>Notes / Audit Trail</h3>
+        <button class="btn-secondary" (click)="toggleNotes()">
+          {{ showNotes ? 'Collapse' : 'Expand' }}
+        </button>
+      </header>
+      <div [hidden]="!showNotes">
+        <div class="notes-input">
+          <textarea
+            placeholder="Click here to add a new note"
+            [(ngModel)]="newNote"
+            (keydown.enter)="addNote($event)">
+          </textarea>
+        </div>
+        <div class="notes-history">
+          <article *ngFor="let note of getNotesHistory()">
+            <div class="note-header">
+              <span>{{ formatDateTime(note.date) }}</span>
+              <span>{{ note.user }}</span>
+            </div>
+            <p>{{ note.content }}</p>
+            <p class="note-summary" *ngIf="note.summary">{{ note.summary }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>

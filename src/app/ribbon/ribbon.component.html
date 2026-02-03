@@ -15,20 +15,8 @@
         <button class="toolbar-button"><img src="assets/icons/print.png" alt="Print">Print</button>
         <button class="toolbar-button"><img src="assets/icons/save.png" alt="Save">Save</button>
         <button class="toolbar-button"><img src="assets/icons/close.png" alt="Close">Close</button>
-        <button class="toolbar-button"><img src="assets/icons/delete.png" alt="Delete">Delete</button>
       </div>
       <div class="toolbar-label">File</div>
-    </div>
-    <div class="toolbar-section">
-      <div class="toolbar-group">
-        <button class="toolbar-button"><img src="assets/icons/copy.png" alt="Copy">Copy</button>
-        <button class="toolbar-button"><img src="assets/icons/cut.png" alt="Cut">Cut</button>
-        <button class="toolbar-button"><img src="assets/icons/paste.png" alt="Paste">Paste</button>
-        <button class="toolbar-button"><img src="assets/icons/undo.png" alt="Undo">Undo</button>
-        <button class="toolbar-button"><img src="assets/icons/select-all.png" alt="Select All">Select All</button>
-        <button class="toolbar-button"><img src="assets/icons/clear.png" alt="Clear">Clear</button>
-      </div>
-      <div class="toolbar-label">Edit</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
@@ -39,14 +27,13 @@
           <div class="dropdown-content" [class.show]="showFindDropdown">
             <a (click)="findOptionSelected('Find Patient')"><img src="assets/icons/patient.png" alt="Find Patient">Find Patient</a>
             <a (click)="findOptionSelected('Find Claim')"><img src="assets/icons/claim.png" alt="Find Claim">Find Claim</a>
-            <a (click)="findOptionSelected('Find Service')"><img src="assets/icons/service.png" alt="Find Service">Find Service</a>
             <a (click)="findOptionSelected('Find Payment')"><img src="assets/icons/payment.png" alt="Find Payment">Find Payment</a>
             <a (click)="findOptionSelected('Find Task')"><img src="assets/icons/task.png" alt="Find Task">Find Task</a>
-            <a (click)="findOptionSelected('Find Adjustment')"><img src="assets/icons/adjustment.png" alt="Find Adjustment">Find Adjustment</a>
+            <a (click)="findOptionSelected('Find Adjustment')"><img src="assets/icons/payment.png" alt="Find Adjustment">Find Adjustment</a>
             <a (click)="findOptionSelected('Find Payer')"><img src="assets/icons/payer.png" alt="Find Payer">Find Payer</a>
             <a (click)="findOptionSelected('Find Physician')"><img src="assets/icons/physician.png" alt="Find Physician">Find Physician</a>
-            <a (click)="findOptionSelected('Find Disbursement')"><img src="assets/icons/disbursement.png" alt="Find Disbursement">Find Disbursement</a>
-            <a (click)="findOptionSelected('Find Claim Note')"><img src="assets/icons/claim-note.png" alt="Find Claim Note">Find Claim Note</a>
+            <a (click)="findOptionSelected('Find Disbursement')"><img src="assets/icons/payment.png" alt="Find Disbursement">Find Disbursement</a>
+            <a (click)="findOptionSelected('Find Claim Note')"><img src="assets/icons/claim.png" alt="Find Claim Note">Find Claim Note</a>
           </div>
         </div>
       </div>
@@ -68,7 +55,6 @@
     <div class="toolbar-section">
       <div class="toolbar-group">
         <button class="toolbar-button"><img src="assets/icons/edi-reports.png" alt="EDI Reports">EDI Reports (5237 NEW)</button>
-        <button class="toolbar-button"><img src="assets/icons/reminders.png" alt="Reminders">Reminders</button>
       </div>
       <div class="toolbar-label">Alerts</div>
     </div>
