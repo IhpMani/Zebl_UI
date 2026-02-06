@@ -60,9 +60,17 @@
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
-        <button class="toolbar-button"><img src="assets/icons/review-incoming.png" alt="Review Incoming">Review Incoming</button>
+        <button class="toolbar-button" (click)="onReviewIncomingClick()" [disabled]="isImporting">
+          <img src="assets/icons/review-incoming.png" alt="Review Incoming">Review Incoming
+        </button>
+        <input #fileInput type="file" accept=".hl7" style="display: none;" (change)="onFileSelected($event)">
       </div>
       <div class="toolbar-label">Incoming</div>
+    </div>
+    <!-- Import Status Messages -->
+    <div *ngIf="importMessage || importError" style="position: fixed; top: 80px; right: 20px; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 400px;">
+      <div *ngIf="importMessage" style="color: green; font-weight: bold;">{{ importMessage }}</div>
+      <div *ngIf="importError" style="color: red; font-weight: bold;">{{ importError }}</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
