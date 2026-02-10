@@ -24,6 +24,10 @@ export class RibbonComponent {
     this.router.navigate(['/']);
   }
 
+  goToPhysicianLibrary(): void {
+    this.router.navigate(['/physicians']);
+  }
+
   toggleFindDropdown(event: Event): void {
     event.stopPropagation();
     this.showFindDropdown = !this.showFindDropdown;

@@ -1,0 +1,335 @@
+<div class="physician-library-container">
+  <div class="library-panels">
+    <!-- Left Panel: List -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <h2>Physician / Facility Library</h2>
+      </div>
+      <div class="search-section">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search..."
+          [(ngModel)]="searchText"
+          (input)="onSearchChange()"
+        />
+      </div>
+      <div class="list-section">
+        <div class="add-new-entry" (click)="onAddNew()">
+          <span class="add-icon">+</span> Add new entry...
+        </div>
+        <div *ngIf="loading" class="loading">Loading...</div>
+        <div *ngIf="error" class="error">{{ error }}</div>
+        <div class="physician-list">
+          <div class="physician-list-header">
+            <div class="physician-name-header">Name</div>
+            <div class="physician-classification-header">Classification</div>
+          </div>
+          <div
+            *ngFor="let physician of filteredPhysicians"
+            class="physician-item"
+            [class.selected]="selectedPhysician?.phyID === physician.phyID"
+            (click)="onSelectPhysician(physician)"
+          >
+            <div class="physician-name">{{ physician.phyName || '(No Name)' }}</div>
+            <div class="physician-classification">{{ physician.phyPrimaryCodeType || '-' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Form -->
+    <div class="right-panel">
+      <div class="panel-header">
+        <h2>{{ isNew ? 'New Physician' : 'Edit Physician' }}</h2>
+      </div>
+      <div class="form-section">
+        <div *ngIf="error" class="error-message">{{ error }}</div>
+        
+        <form class="physician-form">
+          <!-- Display Name (required) -->
+          <div class="form-group">
+            <label for="phyName">Display Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="phyName"
+              [(ngModel)]="formData.phyName"
+              name="phyName"
+              class="form-control"
+              maxlength="100"
+              required
+            />
+          </div>
+
+          <!-- Classification -->
+          <div class="form-group">
+            <label for="phyPrimaryCodeType">Classification</label>
+            <select
+              id="phyPrimaryCodeType"
+              [(ngModel)]="formData.phyPrimaryCodeType"
+              name="phyPrimaryCodeType"
+              class="form-control"
+            >
+              <option [value]="null">-- Select --</option>
+              <option value="RE">Rendering</option>
+              <option value="SU">Supervising</option>
+              <option value="FA">Facility</option>
+            </select>
+          </div>
+
+          <!-- Type -->
+          <div class="form-group">
+            <label for="phyType">Type</label>
+            <select
+              id="phyType"
+              [(ngModel)]="formData.phyType"
+              name="phyType"
+              class="form-control"
+              required
+            >
+              <option value="Person">Person</option>
+              <option value="Non-Person">Non-Person</option>
+            </select>
+          </div>
+
+          <!-- Last Name / Organization Name -->
+          <div class="form-group">
+            <label for="phyLastName">Last Name / Organization Name</label>
+            <input
+              type="text"
+              id="phyLastName"
+              [(ngModel)]="formData.phyLastName"
+              name="phyLastName"
+              class="form-control"
+              maxlength="60"
+            />
+          </div>
+
+          <!-- First Name -->
+          <div class="form-group">
+            <label for="phyFirstName">First Name</label>
+            <input
+              type="text"
+              id="phyFirstName"
+              [(ngModel)]="formData.phyFirstName"
+              name="phyFirstName"
+              class="form-control"
+              maxlength="35"
+            />
+          </div>
+
+          <!-- Middle -->
+          <div class="form-group">
+            <label for="phyMiddleName">Middle</label>
+            <input
+              type="text"
+              id="phyMiddleName"
+              [(ngModel)]="formData.phyMiddleName"
+              name="phyMiddleName"
+              class="form-control"
+              maxlength="25"
+            />
+          </div>
+
+          <!-- Address Line 1 -->
+          <div class="form-group">
+            <label for="phyAddress1">Address Line 1</label>
+            <input
+              type="text"
+              id="phyAddress1"
+              [(ngModel)]="formData.phyAddress1"
+              name="phyAddress1"
+              class="form-control"
+              maxlength="55"
+            />
+          </div>
+
+          <!-- Address Line 2 -->
+          <div class="form-group">
+            <label for="phyAddress2">Address Line 2</label>
+            <input
+              type="text"
+              id="phyAddress2"
+              [(ngModel)]="formData.phyAddress2"
+              name="phyAddress2"
+              class="form-control"
+              maxlength="55"
+            />
+          </div>
+
+          <!-- City, State, ZIP -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phyCity">City</label>
+              <input
+                type="text"
+                id="phyCity"
+                [(ngModel)]="formData.phyCity"
+                name="phyCity"
+                class="form-control"
+                maxlength="50"
+              />
+            </div>
+            <div class="form-group">
+              <label for="phyState">State</label>
+              <input
+                type="text"
+                id="phyState"
+                [(ngModel)]="formData.phyState"
+                name="phyState"
+                class="form-control"
+                maxlength="2"
+                style="text-transform: uppercase;"
+              />
+            </div>
+            <div class="form-group">
+              <label for="phyZip">ZIP</label>
+              <input
+                type="text"
+                id="phyZip"
+                [(ngModel)]="formData.phyZip"
+                name="phyZip"
+                class="form-control"
+                maxlength="15"
+              />
+            </div>
+          </div>
+
+          <!-- Telephone, Fax -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phyTelephone">Telephone</label>
+              <input
+                type="text"
+                id="phyTelephone"
+                [(ngModel)]="formData.phyTelephone"
+                name="phyTelephone"
+                class="form-control"
+                maxlength="80"
+              />
+            </div>
+            <div class="form-group">
+              <label for="phyFax">Fax</label>
+              <input
+                type="text"
+                id="phyFax"
+                [(ngModel)]="formData.phyFax"
+                name="phyFax"
+                class="form-control"
+                maxlength="80"
+              />
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label for="phyEMail">Email</label>
+            <input
+              type="email"
+              id="phyEMail"
+              [(ngModel)]="formData.phyEMail"
+              name="phyEMail"
+              class="form-control"
+              maxlength="80"
+            />
+          </div>
+
+          <!-- Taxonomy Code -->
+          <div class="form-group">
+            <label for="phySpecialtyCode">Taxonomy Code</label>
+            <input
+              type="text"
+              id="phySpecialtyCode"
+              [(ngModel)]="formData.phySpecialtyCode"
+              name="phySpecialtyCode"
+              class="form-control"
+              maxlength="30"
+            />
+          </div>
+
+          <!-- Mark as Inactive -->
+          <div class="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="formData.phyInactive"
+                name="phyInactive"
+              />
+              Mark as Inactive
+            </label>
+          </div>
+
+          <!-- NPI -->
+          <div class="form-group">
+            <label for="phyNPI">NPI</label>
+            <input
+              type="text"
+              id="phyNPI"
+              [(ngModel)]="formData.phyNPI"
+              name="phyNPI"
+              class="form-control"
+              maxlength="20"
+            />
+          </div>
+
+          <!-- Tax ID Type + Tax ID -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phyEntityType">Tax ID Type</label>
+              <select
+                id="phyEntityType"
+                [(ngModel)]="formData.phyEntityType"
+                name="phyEntityType"
+                class="form-control"
+              >
+                <option [value]="null">-- Select --</option>
+                <option value="S">SSN</option>
+                <option value="E">EIN</option>
+                <option value="O">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="phyPrimaryIDCode">Tax ID</label>
+              <input
+                type="text"
+                id="phyPrimaryIDCode"
+                [(ngModel)]="formData.phyPrimaryIDCode"
+                name="phyPrimaryIDCode"
+                class="form-control"
+                maxlength="80"
+              />
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="onSaveAndNew()"
+              [disabled]="saving || !formData.phyName?.trim()"
+            >
+              Save & New
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="onSaveAndClose()"
+              [disabled]="saving || !formData.phyName?.trim()"
+            >
+              Save & Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="onClose()"
+              [disabled]="saving"
+            >
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

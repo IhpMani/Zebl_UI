@@ -56,10 +56,33 @@ export class PhysicianApiService {
       }
     }
 
-    return this.http.get<PhysiciansApiResponse>(this.baseUrl, { params });
+    const url = this.baseUrl;
+    console.log('[PhysicianApiService] GET', url, params.toString());
+
+    return this.http.get<PhysiciansApiResponse>(url, { params });
   }
 
   getAvailableColumns(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/available-columns`);
+    const url = `${this.baseUrl}/available-columns`;
+    console.log('[PhysicianApiService] GET', url);
+    return this.http.get<any>(url);
+  }
+
+  getPhysicianById(id: number): Observable<any> {
+    const url = `${this.baseUrl}/${id}`;
+    console.log('[PhysicianApiService] GET', url);
+    return this.http.get<any>(url);
+  }
+
+  createPhysician(physician: any): Observable<any> {
+    const url = this.baseUrl;
+    console.log('[PhysicianApiService] POST', url, physician);
+    return this.http.post<any>(url, physician);
+  }
+
+  updatePhysician(id: number, physician: any): Observable<any> {
+    const url = `${this.baseUrl}/${id}`;
+    console.log('[PhysicianApiService] PUT', url, physician);
+    return this.http.put<any>(url, physician);
   }
 }

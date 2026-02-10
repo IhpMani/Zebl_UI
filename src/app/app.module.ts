@@ -15,6 +15,7 @@ import { PaymentListComponent } from './payments/payment-list/payment-list.compo
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
 import { PayerListComponent } from './payers/payer-list/payer-list.component';
 import { PhysicianListComponent } from './physicians/physician-list/physician-list.component';
+import { PhysicianLibraryComponent } from './physicians/physician-library/physician-library.component';
 import { DisbursementListComponent } from './disbursements/disbursement-list/disbursement-list.component';
 import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note-list.component';
 
@@ -31,6 +32,7 @@ import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note
     AdjustmentListComponent,
     PayerListComponent,
     PhysicianListComponent,
+    PhysicianLibraryComponent,
     DisbursementListComponent,
     ClaimNoteListComponent
   ],

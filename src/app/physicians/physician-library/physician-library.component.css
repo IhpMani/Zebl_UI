@@ -1,0 +1,161 @@
+/* ROOT LAYOUT */
+.physician-library-container {
+  height: 100vh;
+  font-family: Segoe UI, Tahoma, sans-serif;
+}
+
+.library-panels {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+}
+
+/* LEFT PANEL (EZClaim-style list) */
+.left-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  border-right: 1px solid #999;
+}
+
+.panel-header {
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid #999;
+}
+
+.search-section {
+  display: none; /* EZClaim has no search box */
+}
+
+.list-section {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.add-new-entry {
+  padding: 4px 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #aaa;
+  cursor: pointer;
+}
+
+.physician-list {
+  overflow-y: auto;
+}
+
+.physician-list-header {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+  background: #f5f5f5;
+  color: #333;
+}
+
+.physician-name-header,
+.physician-classification-header {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.physician-item {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.physician-item.selected {
+  background: #dbe8f6;
+}
+
+.physician-name,
+.physician-classification {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* RIGHT PANEL */
+.right-panel {
+  padding: 6px;
+}
+
+/* REMOVE BIG TITLE — EZClaim DOES NOT HAVE IT */
+.right-panel .panel-header {
+  display: none;
+}
+
+/* FORM LAYOUT — THIS IS THE KEY */
+.physician-form {
+  display: grid;
+  grid-template-columns: 160px 260px 90px 120px;
+  grid-row-gap: 6px;
+  grid-column-gap: 6px;
+  font-size: 12px;
+  align-items: center;
+}
+
+/* LABELS */
+.form-group label {
+  grid-column: 1;
+  font-weight: normal;
+}
+
+/* INPUTS */
+.form-group input,
+.form-group select {
+  grid-column: 2 / span 3;
+  height: 22px;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+/* DISPLAY NAME FULL WIDTH */
+.form-group:first-child input {
+  grid-column: 2 / span 3;
+}
+
+/* FORM ROW OVERRIDES */
+.form-row {
+  display: contents;
+}
+
+/* CITY / STATE / ZIP */
+#phyCity { grid-column: 2; }
+#phyState { grid-column: 3; }
+#phyZip { grid-column: 4; }
+
+/* PHONE / FAX */
+#phyTelephone { grid-column: 2; }
+#phyFax { grid-column: 4; }
+
+/* CHECKBOX INLINE */
+.checkbox-group {
+  grid-column: 2 / span 2;
+}
+
+/* BUTTONS — TOP RIGHT LIKE EZCLAIM */
+.form-actions {
+  grid-column: 3 / span 2;
+  justify-self: end;
+  margin-top: 10px;
+}
+
+.form-actions button {
+  height: 24px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* REMOVE MODERN STYLES */
+.btn {
+  border-radius: 0;
+  padding: 2px 8px;
+}

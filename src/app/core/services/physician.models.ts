@@ -4,6 +4,8 @@ export interface PhysicianListItem {
   phyFirstName: string | null;
   phyLastName: string | null;
   phyFullNameCC: string | null;
+  phyName?: string | null;
+  phyPrimaryCodeType?: string | null;
   phyNPI: string | null;
   phyType: string;
   phyInactive: boolean;
