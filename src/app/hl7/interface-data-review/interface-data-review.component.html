@@ -1,0 +1,82 @@
+<div class="interface-data-review">
+  <h2>Interface Data Review</h2>
+
+  <div class="top-section">
+    <div class="header-row">
+      <h3>Incoming / Pending Files</h3>
+      <button (click)="onImportClick()">Import...</button>
+      <input #fileInput type="file" accept=".hl7" style="display:none" (change)="onFileSelected($event)" />
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>File Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="!pendingFileName">
+          <td colspan="2" class="empty">No pending files.</td>
+        </tr>
+        <tr *ngIf="pendingFileName">
+          <td>{{ pendingFileName }}</td>
+          <td>
+            <span *ngIf="reviewing">Analyzing...</span>
+            <span *ngIf="!reviewing && review && !importing && !importError">Ready to import</span>
+            <span *ngIf="importing">Importing...</span>
+            <span *ngIf="reviewError" class="error">{{ reviewError }}</span>
+            <span *ngIf="importError" class="error">{{ importError }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Review Summary block (pre-import counts) -->
+    <div class="review-panel" *ngIf="review">
+      <h3>Review Details</h3>
+      <div class="review-grid">
+        <div><strong>File Name:</strong> {{ review.fileName }}</div>
+        <div><strong>Interface:</strong> {{ review.interfaceName }}</div>
+        <div><strong>New Patients:</strong> {{ review.newPatientsCount }}</div>
+        <div><strong>Updated Patients:</strong> {{ review.updatedPatientsCount }}</div>
+        <div><strong>Duplicate Patients:</strong> {{ review.duplicatePatientsCount }}</div>
+        <div><strong>New Claims:</strong> {{ review.newClaimsCount }}</div>
+        <div><strong>Total Amount:</strong> {{ review.totalAmount | currency }}</div>
+      </div>
+
+      <div class="review-actions">
+        <button (click)="onConfirmImport()" [disabled]="reviewing || importing">OK / Import</button>
+        <button (click)="onCancelReview()" [disabled]="reviewing || importing">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <h3>Import History</h3>
+
+    <div *ngIf="loadingHistory" class="loading">Loading history...</div>
+    <div *ngIf="historyError" class="error">{{ historyError }}</div>
+
+    <table class="table" *ngIf="!loadingHistory && !historyError">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Computer</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="history.length === 0">
+          <td colspan="3" class="empty">No imports yet.</td>
+        </tr>
+        <tr *ngFor="let row of history">
+          <td>{{ row.importDateTime | date:'MM/dd/yyyy h:mm a' }}</td>
+          <td>{{ row.computerName }}</td>
+          <td>{{ row.note }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

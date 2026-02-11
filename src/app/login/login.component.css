@@ -1,0 +1,33 @@
+.login-container {
+  max-width: 360px;
+  margin: 60px auto;
+  padding: 16px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #bbb;
+}
+
+.error {
+  color: #b00020;
+}
+
+button {
+  padding: 10px;
+}
+

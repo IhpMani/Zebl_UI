@@ -1,6 +1,5 @@
-import { Component, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, HostListener, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
-import { Hl7ImportService } from '../core/services/hl7-import.service';
 
 @Component({
   selector: 'app-ribbon',
@@ -9,15 +8,12 @@ import { Hl7ImportService } from '../core/services/hl7-import.service';
 })
 export class RibbonComponent {
   showFindDropdown: boolean = false;
-  isImporting: boolean = false;
-  importMessage: string = '';
-  importError: string = '';
 
-  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
+  // Raised when the user wants to review incoming HL7 files.
+  @Output() reviewIncoming = new EventEmitter<void>();
 
   constructor(
-    private router: Router,
-    private hl7ImportService: Hl7ImportService
+    private router: Router
   ) { }
 
   goToHome(): void {
@@ -84,80 +80,9 @@ export class RibbonComponent {
 
   /**
    * Handles Review Incoming button click
-   * Opens file picker for .hl7 files
+   * Opens the Interface Data Review page (no file picker here).
    */
   onReviewIncomingClick(): void {
-    if (this.fileInput) {
-      this.fileInput.nativeElement.click();
-    }
-  }
-
-  /**
-   * Handles file selection and triggers HL7 import
-   */
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    // Validate file extension
-    if (!file.name.toLowerCase().endsWith('.hl7')) {
-      this.importError = 'Please select a .hl7 file';
-      this.importMessage = '';
-      // Reset file input
-      input.value = '';
-      return;
-    }
-
-    // Import the file
-    this.importHl7File(file);
-
-    // Reset file input for next selection
-    input.value = '';
-  }
-
-  /**
-   * Imports the selected HL7 file
-   */
-  private importHl7File(file: File): void {
-    this.isImporting = true;
-    this.importError = '';
-    this.importMessage = '';
-
-    this.hl7ImportService.importHl7File(file).subscribe({
-      next: (response) => {
-        this.isImporting = false;
-        // Display import result
-        if (response.success) {
-          this.importMessage = `Imported ${response.fileName}: ${response.successfulMessages}/${response.totalMessages} messages processed successfully`;
-          if (response.failedMessages > 0) {
-            this.importMessage += ` (${response.failedMessages} failed)`;
-          }
-        } else {
-          this.importError = 'Import completed with errors';
-        }
-        this.importError = '';
-        
-        // Show message for 10 seconds, then clear
-        setTimeout(() => {
-          this.importMessage = '';
-        }, 10000);
-      },
-      error: (error) => {
-        this.isImporting = false;
-        // Extract error message from response
-        const errorMessage = error.error?.error || error.error?.message || error.message || 'Failed to import HL7 file. Please try again.';
-        this.importError = errorMessage;
-        this.importMessage = '';
-        
-        // Show error for 10 seconds, then clear
-        setTimeout(() => {
-          this.importError = '';
-        }, 10000);
-      }
-    });
+    this.reviewIncoming.emit();
   }
 }

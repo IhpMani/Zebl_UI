@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppShellComponent } from './app-shell/app-shell.component';
@@ -18,6 +18,10 @@ import { PhysicianListComponent } from './physicians/physician-list/physician-li
 import { PhysicianLibraryComponent } from './physicians/physician-library/physician-library.component';
 import { DisbursementListComponent } from './disbursements/disbursement-list/disbursement-list.component';
 import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note-list.component';
+import { LoginComponent } from './login/login.component';
+import { UserManagementComponent } from './admin/user-management/user-management.component';
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 
 @NgModule({
   declarations: [
@@ -34,7 +38,10 @@ import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note
     PhysicianListComponent,
     PhysicianLibraryComponent,
     DisbursementListComponent,
-    ClaimNoteListComponent
+    ClaimNoteListComponent,
+    LoginComponent,
+    UserManagementComponent,
+    InterfaceDataReviewComponent
   ],
   imports: [
     BrowserModule,
@@ -42,7 +49,9 @@ import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note
     HttpClientModule,
     FormsModule
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ],
   bootstrap: [AppShellComponent] // Bootstrap with AppShellComponent
 })
 export class AppModule { }

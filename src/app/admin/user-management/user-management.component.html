@@ -1,0 +1,51 @@
+<div class="page">
+  <h2>User Management</h2>
+
+  <div class="error" *ngIf="error">{{ error }}</div>
+
+  <div class="card">
+    <h3>Create user</h3>
+    <div class="form">
+      <input placeholder="Username" [(ngModel)]="newUserName" />
+      <input placeholder="Password" [(ngModel)]="newPassword" type="password" />
+      <input placeholder="Email (optional)" [(ngModel)]="newEmail" />
+      <button (click)="create()" [disabled]="!newUserName || !newPassword">Create</button>
+    </div>
+    <div class="note">
+      Admin status is config-driven (server-side <code>AdminUsers</code> list).
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <h3>Users</h3>
+      <button (click)="refresh()">Refresh</button>
+    </div>
+
+    <div *ngIf="loading">Loading…</div>
+
+    <table *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>UserName</th>
+          <th>Email</th>
+          <th>Active</th>
+          <th>Admin</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users">
+          <td>{{ u.userName }}</td>
+          <td>{{ u.email || '' }}</td>
+          <td>{{ u.isActive ? 'Yes' : 'No' }}</td>
+          <td>{{ u.isAdmin ? 'Yes' : 'No' }}</td>
+          <td>
+            <button (click)="toggleActive(u)">{{ u.isActive ? 'Deactivate' : 'Activate' }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

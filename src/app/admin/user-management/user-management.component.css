@@ -1,0 +1,51 @@
+.page {
+  padding: 8px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #bbb;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  padding: 8px;
+}
+
+.error {
+  color: #b00020;
+  margin-bottom: 8px;
+}
+
+.note {
+  margin-top: 8px;
+  color: #444;
+  font-size: 12px;
+}
+

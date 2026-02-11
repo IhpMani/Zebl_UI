@@ -1,0 +1,61 @@
+.interface-data-review {
+  padding: 8px;
+}
+
+.top-section, .bottom-section {
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #eee;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.empty {
+  text-align: center;
+  color: #666;
+}
+
+.error {
+  color: #b00020;
+}
+
+.loading {
+  color: #333;
+}
+
+.review-panel {
+  margin-top: 12px;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  margin-bottom: 8px;
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+

@@ -12,20 +12,27 @@ import { PhysicianListComponent } from './physicians/physician-list/physician-li
 import { PhysicianLibraryComponent } from './physicians/physician-library/physician-library.component';
 import { DisbursementListComponent } from './disbursements/disbursement-list/disbursement-list.component';
 import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note-list.component';
+import { LoginComponent } from './login/login.component';
+import { UserManagementComponent } from './admin/user-management/user-management.component';
+import { AuthGuard } from './core/guards/auth.guard';
+import { AdminGuard } from './core/guards/admin.guard';
 
 const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'claims/find-claim', component: ClaimListComponent },
-  { path: 'claims/:id', component: ClaimDetailsComponent },
-  { path: 'patients/find-patient', component: PatientListComponent },
-  { path: 'services/find-service', component: ServiceListComponent },
-  { path: 'payments/find-payment', component: PaymentListComponent },
-  { path: 'adjustments/find-adjustment', component: AdjustmentListComponent },
-  { path: 'payers/find-payer', component: PayerListComponent },
-  { path: 'physicians/find-physician', component: PhysicianListComponent },
-  { path: 'physicians', component: PhysicianLibraryComponent },
-  { path: 'disbursements/find-disbursement', component: DisbursementListComponent },
-  { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'admin/users', component: UserManagementComponent, canActivate: [AdminGuard] },
+
+  { path: '', component: HomeComponent, canActivate: [AuthGuard] },
+  { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
+  { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
+  { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
+  { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },
+  { path: 'payments/find-payment', component: PaymentListComponent, canActivate: [AuthGuard] },
+  { path: 'adjustments/find-adjustment', component: AdjustmentListComponent, canActivate: [AuthGuard] },
+  { path: 'payers/find-payer', component: PayerListComponent, canActivate: [AuthGuard] },
+  { path: 'physicians/find-physician', component: PhysicianListComponent, canActivate: [AuthGuard] },
+  { path: 'physicians', component: PhysicianLibraryComponent, canActivate: [AuthGuard] },
+  { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
+  { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
 ];
 
 @NgModule({
