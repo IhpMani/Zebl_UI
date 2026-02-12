@@ -7,9 +7,17 @@ export interface PatientListItem {
   patActive: boolean;
   patAccountNo: string | null;
   patBirthDate: string | null;
-  patPhoneNo: string | null;
+  patSSN: string | null;
+  patSex: string | null;
+  patAddress: string | null;
   patCity: string | null;
   patState: string | null;
+  patZip: string | null;
+  patPhoneNo: string | null;
+  patCellPhoneNo: string | null;
+  patPriEmail: string | null;
+  patBillingPhyFID: number;
+  patClassification: string | null;
   patTotalBalanceCC: number | null;
   additionalColumns?: { [key: string]: any };
 }

@@ -1,0 +1,81 @@
+<div class="list-library-container">
+  <div class="list-library-content">
+    <!-- Left Panel: List Type -->
+    <div class="list-type-panel">
+      <div class="panel-header">List Type</div>
+      <div class="panel-body">
+        <div *ngIf="loading" class="loading">Loading...</div>
+        <div *ngIf="!loading" class="list-type-list">
+          <div 
+            *ngFor="let type of listTypes" 
+            class="list-type-item"
+            [class.selected]="isSelected(type.listTypeName)"
+            (click)="selectListType(type.listTypeName)">
+            {{ type.listTypeName }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Panel: List Entries -->
+    <div class="list-entries-panel">
+      <div class="panel-header">List Entries</div>
+      <div class="panel-body">
+        <!-- Add new entry input -->
+        <div class="add-entry-container" *ngIf="selectedListType">
+          <input 
+            type="text" 
+            class="add-entry-input"
+            [(ngModel)]="newValue"
+            placeholder="Click here to add a new list entry"
+            (keyup.enter)="addValue()"
+            [disabled]="addingValue">
+          <div *ngIf="addError" class="add-error">{{ addError }}</div>
+        </div>
+
+        <!-- Loading state -->
+        <div *ngIf="selectedListType && loadingValues" class="loading">
+          Loading entries...
+        </div>
+
+        <!-- Entries list -->
+        <div *ngIf="selectedListType && !loadingValues" class="entries-list">
+          <div 
+            *ngFor="let value of listValues" 
+            class="entry-item"
+            [class.selected]="selectedValue === value.value"
+            (click)="selectValue(value.value)">
+            <button 
+              class="btn-delete-x"
+              (click)="deleteValue(value.value); $event.stopPropagation()"
+              [disabled]="!canDelete(value)"
+              [title]="canDelete(value) ? 'Delete entry' : 'Cannot delete - in use by ' + value.usageCount + ' record(s)'">
+              ×
+            </button>
+            <span class="entry-text">{{ value.value }}</span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="!selectedListType" class="empty-state">
+          Select a list type to manage entries
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Actions -->
+    <div class="actions-panel">
+      <button class="action-btn" (click)="saveAndClose()" [disabled]="!hasChanges">Save & Close</button>
+      <button class="action-btn" (click)="save()" [disabled]="!hasChanges">Save</button>
+      <button class="action-btn" (click)="close()">Close</button>
+      <button class="action-btn">Find & Replace</button>
+
+      <div class="auto-add-option">
+        <label>
+          <input type="checkbox" [(ngModel)]="autoAddNewEntries">
+          Automatically add new entries to this list
+        </label>
+      </div>
+    </div>
+  </div>
+</div>

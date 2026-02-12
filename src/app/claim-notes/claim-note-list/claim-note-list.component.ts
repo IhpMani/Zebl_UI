@@ -35,7 +35,14 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     { key: 'claDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'claStatus', label: 'Status', visible: true, filterValue: '' },
     { key: 'claEDINotes', label: 'EDI Notes', visible: true, filterValue: '' },
-    { key: 'claRemarks', label: 'Remarks', visible: true, filterValue: '' }
+    { key: 'claRemarks', label: 'Remarks', visible: true, filterValue: '' },
+    { key: 'claBillDate', label: 'Bill Date', visible: false, filterValue: '' },
+    { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: false, filterValue: '' },
+    { key: 'claTotalBalanceCC', label: 'Total Balance', visible: false, filterValue: '' },
+    { key: 'claClassification', label: 'Classification', visible: false, filterValue: '' },
+    { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
+    { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
+    { key: 'claPatFID', label: 'Patient ID', visible: false, filterValue: '' }
   ];
 
   constructor(private claimNoteApiService: ClaimNoteApiService, private router: Router) { }

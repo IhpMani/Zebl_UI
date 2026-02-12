@@ -186,7 +186,7 @@
   <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
     <div class="customization-dialog" (click)="$event.stopPropagation()">
       <div class="dialog-header">
-        <h3>Customization</h3>
+        <h3>Add Column</h3>
         <button class="close-btn" (click)="closeCustomizationDialog()">×</button>
       </div>
       <div class="dialog-search">
@@ -198,59 +198,20 @@
         />
       </div>
       <div class="dialog-content">
-        <!-- Standard Claim Columns -->
-        <div class="column-section">
-          <h4>Claim Columns</h4>
+        <!-- Curated Additional Columns (Categorized) -->
+        <div *ngFor="let category of getAdditionalColumnCategories()" class="column-section">
+          <h4>{{ category }}</h4>
           <div class="column-list">
-            <label *ngFor="let col of filteredColumnsForDialog" class="column-item" [class.related-column]="col.isRelatedColumn">
+            <label *ngFor="let col of getAdditionalColumnsByCategory(category)" class="column-item">
               <input
                 type="checkbox"
-                [checked]="col.visible"
+                [checked]="isAdditionalColumnSelected(col.key)"
                 (change)="toggleColumnVisibility(col.key)"
               />
               <span>{{ col.label }}</span>
-              <button 
-                *ngIf="col.isRelatedColumn" 
-                class="remove-related-btn"
-                (click)="removeRelatedColumn(col.key)"
-                title="Remove related column">
-                ×
-              </button>
+              <span *ngIf="col.isForeignKey" class="fk-badge" title="Foreign Key Reference">FK</span>
             </label>
           </div>
-        </div>
-
-        <!-- Related Columns from Other Tables -->
-        <div class="column-section" *ngIf="availableRelatedColumns && availableRelatedColumns.length > 0">
-          <h4>Add Columns from Related Tables</h4>
-          <div *ngFor="let tableGroup of getRelatedColumnsByTable() | keyvalue" class="table-group">
-            <h5>{{ tableGroup.key }} Table</h5>
-            <div class="column-list">
-              <div 
-                *ngFor="let col of tableGroup.value" 
-                class="column-item related-column-option" 
-                style="cursor: pointer; user-select: none; display: flex; align-items: center;"
-                (click)="toggleRelatedColumn(col.key, col.label, col.table); $event.stopPropagation()"
-              >
-                <input
-                  type="checkbox"
-                  [checked]="isRelatedColumnSelected(col.key)"
-                  (change)="onRelatedColumnToggle(col.key, col.label, col.table, $event)"
-                  (click)="$event.stopPropagation()"
-                  style="cursor: pointer; pointer-events: auto; margin-right: 10px;"
-                />
-                <span style="cursor: pointer; flex: 1;">
-                  {{ col.label }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="!availableRelatedColumns || availableRelatedColumns.length === 0" class="column-section">
-          <p style="color: #999; font-size: 0.9em; padding: 8px;">
-            <span *ngIf="availableRelatedColumns && availableRelatedColumns.length === 0">No related columns available</span>
-            <span *ngIf="!availableRelatedColumns">Loading related columns...</span>
-          </p>
         </div>
       </div>
       <div class="dialog-footer">

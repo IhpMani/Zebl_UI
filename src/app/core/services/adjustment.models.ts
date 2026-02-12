@@ -5,6 +5,7 @@ export interface AdjustmentListItem {
   adjAmount: number;
   adjGroupCode: string;
   adjReasonCode: string | null;
+  adjNote: string | null;
   adjSrvFID: number;
   adjPmtFID: number;
   adjPayFID: number;

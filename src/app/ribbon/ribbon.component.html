@@ -48,7 +48,27 @@
         <button class="toolbar-button"><img src="assets/icons/statement.png" alt="Statement">Statement</button>
         <button class="toolbar-button"><img src="assets/icons/payer.png" alt="Payer">Payer</button>
         <button class="toolbar-button" (click)="goToPhysicianLibrary()"><img src="assets/icons/physician.png" alt="Physician">Physician</button>
-        <button class="toolbar-button"><img src="assets/icons/libraries.png" alt="Libraries">Libraries</button>
+        <div class="dropdown-wrapper">
+          <button class="toolbar-button dropdown" [class.active]="showLibrariesDropdown" (click)="toggleLibrariesDropdown($event)">
+            <img src="assets/icons/libraries.png" alt="Libraries">Libraries
+          </button>
+          <div class="dropdown-content" [class.show]="showLibrariesDropdown">
+            <a (click)="libraryOptionSelected('Add-On Services')"><img src="assets/icons/libraries.png" alt="Add-On Services">Add-On Services</a>
+            <a (click)="libraryOptionSelected('Authorization')"><img src="assets/icons/libraries.png" alt="Authorization">Authorization</a>
+            <a (click)="libraryOptionSelected('City State Zip')"><img src="assets/icons/libraries.png" alt="City State Zip">City State Zip</a>
+            <a (click)="libraryOptionSelected('Claim Template')"><img src="assets/icons/claim.png" alt="Claim Template">Claim Template</a>
+            <a (click)="libraryOptionSelected('Code Library')"><img src="assets/icons/libraries.png" alt="Code Library">Code Library</a>
+            <a (click)="libraryOptionSelected('EDI Connection')"><img src="assets/icons/edi-reports.png" alt="EDI Connection">EDI Connection</a>
+            <a (click)="libraryOptionSelected('Interface')"><img src="assets/icons/libraries.png" alt="Interface">Interface</a>
+            <a (click)="libraryOptionSelected('List')"><img src="assets/icons/libraries.png" alt="List">List</a>
+            <a (click)="libraryOptionSelected('Note Template')"><img src="assets/icons/libraries.png" alt="Note Template">Note Template</a>
+            <a (click)="libraryOptionSelected('Payer')"><img src="assets/icons/payer.png" alt="Payer">Payer</a>
+            <a (click)="libraryOptionSelected('Physician Facility')"><img src="assets/icons/physician.png" alt="Physician Facility">Physician Facility</a>
+            <a (click)="libraryOptionSelected('Procedure Code')"><img src="assets/icons/libraries.png" alt="Procedure Code">Procedure Code</a>
+            <a (click)="libraryOptionSelected('Submitter / Receiver')"><img src="assets/icons/libraries.png" alt="Submitter / Receiver">Submitter / Receiver</a>
+            <a (click)="libraryOptionSelected('Widget')"><img src="assets/icons/libraries.png" alt="Widget">Widget</a>
+          </div>
+        </div>
       </div>
       <div class="toolbar-label">New</div>
     </div>

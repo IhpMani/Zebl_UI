@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 })
 export class RibbonComponent {
   showFindDropdown: boolean = false;
+  showLibrariesDropdown: boolean = false;
 
   // Raised when the user wants to review incoming HL7 files.
   @Output() reviewIncoming = new EventEmitter<void>();
@@ -27,6 +28,19 @@ export class RibbonComponent {
   toggleFindDropdown(event: Event): void {
     event.stopPropagation();
     this.showFindDropdown = !this.showFindDropdown;
+    // Close Libraries dropdown when opening Find
+    if (this.showFindDropdown) {
+      this.showLibrariesDropdown = false;
+    }
+  }
+
+  toggleLibrariesDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showLibrariesDropdown = !this.showLibrariesDropdown;
+    // Close Find dropdown when opening Libraries
+    if (this.showLibrariesDropdown) {
+      this.showFindDropdown = false;
+    }
   }
 
   findOptionSelected(option: string): void {
@@ -71,10 +85,35 @@ export class RibbonComponent {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    const dropdownElement = document.querySelector('.dropdown-wrapper');
+    const dropdownElements = document.querySelectorAll('.dropdown-wrapper');
     
-    if (dropdownElement && !dropdownElement.contains(target)) {
+    let clickedInside = false;
+    dropdownElements.forEach(element => {
+      if (element.contains(target)) {
+        clickedInside = true;
+      }
+    });
+    
+    if (!clickedInside) {
       this.showFindDropdown = false;
+      this.showLibrariesDropdown = false;
+    }
+  }
+
+  libraryOptionSelected(option: string): void {
+    this.showLibrariesDropdown = false;
+    
+    switch (option) {
+      case 'Physician Facility':
+        this.router.navigate(['/physicians']);
+        break;
+      case 'List':
+        this.router.navigate(['/lists/list-library']);
+        break;
+      default:
+        console.log(`Library option selected: ${option}`);
+        // Placeholder for future routing/functionality
+        break;
     }
   }
 

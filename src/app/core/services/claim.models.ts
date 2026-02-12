@@ -5,6 +5,21 @@ export interface ClaimListItem {
   claTotalChargeTRIG: number | null;
   claTotalAmtPaidCC: number | null;
   claTotalBalanceCC: number | null;
+  claClassification: string | null;
+  claPatFID: number;
+  claAttendingPhyFID: number;
+  claBillingPhyFID: number;
+  claReferringPhyFID: number;
+  claBillDate: string | null;
+  claTypeOfBill: string | null;
+  claAdmissionType: string | null;
+  claPatientStatus: string | null;
+  claDiagnosis1: string | null;
+  claDiagnosis2: string | null;
+  claDiagnosis3: string | null;
+  claDiagnosis4: string | null;
+  claFirstDateTRIG: string | null;
+  claLastDateTRIG: string | null;
   additionalColumns?: { [key: string]: any }; // Additional columns from related tables
 }
 
@@ -45,7 +60,9 @@ export interface Claim {
   claRelatedToState: string | null;
   claFirstDateTRIG: string | null;
   claLastDateTRIG: string | null;
-  
+  /** Facility - values from Libraries → List → Claim Classification */
+  claClassification: string | null;
+
   // Diagnosis codes
   claDiagnosis1: string | null;
   claDiagnosis2: string | null;

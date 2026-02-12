@@ -82,5 +82,32 @@ export class ClaimApiService {
   getClaimById(claId: number): Observable<Claim> {
     return this.http.get<Claim>(`/api/claims/${claId}`);
   }
+
+  /** Update claim. ClaStatus and ClaClassification from List Library. */
+  updateClaim(claId: number, body: {
+    claStatus?: string | null;
+    claClassification?: string | null;
+    claAdmittedDate?: string | null;
+    claDischargedDate?: string | null;
+    claDateLastSeen?: string | null;
+    claEDINotes?: string | null;
+    claRemarks?: string | null;
+    claRelatedTo?: number | null;
+    claRelatedToState?: string | null;
+    claLocked?: boolean;
+  }): Observable<void> {
+    const payload: any = {};
+    if (body.claStatus !== undefined) payload.claStatus = body.claStatus;
+    if (body.claClassification !== undefined) payload.claClassification = body.claClassification;
+    if (body.claAdmittedDate !== undefined) payload.claAdmittedDate = body.claAdmittedDate ? new Date(body.claAdmittedDate).toISOString() : null;
+    if (body.claDischargedDate !== undefined) payload.claDischargedDate = body.claDischargedDate ? new Date(body.claDischargedDate).toISOString() : null;
+    if (body.claDateLastSeen !== undefined) payload.claDateLastSeen = body.claDateLastSeen ? new Date(body.claDateLastSeen).toISOString() : null;
+    if (body.claEDINotes !== undefined) payload.claEDINotes = body.claEDINotes;
+    if (body.claRemarks !== undefined) payload.claRemarks = body.claRemarks;
+    if (body.claRelatedTo !== undefined) payload.claRelatedTo = body.claRelatedTo;
+    if (body.claRelatedToState !== undefined) payload.claRelatedToState = body.claRelatedToState;
+    if (body.claLocked !== undefined) payload.claLocked = body.claLocked;
+    return this.http.put<void>(`/api/claims/${claId}`, payload);
+  }
 }
 

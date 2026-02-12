@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { Claim } from '../../core/services/claim.models';
+import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { AdjustmentApiService } from '../../core/services/adjustment-api.service';
 import { DisbursementApiService } from '../../core/services/disbursement-api.service';
 import { PaymentApiService } from '../../core/services/payment-api.service';
@@ -41,6 +43,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     { label: 'Diagnosis L12', field: 'claDiagnosis12' }
   ];
 
+  /** Classification options from Libraries → List → Claim Classification */
+  classificationOptions: ListValueDto[] = [];
+  /** Status options from Libraries → List → Claim Status */
+  statusOptions: ListValueDto[] = [];
+
+  /** Form for Claim Information fields - values from List Library */
+  claimForm = new FormGroup({
+    ClaStatus: new FormControl<string | null>(''),
+    ClaClassification: new FormControl<string | null>('')
+  });
+
   sectionsState = {
     claimInfo: true,
     physician: true,
@@ -78,6 +91,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private claimApiService: ClaimApiService,
+    private listApiService: ListApiService,
     private serviceApi: ServiceApiService,
     private paymentApi: PaymentApiService,
     private adjustmentApi: AdjustmentApiService,
@@ -86,6 +100,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    this.loadClassificationOptions();
+    this.loadStatusOptions();
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.claId = +idParam;
@@ -94,6 +110,58 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     } else {
       this.error = 'Invalid claim ID';
     }
+  }
+
+  loadClassificationOptions(): void {
+    this.listApiService.getListValues('Claim Classification').subscribe({
+      next: (r) => {
+        const items = (r.data || []).slice().sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+        this.classificationOptions = items;
+        this.ensureCurrentClassificationInOptions();
+        this.cdr.markForCheck();
+      },
+      error: () => { this.classificationOptions = []; this.cdr.markForCheck(); }
+    });
+  }
+
+  loadStatusOptions(): void {
+    this.listApiService.getListValues('Claim Status').subscribe({
+      next: (r) => {
+        const items = (r.data || []).slice().sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+        this.statusOptions = items;
+        this.ensureCurrentStatusInOptions();
+        this.cdr.markForCheck();
+      },
+      error: () => { this.statusOptions = []; this.cdr.markForCheck(); }
+    });
+  }
+
+  /** Ensure the claim's current ClaClassification appears in dropdown (for legacy values not in list) */
+  private ensureCurrentClassificationInOptions(): void {
+    if (!this.claim?.claClassification?.trim()) return;
+    const current = this.claim.claClassification.trim();
+    if (!this.classificationOptions.some(o => o.value === current)) {
+      this.classificationOptions = [...this.classificationOptions, { value: current, usageCount: 0 }]
+        .sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+    }
+  }
+
+  /** Ensure the claim's current ClaStatus appears in dropdown (for legacy values not in list) */
+  private ensureCurrentStatusInOptions(): void {
+    if (!this.claim?.claStatus?.trim()) return;
+    const current = this.claim.claStatus.trim();
+    if (!this.statusOptions.some(o => o.value === current)) {
+      this.statusOptions = [...this.statusOptions, { value: current, usageCount: 0 }]
+        .sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+    }
+  }
+
+  /** Patch form with claim data from API */
+  private patchClaimForm(): void {
+    this.claimForm.patchValue({
+      ClaStatus: this.claim?.claStatus ?? null,
+      ClaClassification: this.claim?.claClassification ?? null
+    });
   }
 
   ngOnDestroy(): void {
@@ -120,6 +188,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (claim: Claim) => {
         this.claim = claim;
+        this.ensureCurrentStatusInOptions();
+        this.ensureCurrentClassificationInOptions();
+        this.patchClaimForm();
       },
       error: (err) => {
         if (err.status === 404) {
@@ -148,8 +219,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       })
     ).subscribe({
-      next: (services: any[]) => {
-        this.serviceLines = services || [];
+      next: (res: any) => {
+        this.serviceLines = Array.isArray(res) ? res : (res?.data ?? []) || [];
         this.serviceLoaded = true;
         this.selectedServiceLineId = this.serviceLines[0]?.srvID ?? null;
       },
@@ -167,6 +238,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   trackByServiceLine(index: number, item: any): number {
     return item.srvID;
+  }
+
+  /** Safe array for *ngFor - API may return wrapped { data: [] } */
+  get serviceLinesArray(): any[] {
+    return Array.isArray(this.serviceLines) ? this.serviceLines : [];
   }
 
   trackByPayment(index: number, item: any): number {
@@ -274,12 +350,66 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   saveAndClose(): void {
-    console.log('Save and close clicked');
-    this.goBackToList();
+    if (!this.claim || !this.claId) {
+      this.goBackToList();
+      return;
+    }
+    const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
+    const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
+    this.claimApiService.updateClaim(this.claId, {
+      claStatus: claStatus || null,
+      claClassification: claClassification || null,
+      claAdmittedDate: this.claim.claAdmittedDate ?? null,
+      claDischargedDate: this.claim.claDischargedDate ?? null,
+      claDateLastSeen: this.claim.claDateLastSeen ?? null,
+      claEDINotes: this.claim.claEDINotes ?? null,
+      claRemarks: this.claim.claRemarks ?? null,
+      claRelatedTo: this.claim.claRelatedTo ?? null,
+      claRelatedToState: this.claim.claRelatedToState ?? null,
+      claLocked: this.claim.claLocked
+    }).subscribe({
+      next: () => {
+        if (this.claim) {
+          this.claim.claStatus = claStatus;
+          this.claim.claClassification = claClassification;
+        }
+        this.goBackToList();
+      },
+      error: (err) => {
+        console.error('Failed to save claim', err);
+        alert('Failed to save claim');
+      }
+    });
   }
 
   save(): void {
-    console.log('Save clicked');
+    if (!this.claim || !this.claId) return;
+    const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
+    const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
+    this.claimApiService.updateClaim(this.claId, {
+      claStatus: claStatus || null,
+      claClassification: claClassification || null,
+      claAdmittedDate: this.claim.claAdmittedDate ?? null,
+      claDischargedDate: this.claim.claDischargedDate ?? null,
+      claDateLastSeen: this.claim.claDateLastSeen ?? null,
+      claEDINotes: this.claim.claEDINotes ?? null,
+      claRemarks: this.claim.claRemarks ?? null,
+      claRelatedTo: this.claim.claRelatedTo ?? null,
+      claRelatedToState: this.claim.claRelatedToState ?? null,
+      claLocked: this.claim.claLocked
+    }).subscribe({
+      next: () => {
+        if (this.claim) {
+          this.claim.claStatus = claStatus;
+          this.claim.claClassification = claClassification;
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to save claim', err);
+        alert('Failed to save claim');
+      }
+    });
   }
 
   close(): void {
@@ -350,15 +480,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   getServiceTotalCharges(): number {
-    return this.serviceLines.reduce((sum, line) => sum + (line.srvCharges || 0), 0);
+    const lines = Array.isArray(this.serviceLines) ? this.serviceLines : [];
+    return lines.reduce((sum, line) => sum + (line.srvCharges || 0), 0);
   }
 
   getServiceTotalPaid(): number {
-    return this.serviceLines.reduce((sum, line) => sum + (line.srvTotalAmtPaidCC || 0), 0);
+    const lines = Array.isArray(this.serviceLines) ? this.serviceLines : [];
+    return lines.reduce((sum, line) => sum + (line.srvTotalAmtPaidCC || 0), 0);
   }
 
   getServiceTotalBalance(): number {
-    return this.serviceLines.reduce((sum, line) => sum + (line.srvTotalBalanceCC || 0), 0);
+    const lines = Array.isArray(this.serviceLines) ? this.serviceLines : [];
+    return lines.reduce((sum, line) => sum + (line.srvTotalBalanceCC || 0), 0);
   }
 
   getNotesHistory(): Array<{ date: string; user: string; content: string; summary?: string }> {
@@ -380,10 +513,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (this.claim?.serviceLines) {
-      this.claim.serviceLines.forEach(line => {
+    const claimLines = this.claim?.serviceLines;
+    if (Array.isArray(claimLines)) {
+      claimLines.forEach((line: any) => {
         if (line.adjustments && line.adjustments.length > 0) {
-          line.adjustments.forEach(adj => {
+          line.adjustments.forEach((adj: any) => {
             notes.push({
               date: adj.adjDateTimeCreated || '',
               user: adj.payerName || 'System',

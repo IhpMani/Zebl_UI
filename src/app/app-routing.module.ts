@@ -33,6 +33,7 @@ const routes: Routes = [
   { path: 'physicians', component: PhysicianLibraryComponent, canActivate: [AuthGuard] },
   { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
   { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
+  { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },
 ];
 
 @NgModule({

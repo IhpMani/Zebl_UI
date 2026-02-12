@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { ClaimListItem, ClaimsApiResponse, PaginationMeta } from '../../core/services/claim.models';
 import { Subject, takeUntil } from 'rxjs';
+import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from './claim-list-additional-columns';
 
 @Component({
   selector: 'app-claim-list',
@@ -32,84 +33,183 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   popupSelectedValues: Set<string> = new Set<string>();
   popupTextFilter: string = ''; // For text/numeric input filters
 
-  // Related columns from other tables
-  availableRelatedColumns: Array<{ table: string; key: string; label: string; path: string }> = [];
+  // Curated additional columns from registry
+  availableAdditionalColumns: AdditionalColumnDefinition[] = [];
   selectedAdditionalColumns: Set<string> = new Set<string>(); // Track which additional columns are selected
 
+  // Base columns (always visible by default)
   columns: Array<{
     key: string;
     label: string;
     visible: boolean;
     filterValue: string;
-    isRelatedColumn?: boolean; // Flag to identify related columns
-    table?: string; // Which table this column comes from
+    isAdditionalColumn?: boolean; // Flag for columns added via Add Column
   }> = [
-    {
-      key: 'claID',
-      label: 'Claim ID',
-      visible: true,
-      filterValue: ''
-    },
-    {
-      key: 'claStatus',
-      label: 'Status',
-      visible: true,
-      filterValue: ''
-    },
-    {
-      key: 'claDateTimeCreated',
-      label: 'Date Created',
-      visible: true,
-      filterValue: ''
-    },
-    {
-      key: 'claTotalChargeTRIG',
-      label: 'Total Charge',
-      visible: true,
-      filterValue: ''
-    },
-    {
-      key: 'claTotalBalanceCC',
-      label: 'Total Balance',
-      visible: true,
-      filterValue: ''
-    },
-    {
-      key: 'claClassification',
-      label: 'Classification',
-      visible: false,
-      filterValue: ''
-    },
-    {
-      key: 'claFirstDateTRIG',
-      label: '1st DOS',
-      visible: false,
-      filterValue: ''
-    },
-    {
-      key: 'claLastDateTRIG',
-      label: 'Last DOS',
-      visible: false,
-      filterValue: ''
-    },
-    {
-      key: 'claBillTo',
-      label: 'Bill To',
-      visible: false,
-      filterValue: ''
-    },
-    {
-      key: 'claDateTimeModified',
-      label: 'Modified Timestamp',
-      visible: false,
-      filterValue: ''
-    },
-    {
-      key: 'claLastUserName',
-      label: 'Modified User',
-      visible: false,
-      filterValue: ''
-    }
+    { key: 'claID', label: 'Claim ID', visible: true, filterValue: '' },
+    { key: 'claStatus', label: 'Status', visible: true, filterValue: '' },
+    { key: 'claDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: true, filterValue: '' },
+    { key: 'claTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
+    { key: 'claClassification', label: 'Facility', visible: false, filterValue: '' },
+    { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
+    { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
+    { key: 'claBillTo', label: 'Bill To', visible: false, filterValue: '' },
+    { key: 'claDateTimeModified', label: 'Modified Timestamp', visible: false, filterValue: '' },
+    { key: 'claLastUserName', label: 'Modified User', visible: false, filterValue: '' },
+    { key: 'claPatFID', label: 'Patient ID', visible: false, filterValue: '' },
+    { key: 'claAttendingPhyFID', label: 'Attending Physician ID', visible: false, filterValue: '' },
+    { key: 'claBillingPhyFID', label: 'Billing Physician ID', visible: false, filterValue: '' },
+    { key: 'claBillDate', label: 'Bill Date', visible: false, filterValue: '' },
+    { key: 'claTypeOfBill', label: 'Type of Bill', visible: false, filterValue: '' },
+    { key: 'claAdmissionType', label: 'Admission Type', visible: false, filterValue: '' },
+    { key: 'claPatientStatus', label: 'Patient Status', visible: false, filterValue: '' },
+    { key: 'claDiagnosis1', label: 'Diagnosis 1', visible: false, filterValue: '' },
+    { key: 'claDiagnosis2', label: 'Diagnosis 2', visible: false, filterValue: '' },
+    { key: 'claDiagnosis3', label: 'Diagnosis 3', visible: false, filterValue: '' },
+    { key: 'claDiagnosis4', label: 'Diagnosis 4', visible: false, filterValue: '' },
+    { key: 'claReferringPhyFID', label: 'Referring Physician ID', visible: false, filterValue: '' },
+    { key: 'claCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
+    { key: 'claLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
+    { key: 'claCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
+    { key: 'claCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
+    { key: 'claLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
+    { key: 'claAccidentDate', label: 'Accident Date', visible: false, filterValue: '' },
+    { key: 'claAcuteManifestationDate', label: 'Acute Manifestation Date', visible: false, filterValue: '' },
+    { key: 'claAdmissionHour', label: 'Admission Hour', visible: false, filterValue: '' },
+    { key: 'claAdmissionSource', label: 'Admission Source', visible: false, filterValue: '' },
+    { key: 'claAdmittedDate', label: 'Admitted Date', visible: false, filterValue: '' },
+    { key: 'claAdmittingDiagnosis', label: 'Admitting Diagnosis', visible: false, filterValue: '' },
+    { key: 'claArchived', label: 'Archived', visible: false, filterValue: '' },
+    { key: 'claAssumedCareDate', label: 'Assumed Care Date', visible: false, filterValue: '' },
+    { key: 'claAuthorizedReturnToWorkDate', label: 'Authorized Return To Work Date', visible: false, filterValue: '' },
+    { key: 'claBox10dClaimCodes', label: 'Box 10d Claim Codes', visible: false, filterValue: '' },
+    { key: 'claBox11bOtherClaimIDQualifier', label: 'Box 11b Other Claim ID Qualifier', visible: false, filterValue: '' },
+    { key: 'claBox22CodeOverride', label: 'Box 22 Code Override', visible: false, filterValue: '' },
+    { key: 'claBox33bOverride', label: 'Box 33b Override', visible: false, filterValue: '' },
+    { key: 'claCLIANumber', label: 'CLIA Number', visible: false, filterValue: '' },
+    { key: 'claCMNCertOnFile', label: 'CMN Cert On File', visible: false, filterValue: '' },
+    { key: 'claCMNCertTypeCode', label: 'CMN Cert Type Code', visible: false, filterValue: '' },
+    { key: 'claCMNFormIdentificationCode', label: 'CMN Form Identification Code', visible: false, filterValue: '' },
+    { key: 'claCMNInitialDate', label: 'CMN Initial Date', visible: false, filterValue: '' },
+    { key: 'claCMNLengthOfNeed', label: 'CMN Length Of Need', visible: false, filterValue: '' },
+    { key: 'claCMNRevisedDate', label: 'CMN Revised Date', visible: false, filterValue: '' },
+    { key: 'claCMNSignedDate', label: 'CMN Signed Date', visible: false, filterValue: '' },
+    { key: 'claCN1Segment', label: 'CN1 Segment', visible: false, filterValue: '' },
+    { key: 'claConditionCode1', label: 'Condition Code 1', visible: false, filterValue: '' },
+    { key: 'claConditionCode2', label: 'Condition Code 2', visible: false, filterValue: '' },
+    { key: 'claConditionCode3', label: 'Condition Code 3', visible: false, filterValue: '' },
+    { key: 'claConditionCode4', label: 'Condition Code 4', visible: false, filterValue: '' },
+    { key: 'claCustomField1', label: 'Custom Field 1', visible: false, filterValue: '' },
+    { key: 'claCustomField2', label: 'Custom Field 2', visible: false, filterValue: '' },
+    { key: 'claCustomField3', label: 'Custom Field 3', visible: false, filterValue: '' },
+    { key: 'claCustomField4', label: 'Custom Field 4', visible: false, filterValue: '' },
+    { key: 'claCustomField5', label: 'Custom Field 5', visible: false, filterValue: '' },
+    { key: 'claDateLastSeen', label: 'Date Last Seen', visible: false, filterValue: '' },
+    { key: 'claDateOfCurrent', label: 'Date Of Current', visible: false, filterValue: '' },
+    { key: 'claDateTotalFrom', label: 'Date Total From', visible: false, filterValue: '' },
+    { key: 'claDateTotalThrough', label: 'Date Total Through', visible: false, filterValue: '' },
+    { key: 'claDelayCode', label: 'Delay Code', visible: false, filterValue: '' },
+    { key: 'claDiagnosis5', label: 'Diagnosis 5', visible: false, filterValue: '' },
+    { key: 'claDiagnosis6', label: 'Diagnosis 6', visible: false, filterValue: '' },
+    { key: 'claDiagnosis7', label: 'Diagnosis 7', visible: false, filterValue: '' },
+    { key: 'claDiagnosis8', label: 'Diagnosis 8', visible: false, filterValue: '' },
+    { key: 'claDiagnosis9', label: 'Diagnosis 9', visible: false, filterValue: '' },
+    { key: 'claDiagnosis10', label: 'Diagnosis 10', visible: false, filterValue: '' },
+    { key: 'claDiagnosis11', label: 'Diagnosis 11', visible: false, filterValue: '' },
+    { key: 'claDiagnosis12', label: 'Diagnosis 12', visible: false, filterValue: '' },
+    { key: 'claDiagnosis13', label: 'Diagnosis 13', visible: false, filterValue: '' },
+    { key: 'claDiagnosis14', label: 'Diagnosis 14', visible: false, filterValue: '' },
+    { key: 'claDiagnosis15', label: 'Diagnosis 15', visible: false, filterValue: '' },
+    { key: 'claDiagnosis16', label: 'Diagnosis 16', visible: false, filterValue: '' },
+    { key: 'claDiagnosis17', label: 'Diagnosis 17', visible: false, filterValue: '' },
+    { key: 'claDiagnosis18', label: 'Diagnosis 18', visible: false, filterValue: '' },
+    { key: 'claDiagnosis19', label: 'Diagnosis 19', visible: false, filterValue: '' },
+    { key: 'claDiagnosis20', label: 'Diagnosis 20', visible: false, filterValue: '' },
+    { key: 'claDiagnosis21', label: 'Diagnosis 21', visible: false, filterValue: '' },
+    { key: 'claDiagnosis22', label: 'Diagnosis 22', visible: false, filterValue: '' },
+    { key: 'claDiagnosis23', label: 'Diagnosis 23', visible: false, filterValue: '' },
+    { key: 'claDiagnosis24', label: 'Diagnosis 24', visible: false, filterValue: '' },
+    { key: 'claDiagnosis25', label: 'Diagnosis 25', visible: false, filterValue: '' },
+    { key: 'claDiagnosisCodesCC', label: 'Diagnosis Codes CC', visible: false, filterValue: '' },
+    { key: 'claDisabilityBeginDate', label: 'Disability Begin Date', visible: false, filterValue: '' },
+    { key: 'claDisabilityEndDate', label: 'Disability End Date', visible: false, filterValue: '' },
+    { key: 'claDischargedDate', label: 'Discharged Date', visible: false, filterValue: '' },
+    { key: 'claDischargedHour', label: 'Discharged Hour', visible: false, filterValue: '' },
+    { key: 'claDMEFormData', label: 'DME Form Data', visible: false, filterValue: '' },
+    { key: 'claEDINotes', label: 'EDI Notes', visible: false, filterValue: '' },
+    { key: 'claEPSDTReferral', label: 'EPSDT Referral', visible: false, filterValue: '' },
+    { key: 'claExternalFID', label: 'External FID', visible: false, filterValue: '' },
+    { key: 'claFacilityPhyFID', label: 'Facility Physician ID', visible: false, filterValue: '' },
+    { key: 'claFirstDateOfInjury', label: 'First Date Of Injury', visible: false, filterValue: '' },
+    { key: 'claFirstInsPaymentDateTRIG', label: 'First Ins Payment Date TRIG', visible: false, filterValue: '' },
+    { key: 'claHearingAndPrescriptionDate', label: 'Hearing And Prescription Date', visible: false, filterValue: '' },
+    { key: 'claHomeboundInd', label: 'Homebound Ind', visible: false, filterValue: '' },
+    { key: 'claHospiceInd', label: 'Hospice Ind', visible: false, filterValue: '' },
+    { key: 'claICDIndicator', label: 'ICD Indicator', visible: false, filterValue: '' },
+    { key: 'claIDENumber', label: 'IDE Number', visible: false, filterValue: '' },
+    { key: 'claInitialTreatmentDate', label: 'Initial Treatment Date', visible: false, filterValue: '' },
+    { key: 'claIgnoreAppliedAmount', label: 'Ignore Applied Amount', visible: false, filterValue: '' },
+    { key: 'claInsuranceTypeCodeOverride', label: 'Insurance Type Code Override', visible: false, filterValue: '' },
+    { key: 'claInvoiceNumber', label: 'Invoice Number', visible: false, filterValue: '' },
+    { key: 'claK3FileInformation', label: 'K3 File Information', visible: false, filterValue: '' },
+    { key: 'claLabCharges', label: 'Lab Charges', visible: false, filterValue: '' },
+    { key: 'claLastExportedDate', label: 'Last Exported Date', visible: false, filterValue: '' },
+    { key: 'claLastMenstrualDate', label: 'Last Menstrual Date', visible: false, filterValue: '' },
+    { key: 'claLastPrintedDate', label: 'Last Printed Date', visible: false, filterValue: '' },
+    { key: 'claLastWorkedDate', label: 'Last Worked Date', visible: false, filterValue: '' },
+    { key: 'claLastXRayDate', label: 'Last X Ray Date', visible: false, filterValue: '' },
+    { key: 'claLocked', label: 'Locked', visible: false, filterValue: '' },
+    { key: 'claMammographyCert', label: 'Mammography Cert', visible: false, filterValue: '' },
+    { key: 'claMedicalRecordNumber', label: 'Medical Record Number', visible: false, filterValue: '' },
+    { key: 'claMedicaidResubmissionCode', label: 'Medicaid Resubmission Code', visible: false, filterValue: '' },
+    { key: 'claMOASegment', label: 'MOA Segment', visible: false, filterValue: '' },
+    { key: 'claOperatingPhyFID', label: 'Operating Physician ID', visible: false, filterValue: '' },
+    { key: 'claOrderingPhyFID', label: 'Ordering Physician ID', visible: false, filterValue: '' },
+    { key: 'claOriginalRefNo', label: 'Original Ref No', visible: false, filterValue: '' },
+    { key: 'claOutsideLab', label: 'Outside Lab', visible: false, filterValue: '' },
+    { key: 'claPaidDateTRIG', label: 'Paid Date TRIG', visible: false, filterValue: '' },
+    { key: 'claPaperWorkControlNumber', label: 'Paper Work Control Number', visible: false, filterValue: '' },
+    { key: 'claPaperWorkInd', label: 'Paper Work Ind', visible: false, filterValue: '' },
+    { key: 'claPaperWorkTransmissionCode', label: 'Paper Work Transmission Code', visible: false, filterValue: '' },
+    { key: 'claPatientReasonDiagnosis1', label: 'Patient Reason Diagnosis 1', visible: false, filterValue: '' },
+    { key: 'claPatientReasonDiagnosis2', label: 'Patient Reason Diagnosis 2', visible: false, filterValue: '' },
+    { key: 'claPatientReasonDiagnosis3', label: 'Patient Reason Diagnosis 3', visible: false, filterValue: '' },
+    { key: 'claPOAIndicator', label: 'POA Indicator', visible: false, filterValue: '' },
+    { key: 'claPPSCode', label: 'PPS Code', visible: false, filterValue: '' },
+    { key: 'claPricingExceptionCode', label: 'Pricing Exception Code', visible: false, filterValue: '' },
+    { key: 'claPrincipalProcedureCode', label: 'Principal Procedure Code', visible: false, filterValue: '' },
+    { key: 'claPrincipalProcedureDate', label: 'Principal Procedure Date', visible: false, filterValue: '' },
+    { key: 'claPrintUnitCharge', label: 'Print Unit Charge', visible: false, filterValue: '' },
+    { key: 'claProviderAgreementCode', label: 'Provider Agreement Code', visible: false, filterValue: '' },
+    { key: 'claRecurUntilDate', label: 'Recur Until Date', visible: false, filterValue: '' },
+    { key: 'claRecurringTimeFrame', label: 'Recurring Time Frame', visible: false, filterValue: '' },
+    { key: 'claReferralNumber', label: 'Referral Number', visible: false, filterValue: '' },
+    { key: 'claRelatedTo', label: 'Related To', visible: false, filterValue: '' },
+    { key: 'claRelatedToState', label: 'Related To State', visible: false, filterValue: '' },
+    { key: 'claRelinquishedCareDate', label: 'Relinquished Care Date', visible: false, filterValue: '' },
+    { key: 'claRemarks', label: 'Remarks', visible: false, filterValue: '' },
+    { key: 'claRenderingPhyFID', label: 'Rendering Physician ID', visible: false, filterValue: '' },
+    { key: 'claReserved10', label: 'Reserved 10', visible: false, filterValue: '' },
+    { key: 'claReserved19', label: 'Reserved 19', visible: false, filterValue: '' },
+    { key: 'claSimilarIllnessDate', label: 'Similar Illness Date', visible: false, filterValue: '' },
+    { key: 'claSpecialProgramIndicator', label: 'Special Program Indicator', visible: false, filterValue: '' },
+    { key: 'claStatementCoversFromOverride', label: 'Statement Covers From Override', visible: false, filterValue: '' },
+    { key: 'claStatementCoversThroughOverride', label: 'Statement Covers Through Override', visible: false, filterValue: '' },
+    { key: 'claSubmissionMethod', label: 'Submission Method', visible: false, filterValue: '' },
+    { key: 'claSupervisingPhyFID', label: 'Supervising Physician ID', visible: false, filterValue: '' },
+    { key: 'claTotalCOAdjTRIG', label: 'Total CO Adj TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalCRAdjTRIG', label: 'Total CR Adj TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalOAAdjTRIG', label: 'Total OA Adj TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalPIAdjTRIG', label: 'Total PI Adj TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalPRAdjTRIG', label: 'Total PR Adj TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalAdjCC', label: 'Total Adj CC', visible: false, filterValue: '' },
+    { key: 'claTotalServiceLineCountTRIG', label: 'Total Service Line Count TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalInsAmtPaidTRIG', label: 'Total Ins Amt Paid TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalInsBalanceTRIG', label: 'Total Ins Balance TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalPatAmtPaidTRIG', label: 'Total Pat Amt Paid TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalPatBalanceTRIG', label: 'Total Pat Balance TRIG', visible: false, filterValue: '' },
+    { key: 'claTotalAmtAppliedCC', label: 'Total Amt Applied CC', visible: false, filterValue: '' },
+    { key: 'claTotalAmtPaidCC', label: 'Total Amt Paid CC', visible: false, filterValue: '' }
   ];
 
   constructor(
@@ -123,52 +223,27 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    // Load available related columns
-    this.loadAvailableColumns();
+    // Load curated additional columns from registry
+    this.loadAdditionalColumnsFromRegistry();
+    // Load saved column preferences
+    this.loadColumnPreferences();
     // Load first page with server-side filtering
     this.loadClaims(this.currentPage, this.pageSize);
   }
 
+  /**
+   * Load curated additional columns from the ClaimListAdditionalColumns registry.
+   * NO dynamic schema discovery. NO reflection. NO auto-exposure.
+   */
+  loadAdditionalColumnsFromRegistry(): void {
+    this.availableAdditionalColumns = ClaimListAdditionalColumns.getAllColumns();
+    console.log(`Loaded ${this.availableAdditionalColumns.length} curated additional columns from registry`);
+  }
+
+  // Legacy method - no longer used (replaced by ClaimListAdditionalColumns registry)
   loadAvailableColumns(): void {
-    console.log('Loading available columns...');
-    this.claimApiService.getAvailableColumns()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-      next: (response: any) => {
-        console.log('Available columns response:', response);
-        if (response) {
-          // Handle both direct array and wrapped in data property
-          const columns = response.data || response;
-          if (Array.isArray(columns) && columns.length > 0) {
-            this.availableRelatedColumns = columns;
-            console.log('Loaded available columns:', this.availableRelatedColumns.length, 'columns');
-            // Add related columns that are already selected to the columns array
-            this.availableRelatedColumns.forEach(col => {
-              if (this.selectedAdditionalColumns.has(col.key)) {
-                this.columns.push({
-                  key: col.key,
-                  label: col.label,
-                  visible: true,
-                  filterValue: '',
-                  isRelatedColumn: true,
-                  table: col.table
-                });
-              }
-            });
-          } else {
-            console.warn('No available columns in response:', columns);
-            this.availableRelatedColumns = [];
-          }
-        } else {
-          console.warn('Empty response for available columns');
-          this.availableRelatedColumns = [];
-        }
-      },
-      error: (err) => {
-        console.error('Error loading available columns:', err);
-        this.availableRelatedColumns = [];
-      }
-    });
+    // No-op: Columns are now loaded from the static registry
+    console.log('loadAvailableColumns() is deprecated - using ClaimListAdditionalColumns registry');
   }
 
   loadClaims(page: number, pageSize: number): void {
@@ -540,8 +615,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       label: label,
       visible: true,
       filterValue: '',
-      isRelatedColumn: true,
-      table: table
+      isAdditionalColumn: true
     });
 
     console.log('Added column, reloading data...');
@@ -563,26 +637,17 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     this.loadClaims(this.currentPage, this.pageSize);
   }
 
-  getRelatedColumnsByTable(): { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } {
-    const grouped: { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } = {};
-    this.availableRelatedColumns.forEach(col => {
-      if (!grouped[col.table]) {
-        grouped[col.table] = [];
-      }
-      grouped[col.table].push(col);
-    });
-    return grouped;
+  // Legacy methods - no longer used (replaced by category-based registry)
+  getRelatedColumnsByTable(): { [table: string]: any[] } {
+    return {};
   }
 
   isRelatedColumnSelected(columnKey: string): boolean {
     return this.selectedAdditionalColumns.has(columnKey);
   }
 
-  getVisibleRelatedColumns(): Array<{ table: string; key: string; label: string; path: string }> {
-    return this.availableRelatedColumns.filter(col => 
-      this.selectedAdditionalColumns.has(col.key) && 
-      this.columns.some(c => c.key === col.key && c.visible)
-    );
+  getVisibleRelatedColumns(): any[] {
+    return [];
   }
 
   closeCustomizationDialog(event?: MouseEvent): void {
@@ -595,15 +660,146 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Toggle column visibility from the Add Column dropdown.
+   * Only allows columns from the curated registry.
+   */
   toggleColumnVisibility(columnKey: string): void {
-    const col = this.columns.find(c => c.key === columnKey);
-    if (col) {
-      col.visible = !col.visible;
+    // Check if this is an additional column from the registry
+    const additionalCol = ClaimListAdditionalColumns.findByKey(columnKey);
+    
+    if (additionalCol) {
+      // Check if column already exists in columns array
+      const existingCol = this.columns.find(c => c.key === columnKey);
+      
+      if (existingCol) {
+        // Toggle visibility
+        existingCol.visible = !existingCol.visible;
+        
+        // Update selected set
+        if (existingCol.visible) {
+          this.selectedAdditionalColumns.add(columnKey);
+        } else {
+          this.selectedAdditionalColumns.delete(columnKey);
+        }
+      } else {
+        // Add new column to the grid
+        this.columns.push({
+          key: additionalCol.key,
+          label: additionalCol.label,
+          visible: true,
+          filterValue: '',
+          isAdditionalColumn: true
+        });
+        this.selectedAdditionalColumns.add(columnKey);
+      }
+      
+      // Persist to localStorage
+      this.saveColumnPreferences();
+    } else {
+      // Base column (not from additional registry)
+      const col = this.columns.find(c => c.key === columnKey);
+      if (col) {
+        col.visible = !col.visible;
+      }
+    }
+  }
+
+  /**
+   * Save column preferences to localStorage
+   */
+  saveColumnPreferences(): void {
+    const preferences = {
+      visibleColumns: this.columns.filter(c => c.visible).map(c => c.key),
+      selectedAdditional: Array.from(this.selectedAdditionalColumns)
+    };
+    localStorage.setItem('claimListColumnPreferences', JSON.stringify(preferences));
+  }
+
+  /**
+   * Load column preferences from localStorage
+   */
+  loadColumnPreferences(): void {
+    const saved = localStorage.getItem('claimListColumnPreferences');
+    if (saved) {
+      try {
+        const preferences = JSON.parse(saved);
+        
+        // Apply visibility to existing columns
+        this.columns.forEach(col => {
+          col.visible = preferences.visibleColumns.includes(col.key);
+        });
+        
+        // Add additional columns that were previously selected
+        if (preferences.selectedAdditional) {
+          preferences.selectedAdditional.forEach((key: string) => {
+            const additionalCol = ClaimListAdditionalColumns.findByKey(key);
+            if (additionalCol && !this.columns.find(c => c.key === key)) {
+              this.columns.push({
+                key: additionalCol.key,
+                label: additionalCol.label,
+                visible: true,
+                filterValue: '',
+                isAdditionalColumn: true
+              });
+              this.selectedAdditionalColumns.add(key);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error loading column preferences:', e);
+      }
     }
   }
 
   clearAllColumns(): void {
     this.columns.forEach(col => col.visible = false);
+  }
+
+  /**
+   * Get categories in the defined order
+   */
+  getAdditionalColumnCategories(): string[] {
+    const categories = ClaimListAdditionalColumns.getCategoryOrder();
+    
+    // Filter by search text if provided
+    if (this.columnSearchText.trim()) {
+      const searchLower = this.columnSearchText.toLowerCase();
+      return categories.filter(category => {
+        const columnsInCategory = ClaimListAdditionalColumns.getAllColumns()
+          .filter(col => col.category === category)
+          .filter(col => col.label.toLowerCase().includes(searchLower));
+        return columnsInCategory.length > 0;
+      });
+    }
+    
+    return categories;
+  }
+
+  /**
+   * Get additional columns for a specific category
+   */
+  getAdditionalColumnsByCategory(category: string): AdditionalColumnDefinition[] {
+    let columns = ClaimListAdditionalColumns.getAllColumns()
+      .filter(col => col.category === category);
+    
+    // Apply search filter if provided
+    if (this.columnSearchText.trim()) {
+      const searchLower = this.columnSearchText.toLowerCase();
+      columns = columns.filter(col => 
+        col.label.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return columns;
+  }
+
+  /**
+   * Check if an additional column is currently selected/visible
+   */
+  isAdditionalColumnSelected(key: string): boolean {
+    const col = this.columns.find(c => c.key === key);
+    return col ? col.visible : false;
   }
 
   get filteredColumnsForDialog() {

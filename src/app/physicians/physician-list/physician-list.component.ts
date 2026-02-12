@@ -50,7 +50,32 @@ export class PhysicianListComponent implements OnInit, OnDestroy {
     { key: 'phyInactive', label: 'Inactive', visible: true, filterValue: '' },
     { key: 'phyCity', label: 'City', visible: false, filterValue: '' },
     { key: 'phyState', label: 'State', visible: false, filterValue: '' },
-    { key: 'phyTelephone', label: 'Phone', visible: false, filterValue: '' }
+    { key: 'phyTelephone', label: 'Phone', visible: false, filterValue: '' },
+    { key: 'phyRateClass', label: 'Rate Class', visible: false, filterValue: '' },
+    { key: 'phySpecialtyCode', label: 'Taxonomy', visible: false, filterValue: '' },
+    { key: 'phyAddress1', label: 'Address', visible: false, filterValue: '' },
+    { key: 'phyZip', label: 'ZIP', visible: false, filterValue: '' },
+    { key: 'phyDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'phyCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
+    { key: 'phyLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
+    { key: 'phyCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
+    { key: 'phyLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
+    { key: 'phyCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
+    { key: 'phyLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
+    { key: 'phyAddress2', label: 'Address 2', visible: false, filterValue: '' },
+    { key: 'phyEMail', label: 'Email', visible: false, filterValue: '' },
+    { key: 'phyEntityType', label: 'Entity Type', visible: false, filterValue: '' },
+    { key: 'phyFax', label: 'Fax', visible: false, filterValue: '' },
+    { key: 'phyMiddleName', label: 'Middle Name', visible: false, filterValue: '' },
+    { key: 'phyName', label: 'Name', visible: false, filterValue: '' },
+    { key: 'phyNotes', label: 'Notes', visible: false, filterValue: '' },
+    { key: 'phyPrimaryCodeType', label: 'Primary Code Type', visible: false, filterValue: '' },
+    { key: 'phyPrimaryIDCode', label: 'Primary ID Code', visible: false, filterValue: '' },
+    { key: 'phySignatureOnFile', label: 'Signature On File', visible: false, filterValue: '' },
+    { key: 'phySuffix', label: 'Suffix', visible: false, filterValue: '' },
+    { key: 'phyFirstMiddleLastNameCC', label: 'First Middle Last Name CC', visible: false, filterValue: '' },
+    { key: 'phyNameWithInactiveCC', label: 'Name With Inactive CC', visible: false, filterValue: '' },
+    { key: 'phyCityStateZipCC', label: 'City State Zip CC', visible: false, filterValue: '' }
   ];
 
   constructor(

@@ -5,7 +5,10 @@ export interface PaymentListItem {
   pmtAmount: number;
   pmtPatFID: number;
   pmtPayFID: number | null;
+  pmtBFEPFID: number;
   pmtMethod: string | null;
+  pmtAuthCode: string | null;
+  pmtNote: string | null;
   pmt835Ref: string | null;
   pmtDisbursedTRIG: number;
   pmtRemainingCC: number | null;

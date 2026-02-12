@@ -46,7 +46,16 @@ export class DisbursementListComponent implements OnInit, OnDestroy {
     { key: 'disbPmtFID', label: 'Payment ID', visible: true, filterValue: '' },
     { key: 'disbSrvFID', label: 'Service ID', visible: true, filterValue: '' },
     { key: 'disbCode', label: 'Code', visible: false, filterValue: '' },
-    { key: 'disbNote', label: 'Note', visible: false, filterValue: '' }
+    { key: 'disbNote', label: 'Note', visible: false, filterValue: '' },
+    { key: 'disbDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'disbCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
+    { key: 'disbLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
+    { key: 'disbCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
+    { key: 'disbLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
+    { key: 'disbCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
+    { key: 'disbLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
+    { key: 'disbBatchOperationReference', label: 'Batch Operation Reference', visible: false, filterValue: '' },
+    { key: 'disbSrvGUID', label: 'Service GUID', visible: false, filterValue: '' }
   ];
 
   constructor(

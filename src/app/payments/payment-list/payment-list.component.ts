@@ -40,7 +40,27 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'pmtMethod', label: 'Method', visible: true, filterValue: '' },
     { key: 'pmt835Ref', label: '835 Ref', visible: false, filterValue: '' },
     { key: 'pmtDisbursedTRIG', label: 'Disbursed', visible: false, filterValue: '' },
-    { key: 'pmtRemainingCC', label: 'Remaining', visible: true, filterValue: '' }
+    { key: 'pmtRemainingCC', label: 'Remaining', visible: true, filterValue: '' },
+    { key: 'pmtBFEPFID', label: 'Billing/Entity Physician ID', visible: false, filterValue: '' },
+    { key: 'pmtAuthCode', label: 'Auth Code', visible: false, filterValue: '' },
+    { key: 'pmtNote', label: 'Note', visible: false, filterValue: '' },
+    { key: 'pmtDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'pmtCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
+    { key: 'pmtLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
+    { key: 'pmtCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
+    { key: 'pmtLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
+    { key: 'pmtCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
+    { key: 'pmtLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
+    { key: 'pmtBatchOperationReference', label: 'Batch Operation Reference', visible: false, filterValue: '' },
+    { key: 'pmtOtherReference1', label: 'Other Reference 1', visible: false, filterValue: '' },
+    { key: 'pmtOtherReference2', label: 'Other Reference 2', visible: false, filterValue: '' },
+    { key: 'pmtCardEntryContext', label: 'Card Entry Context', visible: false, filterValue: '' },
+    { key: 'pmtCardEntryMethod', label: 'Card Entry Method', visible: false, filterValue: '' },
+    { key: 'pmtNameOnCard', label: 'Name On Card', visible: false, filterValue: '' },
+    { key: 'pmtIssuerResponseCode', label: 'Issuer Response Code', visible: false, filterValue: '' },
+    { key: 'pmtResponseCode', label: 'Response Code', visible: false, filterValue: '' },
+    { key: 'pmtChargedPlatformFee', label: 'Charged Platform Fee', visible: false, filterValue: '' },
+    { key: 'pmtTransactionType', label: 'Transaction Type', visible: false, filterValue: '' }
   ];
 
   constructor(private paymentApiService: PaymentApiService, private router: Router) { }
@@ -227,7 +247,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
   }
 
   isNumericColumn(columnKey: string): boolean {
-    const numericColumns = ['pmtID', 'pmtAmount', 'pmtPatFID', 'pmtPayFID', 'pmtRemainingCC'];
+    const numericColumns = ['pmtID', 'pmtAmount', 'pmtPatFID', 'pmtPayFID', 'pmtRemainingCC', 'pmtBFEPFID'];
     return numericColumns.includes(columnKey);
   }
   closeFilterPopup(event?: MouseEvent): void {

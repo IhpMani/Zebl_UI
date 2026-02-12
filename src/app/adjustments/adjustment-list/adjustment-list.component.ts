@@ -49,7 +49,22 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
     { key: 'adjSrvFID', label: 'Service ID', visible: true, filterValue: '' },
     { key: 'adjPmtFID', label: 'Payment ID', visible: false, filterValue: '' },
     { key: 'adjPayFID', label: 'Payer ID', visible: false, filterValue: '' },
-    { key: 'adj835Ref', label: '835 Ref', visible: false, filterValue: '' }
+    { key: 'adj835Ref', label: '835 Ref', visible: false, filterValue: '' },
+    { key: 'adjNote', label: 'Note', visible: false, filterValue: '' },
+    { key: 'adjDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'adjCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
+    { key: 'adjLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
+    { key: 'adjCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
+    { key: 'adjLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
+    { key: 'adjCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
+    { key: 'adjLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
+    { key: 'adjBatchOperationReference', label: 'Batch Operation Reference', visible: false, filterValue: '' },
+    { key: 'adjOtherReference1', label: 'Other Reference 1', visible: false, filterValue: '' },
+    { key: 'adjReasonAmount', label: 'Reason Amount', visible: false, filterValue: '' },
+    { key: 'adjRemarkCode', label: 'Remark Code', visible: false, filterValue: '' },
+    { key: 'adjSrvGUID', label: 'Service GUID', visible: false, filterValue: '' },
+    { key: 'adjTaskFID', label: 'Task ID', visible: false, filterValue: '' },
+    { key: 'adjTrackOnly', label: 'Track Only', visible: false, filterValue: '' }
   ];
 
   constructor(
@@ -161,7 +176,8 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
       c.key !== 'adjSrvFID' &&
       c.key !== 'adjGroupCode' &&
       c.key !== 'adjPmtFID' &&
-      c.key !== 'adjPayFID'
+      c.key !== 'adjPayFID' &&
+      c.key !== 'adjPatFID'
     );
     
     if (textFilterColumns.length > 0) {
@@ -289,7 +305,7 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
   }
 
   isNumericColumn(columnKey: string): boolean {
-    const numericColumns = ['adjID', 'adjAmount', 'adjSrvFID', 'adjPmtFID', 'adjPayFID'];
+    const numericColumns = ['adjID', 'adjAmount', 'adjSrvFID', 'adjPmtFID', 'adjPayFID', 'adjPatFID'];
     return numericColumns.includes(columnKey);
   }
 

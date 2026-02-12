@@ -82,9 +82,23 @@
                 <option [ngValue]="2">Final (F/2)</option>
               </select>
               </div>
-              <div class="field-row">
+              <div class="field-row" [formGroup]="claimForm">
                 <label>Status</label>
-                <input [value]="claim.claStatus" disabled />
+                <select formControlName="ClaStatus">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let option of statusOptions" [ngValue]="option.value">
+                    {{ option.value }}
+                  </option>
+                </select>
+              </div>
+              <div class="field-row" [formGroup]="claimForm">
+                <label>Classification</label>
+                <select formControlName="ClaClassification">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let option of classificationOptions" [ngValue]="option.value">
+                    {{ option.value }}
+                  </option>
+                </select>
               </div>
               <div class="field-row">
                 <label>Locked</label>
@@ -227,7 +241,7 @@
           </thead>
           <tbody>
             <tr
-              *ngFor="let line of serviceLines; trackBy: trackByServiceLine"
+              *ngFor="let line of serviceLinesArray; trackBy: trackByServiceLine"
               [class.selected]="line.srvID === selectedServiceLineId"
               (click)="selectServiceLine(line)">
               <td>{{ formatDate(line.srvFromDate) }}</td>
@@ -240,7 +254,7 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="2"><strong>{{ serviceLines.length }} line(s)</strong></td>
+              <td colspan="2"><strong>{{ serviceLinesArray.length }} line(s)</strong></td>
               <td><strong>{{ formatCurrency(getServiceTotalCharges()) }}</strong></td>
               <td></td>
               <td><strong>{{ formatCurrency(getServiceTotalPaid()) }}</strong></td>

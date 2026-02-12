@@ -5,13 +5,17 @@ export interface PhysicianListItem {
   phyLastName: string | null;
   phyFullNameCC: string | null;
   phyName?: string | null;
-  phyPrimaryCodeType?: string | null;
-  phyNPI: string | null;
   phyType: string;
-  phyInactive: boolean;
+  phyRateClass: string | null;
+  phyNPI: string | null;
+  phySpecialtyCode: string | null;
+  phyPrimaryCodeType?: string | null;
+  phyAddress1: string | null;
   phyCity: string | null;
   phyState: string | null;
+  phyZip: string | null;
   phyTelephone: string | null;
+  phyInactive: boolean;
   additionalColumns?: { [key: string]: any };
 }
 
