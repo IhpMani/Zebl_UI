@@ -22,14 +22,19 @@ export interface Hl7ReviewResponse {
   totalAmount: number;
 }
 
-// History rows for Interface Data Review (DB-driven).
+// History rows for Interface Data Review - from Interface_Import_Log.
 export interface Hl7ImportHistoryRow {
-  importLogId: number;
+  importId: number;
   fileName: string;
-  importDateTime: string;
-  importSuccessful: boolean;
+  importDate: string;
+  userName: string;
   computerName: string;
-  note: string;
+  newPatientsCount: number;
+  updatedPatientsCount: number;
+  newClaimsCount: number;
+  duplicateClaimsCount: number;
+  totalAmount: number;
+  notes: string;
 }
 
 @Injectable({

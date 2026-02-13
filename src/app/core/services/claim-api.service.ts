@@ -83,10 +83,14 @@ export class ClaimApiService {
     return this.http.get<Claim>(`/api/claims/${claId}`);
   }
 
-  /** Update claim. ClaStatus and ClaClassification from List Library. */
+  /** Update claim. ClaStatus and ClaClassification from List Library. Physician FIDs map to Claim table. */
   updateClaim(claId: number, body: {
     claStatus?: string | null;
     claClassification?: string | null;
+    claSubmissionMethod?: string | null;
+    claRenderingPhyFID?: number | null;
+    claFacilityPhyFID?: number | null;
+    claInvoiceNumber?: string | null;
     claAdmittedDate?: string | null;
     claDischargedDate?: string | null;
     claDateLastSeen?: string | null;
@@ -95,10 +99,22 @@ export class ClaimApiService {
     claRelatedTo?: number | null;
     claRelatedToState?: string | null;
     claLocked?: boolean;
+    claDelayCode?: string | null;
+    claMedicaidResubmissionCode?: string | null;
+    claOriginalRefNo?: string | null;
+    claPaperWorkTransmissionCode?: string | null;
+    claPaperWorkControlNumber?: string | null;
+    claPaperWorkInd?: string | null;
+    /** Optional manual note for this edit. If empty, backend uses "Claim edited." */
+    noteText?: string | null;
   }): Observable<void> {
     const payload: any = {};
     if (body.claStatus !== undefined) payload.claStatus = body.claStatus;
     if (body.claClassification !== undefined) payload.claClassification = body.claClassification;
+    if (body.claSubmissionMethod !== undefined) payload.claSubmissionMethod = body.claSubmissionMethod;
+    if (body.claRenderingPhyFID !== undefined) payload.claRenderingPhyFID = body.claRenderingPhyFID;
+    if (body.claFacilityPhyFID !== undefined) payload.claFacilityPhyFID = body.claFacilityPhyFID;
+    if (body.claInvoiceNumber !== undefined) payload.claInvoiceNumber = body.claInvoiceNumber;
     if (body.claAdmittedDate !== undefined) payload.claAdmittedDate = body.claAdmittedDate ? new Date(body.claAdmittedDate).toISOString() : null;
     if (body.claDischargedDate !== undefined) payload.claDischargedDate = body.claDischargedDate ? new Date(body.claDischargedDate).toISOString() : null;
     if (body.claDateLastSeen !== undefined) payload.claDateLastSeen = body.claDateLastSeen ? new Date(body.claDateLastSeen).toISOString() : null;
@@ -107,6 +123,13 @@ export class ClaimApiService {
     if (body.claRelatedTo !== undefined) payload.claRelatedTo = body.claRelatedTo;
     if (body.claRelatedToState !== undefined) payload.claRelatedToState = body.claRelatedToState;
     if (body.claLocked !== undefined) payload.claLocked = body.claLocked;
+    if (body.claDelayCode !== undefined) payload.claDelayCode = body.claDelayCode;
+    if (body.claMedicaidResubmissionCode !== undefined) payload.claMedicaidResubmissionCode = body.claMedicaidResubmissionCode;
+    if (body.claOriginalRefNo !== undefined) payload.claOriginalRefNo = body.claOriginalRefNo;
+    if (body.claPaperWorkTransmissionCode !== undefined) payload.claPaperWorkTransmissionCode = body.claPaperWorkTransmissionCode;
+    if (body.claPaperWorkControlNumber !== undefined) payload.claPaperWorkControlNumber = body.claPaperWorkControlNumber;
+    if (body.claPaperWorkInd !== undefined) payload.claPaperWorkInd = body.claPaperWorkInd;
+    if (body.noteText !== undefined) payload.noteText = body.noteText;
     return this.http.put<void>(`/api/claims/${claId}`, payload);
   }
 }

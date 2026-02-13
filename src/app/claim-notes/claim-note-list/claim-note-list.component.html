@@ -28,8 +28,11 @@
         <tr *ngFor="let note of filteredClaimNotes" (click)="onRowClick(note)" class="claim-row">
           <td class="action-col"><button class="open-btn" (click)="$event.stopPropagation(); onRowClick(note)">Open</button></td>
           <td *ngFor="let col of visibleColumns">
-            <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'claDateTimeCreated'">{{ note.claDateTimeCreated | date:'short' }}</span>
+            <ng-container [ngSwitch]="col.dataType">
+              <span *ngSwitchCase="'datetime'">{{ getCellValue(note, col.key) | date:'short' }}</span>
+              <span *ngSwitchCase="'date'">{{ getCellValue(note, col.key) | date:'shortDate' }}</span>
+              <span *ngSwitchCase="'currency'" class="num">{{ getCellValue(note, col.key) | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'boolean'">{{ getCellValue(note, col.key) ? 'Yes' : 'No' }}</span>
               <span *ngSwitchDefault>{{ getCellValue(note, col.key) }}</span>
             </ng-container>
           </td>
@@ -70,7 +73,7 @@
   <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
     <div class="customization-dialog" (click)="$event.stopPropagation()">
       <div class="dialog-header"><h3>Customization</h3><button class="close-btn" (click)="closeCustomizationDialog()">×</button></div>
-      <div class="dialog-search"><input type="text" [(ngModel)]="columnSearchText" placeholder="Search for a column..." class="search-input" /></div>
+      <div class="dialog-search"><input type="text" [(ngModel)]="columnSearchText" placeholder="Search columns..." class="search-input" /></div>
       <div class="dialog-content">
         <!-- Standard Claim Note Columns -->
         <div class="column-section">
@@ -115,7 +118,10 @@
           </p>
         </div>
       </div>
-      <div class="dialog-footer"><button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button></div>
+      <div class="dialog-footer">
+        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+        <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
+      </div>
     </div>
   </div>
 </div>

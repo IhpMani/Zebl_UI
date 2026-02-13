@@ -281,10 +281,13 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
     this.filterPopupSearchText = '';
     this.popupTextFilter = '';
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.filterPopupPosition = {
-      topPx: Math.round(rect.bottom + 6),
-      leftPx: Math.round(rect.left)
-    };
+    const popupWidth = 260;
+    const popupMaxHeight = Math.min(420, window.innerHeight - 24);
+    let topPx = Math.round(rect.bottom + 6);
+    if (topPx + popupMaxHeight > window.innerHeight) topPx = Math.max(8, window.innerHeight - popupMaxHeight);
+    let leftPx = Math.round(rect.left);
+    if (leftPx + popupWidth > window.innerWidth - 8) leftPx = Math.max(8, window.innerWidth - popupWidth - 8);
+    this.filterPopupPosition = { topPx, leftPx };
     
     const isNumeric = this.isNumericColumn(columnKey);
     
@@ -483,11 +486,18 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
   }
 
   getRelatedColumnsByTable(): { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } {
+    let cols = this.availableRelatedColumns;
+    if (this.columnSearchText.trim()) {
+      const q = this.columnSearchText.toLowerCase();
+      cols = cols.filter(c =>
+        (c.label && c.label.toLowerCase().includes(q)) ||
+        (c.key && c.key.toLowerCase().includes(q)) ||
+        (c.table && c.table.toLowerCase().includes(q))
+      );
+    }
     const grouped: { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } = {};
-    this.availableRelatedColumns.forEach(col => {
-      if (!grouped[col.table]) {
-        grouped[col.table] = [];
-      }
+    cols.forEach(col => {
+      if (!grouped[col.table]) grouped[col.table] = [];
       grouped[col.table].push(col);
     });
     return grouped;

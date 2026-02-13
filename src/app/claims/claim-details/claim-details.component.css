@@ -264,10 +264,51 @@ textarea {
   padding: 16px;
 }
 
-.notes-history {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.notes-input textarea {
+  min-height: 48px;
+  height: 48px;
+}
+
+.notes-history-table-wrapper {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.notes-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.notes-history-table th,
+.notes-history-table td {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.notes-history-table th {
+  background: #f4f6fb;
+  font-weight: 600;
+  color: #334155;
+}
+
+.notes-history-table th.num,
+.notes-history-table td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.notes-history-table td.note-text {
+  max-width: 400px;
+  word-wrap: break-word;
+}
+
+.notes-history-table td.no-data {
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
 }
 
 /* =========================

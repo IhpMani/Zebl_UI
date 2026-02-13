@@ -46,11 +46,14 @@ export interface Claim {
   claBillDate: string | null;
   claBillTo: number | null;
   claSubmissionMethod: string | null;
+  claInvoiceNumber: string | null;
   claLocked: boolean;
   claOriginalRefNo: string | null;
   claDelayCode: string | null;
+  claMedicaidResubmissionCode: string | null;
   claPaperWorkTransmissionCode: string | null;
   claPaperWorkControlNumber: string | null;
+  claPaperWorkInd: string | null;
   claEDINotes: string | null;
   claRemarks: string | null;
   claAdmittedDate: string | null;
@@ -113,6 +116,17 @@ export interface Claim {
     phyNPI: string | null;
   } | null;
   
+  /** Claim-specific activity from Claim_Audit (NOT interface import logs) */
+  claimActivity?: Array<{
+    date: string;
+    user: string;
+    activityType: string;
+    notes: string | null;
+    totalCharge?: number | null;
+    insuranceBalance?: number | null;
+    patientBalance?: number | null;
+  }>;
+
   serviceLines: Array<{
     srvID: number;
     srvFromDate: string | null;

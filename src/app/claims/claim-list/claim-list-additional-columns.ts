@@ -55,7 +55,7 @@ export class ClaimListAdditionalColumns {
     { key: 'patAccountNo', label: 'Account #', category: 'Patient', dataType: 'string', width: '120px' },
     { key: 'patLastName', label: 'Last Name', category: 'Patient', dataType: 'string', width: '150px' },
     { key: 'patFirstName', label: 'First Name', category: 'Patient', dataType: 'string', width: '150px' },
-    { key: 'patFullName', label: 'Name', category: 'Patient', dataType: 'string', width: '200px' },
+    { key: 'patFullNameCC', label: 'Name', category: 'Patient', dataType: 'string', width: '200px' },
     { key: 'patDOB', label: 'DOB', category: 'Patient', dataType: 'date', width: '110px' },
     { key: 'patClassification', label: 'Pat Classification', category: 'Patient', dataType: 'string', width: '150px' },
     { key: 'claPatientStatus', label: 'Patient Status', category: 'Patient', dataType: 'string', width: '120px' },

@@ -22,6 +22,7 @@ export class PatientApiService {
       minPatientId?: number;
       maxPatientId?: number;
       claimId?: number;
+      classificationList?: string;
       additionalColumns?: string[];
     }
   ): Observable<PatientsApiResponse> {
@@ -50,6 +51,9 @@ export class PatientApiService {
       }
       if (filters.claimId !== undefined) {
         params = params.append('claimId', filters.claimId.toString());
+      }
+      if (filters.classificationList) {
+        params = params.append('classificationList', filters.classificationList);
       }
       if (filters.additionalColumns && filters.additionalColumns.length > 0) {
         params = params.append('additionalColumns', filters.additionalColumns.join(','));

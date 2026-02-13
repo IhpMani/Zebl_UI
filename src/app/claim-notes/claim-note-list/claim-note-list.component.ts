@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ClaimNoteApiService } from '../../core/services/claim-note-api.service';
 import { ClaimNoteListItem, ClaimNotesApiResponse, PaginationMeta } from '../../core/services/claim-note.models';
 import { Subject, takeUntil } from 'rxjs';
+import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from '../../claims/claim-list/claim-list-additional-columns';
 
 @Component({
   selector: 'app-claim-note-list',
@@ -24,26 +25,54 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   columnValueFilters: Record<string, Set<string>> = {};
   popupAllValues: string[] = [];
   popupSelectedValues: Set<string> = new Set<string>();
-  popupTextFilter: string = ''; // For text/numeric input filters
+  popupTextFilter: string = '';
 
-  // Related columns from other tables
   availableRelatedColumns: Array<{ table: string; key: string; label: string; path: string }> = [];
   selectedAdditionalColumns: Set<string> = new Set<string>();
 
-  columns: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; }> = [
-    { key: 'claID', label: 'Claim ID', visible: true, filterValue: '' },
-    { key: 'claDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
-    { key: 'claStatus', label: 'Status', visible: true, filterValue: '' },
-    { key: 'claEDINotes', label: 'EDI Notes', visible: true, filterValue: '' },
-    { key: 'claRemarks', label: 'Remarks', visible: true, filterValue: '' },
-    { key: 'claBillDate', label: 'Bill Date', visible: false, filterValue: '' },
-    { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: false, filterValue: '' },
-    { key: 'claTotalBalanceCC', label: 'Total Balance', visible: false, filterValue: '' },
-    { key: 'claClassification', label: 'Classification', visible: false, filterValue: '' },
-    { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
-    { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
-    { key: 'claPatFID', label: 'Patient ID', visible: false, filterValue: '' }
-  ];
+  /** Note columns + all Claim List columns (same as Claim List) */
+  columns: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> = this.buildInitialColumns();
+
+  /** Map ClaimListAdditionalColumns keys to notes API response keys */
+  private static readonly NOTES_API_KEY_MAP: Record<string, string> = {
+    claFirstDOS: 'claFirstDateTRIG',
+    claLastDOS: 'claLastDateTRIG',
+    claTotalCharge: 'claTotalChargeTRIG',
+    claTotalBalance: 'claTotalBalanceCC',
+    claCreatedTimestamp: 'claDateTimeCreated',
+    claModifiedTimestamp: 'claDateTimeModified',
+    patID: 'claPatFID'
+  };
+
+  private buildInitialColumns(): Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> {
+    const noteCols: Array<{ key: string; label: string; visible: boolean; filterValue: string; dataType: string }> = [
+      { key: 'activityDate', label: 'Timestamp', visible: true, filterValue: '', dataType: 'datetime' },
+      { key: 'userName', label: 'User', visible: true, filterValue: '', dataType: 'string' },
+      { key: 'noteText', label: 'Note Text', visible: true, filterValue: '', dataType: 'string' }
+    ];
+    const claimCols = ClaimListAdditionalColumns.AVAILABLE_COLUMNS.map(c => {
+      const apiKey = ClaimNoteListComponent.NOTES_API_KEY_MAP[c.key] ?? c.key;
+      return {
+        key: apiKey,
+        label: c.label,
+        visible: ['claID', 'claStatus', 'claTotalChargeTRIG', 'claTotalBalanceCC', 'patFullNameCC'].includes(apiKey),
+        filterValue: '',
+        dataType: c.dataType
+      };
+    });
+    const auditCols = [
+      { key: 'totalCharge', label: 'Note Total Charge', visible: true, filterValue: '', dataType: 'currency' },
+      { key: 'insuranceBalance', label: 'Insurance Balance', visible: true, filterValue: '', dataType: 'currency' },
+      { key: 'patientBalance', label: 'Patient Balance', visible: true, filterValue: '', dataType: 'currency' },
+      { key: 'patientName', label: 'Patient', visible: true, filterValue: '', dataType: 'string' }
+    ];
+    const seen = new Set<string>();
+    const out: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> = [];
+    [...noteCols, ...claimCols, ...auditCols].forEach(c => {
+      if (!seen.has(c.key)) { seen.add(c.key); out.push({ ...c, isRelatedColumn: false }); }
+    });
+    return out;
+  }
 
   constructor(private claimNoteApiService: ClaimNoteApiService, private router: Router) { }
   currentPage: number = 1;
@@ -60,35 +89,12 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     this.claimNoteApiService.getAvailableColumns()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-      next: (response: any) => {
-        if (response) {
-          const columns = response.data || response;
-          if (Array.isArray(columns) && columns.length > 0) {
-            this.availableRelatedColumns = columns;
-            this.availableRelatedColumns.forEach(col => {
-              if (this.selectedAdditionalColumns.has(col.key)) {
-                this.columns.push({
-                  key: col.key,
-                  label: col.label,
-                  visible: true,
-                  filterValue: '',
-                  isRelatedColumn: true,
-                  table: col.table
-                });
-              }
-            });
-          } else {
-            this.availableRelatedColumns = [];
-          }
-        } else {
-          this.availableRelatedColumns = [];
-        }
-      },
-      error: (err) => {
-        console.error('Error loading available columns:', err);
-        this.availableRelatedColumns = [];
-      }
-    });
+        next: (response: any) => {
+          const cols = response?.data || response;
+          this.availableRelatedColumns = Array.isArray(cols) ? cols : [];
+        },
+        error: () => { this.availableRelatedColumns = []; }
+      });
   }
 
   loadClaimNotes(page: number, pageSize: number): void {
@@ -98,12 +104,10 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     const filters: any = {};
     const textFilters = this.columns.filter(c => c.filterValue && c.filterValue.toString().trim() !== '').map(c => c.filterValue.toString().trim()).join(' ');
     if (textFilters) filters.searchText = textFilters;
-    
-    // Add selected additional columns
     if (this.selectedAdditionalColumns.size > 0) {
       filters.additionalColumns = Array.from(this.selectedAdditionalColumns);
     }
-    
+
     this.claimNoteApiService.getClaimNotes(page, pageSize, filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -145,18 +149,23 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     if (col) { col.filterValue = ''; delete this.columnValueFilters[columnKey]; this.loadClaimNotes(1, this.pageSize); }
   }
   getCellValue(note: ClaimNoteListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && note.additionalColumns) {
-      return note.additionalColumns[key];
-    }
-    return (note as any)[key];
+    const rec = note as unknown as Record<string, unknown>;
+    const addCols = rec['additionalColumns'] as Record<string, unknown> | undefined;
+    if (addCols && typeof addCols === 'object' && key in addCols) return addCols[key];
+    return rec[key];
   }
   openFilterPopup(columnKey: string, event: MouseEvent): void {
     event.stopPropagation();
     this.activeFilterColumnKey = columnKey;
     this.filterPopupSearchText = '';
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.filterPopupPosition = { topPx: Math.round(rect.bottom + 6), leftPx: Math.round(rect.left) };
+    const popupWidth = 260;
+    const popupMaxHeight = Math.min(420, window.innerHeight - 24);
+    let topPx = Math.round(rect.bottom + 6);
+    if (topPx + popupMaxHeight > window.innerHeight) topPx = Math.max(8, window.innerHeight - popupMaxHeight);
+    let leftPx = Math.round(rect.left);
+    if (leftPx + popupWidth > window.innerWidth - 8) leftPx = Math.max(8, window.innerWidth - popupWidth - 8);
+    this.filterPopupPosition = { topPx, leftPx };
     this.popupAllValues = this.getAllUniqueValuesForColumn(columnKey);
     const existing = this.columnValueFilters[columnKey];
     this.popupSelectedValues = existing ? new Set<string>(existing) : new Set<string>(this.popupAllValues);
@@ -260,11 +269,18 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   }
 
   getRelatedColumnsByTable(): { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } {
+    let cols = this.availableRelatedColumns;
+    if (this.columnSearchText.trim()) {
+      const q = this.columnSearchText.toLowerCase();
+      cols = cols.filter(c =>
+        (c.label && c.label.toLowerCase().includes(q)) ||
+        (c.key && c.key.toLowerCase().includes(q)) ||
+        (c.table && c.table.toLowerCase().includes(q))
+      );
+    }
     const grouped: { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } = {};
-    this.availableRelatedColumns.forEach(col => {
-      if (!grouped[col.table]) {
-        grouped[col.table] = [];
-      }
+    cols.forEach(col => {
+      if (!grouped[col.table]) grouped[col.table] = [];
       grouped[col.table].push(col);
     });
     return grouped;

@@ -200,14 +200,18 @@ h2 {
 .filter-popup {
   position: fixed;
   width: 260px;
+  max-height: calc(100vh - 24px);
   background: #fff;
   border: 1px solid #bfbfbf;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   border-radius: 3px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .filter-popup-tabs {
+  flex-shrink: 0;
   display: flex;
   border-bottom: 1px solid #ddd;
   background: #f5f5f5;
@@ -235,6 +239,7 @@ h2 {
 }
 
 .filter-popup-search {
+  flex-shrink: 0;
   padding: 8px;
   border-bottom: 1px solid #ddd;
 }
@@ -248,6 +253,8 @@ h2 {
 }
 
 .filter-popup-values {
+  flex: 1;
+  min-height: 0;
   max-height: 260px;
   overflow: auto;
   padding: 6px 8px;
@@ -269,6 +276,7 @@ h2 {
 }
 
 .filter-popup-actions {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   gap: 8px;
@@ -366,10 +374,14 @@ h2 {
 .dialog-search {
   padding: 12px 16px;
   border-bottom: 1px solid #ddd;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .search-input {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -415,7 +427,9 @@ h2 {
   padding: 12px 16px;
   border-top: 1px solid #ddd;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 .clear-all-btn {

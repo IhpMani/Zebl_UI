@@ -1,5 +1,7 @@
-import { Component, HostListener } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, HostListener, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 
 @Component({
@@ -33,11 +35,23 @@ import { AuthService } from '../core/services/auth.service';
   `,
   styleUrls: ['./app-shell.component.css']
 })
-export class AppShellComponent {
+export class AppShellComponent implements OnDestroy {
   showMenu = false;
   showInterfaceDataReview = false;
+  private navSub?: Subscription;
 
-  constructor(public auth: AuthService, private router: Router) {}
+  constructor(public auth: AuthService, private router: Router) {
+    // Close Review Incoming when user navigates (Find Claim, Home, etc.) so router-outlet shows
+    this.navSub = this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.showInterfaceDataReview = false;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.navSub?.unsubscribe();
+  }
 
   toggleMenu(): void {
     this.showMenu = !this.showMenu;

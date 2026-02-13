@@ -11,6 +11,7 @@ export class ClaimNoteApiService {
 
   constructor(private http: HttpClient) { }
 
+  /** GET /api/claims/notes - Claim_Audit (one row per note) + all claim list columns */
   getClaimNotes(
     page: number = 1,
     pageSize: number = 25,
@@ -45,8 +46,7 @@ export class ClaimNoteApiService {
       }
     }
 
-    // Use claims endpoint and filter for notes
-    return this.http.get<ClaimNotesApiResponse>(this.baseUrl, { params });
+    return this.http.get<ClaimNotesApiResponse>(`${this.baseUrl}/notes`, { params });
   }
 
   getAvailableColumns(): Observable<any> {

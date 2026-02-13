@@ -61,19 +61,23 @@
     <table class="table" *ngIf="!loadingHistory && !historyError">
       <thead>
         <tr>
-          <th>Timestamp</th>
-          <th>Computer</th>
-          <th>Note</th>
+          <th>Date</th>
+          <th>System / User</th>
+          <th>File Name</th>
+          <th>Summary</th>
+          <th>Notes</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="history.length === 0">
-          <td colspan="3" class="empty">No imports yet.</td>
+          <td colspan="5" class="empty">No imports yet.</td>
         </tr>
         <tr *ngFor="let row of history">
-          <td>{{ row.importDateTime | date:'MM/dd/yyyy h:mm a' }}</td>
-          <td>{{ row.computerName }}</td>
-          <td>{{ row.note }}</td>
+          <td>{{ row.importDate | date:'MM/dd/yyyy h:mm a' }}</td>
+          <td>{{ row.computerName }} / {{ row.userName }}</td>
+          <td>{{ row.fileName }}</td>
+          <td>{{ row.newPatientsCount }} New Patients, {{ row.updatedPatientsCount }} Updated, {{ row.newClaimsCount }} New Claims, {{ row.duplicateClaimsCount }} Duplicates · {{ row.totalAmount | currency }}</td>
+          <td>{{ row.notes }}</td>
         </tr>
       </tbody>
     </table>

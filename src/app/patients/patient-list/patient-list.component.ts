@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { PatientApiService } from '../../core/services/patient-api.service';
 import { PatientListItem, PatientsApiResponse, PaginationMeta } from '../../core/services/patient.models';
+import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -59,7 +60,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
     { key: 'patCellPhoneNo', label: 'Cell Phone', visible: false, filterValue: '' },
     { key: 'patPriEmail', label: 'Email', visible: false, filterValue: '' },
     { key: 'patBillingPhyFID', label: 'Billing Physician ID', visible: false, filterValue: '' },
-    { key: 'patClassification', label: 'Classification', visible: false, filterValue: '' },
+    { key: 'patClassification', label: 'Facility', visible: true, filterValue: '' },
     { key: 'patMI', label: 'MI', visible: false, filterValue: '' },
     { key: 'patDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'patCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
@@ -158,6 +159,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
 
   constructor(
     private patientApiService: PatientApiService,
+    private listApiService: ListApiService,
     private router: Router
   ) { }
 
@@ -239,6 +241,14 @@ export class PatientListComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Facility (patClassification) filter - from Libraries → List → Patient Classification
+    if (this.columnValueFilters['patClassification'] && this.columnValueFilters['patClassification'].size > 0) {
+      const vals = Array.from(this.columnValueFilters['patClassification']);
+      if (vals.length > 0) {
+        filters.classificationList = vals.join(',');
+      }
+    }
+
     // Text search across columns (for non-numeric columns)
     const textFilterColumns = this.columns.filter(c => 
       c.filterValue && 
@@ -266,7 +276,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: PatientsApiResponse) => {
           this.patients = response.data || [];
-          this.filteredPatients = this.patients;
+          this.filteredPatients = this.applyClientSideFilters(this.patients);
           this.meta = response.meta;
           this.loading = false;
           this.error = null;
@@ -349,10 +359,17 @@ export class PatientListComponent implements OnInit, OnDestroy {
     this.filterPopupSearchText = '';
     this.popupTextFilter = '';
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.filterPopupPosition = {
-      topPx: Math.round(rect.bottom + 6),
-      leftPx: Math.round(rect.left)
-    };
+    const popupWidth = 260;
+    const popupMaxHeight = Math.min(420, window.innerHeight - 24);
+    let topPx = Math.round(rect.bottom + 6);
+    if (topPx + popupMaxHeight > window.innerHeight) {
+      topPx = Math.max(8, window.innerHeight - popupMaxHeight);
+    }
+    let leftPx = Math.round(rect.left);
+    if (leftPx + popupWidth > window.innerWidth - 8) {
+      leftPx = Math.max(8, window.innerWidth - popupWidth - 8);
+    }
+    this.filterPopupPosition = { topPx, leftPx };
     
     const isNumeric = this.isNumericColumn(columnKey);
     
@@ -362,14 +379,37 @@ export class PatientListComponent implements OnInit, OnDestroy {
         const values = Array.from(existing).filter(v => v !== '(Blank)');
         this.popupTextFilter = values.join(', ');
       }
+      this.showFilterPopup = true;
+    } else if (columnKey === 'patClassification') {
+      // Facility: merge values from Patient Classification list (Libraries → List) with existing patient data
+      const fromPatients = this.getAllUniqueValuesForColumn(columnKey);
+      this.listApiService.getListValues('Patient Classification')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            const fromList = (res.data || []).map(v => v.value?.trim()).filter(Boolean) || [];
+            const merged = [...new Set([...fromList, ...fromPatients])];
+            merged.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            this.popupAllValues = merged;
+            const existing = this.columnValueFilters[columnKey];
+            this.popupSelectedValues = existing ? new Set<string>(existing) : new Set<string>(this.popupAllValues);
+            this.showFilterPopup = true;
+          },
+          error: () => {
+            this.popupAllValues = fromPatients;
+            const existing = this.columnValueFilters[columnKey];
+            this.popupSelectedValues = existing ? new Set<string>(existing) : new Set<string>(this.popupAllValues);
+            this.showFilterPopup = true;
+          }
+        });
     } else {
       this.popupAllValues = this.getAllUniqueValuesForColumn(columnKey);
       const existing = this.columnValueFilters[columnKey];
       this.popupSelectedValues = existing
         ? new Set<string>(existing)
         : new Set<string>(this.popupAllValues);
+      this.showFilterPopup = true;
     }
-    this.showFilterPopup = true;
   }
 
   isNumericColumn(columnKey: string): boolean {
@@ -475,6 +515,24 @@ export class PatientListComponent implements OnInit, OnDestroy {
     return all;
   }
 
+  /** Apply columnValueFilters that are not sent to the API (client-side filtering) */
+  private applyClientSideFilters(patients: PatientListItem[]): PatientListItem[] {
+    const serverFilterKeys = ['patActive', 'patID', 'patClassification'];
+    let result = patients;
+    for (const key of Object.keys(this.columnValueFilters)) {
+      const selected = this.columnValueFilters[key];
+      if (!selected || selected.size === 0) return []; // User selected none = show nothing
+      if (serverFilterKeys.includes(key)) continue; // Already filtered by server
+      result = result.filter(p => {
+        const v = this.getCellValue(p, key);
+        const s = (v ?? '').toString().trim();
+        const displayVal = s === '' ? '(Blank)' : s;
+        return selected.has(displayVal);
+      });
+    }
+    return result;
+  }
+
   toggleCustomizationDialog(): void {
     this.showCustomizationDialog = !this.showCustomizationDialog;
     if (!this.showCustomizationDialog) {
@@ -551,11 +609,18 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
 
   getRelatedColumnsByTable(): { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } {
+    let cols = this.availableRelatedColumns;
+    if (this.columnSearchText.trim()) {
+      const q = this.columnSearchText.toLowerCase();
+      cols = cols.filter(c =>
+        (c.label && c.label.toLowerCase().includes(q)) ||
+        (c.key && c.key.toLowerCase().includes(q)) ||
+        (c.table && c.table.toLowerCase().includes(q))
+      );
+    }
     const grouped: { [table: string]: Array<{ table: string; key: string; label: string; path: string }> } = {};
-    this.availableRelatedColumns.forEach(col => {
-      if (!grouped[col.table]) {
-        grouped[col.table] = [];
-      }
+    cols.forEach(col => {
+      if (!grouped[col.table]) grouped[col.table] = [];
       grouped[col.table].push(col);
     });
     return grouped;

@@ -91,7 +91,7 @@
   <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
     <div class="customization-dialog" (click)="$event.stopPropagation()">
       <div class="dialog-header"><h3>Customization</h3><button class="close-btn" (click)="closeCustomizationDialog()">×</button></div>
-      <div class="dialog-search"><input type="text" [(ngModel)]="columnSearchText" placeholder="Search for a column..." class="search-input" /></div>
+      <div class="dialog-search"><input type="text" [(ngModel)]="columnSearchText" placeholder="Search columns..." class="search-input" /></div>
       <div class="dialog-content">
         <!-- Standard Payment Columns -->
         <div class="column-section">
@@ -136,7 +136,10 @@
           </p>
         </div>
       </div>
-      <div class="dialog-footer"><button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button></div>
+      <div class="dialog-footer">
+        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+        <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
+      </div>
     </div>
   </div>
 </div>

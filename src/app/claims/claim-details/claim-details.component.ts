@@ -5,6 +5,8 @@ import { finalize } from 'rxjs';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { Claim } from '../../core/services/claim.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
+import { PhysicianApiService } from '../../core/services/physician-api.service';
+import { PhysicianListItem } from '../../core/services/physician.models';
 import { AdjustmentApiService } from '../../core/services/adjustment-api.service';
 import { DisbursementApiService } from '../../core/services/disbursement-api.service';
 import { PaymentApiService } from '../../core/services/payment-api.service';
@@ -48,10 +50,53 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   /** Status options from Libraries → List → Claim Status */
   statusOptions: ListValueDto[] = [];
 
-  /** Form for Claim Information fields - values from List Library */
+  /** Static options for Method (ClaSubmissionMethod) */
+  methodOptions = ['Electronic', 'Paper', 'Other'];
+
+  /** Condition Related To options (ClaRelatedTo: 0=None, 1=Employment, 2=Auto Accident, 3=Other Accident) */
+  conditionRelatedOptions = [
+    { value: 0, label: 'None' },
+    { value: 1, label: 'Employment' },
+    { value: 2, label: 'Auto Accident' },
+    { value: 3, label: 'Other Accident' }
+  ];
+
+  /** Claim Delay Code options (ClaDelayCode) */
+  delayCodeOptions = [
+    { value: '01', label: '01 – Proof of Eligibility Unknown' },
+    { value: '02', label: '02 – Litigation' },
+    { value: '03', label: '03 – Authorization Delayed' },
+    { value: '04', label: '04 – Delay in Certifying Provider' },
+    { value: '05', label: '05 – Delay in Supplying Billing Forms' }
+  ];
+
+  /** Paperwork Transmission Code options (ClaPaperWorkTransmissionCode) */
+  transmissionCodeOptions = ['AA', 'BM', 'EL', 'EM', 'FX'];
+
+  /** Paperwork Indicator options (ClaPaperWorkInd) */
+  paperworkIndOptions = ['Y', 'N'];
+
+  /** Resubmission Code options (ClaMedicaidResubmissionCode) */
+  resubmissionCodeOptions = [
+    { value: '1', label: '1 – Original' },
+    { value: '7', label: '7 – Replacement' },
+    { value: '8', label: '8 – Void' }
+  ];
+
+  /** Physicians for provider dropdowns - from existing Physician API */
+  physicians: PhysicianListItem[] = [];
+  /** Rendering providers only (phyType === "Person") */
+  renderingProviders: PhysicianListItem[] = [];
+  /** Service facilities only (phyType === "Non-Person") */
+  serviceFacilities: PhysicianListItem[] = [];
+
+  /** Form for Claim Information and Physician fields */
   claimForm = new FormGroup({
     ClaStatus: new FormControl<string | null>(''),
-    ClaClassification: new FormControl<string | null>('')
+    ClaClassification: new FormControl<string | null>(''),
+    ClaSubmissionMethod: new FormControl<string | null>(''),
+    ClaRenderingPhyFID: new FormControl<number | null>(null),
+    ClaFacilityPhyFID: new FormControl<number | null>(null)
   });
 
   sectionsState = {
@@ -92,6 +137,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private router: Router,
     private claimApiService: ClaimApiService,
     private listApiService: ListApiService,
+    private physicianApiService: PhysicianApiService,
     private serviceApi: ServiceApiService,
     private paymentApi: PaymentApiService,
     private adjustmentApi: AdjustmentApiService,
@@ -102,6 +148,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadClassificationOptions();
     this.loadStatusOptions();
+    this.loadPhysicians();
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.claId = +idParam;
@@ -136,6 +183,25 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Load physicians once from existing Physician API; derive filtered lists for dropdowns */
+  loadPhysicians(): void {
+    this.physicianApiService.getPhysicians(1, 10000).subscribe({
+      next: (r) => {
+        this.physicians = r.data ?? [];
+        this.renderingProviders = this.physicians.filter(p => p.phyType === 'Person');
+        this.serviceFacilities = this.physicians.filter(p => p.phyType === 'Non-Person');
+        this.ensureCurrentPhysiciansInOptions();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.physicians = [];
+        this.renderingProviders = [];
+        this.serviceFacilities = [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   /** Ensure the claim's current ClaClassification appears in dropdown (for legacy values not in list) */
   private ensureCurrentClassificationInOptions(): void {
     if (!this.claim?.claClassification?.trim()) return;
@@ -143,6 +209,20 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     if (!this.classificationOptions.some(o => o.value === current)) {
       this.classificationOptions = [...this.classificationOptions, { value: current, usageCount: 0 }]
         .sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+    }
+  }
+
+  /** Ensure claim's current rendering/facility physicians appear in dropdowns (for legacy/edge cases) */
+  private ensureCurrentPhysiciansInOptions(): void {
+    const rid = this.claim?.renderingPhysician?.phyID;
+    const fid = this.claim?.facilityPhysician?.phyID;
+    if (rid && rid > 0 && !this.renderingProviders.some(p => p.phyID === rid)) {
+      const p = this.physicians.find(x => x.phyID === rid);
+      if (p) this.renderingProviders = [...this.renderingProviders, p];
+    }
+    if (fid && fid > 0 && !this.serviceFacilities.some(p => p.phyID === fid)) {
+      const p = this.physicians.find(x => x.phyID === fid);
+      if (p) this.serviceFacilities = [...this.serviceFacilities, p];
     }
   }
 
@@ -156,11 +236,27 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Update claim nested physician refs from physicians list after save */
+  private updateClaimPhysicianRefs(renderingId: number | null, facilityId: number | null): void {
+    const toPhy = (id: number | null) => {
+      if (id == null || id === 0) return null;
+      const p = this.physicians.find(x => x.phyID === id);
+      return p ? { phyID: p.phyID, phyName: p.phyFullNameCC || p.phyName || null, phyNPI: p.phyNPI || null } : null;
+    };
+    if (this.claim) {
+      this.claim.renderingPhysician = toPhy(renderingId);
+      this.claim.facilityPhysician = toPhy(facilityId);
+    }
+  }
+
   /** Patch form with claim data from API */
   private patchClaimForm(): void {
     this.claimForm.patchValue({
       ClaStatus: this.claim?.claStatus ?? null,
-      ClaClassification: this.claim?.claClassification ?? null
+      ClaClassification: this.claim?.claClassification ?? null,
+      ClaSubmissionMethod: this.claim?.claSubmissionMethod ?? null,
+      ClaRenderingPhyFID: this.claim?.renderingPhysician?.phyID ?? 0,
+      ClaFacilityPhyFID: this.claim?.facilityPhysician?.phyID ?? 0
     });
   }
 
@@ -190,6 +286,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.claim = claim;
         this.ensureCurrentStatusInOptions();
         this.ensureCurrentClassificationInOptions();
+        this.ensureCurrentPhysiciansInOptions();
         this.patchClaimForm();
       },
       error: (err) => {
@@ -356,9 +453,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
+    const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
+    const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
+    const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
+    const noteText = this.newNote?.trim() || null;
     this.claimApiService.updateClaim(this.claId, {
       claStatus: claStatus || null,
       claClassification: claClassification || null,
+      claSubmissionMethod: claSubmissionMethod ?? null,
+      claRenderingPhyFID,
+      claFacilityPhyFID,
+      claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
       claAdmittedDate: this.claim.claAdmittedDate ?? null,
       claDischargedDate: this.claim.claDischargedDate ?? null,
       claDateLastSeen: this.claim.claDateLastSeen ?? null,
@@ -366,13 +471,23 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claRemarks: this.claim.claRemarks ?? null,
       claRelatedTo: this.claim.claRelatedTo ?? null,
       claRelatedToState: this.claim.claRelatedToState ?? null,
-      claLocked: this.claim.claLocked
+      claLocked: this.claim.claLocked,
+      claDelayCode: this.claim.claDelayCode ?? null,
+      claMedicaidResubmissionCode: this.claim.claMedicaidResubmissionCode ?? null,
+      claOriginalRefNo: this.claim.claOriginalRefNo ?? null,
+      claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
+      claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
+      claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
+      noteText
     }).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
+          this.claim.claSubmissionMethod = claSubmissionMethod;
+          this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
         }
+        this.newNote = '';
         this.goBackToList();
       },
       error: (err) => {
@@ -386,9 +501,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     if (!this.claim || !this.claId) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
+    const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
+    const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
+    const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
+    const noteText = this.newNote?.trim() || null;
     this.claimApiService.updateClaim(this.claId, {
       claStatus: claStatus || null,
       claClassification: claClassification || null,
+      claSubmissionMethod: claSubmissionMethod ?? null,
+      claRenderingPhyFID,
+      claFacilityPhyFID,
+      claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
       claAdmittedDate: this.claim.claAdmittedDate ?? null,
       claDischargedDate: this.claim.claDischargedDate ?? null,
       claDateLastSeen: this.claim.claDateLastSeen ?? null,
@@ -396,13 +519,24 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claRemarks: this.claim.claRemarks ?? null,
       claRelatedTo: this.claim.claRelatedTo ?? null,
       claRelatedToState: this.claim.claRelatedToState ?? null,
-      claLocked: this.claim.claLocked
+      claLocked: this.claim.claLocked,
+      claDelayCode: this.claim.claDelayCode ?? null,
+      claMedicaidResubmissionCode: this.claim.claMedicaidResubmissionCode ?? null,
+      claOriginalRefNo: this.claim.claOriginalRefNo ?? null,
+      claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
+      claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
+      claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
+      noteText
     }).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
+          this.claim.claSubmissionMethod = claSubmissionMethod;
+          this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
         }
+        this.newNote = '';
+        if (this.claId) this.loadClaim(this.claId);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -494,42 +628,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return lines.reduce((sum, line) => sum + (line.srvTotalBalanceCC || 0), 0);
   }
 
-  getNotesHistory(): Array<{ date: string; user: string; content: string; summary?: string }> {
-    const notes: Array<{ date: string; user: string; content: string; summary?: string }> = [];
-
-    if (this.claim?.claEDINotes) {
-      notes.push({
-        date: this.claim.claDateTimeModified || this.claim.claDateTimeCreated || '',
-        user: 'System',
-        content: this.claim.claEDINotes
-      });
-    }
-
-    if (this.claim?.claRemarks) {
-      notes.push({
-        date: this.claim.claDateTimeModified || this.claim.claDateTimeCreated || '',
-        user: 'System',
-        content: this.claim.claRemarks
-      });
-    }
-
-    const claimLines = this.claim?.serviceLines;
-    if (Array.isArray(claimLines)) {
-      claimLines.forEach((line: any) => {
-        if (line.adjustments && line.adjustments.length > 0) {
-          line.adjustments.forEach((adj: any) => {
-            notes.push({
-              date: adj.adjDateTimeCreated || '',
-              user: adj.payerName || 'System',
-              content: `${adj.payerName || 'Payer'}: Adjustment Applied`,
-              summary: `1 ${this.formatCurrency(line.srvCharges)} ${this.formatCurrency(line.srvTotalAmtPaidCC)} ${this.formatCurrency(line.srvTotalAdjCC)} ${this.formatCurrency(line.srvTotalBalanceCC)}`
-            });
-          });
-        }
-      });
-    }
-
-    return notes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  /** Notes/activity from Claim_Audit (claim-specific: Claim Created, Claim Edited, Payment Applied, Manual Notes) */
+  getNotesHistory(): Array<{ date: string; user: string; content: string; totalCharge?: number | null; insuranceBalance?: number | null; patientBalance?: number | null }> {
+    const activity = this.claim?.claimActivity ?? [];
+    return activity.map(a => ({
+      date: a.date,
+      user: a.user,
+      content: a.notes || a.activityType,
+      totalCharge: a.totalCharge ?? null,
+      insuranceBalance: a.insuranceBalance ?? null,
+      patientBalance: a.patientBalance ?? null
+    })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   toggleNotes(): void {

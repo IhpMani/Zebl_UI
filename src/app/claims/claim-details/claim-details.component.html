@@ -65,22 +65,13 @@
       <section class="right-panel">
         <div class="sections-stack">
           <article class="section-card">
-            <header (click)="toggleSection('claimInfo')">
+            <header>
               <h3>Claim Information</h3>
-              <button type="button">{{ sectionsState.claimInfo ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.claimInfo">
               <div class="field-row">
                 <label>Bill Date</label>
                 <input type="date" [(ngModel)]="claim.claBillDate" />
-              </div>
-              <div class="field-row">
-                <label>Bill To</label>
-              <select [(ngModel)]="claim.claBillTo">
-                <option [ngValue]="0">Patient</option>
-                <option [ngValue]="1">Primary</option>
-                <option [ngValue]="2">Final (F/2)</option>
-              </select>
               </div>
               <div class="field-row" [formGroup]="claimForm">
                 <label>Status</label>
@@ -100,46 +91,49 @@
                   </option>
                 </select>
               </div>
+              <div class="field-row" [formGroup]="claimForm">
+                <label>Method</label>
+                <select formControlName="ClaSubmissionMethod">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let opt of methodOptions" [ngValue]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <label>Invoice #</label>
+                <input type="text" [(ngModel)]="claim.claInvoiceNumber" />
+              </div>
               <div class="field-row">
                 <label>Locked</label>
                 <input type="checkbox" [(ngModel)]="claim.claLocked" />
               </div>
-              <div class="field-row">
-                <label>Total Charge</label>
-                <input [value]="formatCurrency(claim.claTotalChargeTRIG)" disabled />
-              </div>
             </div>
           </article>
 
           <article class="section-card">
-            <header (click)="toggleSection('physician')">
+            <header>
               <h3>Physician / Facility Information</h3>
-              <button type="button">{{ sectionsState.physician ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.physician">
-              <div class="field-row">
+              <div class="field-row" [formGroup]="claimForm">
                 <label>Rendering Provider</label>
-                <input [value]="claim.renderingPhysician?.phyName" disabled />
+                <select formControlName="ClaRenderingPhyFID">
+                  <option [ngValue]="0">-- Select --</option>
+                  <option *ngFor="let p of renderingProviders" [value]="p.phyID">{{ p.phyFullNameCC || p.phyName || 'Unknown' }}</option>
+                </select>
               </div>
-              <div class="field-row">
-                <label>Referring Provider</label>
-                <input [value]="claim.referringPhysician?.phyName" disabled />
-              </div>
-              <div class="field-row">
-                <label>Billing Provider</label>
-                <input [value]="claim.billingPhysician?.phyName" disabled />
-              </div>
-              <div class="field-row">
+              <div class="field-row" [formGroup]="claimForm">
                 <label>Service Facility</label>
-                <input [value]="claim.facilityPhysician?.phyName" disabled />
+                <select formControlName="ClaFacilityPhyFID">
+                  <option [ngValue]="0">-- Select --</option>
+                  <option *ngFor="let p of serviceFacilities" [value]="p.phyID">{{ p.phyFullNameCC || p.phyName || 'Unknown' }}</option>
+                </select>
               </div>
             </div>
           </article>
 
           <article class="section-card">
-            <header (click)="toggleSection('dates')">
+            <header>
               <h3>Date Information</h3>
-              <button type="button">{{ sectionsState.dates ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.dates">
               <div class="field-row">
@@ -158,21 +152,19 @@
           </article>
 
           <article class="section-card">
-            <header (click)="toggleSection('misc')">
+            <header>
               <h3>Misc Information</h3>
-              <button type="button">{{ sectionsState.misc ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.misc">
               <div class="field-row">
                 <label>EDI Notes</label>
-                <textarea [(ngModel)]="claim.claEDINotes"></textarea>
+                <input type="text" [(ngModel)]="claim.claEDINotes" />
               </div>
               <div class="field-row">
-                <label>Condition Related</label>
-                <input
-                  type="checkbox"
-                  [checked]="claim.claRelatedTo === 1"
-                  (change)="claim.claRelatedTo = $any($event.target).checked ? 1 : 0" />
+                <label>Condition Related To</label>
+                <select [(ngModel)]="claim.claRelatedTo">
+                  <option *ngFor="let opt of conditionRelatedOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+                </select>
               </div>
               <div class="field-row">
                 <label>Auto Accident State</label>
@@ -182,9 +174,8 @@
           </article>
 
           <article class="section-card">
-            <header (click)="toggleSection('resubmission')">
+            <header>
               <h3>Resubmission Information</h3>
-              <button type="button">{{ sectionsState.resubmission ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.resubmission">
               <div class="field-row">
@@ -193,24 +184,43 @@
               </div>
               <div class="field-row">
                 <label>Delay Code</label>
-                <input [(ngModel)]="claim.claDelayCode" />
+                <select [(ngModel)]="claim.claDelayCode">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let opt of delayCodeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <label>Resubmission Code</label>
+                <select [(ngModel)]="claim.claMedicaidResubmissionCode">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let opt of resubmissionCodeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+                </select>
               </div>
             </div>
           </article>
 
           <article class="section-card">
-            <header (click)="toggleSection('paperwork')">
+            <header>
               <h3>Paperwork Information</h3>
-              <button type="button">{{ sectionsState.paperwork ? 'Collapse' : 'Expand' }}</button>
             </header>
             <div class="section-body" [hidden]="!sectionsState.paperwork">
               <div class="field-row">
                 <label>Transmission Code</label>
-                <input [(ngModel)]="claim.claPaperWorkTransmissionCode" />
+                <select [(ngModel)]="claim.claPaperWorkTransmissionCode">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let opt of transmissionCodeOptions" [ngValue]="opt">{{ opt }}</option>
+                </select>
               </div>
               <div class="field-row">
                 <label>Control Number</label>
                 <input [(ngModel)]="claim.claPaperWorkControlNumber" />
+              </div>
+              <div class="field-row">
+                <label>Paperwork Indicator</label>
+                <select [(ngModel)]="claim.claPaperWorkInd">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let opt of paperworkIndOptions" [ngValue]="opt">{{ opt }}</option>
+                </select>
               </div>
             </div>
           </article>
@@ -351,27 +361,40 @@
     <section class="notes-section">
       <header>
         <h3>Notes / Audit Trail</h3>
-        <button class="btn-secondary" (click)="toggleNotes()">
-          {{ showNotes ? 'Collapse' : 'Expand' }}
-        </button>
       </header>
       <div [hidden]="!showNotes">
         <div class="notes-input">
           <textarea
             placeholder="Click here to add a new note"
-            [(ngModel)]="newNote"
-            (keydown.enter)="addNote($event)">
+            [(ngModel)]="newNote">
           </textarea>
         </div>
-        <div class="notes-history">
-          <article *ngFor="let note of getNotesHistory()">
-            <div class="note-header">
-              <span>{{ formatDateTime(note.date) }}</span>
-              <span>{{ note.user }}</span>
-            </div>
-            <p>{{ note.content }}</p>
-            <p class="note-summary" *ngIf="note.summary">{{ note.summary }}</p>
-          </article>
+        <div class="notes-history-table-wrapper">
+          <table class="notes-history-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Note Text</th>
+                <th class="num">Total Charge</th>
+                <th class="num">Insurance Balance</th>
+                <th class="num">Patient Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let note of getNotesHistory()">
+                <td>{{ formatDateTime(note.date) }}</td>
+                <td>{{ note.user }}</td>
+                <td class="note-text">{{ note.content }}</td>
+                <td class="num">{{ formatCurrency(note.totalCharge) }}</td>
+                <td class="num">{{ formatCurrency(note.insuranceBalance) }}</td>
+                <td class="num">{{ formatCurrency(note.patientBalance) }}</td>
+              </tr>
+              <tr *ngIf="getNotesHistory().length === 0">
+                <td colspan="6" class="no-data">No notes or activity recorded.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

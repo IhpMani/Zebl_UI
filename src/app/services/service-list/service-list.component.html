@@ -203,7 +203,7 @@
         <input
           type="text"
           [(ngModel)]="columnSearchText"
-          placeholder="Search for a column..."
+          placeholder="Search columns..."
           class="search-input"
         />
       </div>
@@ -258,6 +258,7 @@
       </div>
       <div class="dialog-footer">
         <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+        <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
       </div>
     </div>
   </div>

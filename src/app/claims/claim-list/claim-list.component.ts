@@ -427,10 +427,17 @@ export class ClaimListComponent implements OnInit, OnDestroy {
 
     // position near the clicked button
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    this.filterPopupPosition = {
-      topPx: Math.round(rect.bottom + 6),
-      leftPx: Math.round(rect.left)
-    };
+    const popupWidth = 260;
+    const popupMaxHeight = Math.min(420, window.innerHeight - 24);
+    let topPx = Math.round(rect.bottom + 6);
+    if (topPx + popupMaxHeight > window.innerHeight) {
+      topPx = Math.max(8, window.innerHeight - popupMaxHeight);
+    }
+    let leftPx = Math.round(rect.left);
+    if (leftPx + popupWidth > window.innerWidth - 8) {
+      leftPx = Math.max(8, window.innerWidth - popupWidth - 8);
+    }
+    this.filterPopupPosition = { topPx, leftPx };
 
     // Check if this is a numeric/text input column
     const isNumericColumn = this.isNumericColumn(columnKey);
@@ -698,9 +705,9 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       this.saveColumnPreferences();
     } else {
       // Base column (not from additional registry)
-      const col = this.columns.find(c => c.key === columnKey);
-      if (col) {
-        col.visible = !col.visible;
+    const col = this.columns.find(c => c.key === columnKey);
+    if (col) {
+      col.visible = !col.visible;
       }
     }
   }
@@ -733,8 +740,10 @@ export class ClaimListComponent implements OnInit, OnDestroy {
         // Add additional columns that were previously selected
         if (preferences.selectedAdditional) {
           preferences.selectedAdditional.forEach((key: string) => {
-            const additionalCol = ClaimListAdditionalColumns.findByKey(key);
-            if (additionalCol && !this.columns.find(c => c.key === key)) {
+            // Migrate legacy key: patFullName -> patFullNameCC (sync with backend)
+            const resolvedKey = key === 'patFullName' ? 'patFullNameCC' : key;
+            const additionalCol = ClaimListAdditionalColumns.findByKey(resolvedKey);
+            if (additionalCol && !this.columns.find(c => c.key === resolvedKey)) {
               this.columns.push({
                 key: additionalCol.key,
                 label: additionalCol.label,
@@ -742,7 +751,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
                 filterValue: '',
                 isAdditionalColumn: true
               });
-              this.selectedAdditionalColumns.add(key);
+              this.selectedAdditionalColumns.add(resolvedKey);
             }
           });
         }
