@@ -33,7 +33,7 @@ export interface EntitiesResponse {
   providedIn: 'root'
 })
 export class SchemaApiService {
-  private baseUrl = `${environment.apiBaseUrl}/schema`;
+  private baseUrl = `${environment.apiUrl}/schema`;
 
   constructor(private http: HttpClient) { }
 
