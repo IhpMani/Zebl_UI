@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PayersApiResponse } from './payer.models';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PayerApiService {
-  private baseUrl = '/api/payers';
+  private baseUrl = `${environment.apiUrl}/api/payers`;
 
   constructor(private http: HttpClient) { }
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 export interface LoginResponse {
   token: string;
@@ -23,7 +24,7 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   login(userName: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>('/api/auth/login', { userName, password }).pipe(
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/api/auth/login`, { userName, password }).pipe(
       tap((res) => {
         this.setToken(res.token);
       })

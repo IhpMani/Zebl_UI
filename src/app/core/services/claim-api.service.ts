@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ClaimsApiResponse, Claim } from './claim.models';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClaimApiService {
-  private baseUrl = '/api/claims';
+  private baseUrl = `${environment.apiUrl}/api/claims`;
 
   constructor(private http: HttpClient) { }
 
@@ -84,7 +85,7 @@ export class ClaimApiService {
   }
 
   getClaimById(claId: number): Observable<Claim> {
-    return this.http.get<Claim>(`/api/claims/${claId}`);
+    return this.http.get<Claim>(`${environment.apiUrl}/api/claims/${claId}`);
   }
 
   /** Update claim. ClaStatus and ClaClassification from List Library. Physician FIDs map to Claim table. */
@@ -137,7 +138,7 @@ export class ClaimApiService {
     if (body.claPaperWorkInd !== undefined) payload.claPaperWorkInd = body.claPaperWorkInd;
     if (body.noteText !== undefined) payload.noteText = body.noteText;
     if (body.additionalData !== undefined) payload.additionalData = body.additionalData;
-    return this.http.put<void>(`/api/claims/${claId}`, payload);
+    return this.http.put<void>(`${environment.apiUrl}/api/claims/${claId}`, payload);
   }
 }
 
