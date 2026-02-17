@@ -1,1 +1,81 @@
-/* You can add global styles to this file, and also import other style files */
+/* =========================
+   GLOBAL LIGHT BLUE THEME
+========================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #e8f4fc;
+  color: #1f2937;
+}
+
+/* =========================
+   FORM ELEMENTS - Prevent overlapping
+========================= */
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+/* Flex/grid children - prevent overflow */
+.field-row,
+.col-md-6,
+[class*="-left"],
+[class*="-right"],
+[class*="-panel"] {
+  min-width: 0;
+}
+
+/* Common panel styling */
+.panel-card {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #a8d4f0;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+}
+
+/* Common button styles */
+.btn-primary {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #f0f8ff;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}

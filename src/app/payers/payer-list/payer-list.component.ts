@@ -179,7 +179,11 @@ export class PayerListComponent implements OnInit, OnDestroy {
         next: (response: PayersApiResponse) => {
           this.payers = response.data || [];
           this.filteredPayers = this.payers;
-          this.meta = response.meta;
+          this.meta = {
+            page,
+            pageSize,
+            totalCount: response.totalCount ?? 0
+          };
           this.loading = false;
           this.error = null;
         },

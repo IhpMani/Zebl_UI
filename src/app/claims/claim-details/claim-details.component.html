@@ -224,6 +224,50 @@
               </div>
             </div>
           </article>
+
+          <article class="section-card section-card-collapsible">
+            <header (click)="toggleSection('additionalData')" class="collapsible-header">
+              <h3>Additional Data</h3>
+              <span class="collapse-icon">{{ sectionsState.additionalData ? '▼' : '▶' }}</span>
+            </header>
+            <div class="section-body additional-data-grid" [hidden]="!sectionsState.additionalData" *ngIf="claim.additionalData">
+              <div class="additional-data-left">
+                <div class="field-row">
+                  <label>Custom Text Value</label>
+                  <input type="text" [(ngModel)]="claim.additionalData.customTextValue" placeholder="Enter text" />
+                </div>
+                <div class="field-row">
+                  <label>Custom Currency Value</label>
+                  <input type="number" [(ngModel)]="claim.additionalData.customCurrencyValue" placeholder="0.00" step="0.01" min="0" />
+                </div>
+                <div class="field-row">
+                  <label>Custom Date Value</label>
+                  <input type="date" [(ngModel)]="claim.additionalData.customDateValue" />
+                </div>
+                <div class="field-row">
+                  <label>Payment Matching Key</label>
+                  <input type="text" [(ngModel)]="claim.additionalData.paymentMatchingKey" placeholder="Enter key" />
+                </div>
+              </div>
+              <div class="additional-data-right">
+                <div class="field-row">
+                  <label>Custom Number Value</label>
+                  <input type="number" [(ngModel)]="claim.additionalData.customNumberValue" placeholder="0" step="1" />
+                </div>
+                <div class="field-row">
+                  <label>Custom True / False Value</label>
+                  <label class="checkbox-inline">
+                    <input type="checkbox" [(ngModel)]="claim.additionalData.customTrueFalseValue" />
+                    <span>Enabled</span>
+                  </label>
+                </div>
+                <div class="field-row">
+                  <label>External ID</label>
+                  <input type="text" [(ngModel)]="claim.additionalData.externalId" placeholder="Enter ID" />
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
     </div>

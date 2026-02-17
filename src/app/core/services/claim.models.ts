@@ -1,3 +1,13 @@
+export interface ClaimAdditionalData {
+  customTextValue?: string | null;
+  customCurrencyValue?: number | null;
+  customDateValue?: string | null;
+  customNumberValue?: number | null;
+  customTrueFalseValue?: boolean;
+  externalId?: string | null;
+  paymentMatchingKey?: string | null;
+}
+
 export interface ClaimListItem {
   claID: number;
   claStatus: string | null;
@@ -116,6 +126,9 @@ export interface Claim {
     phyNPI: string | null;
   } | null;
   
+  /** Additional data from ClaAdditionalData XML */
+  additionalData?: ClaimAdditionalData | null;
+
   /** Claim-specific activity from Claim_Audit (NOT interface import logs) */
   claimActivity?: Array<{
     date: string;

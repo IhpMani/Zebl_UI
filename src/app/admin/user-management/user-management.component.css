@@ -4,7 +4,7 @@
 
 .card {
   background: #fff;
-  border: 1px solid #ccc;
+  border: 1px solid #a8d4f0;
   padding: 12px;
   margin-bottom: 12px;
 }
@@ -17,14 +17,21 @@
 
 .form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
   align-items: center;
 }
 
+.form input {
+  min-width: 0;
+}
+
 input {
-  padding: 8px;
-  border: 1px solid #bbb;
+  padding: 8px 10px;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 table {

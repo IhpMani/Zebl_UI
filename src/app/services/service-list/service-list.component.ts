@@ -276,7 +276,10 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }
 
   onRowClick(service: ServiceListItem): void {
-    // Navigate to service details if needed
+    const claimId = service.srvClaFID;
+    if (claimId) {
+      this.router.navigate(['claims', claimId]);
+    }
   }
 
   getTotalPages(): number {

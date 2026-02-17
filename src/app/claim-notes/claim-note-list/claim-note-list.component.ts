@@ -112,9 +112,16 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: ClaimNotesApiResponse) => {
-          this.claimNotes = response.data || [];
-          this.filteredClaimNotes = this.claimNotes;
-          this.meta = response.meta;
+          // Handle both direct { data, meta } and wrapped { data: { data, meta } } responses
+          const data = Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray((response as any)?.data?.data)
+              ? (response as any).data.data
+              : [];
+          const meta = response?.meta ?? (response as any)?.data?.meta ?? null;
+          this.claimNotes = data;
+          this.filteredClaimNotes = this.applyValueFilters(this.claimNotes);
+          this.meta = meta;
           this.loading = false;
           this.error = null;
         },
@@ -139,6 +146,9 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   onPageSizeChange(pageSize: number): void { this.pageSize = pageSize; this.loadClaimNotes(1, pageSize); }
   onRowClick(note: ClaimNoteListItem): void { this.router.navigate(['/claims', note.claID]); }
   getTotalPages(): number { if (!this.meta) return 0; return Math.ceil(this.meta.totalCount / this.meta.pageSize); }
+  hasActiveValueFilters(): boolean {
+    return Object.keys(this.columnValueFilters || {}).length > 0;
+  }
   get visibleColumns() { return this.columns.filter(c => c.visible); }
   hideColumn(columnKey: string): void { const col = this.columns.find(c => c.key === columnKey); if (col) col.visible = false; }
   showColumn(columnKey: string): void { const col = this.columns.find(c => c.key === columnKey); if (col) col.visible = true; }
@@ -215,6 +225,24 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     const all = Array.from(uniq);
     all.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
     return all;
+  }
+
+  /** Apply columnValueFilters to the notes (client-side filtering when API doesn't support value filters) */
+  private applyValueFilters(notes: ClaimNoteListItem[]): ClaimNoteListItem[] {
+    const keys = Object.keys(this.columnValueFilters || {});
+    if (keys.length === 0) return notes;
+    return notes.filter(note => {
+      for (const key of keys) {
+        const selected = this.columnValueFilters[key];
+        if (!selected) continue;
+        if (selected.size === 0) return false; // Explicit "match nothing" selection
+        const v = this.getCellValue(note, key);
+        const s = (v ?? '').toString().trim();
+        const displayVal = s === '' ? '(Blank)' : s;
+        if (!selected.has(displayVal)) return false;
+      }
+      return true;
+    });
   }
   toggleCustomizationDialog(): void { this.showCustomizationDialog = !this.showCustomizationDialog; if (!this.showCustomizationDialog) { this.columnSearchText = ''; } }
   closeCustomizationDialog(event?: MouseEvent): void {

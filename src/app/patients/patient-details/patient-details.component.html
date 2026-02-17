@@ -1,0 +1,462 @@
+<div class="patient-details-wrapper">
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading">Loading patient data…</div>
+  </div>
+
+  <div *ngIf="error" class="error-panel">
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="goBackToList()">Back to List</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && patient">
+    <header class="patient-header">
+      <div>
+        <p class="patient-context">Patient {{ patient.patID }} · {{ patient.patActive ? 'Active' : 'Inactive' }} · Account {{ patient.patAccountNo || 'N/A' }}</p>
+        <h1>{{ getPatientName() }}</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="saveAndClose()" [disabled]="saving">Save & Close</button>
+        <button class="btn-primary ghost" (click)="save()" [disabled]="saving">Save</button>
+        <button class="btn-secondary" (click)="close()">Close</button>
+        <button class="btn-secondary" disabled>Delete</button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: Patient Information (top full width) -->
+    <div class="section-panel patient-info-section" [hidden]="!sectionsState.patientInfo">
+      <div class="section-title" (click)="toggleSection('patientInfo')">Patient Information</div>
+      <form [formGroup]="patientForm">
+        <div class="patient-grid">
+          <div class="patient-info-left">
+            <div class="form-row">
+              <label>Name (Last, First, MI)</label>
+              <div class="inline-three">
+                <input type="text" formControlName="patLastName" placeholder="Last" />
+                <input type="text" formControlName="patFirstName" placeholder="First" />
+                <input type="text" formControlName="patMI" placeholder="MI" class="mi-input" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Address</label>
+              <input type="text" formControlName="patAddress" />
+            </div>
+            <div class="form-row">
+              <label>Address 2</label>
+              <input type="text" formControlName="patAddress2" />
+            </div>
+            <div class="form-row">
+              <label>City / State / ZIP</label>
+              <div class="inline-three">
+                <input type="text" formControlName="patCity" placeholder="City" />
+                <select formControlName="patState">
+                  <option [ngValue]="null">--</option>
+                  <option *ngFor="let s of US_STATES" [ngValue]="s">{{ s }}</option>
+                </select>
+                <input type="text" formControlName="patZip" placeholder="ZIP" class="zip-input" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label>DOB / Sex / Marital</label>
+              <div class="inline-three">
+                <input type="date" formControlName="patBirthDate" />
+                <select formControlName="patSex">
+                  <option [ngValue]="null">--</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </select>
+                <select formControlName="patMarried">
+                  <option *ngFor="let o of MARITAL_OPTIONS" [ngValue]="o.value">{{ o.label }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Employment</label>
+              <input type="number" formControlName="patEmployed" min="0" />
+            </div>
+            <div class="form-row">
+              <label>Account #</label>
+              <input type="text" formControlName="patAccountNo" />
+            </div>
+          </div>
+          <div class="patient-info-right">
+            <div class="form-row">
+              <label>Classification</label>
+              <select formControlName="patClassification">
+                <option [ngValue]="null">-- Select --</option>
+                <option *ngFor="let opt of classificationOptions" [ngValue]="opt.value">{{ opt.value }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Claim Template</label>
+              <select formControlName="patClaLibFID">
+                <option [ngValue]="0">&lt;No Template&gt;</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Copay Amount</label>
+              <input type="number" formControlName="patCoPayAmount" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="form-row">
+              <label>Copay Percent</label>
+              <input type="number" formControlName="patCoPayPercent" placeholder="0" min="0" max="100" />
+            </div>
+            <div class="form-row">
+              <label>Diagnosis A1-D4</label>
+              <div class="inline-four">
+                <input type="text" formControlName="patDiagnosis1" placeholder="A1" />
+                <input type="text" formControlName="patDiagnosis2" placeholder="B2" />
+                <input type="text" formControlName="patDiagnosis3" placeholder="C3" />
+                <input type="text" formControlName="patDiagnosis4" placeholder="D4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Two-column layout: LEFT | RIGHT -->
+    <div class="row two-col-layout">
+      <!-- LEFT COLUMN -->
+      <div class="col-md-6">
+        <div class="section-panel contact-section">
+          <div class="section-title" (click)="toggleSection('contactInfo')">Patient Contact Information</div>
+          <form [formGroup]="patientForm">
+            <div class="contact-grid" [hidden]="!sectionsState.contactInfo">
+              <label>Primary Phone #</label><input type="text" formControlName="patPhoneNo" />
+              <label>Home Phone #</label><input type="text" formControlName="patHomePhoneNo" />
+              <label>Cell Phone #</label><input type="text" formControlName="patCellPhoneNo" />
+              <label>Work Phone #</label><input type="text" formControlName="patWorkPhoneNo" />
+              <label>Fax #</label><input type="text" formControlName="patFaxNo" />
+              <label>Primary Email</label>
+              <div class="email-with-btn"><input type="email" formControlName="patPriEmail" /><button type="button" class="btn-email" title="Email">Email</button></div>
+              <label>Secondary Email</label>
+              <div class="email-with-btn"><input type="email" formControlName="patSecEmail" /><button type="button" class="btn-email" title="Email">Email</button></div>
+              <label>Appt Reminder Pref</label>
+              <select formControlName="patAptReminderPref">
+                <option [ngValue]="null">--</option>
+                <option *ngFor="let o of APT_REMINDER_OPTIONS" [ngValue]="o">{{ o }}</option>
+              </select>
+              <label>Emergency Contact</label><input type="text" formControlName="patEmergencyContactName" />
+              <label>Emergency Phone #</label>
+              <div class="emergency-phone-row">
+                <input type="text" formControlName="patEmergencyContactPhoneNo" />
+                <label class="inline-label">Relation</label>
+                <input type="text" formControlName="patEmergencyContactRelation" />
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="section-panel physician-section">
+          <div class="section-title physician-section-header">
+            <span (click)="toggleSection('physicianFacility')">Physician / Facility Library Entries</span>
+            <div class="physician-header-btns">
+              <button type="button" class="btn-physician-icon" (click)="refreshPhysicians()" title="Refresh">↻</button>
+              <button type="button" class="btn-physician-icon" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+            </div>
+          </div>
+          <form [formGroup]="patientForm">
+            <div class="physician-list" [hidden]="!sectionsState.physicianFacility">
+              <div class="form-row-inline">
+                <label>Billing Provider</label>
+                <select formControlName="patBillingPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patBillingPhyFID')" title="Clear">×</button>
+              </div>
+              <div class="form-row-inline">
+                <label>Rendering Provider</label>
+                <select formControlName="patRenderingPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patRenderingPhyFID')" title="Clear">×</button>
+              </div>
+              <div class="form-row-inline">
+                <label>Service Facility</label>
+                <select formControlName="patFacilityPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patFacilityPhyFID')" title="Clear">×</button>
+              </div>
+              <div class="form-row-inline">
+                <label>Referring Provider</label>
+                <select formControlName="patReferringPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patReferringPhyFID')" title="Clear">×</button>
+              </div>
+              <div class="form-row-inline">
+                <label>Ordering Provider</label>
+                <select formControlName="patOrderingPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patOrderingPhyFID')" title="Clear">×</button>
+              </div>
+              <div class="form-row-inline">
+                <label>Supervising Provider</label>
+                <select formControlName="patSupervisingPhyFID">
+                  <option [ngValue]="0">None</option>
+                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                </select>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patSupervisingPhyFID')" title="Clear">×</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col-md-6">
+        <div class="insurance-panel" *ngIf="insuranceLoaded">
+          <header class="insurance-panel-header">
+            <div class="insurance-tabs insurance-tabs-compact" (click)="$event.stopPropagation()">
+              <button type="button" class="tab-btn" [class.active]="insuranceTab === 1" [class.placeholder]="!hasInsuranceAtSequence(1)" (click)="selectInsuranceTab(1)">Primary Ins</button>
+              <button type="button" class="tab-btn" *ngFor="let ins of additionalInsuranceTabs" [class.active]="insuranceTab === ins.patInsSequence" (click)="selectInsuranceTab(ins.patInsSequence)">{{ getInsuranceTabLabel(ins.patInsSequence) }}</button>
+            </div>
+            <div class="insurance-header-right" (click)="$event.stopPropagation()">
+              <button class="btn-ins-header" (click)="addInsurance()" [disabled]="!canAddInsurance">Add Ins</button>
+              <button class="btn-ins-header" disabled>Lookup</button>
+              <button class="btn-ins-header" disabled>Replace</button>
+              <button class="btn-ins-header" (click)="updateClaims()" [disabled]="!canUpdateClaims">Update Claims</button>
+              <label class="ins-header-chk" *ngIf="currentInsurance"><input type="checkbox" [(ngModel)]="currentInsurance.patInsActive" [ngModelOptions]="ngModelStandalone" /> Active</label>
+              <label class="ins-header-chk" *ngIf="currentInsurance"><input type="checkbox" [(ngModel)]="currentInsurance.patInsLocked" [ngModelOptions]="ngModelStandalone" /> Lock</label>
+              <button type="button" class="btn-icon" *ngIf="insuranceList.length >= 2 && currentInsurance?.patInsSequence === 1" (click)="swapInsurance()" title="Swap">⇄</button>
+              <button type="button" class="btn-icon" *ngIf="currentInsurance && currentInsurance.patInsSequence !== 1" (click)="replacePrimary()" title="Promote to Primary">← Primary</button>
+              <button type="button" class="btn-icon" *ngIf="currentInsurance" (click)="removeCurrentInsurance()" title="Remove">×</button>
+            </div>
+          </header>
+          <div class="insurance-panel-body">
+            <ng-container *ngIf="currentInsurance">
+                <div class="insurance-container">
+                  <div class="insurance-form-grid">
+                    <button type="button" class="btn-copy-from-patient" (click)="copyFromPatient(currentInsurance)">Copy from Patient</button>
+                    <label class="ins-lbl">Name (L,F,MI)</label>
+                    <input type="text" class="ins-inp" [ngModel]="getInsuredNameDisplay(currentInsurance)" (ngModelChange)="parseInsuredName($event, currentInsurance)" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Payer</label>
+                    <div class="ins-cell-with-btns">
+                      <select class="ins-inp" [(ngModel)]="currentInsurance.payID" [ngModelOptions]="ngModelStandalone">
+                        <option [ngValue]="0">-- Select --</option>
+                        <option *ngFor="let pay of payers" [ngValue]="pay.payID">{{ pay.payName }}</option>
+                      </select>
+                      <button type="button" class="btn-sm-icon" title="Library">…</button>
+                      <button type="button" class="btn-sm-icon" (click)="clearPayer(currentInsurance)" title="Clear">×</button>
+                    </div>
+                    <label class="ins-lbl">Date of Birth</label>
+                    <input type="date" class="ins-inp" [(ngModel)]="currentInsurance.insBirthDate" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Eligibility</label>
+                    <div class="ins-cell-with-btns">
+                      <input type="text" class="ins-inp ins-readonly" [value]="currentInsurance.patInsEligStatus || ''" readonly />
+                      <button type="button" class="btn-sm-icon" disabled>CHECK</button>
+                      <button type="button" class="btn-sm-icon" disabled>VIEW</button>
+                    </div>
+                    <label class="ins-lbl">Address</label>
+                    <input type="text" class="ins-inp ins-inp-full" [(ngModel)]="currentInsurance.insAddress" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">City / State / Zip</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insCity" placeholder="City" [ngModelOptions]="ngModelStandalone" />
+                    <select class="ins-inp ins-inp-state" [(ngModel)]="currentInsurance.insState" [ngModelOptions]="ngModelStandalone"><option [ngValue]="null">--</option><option *ngFor="let s of US_STATES" [ngValue]="s">{{ s }}</option></select>
+                    <input type="text" class="ins-inp ins-inp-zip" [(ngModel)]="currentInsurance.insZip" placeholder="ZIP" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Phone</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insPhone" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Insured ID #</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insIDNumber" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Employer</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insEmployer" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Group #</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insGroupNumber" [ngModelOptions]="ngModelStandalone" />
+                    <span class="ins-grid-spacer"></span>
+                    <span class="ins-grid-spacer"></span>
+                    <label class="ins-lbl">Plan Name</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insPlanName" [ngModelOptions]="ngModelStandalone" />
+                    <span class="ins-grid-spacer"></span>
+                    <span class="ins-grid-spacer"></span>
+                    <label class="ins-lbl">Relation To Insured</label>
+                    <select class="ins-inp" [(ngModel)]="currentInsurance.patInsRelationToInsured" [ngModelOptions]="ngModelStandalone">
+                      <option *ngFor="let o of RELATION_TO_INSURED_OPTIONS" [ngValue]="o.value">{{ o.label }}</option>
+                    </select>
+                    <label class="ins-lbl">Accept Assignment</label>
+                    <label class="ins-chk"><input type="checkbox" [checked]="(currentInsurance.insAcceptAssignment ?? 0) === 1" (change)="setAcceptAssignment(currentInsurance, $any($event.target).checked)" /> Accept</label>
+                    <label class="ins-lbl">Claim Filing</label>
+                    <select class="ins-inp" [(ngModel)]="currentInsurance.insClaimFilingIndicator" [ngModelOptions]="ngModelStandalone">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let c of CLAIM_FILING_OPTIONS" [ngValue]="c">{{ c }}</option>
+                    </select>
+                    <label class="ins-lbl">Subscriber SSN</label>
+                    <input type="text" class="ins-inp" [(ngModel)]="currentInsurance.insSSN" [ngModelOptions]="ngModelStandalone" />
+                    <label class="ins-lbl">Responsibility Sequence</label>
+                    <input type="text" class="ins-inp ins-readonly" [value]="currentInsurance.patInsSequence" readonly />
+                  </div>
+                </div>
+            </ng-container>
+            <div *ngIf="!currentInsurance" class="insurance-container">
+              <p class="no-insurance">No insurance. Click Add Ins.</p>
+            </div>
+          </div>
+        </div>
+
+        <section class="panel-card additional-claim-panel">
+          <header (click)="toggleSection('additionalClaim')" class="additional-claim-header">
+            <h3>Additional Claim Information</h3>
+            <span class="collapse-icon">{{ sectionsState.additionalClaim ? '▲' : '▼' }}</span>
+          </header>
+          <form [formGroup]="patientForm">
+            <div class="section-body additional-claim-inline" [hidden]="!sectionsState.additionalClaim">
+              <label class="inline-checkbox"><input type="checkbox" formControlName="patPhyPrintDate" /> Box 12: Print Current Date</label>
+              <span class="inline-or">or</span>
+              <input type="date" class="inline-date" [value]="getBox8DateValue()" (input)="setBox8DateValue($any($event.target).value)" />
+              <label class="inline-checkbox"><input type="checkbox" formControlName="patSigOnFile" /> Patient Signature On File</label>
+              <label class="inline-label">Signature Source</label>
+              <select class="inline-select" formControlName="patSigSource">
+                <option [ngValue]="null">--</option>
+                <option value="I">Initial Claim Values</option>
+                <option value="C">Custom</option>
+              </select>
+              <button type="button" class="btn-initial-claim" (click)="setSignatureSourceToInitial()">Initial Claim Values</button>
+              <label class="inline-checkbox"><input type="checkbox" formControlName="patPrintSigDate" /> Box 31: Print Claim Bill Date</label>
+              <label class="inline-checkbox"><input type="checkbox" formControlName="patInsuredSigOnFile" /> Insured Signature On File</label>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel-card other-patient-panel">
+          <header (click)="toggleSection('otherPatient')" class="other-patient-header">
+            <h3>Other Patient Information</h3>
+            <span class="collapse-icon">{{ sectionsState.otherPatient ? '▲' : '▼' }}</span>
+          </header>
+          <form [formGroup]="patientForm">
+            <div class="section-body other-patient-body" [hidden]="!sectionsState.otherPatient">
+              <div class="other-patient-row">
+                <div class="other-patient-field"><label>Patient SSN:</label><input type="text" formControlName="patSSN" /></div>
+                <div class="other-patient-field"><label>Weight:</label><span class="input-with-unit"><input type="text" formControlName="patWeight" /><span class="unit">lbs.</span></span></div>
+                <div class="other-patient-field"><label>Height:</label><span class="input-with-unit"><input type="text" formControlName="patHeight" /><span class="unit">inches</span></span></div>
+              </div>
+              <div class="other-patient-row">
+                <div class="other-patient-field other-patient-member-id"><label>Patient Member ID:</label><input type="text" formControlName="patMemberID" /></div>
+              </div>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <!-- Additional Data, Statement, Reminder, Notes - full width (EZClaim-style tan panels) -->
+    <section class="panel-card tan-panel">
+      <header (click)="toggleSection('additionalData')" class="tan-panel-header">
+        <h3>Additional Data</h3>
+        <span class="collapse-icon">{{ sectionsState.additionalData ? '▲' : '▼' }}</span>
+      </header>
+      <form [formGroup]="patientForm">
+        <div class="section-body tan-panel-body additional-data-two-col" [hidden]="!sectionsState.additionalData">
+          <div class="additional-data-left">
+            <div class="field-row"><label>Custom Text Value:</label><input type="text" formControlName="patCustomField1" /></div>
+            <div class="field-row"><label>Custom Currency Value:</label><input type="text" formControlName="patCustomField3" /></div>
+            <div class="field-row"><label>Custom Date Value:</label><input type="date" formControlName="patCustomField4" /></div>
+            <div class="field-row"><label>Payment Matching Key:</label><input type="text" formControlName="patPaymentMatchingKey" /></div>
+          </div>
+          <div class="additional-data-right">
+            <div class="field-row"><label>Custom Number Value:</label><input type="text" formControlName="patCustomField2" /></div>
+            <div class="field-row checkbox-row"><label><input type="checkbox" [checked]="patientForm.get('patCustomField5')?.value === '1' || patientForm.get('patCustomField5')?.value === 'true'" (change)="patientForm.patchValue({patCustomField5: $any($event.target).checked ? '1' : '0'})" /> Custom True / False Value</label></div>
+            <div class="field-row"><label>External ID:</label><input type="text" formControlName="patExternalFID" /></div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-card tan-panel">
+      <header (click)="toggleSection('statement')" class="tan-panel-header">
+        <h3>Statement Information</h3>
+        <span class="collapse-icon">{{ sectionsState.statement ? '▲' : '▼' }}</span>
+      </header>
+      <form [formGroup]="patientForm">
+        <div class="section-body tan-panel-body" [hidden]="!sectionsState.statement">
+          <div class="field-row statement-name-row">
+            <label><span class="icon-doc">📄</span> Name:</label>
+            <input type="text" formControlName="patStatementName" />
+          </div>
+          <div class="field-row"><label>Address 1:</label><input type="text" formControlName="patStatementAddressLine1" /></div>
+          <div class="field-row"><label>Address 2:</label><input type="text" formControlName="patStatementAddressLine2" /></div>
+          <div class="field-row"><label>City ST Zip:</label>
+            <div class="city-st-zip-row">
+              <input type="text" formControlName="patStatementCity" />
+              <select formControlName="patStatementState" class="state-select"><option [ngValue]="null">--</option><option *ngFor="let s of US_STATES" [ngValue]="s">{{ s }}</option></select>
+              <input type="text" formControlName="patStatementZipCode" class="zip-input" />
+            </div>
+          </div>
+          <div class="field-row"><label>Statement Message:</label><textarea formControlName="patStatementMessage"></textarea></div>
+          <div class="field-row"><label>Last Statement Date:</label><input type="text" [value]="formatDateOnly(patient.patLastStatementDateTRIG)" readonly class="readonly-field" /></div>
+          <div class="field-row checkbox-row"><label><input type="checkbox" formControlName="patDontSendStatements" /> Don't Send Statements</label></div>
+          <div class="field-row checkbox-row"><label><input type="checkbox" formControlName="patDontSendPromotions" /> Don't Send Promotions</label></div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-card tan-panel">
+      <header (click)="toggleSection('reminderNote')" class="tan-panel-header">
+        <h3>Reminder Note</h3>
+        <span class="collapse-icon">{{ sectionsState.reminderNote ? '▲' : '▼' }}</span>
+      </header>
+      <form [formGroup]="patientForm">
+        <div class="section-body tan-panel-body" [hidden]="!sectionsState.reminderNote">
+          <div class="field-row"><label>Don't Prompt</label>
+            <select formControlName="patReminderNoteEvent">
+              <option [ngValue]="null">--</option>
+              <option *ngFor="let o of REMINDER_PROMPT_OPTIONS" [ngValue]="o">{{ o }}</option>
+            </select>
+          </div>
+          <div class="field-row"><textarea formControlName="patReminderNote" placeholder="Reminder note..."></textarea></div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-card tan-panel notes-section">
+      <header (click)="toggleSection('patientNotes')" class="tan-panel-header">
+        <h3>Patient Notes</h3>
+        <span class="collapse-icon">{{ sectionsState.patientNotes ? '▲' : '▼' }}</span>
+      </header>
+      <div class="tan-panel-body" [hidden]="!sectionsState.patientNotes">
+        <form [formGroup]="patientForm">
+          <div class="field-row checkbox-row notes-hide-tracking"><label><input type="checkbox" formControlName="patAuthTracking" /> Hide Tracking Notes</label></div>
+        </form>
+        <div class="notes-input-row">
+          <textarea placeholder="Click here to add a new note" [(ngModel)]="newNote" [ngModelOptions]="ngModelStandalone"></textarea>
+        </div>
+        <div class="notes-history-table-wrapper">
+          <table class="notes-history-table">
+            <thead><tr><th>Date and Time</th><th>User/Originator</th><th>Note Content</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let note of getNotesHistory()">
+                <td>{{ formatDateTime(note.date) }}</td>
+                <td>{{ note.user }}</td>
+                <td class="note-text">{{ note.noteText }}</td>
+              </tr>
+              <tr *ngIf="getNotesHistory().length === 0"><td colspan="3" class="no-data">No notes recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Physician Library Modal (full page in popup) -->
+    <div class="physician-library-overlay" *ngIf="physicianPickerOpen" (click)="closePhysicianPicker()">
+      <div class="physician-library-modal" (click)="$event.stopPropagation()">
+        <div class="physician-library-modal-header">
+          <h3>Physician / Facility Library</h3>
+          <button type="button" class="physician-library-close" (click)="closePhysicianPicker()" title="Close">×</button>
+        </div>
+        <div class="physician-library-modal-body">
+          <app-physician-library></app-physician-library>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

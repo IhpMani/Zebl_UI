@@ -4,6 +4,7 @@ import { ClaimListComponent } from './claims/claim-list/claim-list.component';
 import { ClaimDetailsComponent } from './claims/claim-details/claim-details.component';
 import { HomeComponent } from './home/home.component';
 import { PatientListComponent } from './patients/patient-list/patient-list.component';
+import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
@@ -25,6 +26,7 @@ const routes: Routes = [
   { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
+  { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
   { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },
   { path: 'payments/find-payment', component: PaymentListComponent, canActivate: [AuthGuard] },
   { path: 'adjustments/find-adjustment', component: AdjustmentListComponent, canActivate: [AuthGuard] },

@@ -18,7 +18,7 @@ export interface PayerListItem {
 
 export interface PayersApiResponse {
   data: PayerListItem[];
-  meta: PaginationMeta;
+  totalCount: number;
 }
 
 export interface PaginationMeta {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PatientsApiResponse } from './patient.models';
+import { PatientsApiResponse, PatientDetail, UpdatePatientRequest } from './patient.models';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +10,14 @@ export class PatientApiService {
   private baseUrl = '/api/patients';
 
   constructor(private http: HttpClient) { }
+
+  getPatientById(patId: number): Observable<PatientDetail> {
+    return this.http.get<PatientDetail>(`${this.baseUrl}/${patId}`);
+  }
+
+  updatePatient(id: number, body: UpdatePatientRequest): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}`, body);
+  }
 
   getPatients(
     page: number = 1,

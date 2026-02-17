@@ -10,6 +10,7 @@ import { ClaimListComponent } from './claims/claim-list/claim-list.component';
 import { ClaimDetailsComponent } from './claims/claim-details/claim-details.component';
 import { HomeComponent } from './home/home.component';
 import { PatientListComponent } from './patients/patient-list/patient-list.component';
+import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
@@ -31,6 +32,7 @@ import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interf
     ClaimDetailsComponent,
     HomeComponent,
     PatientListComponent,
+    PatientDetailsComponent,
     ServiceListComponent,
     PaymentListComponent,
     AdjustmentListComponent,

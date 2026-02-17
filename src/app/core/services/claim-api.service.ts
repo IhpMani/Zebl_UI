@@ -26,6 +26,7 @@ export class ClaimApiService {
       maxTotalCharge?: number;
       minTotalBalance?: number;
       maxTotalBalance?: number;
+      patientId?: number; // Filter by patient (ClaPatFID)
       additionalColumns?: string[]; // Additional columns from related tables
     }
   ): Observable<ClaimsApiResponse> {
@@ -67,6 +68,9 @@ export class ClaimApiService {
       if (filters.maxTotalBalance !== undefined) {
         params = params.append('maxTotalBalance', filters.maxTotalBalance.toString());
       }
+      if (filters.patientId !== undefined && filters.patientId > 0) {
+        params = params.append('patientId', filters.patientId.toString());
+      }
       if (filters.additionalColumns && filters.additionalColumns.length > 0) {
         params = params.append('additionalColumns', filters.additionalColumns.join(','));
       }
@@ -107,6 +111,8 @@ export class ClaimApiService {
     claPaperWorkInd?: string | null;
     /** Optional manual note for this edit. If empty, backend uses "Claim edited." */
     noteText?: string | null;
+    /** Additional data (ClaAdditionalData XML) */
+    additionalData?: import('./claim.models').ClaimAdditionalData;
   }): Observable<void> {
     const payload: any = {};
     if (body.claStatus !== undefined) payload.claStatus = body.claStatus;
@@ -130,6 +136,7 @@ export class ClaimApiService {
     if (body.claPaperWorkControlNumber !== undefined) payload.claPaperWorkControlNumber = body.claPaperWorkControlNumber;
     if (body.claPaperWorkInd !== undefined) payload.claPaperWorkInd = body.claPaperWorkInd;
     if (body.noteText !== undefined) payload.noteText = body.noteText;
+    if (body.additionalData !== undefined) payload.additionalData = body.additionalData;
     return this.http.put<void>(`/api/claims/${claId}`, payload);
   }
 }

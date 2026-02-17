@@ -7,6 +7,9 @@
       <div class="menu-item">Support</div>
       <div class="menu-item">Info</div>
     </nav>
+    <div class="menu-bar-trailing">
+      <ng-content select="[menuBarTrailing]"></ng-content>
+    </div>
   </div>
   <div class="toolbar">
     <div class="toolbar-section">
@@ -27,6 +30,7 @@
           <div class="dropdown-content" [class.show]="showFindDropdown">
             <a (click)="findOptionSelected('Find Patient')"><img src="assets/icons/patient.png" alt="Find Patient">Find Patient</a>
             <a (click)="findOptionSelected('Find Claim')"><img src="assets/icons/claim.png" alt="Find Claim">Find Claim</a>
+            <a (click)="findOptionSelected('Find Service')"><img src="assets/icons/claim.png" alt="Find Service">Find Service</a>
             <a (click)="findOptionSelected('Find Payment')"><img src="assets/icons/payment.png" alt="Find Payment">Find Payment</a>
             <a (click)="findOptionSelected('Find Task')"><img src="assets/icons/task.png" alt="Find Task">Find Task</a>
             <a (click)="findOptionSelected('Find Adjustment')"><img src="assets/icons/payment.png" alt="Find Adjustment">Find Adjustment</a>
@@ -41,8 +45,8 @@
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
-        <button class="toolbar-button"><img src="assets/icons/patient.png" alt="Patient">Patient</button>
-        <button class="toolbar-button"><img src="assets/icons/claim.png" alt="Claim">Claim</button>
+        <button class="toolbar-button" (click)="onPatientClick()"><img src="assets/icons/patient.png" alt="Patient">Patient</button>
+        <button class="toolbar-button" (click)="onClaimClick()"><img src="assets/icons/claim.png" alt="Claim">Claim</button>
         <button class="toolbar-button"><img src="assets/icons/payment.png" alt="Payment">Payment</button>
         <button class="toolbar-button"><img src="assets/icons/task.png" alt="Task">Task</button>
         <button class="toolbar-button"><img src="assets/icons/statement.png" alt="Statement">Statement</button>

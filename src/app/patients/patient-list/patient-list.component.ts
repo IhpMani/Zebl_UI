@@ -308,8 +308,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
 
   onRowClick(patient: PatientListItem): void {
-    // Navigate to patient details if needed
-    // this.router.navigate(['/patients', patient.patID]);
+    this.router.navigate(['/patients', patient.patID]);
   }
 
   getTotalPages(): number {

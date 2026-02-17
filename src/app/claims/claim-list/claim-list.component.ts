@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { ClaimListItem, ClaimsApiResponse, PaginationMeta } from '../../core/services/claim.models';
 import { Subject, takeUntil } from 'rxjs';
@@ -214,7 +214,8 @@ export class ClaimListComponent implements OnInit, OnDestroy {
 
   constructor(
     private claimApiService: ClaimApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   currentPage: number = 1;
@@ -227,8 +228,10 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     this.loadAdditionalColumnsFromRegistry();
     // Load saved column preferences
     this.loadColumnPreferences();
-    // Load first page with server-side filtering
-    this.loadClaims(this.currentPage, this.pageSize);
+    // React to query param changes (e.g. patientId from ribbon Claim button)
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.loadClaims(this.currentPage, this.pageSize);
+    });
   }
 
   /**
@@ -325,6 +328,15 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     // Add selected additional columns
     if (this.selectedAdditionalColumns.size > 0) {
       filters.additionalColumns = Array.from(this.selectedAdditionalColumns);
+    }
+
+    // Patient filter from query params (ribbon: Claim from Patient Details)
+    const patientIdParam = this.route.snapshot.queryParamMap.get('patientId');
+    if (patientIdParam) {
+      const pid = parseInt(patientIdParam, 10);
+      if (!isNaN(pid)) {
+        filters.patientId = pid;
+      }
     }
 
     this.claimApiService.getClaims(page, pageSize, filters)

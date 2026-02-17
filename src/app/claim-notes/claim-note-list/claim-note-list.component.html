@@ -37,7 +37,11 @@
             </ng-container>
           </td>
         </tr>
-        <tr *ngIf="filteredClaimNotes.length === 0 && !loading"><td [attr.colspan]="visibleColumns.length + 1" class="no-data">No claim notes found</td></tr>
+        <tr *ngIf="filteredClaimNotes.length === 0 && !loading">
+          <td [attr.colspan]="visibleColumns.length + 1" class="no-data">
+            {{ hasActiveValueFilters() ? 'No claim notes match your filters. Clear filters to see data.' : 'No claim notes found' }}
+          </td>
+        </tr>
       </tbody>
     </table>
     <div *ngIf="meta" class="pagination-container">

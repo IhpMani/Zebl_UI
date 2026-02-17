@@ -1,5 +1,6 @@
 import { Component, HostListener, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
+import { RibbonContextService } from '../core/services/ribbon-context.service';
 
 @Component({
   selector: 'app-ribbon',
@@ -14,8 +15,32 @@ export class RibbonComponent {
   @Output() reviewIncoming = new EventEmitter<void>();
 
   constructor(
-    private router: Router
+    private router: Router,
+    private ribbonContext: RibbonContextService
   ) { }
+
+  /** Navigate to the patient for the current claim (Claim Details) or open Find Patient */
+  onPatientClick(): void {
+    const ctx = this.ribbonContext.getContext();
+    if (ctx.patientId) {
+      const qp = ctx.claimId ? { claimId: ctx.claimId } : {};
+      this.router.navigate(['patients', ctx.patientId], { queryParams: qp });
+    } else {
+      this.router.navigate(['patients/find-patient']);
+    }
+  }
+
+  /** Navigate to the claim for the current patient (Patient Details) or open Find Claim */
+  onClaimClick(): void {
+    const ctx = this.ribbonContext.getContext();
+    if (ctx.claimId) {
+      this.router.navigate(['claims', ctx.claimId]);
+    } else if (ctx.patientId) {
+      this.router.navigate(['claims/find-claim'], { queryParams: { patientId: ctx.patientId } });
+    } else {
+      this.router.navigate(['claims/find-claim']);
+    }
+  }
 
   goToHome(): void {
     this.router.navigate(['/']);

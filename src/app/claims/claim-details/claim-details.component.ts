@@ -3,7 +3,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ClaimApiService } from '../../core/services/claim-api.service';
-import { Claim } from '../../core/services/claim.models';
+import { Claim, ClaimAdditionalData } from '../../core/services/claim.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PhysicianListItem } from '../../core/services/physician.models';
@@ -11,6 +11,7 @@ import { AdjustmentApiService } from '../../core/services/adjustment-api.service
 import { DisbursementApiService } from '../../core/services/disbursement-api.service';
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { ServiceApiService } from '../../core/services/service-api.service';
+import { RibbonContextService } from '../../core/services/ribbon-context.service';
 
 @Component({
   selector: 'app-claim-details',
@@ -105,7 +106,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     dates: true,
     misc: true,
     resubmission: true,
-    paperwork: true
+    paperwork: true,
+    additionalData: true
   };
 
   payments: any[] = [];
@@ -136,6 +138,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private claimApiService: ClaimApiService,
+    private ribbonContext: RibbonContextService,
     private listApiService: ListApiService,
     private physicianApiService: PhysicianApiService,
     private serviceApi: ServiceApiService,
@@ -264,6 +267,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     // Drain any subscriptions if necessary (currently none).
   }
 
+  getEmptyAdditionalData(): ClaimAdditionalData {
+    return {
+      customTextValue: null,
+      customCurrencyValue: null,
+      customDateValue: null,
+      customNumberValue: null,
+      customTrueFalseValue: false,
+      externalId: null,
+      paymentMatchingKey: null
+    };
+  }
+
   toggleSection(section: keyof typeof this.sectionsState): void {
     this.sectionsState[section] = !this.sectionsState[section];
     this.cdr.markForCheck();
@@ -284,6 +299,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (claim: Claim) => {
         this.claim = claim;
+        if (!this.claim.additionalData) {
+          this.claim.additionalData = this.getEmptyAdditionalData();
+        }
+        const patId = claim.patient?.patID;
+        this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
         this.ensureCurrentStatusInOptions();
         this.ensureCurrentClassificationInOptions();
         this.ensureCurrentPhysiciansInOptions();
@@ -478,7 +498,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
       claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
       claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
-      noteText
+      noteText,
+      additionalData: this.claim.additionalData ?? undefined
     }).subscribe({
       next: () => {
         if (this.claim) {
@@ -526,7 +547,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
       claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
       claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
-      noteText
+      noteText,
+      additionalData: this.claim.additionalData ?? undefined
     }).subscribe({
       next: () => {
         if (this.claim) {
