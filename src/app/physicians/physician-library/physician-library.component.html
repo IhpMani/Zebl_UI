@@ -29,7 +29,7 @@
             *ngFor="let physician of filteredPhysicians"
             class="physician-item"
             [class.selected]="selectedPhysician?.phyID === physician.phyID"
-            (click)="onSelectPhysician(physician)"
+            (click)="onPhysicianItemClick(physician)"
           >
             <div class="physician-name">{{ physician.phyName || '(No Name)' }}</div>
             <div class="physician-classification">{{ physician.phyPrimaryCodeType || '-' }}</div>

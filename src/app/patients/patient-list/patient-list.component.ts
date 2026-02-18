@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { PatientApiService } from '../../core/services/patient-api.service';
+import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { PatientListItem, PatientsApiResponse, PaginationMeta } from '../../core/services/patient.models';
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -160,7 +161,8 @@ export class PatientListComponent implements OnInit, OnDestroy {
   constructor(
     private patientApiService: PatientApiService,
     private listApiService: ListApiService,
-    private router: Router
+    private router: Router,
+    private ribbonContext: RibbonContextService
   ) { }
 
   currentPage: number = 1;
@@ -308,6 +310,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
 
   onRowClick(patient: PatientListItem): void {
+    this.ribbonContext.setContext({ patientId: patient.patID, claimId: null });
     this.router.navigate(['/patients', patient.patID]);
   }
 

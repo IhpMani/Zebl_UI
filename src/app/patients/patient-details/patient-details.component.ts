@@ -38,6 +38,8 @@ export class PatientDetailsComponent implements OnInit {
   payers: Array<{ payID: number; payName: string }> = [];
 
   physicianPickerOpen = false;
+  /** When opening the physician library, which patient form field to set (e.g. patFacilityPhyFID). */
+  physicianPickerFor: string | null = null;
 
   classificationOptions: ListValueDto[] = [];
 
@@ -397,15 +399,31 @@ export class PatientDetailsComponent implements OnInit {
     this.loadPhysicians();
   }
 
-  openPhysicianPicker(): void {
+  openPhysicianPicker(controlName?: string): void {
+    this.physicianPickerFor = controlName ?? null;
     this.physicianPickerOpen = true;
     this.cdr.markForCheck();
   }
 
   closePhysicianPicker(): void {
     this.physicianPickerOpen = false;
+    this.physicianPickerFor = null;
     this.loadPhysicians();
     this.cdr.markForCheck();
+  }
+
+  getPhysicianPickerInitialId(): number {
+    if (!this.physicianPickerFor) return 0;
+    const v = this.patientForm.get(this.physicianPickerFor)?.value;
+    return (v != null && Number(v)) ? Number(v) : 0;
+  }
+
+  onPhysicianSelected(physician: { phyID: number }): void {
+    if (this.physicianPickerFor && this.patientForm.contains(this.physicianPickerFor)) {
+      this.patientForm.patchValue({ [this.physicianPickerFor]: physician.phyID });
+      this.cdr.markForCheck();
+    }
+    this.closePhysicianPicker();
   }
 
   getBox8DateValue(): string {

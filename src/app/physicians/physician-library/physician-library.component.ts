@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnDestroy, Output } from '@angular/core';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -37,6 +37,12 @@ interface PhysicianDetail {
   styleUrls: ['./physician-library.component.css']
 })
 export class PhysicianLibraryComponent implements OnInit, OnDestroy {
+  /** When true, clicking a physician in the list emits physicianSelected (for use in patient-details picker). */
+  @Input() pickerMode = false;
+  /** When opening from patient details, pre-load and show this provider's details (e.g. current Service Facility). */
+  @Input() initialPhyId: number | null = null;
+  @Output() physicianSelected = new EventEmitter<PhysicianListItem>();
+
   physicians: PhysicianListItem[] = [];
   filteredPhysicians: PhysicianListItem[] = [];
   selectedPhysician: PhysicianDetail | null = null;
@@ -75,7 +81,10 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private physicianApiService: PhysicianApiService) { }
+  constructor(
+    private physicianApiService: PhysicianApiService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadPhysicians();
@@ -101,6 +110,11 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
           }));
           this.filteredPhysicians = this.physicians;
           this.loading = false;
+          this.cdr.detectChanges();
+          const phyId = this.initialPhyId ?? 0;
+          if (phyId > 0) {
+            this.loadInitialPhysician(phyId);
+          }
         },
         error: (err) => {
           if (err.status !== 0) {
@@ -108,8 +122,33 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
             console.error('Error loading physicians:', err);
           }
           this.loading = false;
+          this.cdr.detectChanges();
         }
       });
+  }
+
+  private loadInitialPhysician(phyId: number): void {
+    this.physicianApiService.getPhysicianById(phyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.selectedPhysician = response.data;
+          this.formData = { ...response.data };
+          this.isNew = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  onPhysicianItemClick(physician: PhysicianListItem): void {
+    if (this.pickerMode) {
+      this.physicianSelected.emit(physician);
+      return;
+    }
+    this.onSelectPhysician(physician);
   }
 
   onSearchChange(): void {
@@ -164,11 +203,13 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
           this.selectedPhysician = response.data;
           this.formData = { ...response.data };
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.error = 'Failed to load physician details.';
           console.error('Error loading physician:', err);
           this.loading = false;
+          this.cdr.detectChanges();
         }
       });
   }

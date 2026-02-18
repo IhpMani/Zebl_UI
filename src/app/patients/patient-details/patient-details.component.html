@@ -152,7 +152,7 @@
             <span (click)="toggleSection('physicianFacility')">Physician / Facility Library Entries</span>
             <div class="physician-header-btns">
               <button type="button" class="btn-physician-icon" (click)="refreshPhysicians()" title="Refresh">↻</button>
-              <button type="button" class="btn-physician-icon" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+              <button type="button" class="btn-physician-icon" (click)="openPhysicianPicker('patBillingPhyFID')" title="Pick Physician">…</button>
             </div>
           </div>
           <form [formGroup]="patientForm">
@@ -163,7 +163,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patBillingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patBillingPhyFID')" title="Clear">×</button>
               </div>
               <div class="form-row-inline">
@@ -172,7 +172,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patRenderingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patRenderingPhyFID')" title="Clear">×</button>
               </div>
               <div class="form-row-inline">
@@ -181,7 +181,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patFacilityPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patFacilityPhyFID')" title="Clear">×</button>
               </div>
               <div class="form-row-inline">
@@ -190,7 +190,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patReferringPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patReferringPhyFID')" title="Clear">×</button>
               </div>
               <div class="form-row-inline">
@@ -199,7 +199,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patOrderingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patOrderingPhyFID')" title="Clear">×</button>
               </div>
               <div class="form-row-inline">
@@ -208,7 +208,7 @@
                   <option [ngValue]="0">None</option>
                   <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker()" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patSupervisingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patSupervisingPhyFID')" title="Clear">×</button>
               </div>
             </div>
@@ -454,7 +454,11 @@
           <button type="button" class="physician-library-close" (click)="closePhysicianPicker()" title="Close">×</button>
         </div>
         <div class="physician-library-modal-body">
-          <app-physician-library></app-physician-library>
+          <app-physician-library
+            [pickerMode]="!!physicianPickerFor"
+            [initialPhyId]="getPhysicianPickerInitialId()"
+            (physicianSelected)="onPhysicianSelected($event)"
+          ></app-physician-library>
         </div>
       </div>
     </div>

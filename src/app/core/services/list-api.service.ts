@@ -41,7 +41,7 @@ export interface AddValueResponse {
   providedIn: 'root'
 })
 export class ListApiService {
-  private baseUrl = `${environment.apiUrl}/lists`;
+  private baseUrl = `${environment.apiUrl}/api/lists`;
 
   constructor(private http: HttpClient) { }
 

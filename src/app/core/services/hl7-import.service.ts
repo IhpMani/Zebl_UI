@@ -42,7 +42,7 @@ export interface Hl7ImportHistoryRow {
 })
 export class Hl7ImportService {
   // In dev, /api is proxied to ASP.NET Core; in prod, apiUrl can be set to server URL.
-  private baseUrl = `${environment.apiUrl}/hl7`;
+  private baseUrl = `${environment.apiUrl}/api/hl7`;
 
   constructor(private http: HttpClient) { }
 
@@ -70,6 +70,6 @@ export class Hl7ImportService {
    * Reads directly from SQL table.
    */
   getImportHistory(): Observable<Hl7ImportHistoryRow[]> {
-    return this.http.get<Hl7ImportHistoryRow[]>(`${environment.apiUrl}/interface/history`);
+    return this.http.get<Hl7ImportHistoryRow[]>(`${environment.apiUrl}/api/interface/history`);
   }
 }

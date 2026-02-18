@@ -1,6 +1,8 @@
 import { Component, HostListener, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
+import { take } from 'rxjs';
 import { RibbonContextService } from '../core/services/ribbon-context.service';
+import { ClaimApiService } from '../core/services/claim-api.service';
 
 @Component({
   selector: 'app-ribbon',
@@ -16,7 +18,8 @@ export class RibbonComponent {
 
   constructor(
     private router: Router,
-    private ribbonContext: RibbonContextService
+    private ribbonContext: RibbonContextService,
+    private claimApiService: ClaimApiService
   ) { }
 
   /** Navigate to the patient for the current claim (Claim Details) or open Find Patient */
@@ -36,7 +39,21 @@ export class RibbonComponent {
     if (ctx.claimId) {
       this.router.navigate(['claims', ctx.claimId]);
     } else if (ctx.patientId) {
-      this.router.navigate(['claims/find-claim'], { queryParams: { patientId: ctx.patientId } });
+      this.claimApiService.getClaims(1, 1, { patientId: ctx.patientId })
+        .pipe(take(1))
+        .subscribe({
+          next: (response) => {
+            const first = response.data?.[0];
+            if (first?.claID) {
+              this.router.navigate(['claims', first.claID]);
+            } else {
+              this.router.navigate(['claims/find-claim'], { queryParams: { patientId: ctx.patientId } });
+            }
+          },
+          error: () => {
+            this.router.navigate(['claims/find-claim'], { queryParams: { patientId: ctx.patientId } });
+          }
+        });
     } else {
       this.router.navigate(['claims/find-claim']);
     }
