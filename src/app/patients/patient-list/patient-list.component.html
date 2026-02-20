@@ -48,6 +48,9 @@
           </td>
           <td *ngFor="let col of visibleColumns">
             <ng-container [ngSwitch]="col.key">
+              <span *ngSwitchCase="'patAccountNo'">
+                {{ patient.patAccountNo ?? '' }}
+              </span>
               <span *ngSwitchCase="'patDateTimeCreated'">
                 {{ patient.patDateTimeCreated | date:'short' }}
               </span>
@@ -133,26 +136,27 @@
         <button class="tab active">Values</button>
       </div>
 
-      <!-- Text/Numeric Input for numeric columns -->
-      <div *ngIf="activeFilterColumnKey && isNumericColumn(activeFilterColumnKey)" class="filter-popup-input">
+      <!-- Text input for numeric columns and Account No (PatAccountNo per DBML) -->
+      <div *ngIf="activeFilterColumnKey && (isNumericColumn(activeFilterColumnKey) || isTextFilterColumn(activeFilterColumnKey))" class="filter-popup-input">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">
           {{ getColumnLabel(activeFilterColumnKey) }}
         </label>
         <input
           type="text"
           [(ngModel)]="popupTextFilter"
-          [placeholder]="activeFilterColumnKey === 'patID' ? 'Enter Patient ID (e.g., 123456 or 123,456,789)' : 'Enter value(s), comma-separated'"
+          [placeholder]="activeFilterColumnKey === 'patID' ? 'Enter Patient ID (e.g., 123456)' : activeFilterColumnKey === 'patAccountNo' ? 'Enter Account Number to filter' : 'Enter value(s), comma-separated'"
           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
           (keyup.enter)="applyValueFilterAndClose()"
         />
         <div style="margin-top: 8px; font-size: 0.85em; color: #666;">
           <span *ngIf="activeFilterColumnKey === 'patID'">Enter one or more Patient IDs, separated by commas</span>
-          <span *ngIf="activeFilterColumnKey !== 'patID'">Enter one or more values, separated by commas</span>
+          <span *ngIf="activeFilterColumnKey === 'patAccountNo'">Filters by Patient Account Number (PatAccountNo)</span>
+          <span *ngIf="activeFilterColumnKey !== 'patID' && activeFilterColumnKey !== 'patAccountNo'">Enter one or more values, separated by commas</span>
         </div>
       </div>
 
-      <!-- Checkbox-based filter for non-numeric columns -->
-      <div *ngIf="!activeFilterColumnKey || !isNumericColumn(activeFilterColumnKey)">
+      <!-- Checkbox-based filter for other columns -->
+      <div *ngIf="activeFilterColumnKey && !isNumericColumn(activeFilterColumnKey) && !isTextFilterColumn(activeFilterColumnKey)">
         <div class="filter-popup-search">
           <input
             type="text"

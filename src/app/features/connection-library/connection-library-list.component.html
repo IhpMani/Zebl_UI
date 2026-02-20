@@ -1,0 +1,34 @@
+<div class="connection-library-list-container">
+  <div class="left-panel">
+    <div class="panel-header">
+      <h3>Entry Name</h3>
+    </div>
+
+    <div *ngIf="loading" class="loading">Loading...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <div class="connection-list">
+      <div class="connection-item add-entry" (click)="onAddNew()">
+        Add new entry...
+      </div>
+      <div
+        *ngFor="let connection of connections"
+        class="connection-item"
+        [class.selected]="isSelected(connection.id)"
+        (click)="selectConnection(connection.id)"
+      >
+        {{ connection.name }}
+      </div>
+      <div *ngIf="connections.length === 0 && !loading" class="empty-state">
+        No entries. Click "Add new entry..." to create one.
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <router-outlet></router-outlet>
+    <div *ngIf="!hasActiveChildRoute" class="empty-detail">
+      <p>Select an entry from the list or click "Add new entry..." to create one.</p>
+    </div>
+  </div>
+</div>

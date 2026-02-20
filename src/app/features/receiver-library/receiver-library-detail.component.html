@@ -1,0 +1,219 @@
+<div class="receiver-library-detail-container">
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading">Loading receiver library...</div>
+  </div>
+
+  <div *ngIf="error" class="error-panel">
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="onClose()">Close</button>
+  </div>
+
+  <form [formGroup]="form" *ngIf="!loading && !error" class="receiver-library-form">
+    <!-- Action Buttons Top Right -->
+    <div class="action-buttons-top">
+      <button type="button" class="btn-action" (click)="onSaveAndNew()" [disabled]="form.invalid || saving">
+        Save & New
+      </button>
+      <button type="button" class="btn-action" (click)="onSaveAndClose()" [disabled]="form.invalid || saving">
+        Save & Close
+      </button>
+      <button type="button" class="btn-action" (click)="onClose()">
+        Close
+      </button>
+      <button type="button" class="btn-delete" (click)="onDelete()" [disabled]="isNew || saving">
+        Delete
+      </button>
+    </div>
+
+    <!-- Top Row -->
+    <div class="top-row">
+      <div class="form-field">
+        <label>Library Entry Name (Required):</label>
+        <input type="text" formControlName="libraryEntryName" class="form-input" />
+        <span *ngIf="form.get('libraryEntryName')?.invalid && form.get('libraryEntryName')?.touched" class="error-text">
+          Required
+        </span>
+      </div>
+      
+      <div class="form-field">
+        <label>Export Format:</label>
+        <select formControlName="exportFormat" class="form-input">
+          <option [value]="null">Select Export Format</option>
+          <option *ngFor="let f of exportFormats" [value]="f.value">
+            {{ f.name }}
+          </option>
+        </select>
+        <span *ngIf="form.get('exportFormat')?.invalid && form.get('exportFormat')?.touched" class="error-text">
+          Required
+        </span>
+      </div>
+      
+      <div class="form-field">
+        <label>Claim Type:</label>
+        <select formControlName="claimType" class="form-input">
+          <option value="">Select Claim Type</option>
+          <option value="Chargeable">Chargeable</option>
+          <option value="Reporting">Reporting</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Submitter Information Panel -->
+    <div class="section-panel">
+      <div class="section-title">Submitter Information - Loop 1000A - NM1 and PER Segments</div>
+      <div class="panel-content grid-2-col">
+        <div class="form-field">
+          <label>Type:</label>
+          <select formControlName="submitterType" class="form-input">
+            <option [value]="null">Select Type</option>
+            <option [value]="1">1 Person</option>
+            <option [value]="2">2 Non-Person Entity</option>
+          </select>
+        </div>
+        
+        <div class="form-field">
+          <label>Business Name or Last Name:</label>
+          <input type="text" formControlName="businessOrLastName" class="form-input" />
+        </div>
+        
+        <div class="form-field">
+          <label>First Name:</label>
+          <input type="text" formControlName="firstName" class="form-input" />
+        </div>
+        
+        <div class="form-field">
+          <label>Submitter ID:</label>
+          <input type="text" formControlName="submitterId" class="form-input" />
+        </div>
+        
+        <div class="form-field">
+          <label>Contact Name:</label>
+          <input type="text" formControlName="contactName" class="form-input" />
+        </div>
+        
+        <div class="form-field contact-type-phone">
+          <div class="type-field">
+            <label>Type:</label>
+            <select formControlName="contactType" class="form-input contact-type-select">
+              <option value="">Select Type</option>
+              <option value="TE">TE</option>
+              <option value="EM">EM</option>
+              <option value="FX">FX</option>
+            </select>
+          </div>
+          <div class="phone-field">
+            <label>Phone Number, Email Address, or Other:</label>
+            <input type="text" formControlName="contactValue" class="form-input contact-phone-input" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receiver Information Panel -->
+    <div class="section-panel">
+      <div class="section-title">Receiver Information - Loop 1000B</div>
+      <div class="panel-content grid-2-col">
+        <div class="form-field">
+          <label>Receiver Name NM103:</label>
+          <input type="text" formControlName="receiverName" class="form-input" />
+        </div>
+        
+        <div class="form-field">
+          <label>Receiver ID NM109:</label>
+          <input type="text" formControlName="receiverId" class="form-input" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Information (ISA/GS) Panel -->
+    <div class="section-panel">
+      <div class="section-title">Header Information - ISA and GS Segments</div>
+      <div class="panel-content grid-2-col">
+        <div class="form-field">
+          <label>Authorization Information ISA01 and ISA02:</label>
+          <div class="inline-combo">
+            <select formControlName="authorizationInfoQualifier" class="form-input combo-select">
+              <option value="00">00 - No Authorization Information Present</option>
+              <option value="03">03 - Additional Data Identification</option>
+            </select>
+            <input type="text" formControlName="authorizationInfo" class="form-input combo-input" />
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label>Password Information ISA03 and ISA04:</label>
+          <div class="inline-combo">
+            <select formControlName="securityInfoQualifier" class="form-input combo-select">
+              <option value="00">00 - No Security Information Present</option>
+              <option value="01">01 - Password</option>
+            </select>
+            <input type="text" formControlName="securityInfo" class="form-input combo-input" />
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label>Sender ID ISA05 and ISA06:</label>
+          <div class="inline-combo">
+            <select formControlName="senderIdQualifier" class="form-input combo-select">
+              <option value="01">01 - Duns</option>
+              <option value="14">14 - Duns Plus Suffix</option>
+              <option value="20">20 - Health Industry Number (HIN)</option>
+              <option value="27">27 - Carrier ID Number assigned by HCFA</option>
+              <option value="28">28 - Fiscal Intermediary ID assigned by HCFA</option>
+              <option value="29">29 - Medicare Provider and Supplier ID assigned by HCFA</option>
+              <option value="30">30 - Federal Tax ID Number</option>
+              <option value="33">33 - National Association of Insurance Commissioners</option>
+              <option value="ZZ">ZZ - Mutually Defined</option>
+            </select>
+            <input type="text" formControlName="senderId" class="form-input combo-input" />
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label>Interchange Receiver ID ISA07 and ISA08:</label>
+          <div class="inline-combo">
+            <select formControlName="interchangeReceiverIdQualifier" class="form-input combo-select">
+              <option value="01">01 - Duns</option>
+              <option value="14">14 - Duns Plus Suffix</option>
+              <option value="20">20 - Health Industry Number (HIN)</option>
+              <option value="27">27 - Carrier ID Number assigned by HCFA</option>
+              <option value="28">28 - Fiscal Intermediary ID assigned by HCFA</option>
+              <option value="29">29 - Medicare Provider and Supplier ID assigned by HCFA</option>
+              <option value="30">30 - Federal Tax ID Number</option>
+              <option value="33">33 - National Association of Insurance Commissioners</option>
+              <option value="ZZ">ZZ - Mutually Defined</option>
+            </select>
+            <input type="text" formControlName="interchangeReceiverId" class="form-input combo-input" />
+          </div>
+        </div>
+        
+        <div class="form-field checkbox-field">
+          <input type="checkbox" formControlName="acknowledgeRequested" class="checkbox-input" id="ackRequested" />
+          <label for="ackRequested">Acknowledge Requested ISA14:</label>
+        </div>
+        
+        <div class="form-field">
+          <label>Test/Prod Indicator ISA15:</label>
+          <select formControlName="testProdIndicator" class="form-input">
+            <option value="P">P - Production Data</option>
+            <option value="T">T - Test Data</option>
+          </select>
+        </div>
+        
+        <div class="form-field">
+          <label>Sender Code GS02:</label>
+          <input type="text" formControlName="senderCode" class="form-input" />
+        </div>
+        
+        <div class="form-field">
+          <label>Receiver Code GS03:</label>
+          <input type="text" formControlName="receiverCode" class="form-input" />
+        </div>
+      </div>
+      
+      <div class="important-note">
+        IMPORTANT: Fields may remain blank if not required. Please contact the payer for required fields.
+      </div>
+    </div>
+  </form>
+</div>

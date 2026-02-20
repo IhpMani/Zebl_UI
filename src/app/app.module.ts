@@ -23,6 +23,7 @@ import { LoginComponent } from './login/login.component';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
+import { EdiReportsComponent } from './edi-reports/edi-reports.component';
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interf
     ClaimNoteListComponent,
     LoginComponent,
     UserManagementComponent,
-    InterfaceDataReviewComponent
+    InterfaceDataReviewComponent,
+    EdiReportsComponent
   ],
   imports: [
     BrowserModule,

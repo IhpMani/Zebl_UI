@@ -34,6 +34,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   availableRelatedColumns: Array<{ table: string; key: string; label: string; path: string }> = [];
   selectedAdditionalColumns: Set<string> = new Set<string>();
 
+  /** Patient list: only these columns shown by default. All from Patient table. */
   columns: Array<{
     key: string;
     label: string;
@@ -43,17 +44,18 @@ export class PatientListComponent implements OnInit, OnDestroy {
     table?: string;
   }> = [
     { key: 'patID', label: 'Patient ID', visible: true, filterValue: '' },
+    { key: 'patAccountNo', label: 'Account No', visible: true, filterValue: '' },
     { key: 'patFullNameCC', label: 'Full Name', visible: true, filterValue: '' },
-    { key: 'patFirstName', label: 'First Name', visible: false, filterValue: '' },
-    { key: 'patLastName', label: 'Last Name', visible: false, filterValue: '' },
     { key: 'patDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'patActive', label: 'Active', visible: true, filterValue: '' },
-    { key: 'patAccountNo', label: 'Account No', visible: true, filterValue: '' },
-    { key: 'patBirthDate', label: 'Birth Date', visible: false, filterValue: '' },
     { key: 'patPhoneNo', label: 'Phone', visible: true, filterValue: '' },
+    { key: 'patTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
+    { key: 'patClassification', label: 'Facility', visible: true, filterValue: '' },
+    { key: 'patFirstName', label: 'First Name', visible: false, filterValue: '' },
+    { key: 'patLastName', label: 'Last Name', visible: false, filterValue: '' },
+    { key: 'patBirthDate', label: 'Birth Date', visible: false, filterValue: '' },
     { key: 'patCity', label: 'City', visible: false, filterValue: '' },
     { key: 'patState', label: 'State', visible: false, filterValue: '' },
-    { key: 'patTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
     { key: 'patSSN', label: 'SSN', visible: false, filterValue: '' },
     { key: 'patSex', label: 'Sex', visible: false, filterValue: '' },
     { key: 'patAddress', label: 'Address', visible: false, filterValue: '' },
@@ -61,7 +63,6 @@ export class PatientListComponent implements OnInit, OnDestroy {
     { key: 'patCellPhoneNo', label: 'Cell Phone', visible: false, filterValue: '' },
     { key: 'patPriEmail', label: 'Email', visible: false, filterValue: '' },
     { key: 'patBillingPhyFID', label: 'Billing Physician ID', visible: false, filterValue: '' },
-    { key: 'patClassification', label: 'Facility', visible: true, filterValue: '' },
     { key: 'patMI', label: 'MI', visible: false, filterValue: '' },
     { key: 'patDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'patCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
@@ -251,6 +252,14 @@ export class PatientListComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Account No filter (backend searchText searches PatAccountNo per DBML)
+    if (this.columnValueFilters['patAccountNo'] && this.columnValueFilters['patAccountNo'].size > 0) {
+      const accountVals = Array.from(this.columnValueFilters['patAccountNo']).filter(v => v !== '(Blank)');
+      if (accountVals.length > 0) {
+        filters.searchText = accountVals[0];
+      }
+    }
+
     // Text search across columns (for non-numeric columns)
     const textFilterColumns = this.columns.filter(c => 
       c.filterValue && 
@@ -352,7 +361,11 @@ export class PatientListComponent implements OnInit, OnDestroy {
     if (columnDefinition?.isRelatedColumn && patient.additionalColumns) {
       return patient.additionalColumns[key];
     }
-    return (patient as any)[key];
+    const p = patient as any;
+    if (key === 'patAccountNo') {
+      return p.patAccountNo ?? p.PatAccountNo ?? '';
+    }
+    return p[key];
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {
@@ -374,8 +387,9 @@ export class PatientListComponent implements OnInit, OnDestroy {
     this.filterPopupPosition = { topPx, leftPx };
     
     const isNumeric = this.isNumericColumn(columnKey);
+    const isTextFilter = this.isTextFilterColumn(columnKey);
     
-    if (isNumeric) {
+    if (isNumeric || isTextFilter) {
       const existing = this.columnValueFilters[columnKey];
       if (existing && existing.size > 0) {
         const values = Array.from(existing).filter(v => v !== '(Blank)');
@@ -417,6 +431,11 @@ export class PatientListComponent implements OnInit, OnDestroy {
   isNumericColumn(columnKey: string): boolean {
     const numericColumns = ['patID', 'patTotalBalanceCC'];
     return numericColumns.includes(columnKey);
+  }
+
+  /** Account No uses a text filter (backend searchText searches PatAccountNo). */
+  isTextFilterColumn(columnKey: string): boolean {
+    return columnKey === 'patAccountNo';
   }
 
   closeFilterPopup(event?: MouseEvent): void {
@@ -478,8 +497,9 @@ export class PatientListComponent implements OnInit, OnDestroy {
     if (this.activeFilterColumnKey) {
       const key = this.activeFilterColumnKey;
       const isNumeric = this.isNumericColumn(key);
+      const isTextFilter = this.isTextFilterColumn(key);
 
-      if (isNumeric) {
+      if (isNumeric || isTextFilter) {
         const textValue = this.popupTextFilter.trim();
         if (textValue) {
           const values = textValue.split(',').map(v => v.trim()).filter(v => v);

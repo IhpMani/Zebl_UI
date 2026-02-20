@@ -17,6 +17,7 @@ import { LoginComponent } from './login/login.component';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
+import { EdiReportsComponent } from './edi-reports/edi-reports.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -35,7 +36,10 @@ const routes: Routes = [
   { path: 'physicians', component: PhysicianLibraryComponent, canActivate: [AuthGuard] },
   { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
   { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
+  { path: 'edi-reports', component: EdiReportsComponent, canActivate: [AuthGuard] },
   { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },
+  { path: 'receiver-library', loadChildren: () => import('./features/receiver-library/receiver-library.module').then(m => m.ReceiverLibraryModule), canActivate: [AuthGuard] },
+  { path: 'connection-library', loadChildren: () => import('./features/connection-library/connection-library.module').then(m => m.ConnectionLibraryModule), canActivate: [AuthGuard] },
 ];
 
 @NgModule({

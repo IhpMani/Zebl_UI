@@ -26,12 +26,12 @@ export class UserManagementComponent implements OnInit {
     this.error = null;
     this.usersApi.getUsers().subscribe({
       next: (u) => {
-        this.users = u;
+        this.users = Array.isArray(u) ? u : [];
         this.loading = false;
       },
       error: (err) => {
         this.loading = false;
-        this.error = err?.error?.error ?? 'Failed to load users';
+        this.error = this.getErrorMessage(err, 'Failed to load users');
       }
     });
   }
@@ -52,7 +52,7 @@ export class UserManagementComponent implements OnInit {
           this.refresh();
         },
         error: (err) => {
-          this.error = err?.error?.error ?? 'Failed to create user';
+          this.error = this.getErrorMessage(err, 'Failed to create user');
         }
       });
   }
@@ -62,9 +62,21 @@ export class UserManagementComponent implements OnInit {
     req.subscribe({
       next: () => this.refresh(),
       error: (err) => {
-        this.error = err?.error?.error ?? 'Failed to update user';
+        this.error = this.getErrorMessage(err, 'Failed to update user');
       }
     });
+  }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    if (err?.status === 403) {
+      return 'Access denied. Admin rights required.';
+    }
+    const body = err?.error;
+    if (body && typeof body === 'object') {
+      return (body.error ?? body.message ?? body.Message) || fallback;
+    }
+    if (typeof body === 'string') return body;
+    return err?.message || fallback;
   }
 }
 

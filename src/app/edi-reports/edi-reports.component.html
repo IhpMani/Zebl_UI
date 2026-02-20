@@ -1,0 +1,126 @@
+<div class="edi-reports-container">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <label class="dropdown-label">Connection:</label>
+      <select [(ngModel)]="selectedConnectionId" class="dropdown" (ngModelChange)="loadReports()">
+        <option value="">-- Select --</option>
+        <option *ngFor="let c of connections" [value]="c.id">{{ c.name }}</option>
+      </select>
+      <label class="dropdown-label">Receiver:</label>
+      <select [(ngModel)]="selectedReceiverId" class="dropdown">
+        <option value="">-- Select --</option>
+        <option *ngFor="let r of receivers" [value]="r.id">{{ r.libraryEntryName }}</option>
+      </select>
+      <label class="filter-label">
+        <input type="checkbox" [(ngModel)]="showArchived" (ngModelChange)="loadReports()" />
+        Show archived
+      </label>
+      <input type="text" class="filter-input" [(ngModel)]="filterText" placeholder="Filter..." />
+    </div>
+    <div class="toolbar-buttons">
+      <button type="button" class="btn btn-primary" (click)="getReports()" [disabled]="loading || !selectedConnectionId || !selectedReceiverId">Get Reports</button>
+      <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Reports</button>
+      <button type="button" class="btn btn-secondary" (click)="refreshReports()" [disabled]="loading">Refresh Reports</button>
+      <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-bar">{{ error }}</div>
+
+  <div class="grid-wrapper">
+    <table class="reports-grid">
+      <thead>
+        <tr>
+          <th (click)="sortBy('fileName')" class="sortable">Name {{ sortColumn === 'fileName' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('createdAt')" class="sortable">Date Created {{ sortColumn === 'createdAt' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('fileType')" class="sortable">Type {{ sortColumn === 'fileType' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('fileSize')" class="sortable">Size {{ sortColumn === 'fileSize' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('status')" class="sortable">Status {{ sortColumn === 'status' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('note')" class="sortable">Note {{ sortColumn === 'note' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('payerName')" class="sortable">Payer {{ sortColumn === 'payerName' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('paymentAmount')" class="sortable">Pmt Amt {{ sortColumn === 'paymentAmount' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th>Date</th>
+          <th (click)="sortBy('traceNumber')" class="sortable">Trace Number {{ sortColumn === 'traceNumber' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th (click)="sortBy('direction')" class="sortable">Method {{ sortColumn === 'direction' ? (sortAsc ? '↑' : '↓') : '' }}</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading"><td colspan="12" class="loading-cell">Loading...</td></tr>
+        <tr *ngFor="let r of filteredReports" (dblclick)="onRowDoubleClick(r)" [class.archived]="r.isArchived" [class.unread]="!r.isRead">
+          <td>{{ r.fileName }}</td>
+          <td>{{ r.createdAt | date:'short' }}</td>
+          <td>{{ r.fileType }}</td>
+          <td>{{ formatFileSize(r.fileSize) }}</td>
+          <td><span [class]="'status ' + statusClass(r.status)">{{ r.status }}</span></td>
+          <td>{{ r.note || '—' }}</td>
+          <td>{{ r.payerName || '—' }}</td>
+          <td>{{ r.paymentAmount != null ? (r.paymentAmount | number:'1.2-2') : '—' }}</td>
+          <td>{{ dateDisplay(r) }}</td>
+          <td>{{ r.traceNumber || '—' }}</td>
+          <td>{{ r.direction }}</td>
+          <td class="action-buttons">
+            <button type="button" class="btn-link" (click)="openFullViewer(r); $event.stopPropagation()" title="Open">Open</button>
+            <button type="button" class="btn-link" (click)="openNoteEditor(r); $event.stopPropagation()" title="Save Notes">Notes</button>
+            <button type="button" class="btn-link" (click)="exportFile(r); $event.stopPropagation()" title="Export File">Export</button>
+            <button type="button" class="btn-link" (click)="markAsRead(r); $event.stopPropagation()" [disabled]="r.isRead" title="Mark as Read">Read</button>
+            <button type="button" class="btn-link" (click)="archiveReport(r); $event.stopPropagation()" [disabled]="r.isArchived" title="Archive">Archive</button>
+            <button type="button" class="btn-link btn-danger" (click)="deleteReport(r); $event.stopPropagation()" title="Delete">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && filteredReports.length === 0"><td colspan="12" class="empty-cell">No reports.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="previewContent !== null" class="preview-panel">
+    <div class="preview-header">
+      <strong>{{ previewFileName }}</strong>
+      <button type="button" class="btn btn-sm" (click)="close()">×</button>
+    </div>
+    <pre class="preview-content">{{ previewContent }}</pre>
+  </div>
+
+  <div *ngIf="showAddForm" class="modal-overlay" (click)="cancelAddForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Add Reports (Generate 837/270)</h3>
+      <div *ngIf="addFormError" class="error-text">{{ addFormError }}</div>
+      <div class="form-row">
+        <label>Receiver:</label>
+        <select [(ngModel)]="addForm.receiverLibraryId" class="form-input">
+          <option value="">-- Select --</option>
+          <option *ngFor="let r of receivers" [value]="r.id">{{ r.libraryEntryName }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Claim ID:</label>
+        <input type="number" [(ngModel)]="addForm.claimId" class="form-input" min="1" />
+      </div>
+      <div class="form-row">
+        <label>File type:</label>
+        <select [(ngModel)]="addForm.fileType" class="form-input">
+          <option value="837">837</option>
+          <option value="270">270</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" (click)="submitAddForm()" [disabled]="addFormSaving">Generate</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelAddForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showNoteModal" class="modal-overlay" (click)="cancelNoteEdit()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Edit Note</h3>
+      <div class="form-row">
+        <label>Note (max 255 characters):</label>
+        <textarea [(ngModel)]="noteEditText" class="form-input" rows="4" maxlength="255"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" (click)="saveNote()" [disabled]="noteSaving">Save Notes</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelNoteEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

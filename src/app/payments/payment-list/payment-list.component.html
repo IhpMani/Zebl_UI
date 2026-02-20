@@ -30,9 +30,12 @@
           <td *ngFor="let col of visibleColumns">
             <ng-container [ngSwitch]="col.key">
               <span *ngSwitchCase="'pmtDateTimeCreated'">{{ payment.pmtDateTimeCreated | date:'short' }}</span>
+              <span *ngSwitchCase="'pmtDateTimeModified'">{{ payment.pmtDateTimeModified | date:'short' }}</span>
               <span *ngSwitchCase="'pmtDate'">{{ payment.pmtDate | date:'shortDate' }}</span>
-              <span *ngSwitchCase="'pmtAmount'">{{ payment.pmtAmount | currency:'USD':'symbol':'1.2-2' }}</span>
-              <span *ngSwitchCase="'pmtRemainingCC'">{{ payment.pmtRemainingCC | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtAmount'" [class.amount-zero]="payment.pmtAmount === 0">{{ payment.pmtAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtRemainingCC'" [class.remaining-positive]="(payment.pmtRemainingCC ?? 0) > 0">{{ payment.pmtRemainingCC | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtChargedPlatformFee'">{{ payment.pmtChargedPlatformFee | currency:'USD':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'pmtSource'">—</span>
               <span *ngSwitchCase="'pmtDisbursedTRIG'">{{ payment.pmtDisbursedTRIG | currency:'USD':'symbol':'1.2-2' }}</span>
               <span *ngSwitchDefault>{{ getCellValue(payment, col.key) }}</span>
             </ng-container>

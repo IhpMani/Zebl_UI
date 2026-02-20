@@ -1,0 +1,57 @@
+<div class="receiver-library-list-container">
+  <div class="left-panel">
+    <div class="panel-header">
+      <h3>Entry Name</h3>
+      <button class="btn-add" (click)="onAddNew()">Add New</button>
+    </div>
+    
+    <div *ngIf="loading" class="loading">Loading...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
+    
+    <div class="library-list">
+      <div class="library-item add-entry" (click)="onAddNew()">
+        <div class="library-name">Add new entry...</div>
+      </div>
+      <div
+        *ngFor="let library of libraries"
+        class="library-item"
+        [class.selected]="isSelected(library.id)"
+        (click)="selectLibrary(library.id)"
+      >
+        <div class="library-name">{{ library.libraryEntryName }}</div>
+        <div class="library-meta">
+          <span class="format">{{ library.exportFormat }}</span>
+          <span class="status" [class.active]="library.isActive" [class.inactive]="!library.isActive">
+            {{ library.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
+      <div *ngIf="libraries.length === 0 && !loading" class="empty-state">
+        No receiver libraries found.
+      </div>
+    </div>
+    
+    <div class="checkboxes-section">
+      <label class="checkbox-label">
+        <input type="checkbox" checked />
+        <span>Strip extra characters from ID fields.</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" />
+        <span>Zip export file.</span>
+      </label>
+    </div>
+    
+    <div class="notes-section">
+      <textarea class="notes-textarea" placeholder="Type your notes here..."></textarea>
+      <div class="notes-hint">These are for your reference only...</div>
+    </div>
+  </div>
+  
+  <div class="right-panel">
+    <router-outlet></router-outlet>
+    <div *ngIf="!hasActiveChildRoute" class="empty-detail">
+      <p>Select a receiver library from the list or click "Add new entry..." to create one.</p>
+    </div>
+  </div>
+</div>

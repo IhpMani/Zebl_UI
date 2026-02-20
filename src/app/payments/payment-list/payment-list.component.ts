@@ -30,37 +30,30 @@ export class PaymentListComponent implements OnInit, OnDestroy {
   availableRelatedColumns: Array<{ table: string; key: string; label: string; path: string }> = [];
   selectedAdditionalColumns: Set<string> = new Set<string>();
 
+  /** Only these columns, in this order (per user request). */
   columns: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; }> = [
-    { key: 'pmtID', label: 'Payment ID', visible: true, filterValue: '' },
-    { key: 'pmtDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
-    { key: 'pmtDate', label: 'Payment Date', visible: true, filterValue: '' },
+    { key: 'patAccountNo', label: 'Account #', visible: true, filterValue: '' },
+    { key: 'pmtOtherReference1', label: 'Addl Ref #', visible: true, filterValue: '' },
     { key: 'pmtAmount', label: 'Amount', visible: true, filterValue: '' },
-    { key: 'pmtPatFID', label: 'Patient ID', visible: true, filterValue: '' },
-    { key: 'pmtPayFID', label: 'Payer ID', visible: false, filterValue: '' },
+    { key: 'pmtChargedPlatformFee', label: 'Charged Platform Fee', visible: true, filterValue: '' },
+    { key: 'pmtDateTimeCreated', label: 'Created Timestamp', visible: true, filterValue: '' },
+    { key: 'pmtCreatedUserName', label: 'Created User', visible: true, filterValue: '' },
+    { key: 'pmtLastUserName', label: 'Modified User', visible: true, filterValue: '' },
+    { key: 'pmtRemainingCC', label: 'Remaining Bal', visible: true, filterValue: '' },
+    { key: 'pmtSource', label: 'Source', visible: true, filterValue: '' },
+    { key: 'patLastName', label: 'Last Name', visible: true, filterValue: '' },
+    { key: 'patFirstName', label: 'First Name', visible: true, filterValue: '' },
     { key: 'pmtMethod', label: 'Method', visible: true, filterValue: '' },
-    { key: 'pmt835Ref', label: '835 Ref', visible: false, filterValue: '' },
-    { key: 'pmtDisbursedTRIG', label: 'Disbursed', visible: false, filterValue: '' },
-    { key: 'pmtRemainingCC', label: 'Remaining', visible: true, filterValue: '' },
-    { key: 'pmtBFEPFID', label: 'Billing/Entity Physician ID', visible: false, filterValue: '' },
-    { key: 'pmtAuthCode', label: 'Auth Code', visible: false, filterValue: '' },
-    { key: 'pmtNote', label: 'Note', visible: false, filterValue: '' },
-    { key: 'pmtDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
-    { key: 'pmtCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
-    { key: 'pmtLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
-    { key: 'pmtCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
-    { key: 'pmtLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
-    { key: 'pmtCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
-    { key: 'pmtLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
-    { key: 'pmtBatchOperationReference', label: 'Batch Operation Reference', visible: false, filterValue: '' },
-    { key: 'pmtOtherReference1', label: 'Other Reference 1', visible: false, filterValue: '' },
-    { key: 'pmtOtherReference2', label: 'Other Reference 2', visible: false, filterValue: '' },
-    { key: 'pmtCardEntryContext', label: 'Card Entry Context', visible: false, filterValue: '' },
-    { key: 'pmtCardEntryMethod', label: 'Card Entry Method', visible: false, filterValue: '' },
-    { key: 'pmtNameOnCard', label: 'Name On Card', visible: false, filterValue: '' },
-    { key: 'pmtIssuerResponseCode', label: 'Issuer Response Code', visible: false, filterValue: '' },
-    { key: 'pmtResponseCode', label: 'Response Code', visible: false, filterValue: '' },
-    { key: 'pmtChargedPlatformFee', label: 'Charged Platform Fee', visible: false, filterValue: '' },
-    { key: 'pmtTransactionType', label: 'Transaction Type', visible: false, filterValue: '' }
+    { key: 'pmtPayerName', label: 'Payer Name', visible: true, filterValue: '' },
+    { key: 'pmtDateTimeModified', label: 'Modified Timestamp', visible: true, filterValue: '' },
+    { key: 'pmtID', label: 'Payment ID', visible: true, filterValue: '' },
+    { key: 'payClassification', label: 'Pay Classification', visible: true, filterValue: '' },
+    { key: 'pmtDate', label: 'Pmt Date', visible: true, filterValue: '' },
+    { key: 'patFullNameCC', label: 'Name', visible: true, filterValue: '' },
+    { key: 'pmtNote', label: 'Note', visible: true, filterValue: '' },
+    { key: 'patClassification', label: 'Pat Classification', visible: true, filterValue: '' },
+    { key: 'pmtPatFID', label: 'Patient ID', visible: true, filterValue: '' },
+    { key: 'pmt835Ref', label: 'Ref #', visible: true, filterValue: '' },
   ];
 
   constructor(private paymentApiService: PaymentApiService, private router: Router) { }
@@ -216,6 +209,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     if (col) { col.filterValue = ''; delete this.columnValueFilters[columnKey]; this.loadPayments(1, this.pageSize); }
   }
   getCellValue(payment: PaymentListItem, key: string): any {
+    if (key === 'pmtSource') return '';
     const columnDefinition = this.columns.find(c => c.key === key);
     if (columnDefinition?.isRelatedColumn && payment.additionalColumns) {
       return payment.additionalColumns[key];

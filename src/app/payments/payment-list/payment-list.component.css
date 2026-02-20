@@ -23,6 +23,9 @@ h2 {
   margin-bottom: 20px;
 }
 
+.amount-zero { color: #94a3b8; }
+.remaining-positive { color: #b91c1c; font-weight: 500; }
+
 .claims-table {
   width: 100%;
   border-collapse: collapse;

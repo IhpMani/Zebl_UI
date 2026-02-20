@@ -1,0 +1,107 @@
+<div class="connection-library-detail-container">
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div *ngIf="error" class="error-panel">
+    <p>{{ error }}</p>
+    <button type="button" class="btn-secondary" (click)="onClose()">Close</button>
+  </div>
+
+  <form [formGroup]="form" *ngIf="!loading && !error" class="connection-library-form" autocomplete="off">
+    <!-- Right-side action buttons (match reference order) -->
+    <div class="action-buttons-right">
+      <button type="button" class="btn-action" (click)="onSaveAndNew()" [disabled]="form.invalid || saving">
+        Save & New
+      </button>
+      <button type="button" class="btn-action" (click)="onSaveAndClose()" [disabled]="form.invalid || saving">
+        Save & Close
+      </button>
+      <button type="button" class="btn-action" (click)="onClose()">Close</button>
+      <button type="button" class="btn-delete" (click)="onDelete()" [disabled]="isNew || saving">Delete</button>
+      <button type="button" class="btn-action" (click)="onTestConnection()" [disabled]="isNew || testing || form.invalid">
+        Test Connection
+      </button>
+    </div>
+
+    <!-- Header: Name and Type -->
+    <div class="form-header">
+      <div class="header-field">
+        <label>Name:</label>
+        <input type="text" formControlName="name" class="form-input header-input" />
+        <span *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="error-text">Required</span>
+      </div>
+      <div class="header-field">
+        <label>Type:</label>
+        <select formControlName="connectionType" class="form-input header-input">
+          <option value="Secure File Transfer">Secure File Transfer</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Secure File Transfer Configuration -->
+    <div class="section-title">Secure File Transfer Configuration</div>
+    <div class="connection-form-grid">
+      <div class="form-field">
+        <label>SFTP User Name:</label>
+        <input type="text" formControlName="username" class="form-input" autocomplete="off" name="sftp-username" />
+        <span *ngIf="form.get('username')?.invalid && form.get('username')?.touched" class="error-text">Required</span>
+      </div>
+      <div class="form-field">
+        <label>SFTP Password:</label>
+        <input type="password" formControlName="password" class="form-input" autocomplete="new-password" name="sftp-password" />
+        <span *ngIf="form.get('password')?.invalid && form.get('password')?.touched" class="error-text">
+          <span *ngIf="isNew">Required</span>
+        </span>
+      </div>
+      <div class="form-field">
+        <label>Host Name:</label>
+        <input type="text" formControlName="host" class="form-input" />
+        <span *ngIf="form.get('host')?.invalid && form.get('host')?.touched" class="error-text">Required</span>
+      </div>
+      <div class="form-field">
+        <label>Port:</label>
+        <input type="number" formControlName="port" class="form-input" min="1" max="65535" />
+        <span *ngIf="form.get('port')?.invalid && form.get('port')?.touched" class="error-text">
+          <span *ngIf="form.get('port')?.errors?.['required']">Required</span>
+          <span *ngIf="form.get('port')?.errors?.['min'] || form.get('port')?.errors?.['max']">1–65535</span>
+        </span>
+      </div>
+      <div class="form-field">
+        <label>Upload Directory:</label>
+        <input type="text" formControlName="uploadDirectory" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Download Directory:</label>
+        <input type="text" formControlName="downloadDirectory" class="form-input" />
+      </div>
+      <div class="form-field full-width">
+        <label>Download File Pattern (Optional):</label>
+        <input type="text" formControlName="downloadPattern" class="form-input" />
+      </div>
+      <div class="form-field checkbox-field">
+        <input type="checkbox" formControlName="autoRenameFiles" class="checkbox-input" id="autoRenameFiles" />
+        <label for="autoRenameFiles">Automatically Name and Save Upload Files</label>
+      </div>
+      <div class="form-field checkbox-field">
+        <input type="checkbox" formControlName="allowMoveOrDelete" class="checkbox-input" id="allowMoveOrDelete" />
+        <label for="allowMoveOrDelete">Allow SFTP Site to Move or Delete Files</label>
+      </div>
+      <div class="form-field">
+        <label>File Extension for Automatically Named Files (Optional):</label>
+        <input type="text" formControlName="autoFileExtension" class="form-input" />
+        <span *ngIf="form.get('autoFileExtension')?.invalid && form.get('autoFileExtension')?.touched" class="error-text">
+          Required when automatically naming files
+        </span>
+      </div>
+      <div class="form-field checkbox-field">
+        <input type="checkbox" formControlName="useWithInterfacesOnly" class="checkbox-input" id="useWithInterfacesOnly" />
+        <label for="useWithInterfacesOnly">For use with Interfaces Only</label>
+      </div>
+      <div class="form-field checkbox-field">
+        <input type="checkbox" formControlName="downloadFromSubdirectories" class="checkbox-input" id="downloadFromSubdirectories" />
+        <label for="downloadFromSubdirectories">Download from Subdirectories</label>
+      </div>
+    </div>
+  </form>
+</div>

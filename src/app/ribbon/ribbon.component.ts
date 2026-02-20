@@ -67,6 +67,16 @@ export class RibbonComponent {
     this.router.navigate(['/physicians']);
   }
 
+  /** EDI Library = Submitter/Receiver library (configure receivers). */
+  goToReceiverLibrary(): void {
+    this.router.navigate(['/receiver-library']);
+  }
+
+  /** EDI Reports = run/generate EDI reports (different from library). */
+  goToEdiReports(): void {
+    this.router.navigate(['/edi-reports']);
+  }
+
   toggleFindDropdown(event: Event): void {
     event.stopPropagation();
     this.showFindDropdown = !this.showFindDropdown;
@@ -151,6 +161,12 @@ export class RibbonComponent {
         break;
       case 'List':
         this.router.navigate(['/lists/list-library']);
+        break;
+      case 'Submitter / Receiver':
+        this.router.navigate(['/receiver-library']);
+        break;
+      case 'EDI Connection':
+        this.router.navigate(['/connection-library']);
         break;
       default:
         console.log(`Library option selected: ${option}`);
