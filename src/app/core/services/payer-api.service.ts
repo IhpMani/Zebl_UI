@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PayersApiResponse } from './payer.models';
+import { PayersApiResponse, PayerDetailDto } from './payer.models';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -15,7 +15,7 @@ export class PayerApiService {
   getPayers(
     page: number = 1,
     pageSize: number = 100,
-    filters?: { inactive?: boolean }
+    filters?: { inactive?: boolean; classificationList?: string }
   ): Observable<PayersApiResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -23,7 +23,26 @@ export class PayerApiService {
     if (filters?.inactive !== undefined) {
       params = params.set('inactive', filters.inactive.toString());
     }
+    if (filters?.classificationList && filters.classificationList.trim()) {
+      params = params.set('classificationList', filters.classificationList.trim());
+    }
     return this.http.get<PayersApiResponse>(this.baseUrl, { params });
+  }
+
+  getById(id: number): Observable<PayerDetailDto> {
+    return this.http.get<PayerDetailDto>(`${this.baseUrl}/${id}`);
+  }
+
+  create(body: Partial<PayerDetailDto>): Observable<PayerDetailDto> {
+    return this.http.post<PayerDetailDto>(this.baseUrl, body);
+  }
+
+  update(id: number, body: Partial<PayerDetailDto>): Observable<PayerDetailDto> {
+    return this.http.put<PayerDetailDto>(`${this.baseUrl}/${id}`, { ...body, payID: id });
+  }
+
+  delete(id: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.baseUrl}/${id}`);
   }
 
   getAvailableColumns(): Observable<any> {

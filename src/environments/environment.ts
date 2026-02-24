@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  // Base URL for API. Empty = relative URLs (/api/...); dev-server proxies /api to backend.
-  apiUrl: ''
+  // Use the same URL as your API (https profile = 7183). Avoids redirect from 5226 → 7183 which breaks CORS.
+  apiUrl: 'https://localhost:7183'
 };
 

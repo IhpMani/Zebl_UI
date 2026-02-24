@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { PayerListItem, PayersApiResponse, PaginationMeta } from '../../core/services/payer.models';
+import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -96,6 +97,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
 
   constructor(
     private payerApiService: PayerApiService,
+    private listApiService: ListApiService,
     private router: Router
   ) { }
 
@@ -156,6 +158,13 @@ export class PayerListComponent implements OnInit, OnDestroy {
       const inactiveArray = Array.from(inactiveSet).filter(s => s !== '(Blank)');
       if (inactiveArray.length === 1) {
         filters.inactive = inactiveArray[0] === 'true';
+      }
+    }
+
+    if (this.columnValueFilters['payClassification'] && this.columnValueFilters['payClassification'].size > 0) {
+      const vals = Array.from(this.columnValueFilters['payClassification']).filter(s => s !== '(Blank)');
+      if (vals.length > 0) {
+        filters.classificationList = vals.join(',');
       }
     }
 
@@ -270,12 +279,37 @@ export class PayerListComponent implements OnInit, OnDestroy {
     let leftPx = Math.round(rect.left);
     if (leftPx + popupWidth > window.innerWidth - 8) leftPx = Math.max(8, window.innerWidth - popupWidth - 8);
     this.filterPopupPosition = { topPx, leftPx };
-    this.popupAllValues = this.getAllUniqueValuesForColumn(columnKey);
-    const existing = this.columnValueFilters[columnKey];
-    this.popupSelectedValues = existing
-      ? new Set<string>(existing)
-      : new Set<string>(this.popupAllValues);
-    this.showFilterPopup = true;
+
+    if (columnKey === 'payClassification') {
+      // Classification: values from List Library "Payer Classification" (linked to Payer.PayClassification)
+      const fromPayers = this.getAllUniqueValuesForColumn(columnKey);
+      this.listApiService.getListValues('Payer Classification')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            const fromList = (res.data || []).map(v => v.value?.trim()).filter(Boolean) || [];
+            const merged = [...new Set([...fromList, ...fromPayers])];
+            merged.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            this.popupAllValues = merged;
+            const existing = this.columnValueFilters[columnKey];
+            this.popupSelectedValues = existing ? new Set<string>(existing) : new Set<string>(this.popupAllValues);
+            this.showFilterPopup = true;
+          },
+          error: () => {
+            this.popupAllValues = fromPayers;
+            const existing = this.columnValueFilters[columnKey];
+            this.popupSelectedValues = existing ? new Set<string>(existing) : new Set<string>(this.popupAllValues);
+            this.showFilterPopup = true;
+          }
+        });
+    } else {
+      this.popupAllValues = this.getAllUniqueValuesForColumn(columnKey);
+      const existing = this.columnValueFilters[columnKey];
+      this.popupSelectedValues = existing
+        ? new Set<string>(existing)
+        : new Set<string>(this.popupAllValues);
+      this.showFilterPopup = true;
+    }
   }
 
   closeFilterPopup(event?: MouseEvent): void {

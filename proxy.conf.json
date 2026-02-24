@@ -1,9 +1,9 @@
 {
   "/api": {
-    "target": "https://localhost:7183",
+    "target": "http://localhost:5226",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "proxyTimeout": 120000
   }
 }
-

@@ -168,6 +168,9 @@ export class RibbonComponent {
       case 'EDI Connection':
         this.router.navigate(['/connection-library']);
         break;
+      case 'Payer':
+        this.router.navigate(['/payer-library/new']);
+        break;
       default:
         console.log(`Library option selected: ${option}`);
         // Placeholder for future routing/functionality

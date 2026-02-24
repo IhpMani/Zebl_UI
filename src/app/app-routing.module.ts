@@ -40,6 +40,7 @@ const routes: Routes = [
   { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },
   { path: 'receiver-library', loadChildren: () => import('./features/receiver-library/receiver-library.module').then(m => m.ReceiverLibraryModule), canActivate: [AuthGuard] },
   { path: 'connection-library', loadChildren: () => import('./features/connection-library/connection-library.module').then(m => m.ConnectionLibraryModule), canActivate: [AuthGuard] },
+  { path: 'payer-library', loadChildren: () => import('./features/payer-library/payer-library.module').then(m => m.PayerLibraryModule), canActivate: [AuthGuard] },
 ];
 
 @NgModule({

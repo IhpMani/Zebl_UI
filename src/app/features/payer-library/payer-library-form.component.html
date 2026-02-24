@@ -1,0 +1,132 @@
+<div class="payer-library-form-container">
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div *ngIf="error" class="error-panel">
+    <p>{{ error }}</p>
+    <button type="button" class="btn-secondary" (click)="error = null">Dismiss</button>
+  </div>
+
+  <form [formGroup]="form" *ngIf="!loading" class="payer-library-form">
+    <div class="action-buttons-right">
+      <button type="button" class="btn-action" (click)="onSaveAndNew()" [disabled]="form.invalid || saving">Save & New</button>
+      <button type="button" class="btn-action" (click)="onSaveAndClose()" [disabled]="form.invalid || saving">Save & Close</button>
+      <button type="button" class="btn-action" (click)="onClose()">Close</button>
+      <button type="button" class="btn-delete" (click)="onDelete()" [disabled]="isNew || saving">Delete</button>
+    </div>
+
+    <div class="form-header">
+      <div class="header-field">
+        <label>Payer Name:</label>
+        <input type="text" formControlName="payName" class="form-input header-input" />
+        <span *ngIf="form.get('payName')?.invalid && form.get('payName')?.touched" class="error-text">Required</span>
+      </div>
+      <div class="header-field">
+        <label>Payer ID:</label>
+        <input type="text" formControlName="payExternalID" class="form-input header-input" />
+        <span *ngIf="form.get('payExternalID')?.invalid && form.get('payExternalID')?.touched" class="error-text">Required when Method is Electronic</span>
+      </div>
+      <div class="header-field">
+        <label>Method:</label>
+        <select formControlName="paySubmissionMethod" class="form-input header-input">
+          <option value="Paper">Paper</option>
+          <option value="Electronic">Electronic</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">Payer details</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Claim Filing Indicator:</label>
+        <input type="text" formControlName="payClaimFilingIndicator" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Claim Type:</label>
+        <select formControlName="payClaimType" class="form-input">
+          <option value="Professional">Professional</option>
+          <option value="Institutional">Institutional</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Insurance Type Code:</label>
+        <input type="text" formControlName="payInsTypeCode" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Classification:</label>
+        <select formControlName="payClassification" class="form-input">
+          <option value="">-- Select --</option>
+          <option *ngFor="let opt of classificationOptions" [value]="opt.value">{{ opt.value }}</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Payment Matching Key:</label>
+        <input type="text" formControlName="payPaymentMatchingKey" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Eligibility Payer ID:</label>
+        <input type="text" formControlName="payEligibilityPayerID" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Follow Up Days:</label>
+        <input type="number" formControlName="payFollowUpDays" class="form-input" min="0" />
+      </div>
+      <div class="form-field">
+        <label>ICD Indicator:</label>
+        <input type="text" formControlName="payICDIndicator" class="form-input" maxlength="1" />
+      </div>
+    </div>
+
+    <div class="section-title">Checkboxes</div>
+    <div class="checkbox-grid">
+      <label class="checkbox-label"><input type="checkbox" formControlName="payIgnoreRenderingProvider" /> Ignore Rendering Provider</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payForwardsClaims" /> Automatically Forwards Claims</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payExportSSN" /> Export Subscriber SSN</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payExportAuthIn2400" /> Export Authorization Loop 2400</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payExportOriginalRefIn2330B" /> Export Original Ref Loop 2330B</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payExportPaymentDateIn2330B" /> Export Payment Date Loop 2330B</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payExportPatientAmtDueIn2430" /> Export Patient Amount Due Loop 2430</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payUseTotalAppliedInBox29" /> Include Adjustments Box 29</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payPrintBox30" /> Print Box 30</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="paySuppressWhenPrinting" /> Suppress Address</label>
+      <label class="checkbox-label"><input type="checkbox" formControlName="payInactive" /> Mark as Inactive</label>
+    </div>
+
+    <div class="section-title">Address & contact</div>
+    <div class="form-grid">
+      <div class="form-field full-width">
+        <label>Address 1:</label>
+        <input type="text" formControlName="payAddr1" class="form-input" />
+      </div>
+      <div class="form-field full-width">
+        <label>Address 2:</label>
+        <input type="text" formControlName="payAddr2" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>City:</label>
+        <input type="text" formControlName="payCity" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>State:</label>
+        <input type="text" formControlName="payState" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>ZIP:</label>
+        <input type="text" formControlName="payZip" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Phone:</label>
+        <input type="text" formControlName="payPhoneNo" class="form-input" />
+      </div>
+      <div class="form-field">
+        <label>Email:</label>
+        <input type="email" formControlName="payEmail" class="form-input" />
+      </div>
+      <div class="form-field full-width">
+        <label>Notes:</label>
+        <textarea formControlName="payNotes" class="form-input" rows="3"></textarea>
+      </div>
+    </div>
+  </form>
+</div>
