@@ -29,12 +29,13 @@ export class ConnectionLibraryDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
-    if (idParam === 'new') {
+    if (idParam === 'new' || !idParam || idParam === 'null') {
       this.isNew = true;
-    } else if (idParam) {
+      this.currentId = null;
+    } else {
       this.currentId = idParam;
     }
-    
+
     this.buildForm();
 
     if (this.currentId) {
@@ -55,8 +56,8 @@ export class ConnectionLibraryDetailComponent implements OnInit {
       connectionType: ['Secure File Transfer'],
       host: ['', Validators.required],
       port: [22, [Validators.required, Validators.min(1), Validators.max(65535)]],
-      username: ['', this.isNew ? Validators.required : []],
-      password: [this.isNew ? '' : '', this.isNew ? Validators.required : []],
+      username: ['', Validators.required],
+      password: ['', this.isNew ? Validators.required : []],
       uploadDirectory: [''],
       downloadDirectory: [''],
       downloadPattern: [''],
@@ -91,7 +92,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
           name: connection.name,
           host: connection.host,
           port: connection.port,
-          username: '',
+          username: connection.username || '',
           password: '',
           uploadDirectory: connection.uploadDirectory || '',
           downloadDirectory: connection.downloadDirectory || '',
@@ -104,9 +105,8 @@ export class ConnectionLibraryDetailComponent implements OnInit {
           isActive: connection.isActive
         });
         this.loading = false;
-        // Clear credentials again after a tick so browser autofill does not overwrite
+        // Clear password after a tick so browser autofill does not overwrite (username stays for required validation)
         setTimeout(() => {
-          this.form.get('username')?.setValue('', { emitEvent: false });
           this.form.get('password')?.setValue('', { emitEvent: false });
         }, 0);
       },
@@ -119,11 +119,12 @@ export class ConnectionLibraryDetailComponent implements OnInit {
 
   onSaveAndNew(): void {
     if (this.form.invalid) return;
-    
+
     this.saving = true;
     const formValue = this.prepareFormValue(this.form.value);
-    
-    if (this.isNew) {
+    const effectiveId = this.currentId && this.currentId !== 'null' ? this.currentId : null;
+
+    if (this.isNew || !effectiveId) {
       this.service.create(formValue as CreateConnectionLibraryCommand).subscribe({
         next: () => {
           this.saving = false;
@@ -142,7 +143,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
         }
       });
     } else {
-      this.service.update(this.currentId!, formValue as UpdateConnectionLibraryCommand).subscribe({
+      this.service.update(effectiveId, formValue as UpdateConnectionLibraryCommand).subscribe({
         next: () => {
           this.saving = false;
           this.form.reset();
@@ -164,11 +165,12 @@ export class ConnectionLibraryDetailComponent implements OnInit {
 
   onSaveAndClose(): void {
     if (this.form.invalid) return;
-    
+
     this.saving = true;
     const formValue = this.prepareFormValue(this.form.value);
-    
-    if (this.isNew) {
+    const effectiveId = this.currentId && this.currentId !== 'null' ? this.currentId : null;
+
+    if (this.isNew || !effectiveId) {
       this.service.create(formValue as CreateConnectionLibraryCommand).subscribe({
         next: () => {
           this.saving = false;
@@ -180,7 +182,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
         }
       });
     } else {
-      this.service.update(this.currentId!, formValue as UpdateConnectionLibraryCommand).subscribe({
+      this.service.update(effectiveId, formValue as UpdateConnectionLibraryCommand).subscribe({
         next: () => {
           this.saving = false;
           this.router.navigate(['../'], { relativeTo: this.route });
@@ -233,7 +235,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
       },
       error: (err) => {
         this.testing = false;
-        const errorMsg = err?.error?.error?.message || err?.error?.error || err?.message || 'Connection test failed';
+        const errorMsg = err?.error?.message || err?.error?.error?.message || err?.error?.error || err?.message || 'Connection test failed';
         alert('Connection test failed: ' + errorMsg);
       }
     });

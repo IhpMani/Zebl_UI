@@ -13,6 +13,7 @@ import { PatientListComponent } from './patients/patient-list/patient-list.compo
 import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
+import { PaymentEntryComponent } from './payments/payment-entry/payment-entry.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
 import { PayerListComponent } from './payers/payer-list/payer-list.component';
 import { PhysicianListComponent } from './physicians/physician-list/physician-list.component';
@@ -36,6 +37,7 @@ import { EdiReportsComponent } from './edi-reports/edi-reports.component';
     PatientDetailsComponent,
     ServiceListComponent,
     PaymentListComponent,
+    PaymentEntryComponent,
     AdjustmentListComponent,
     PayerListComponent,
     PhysicianListComponent,

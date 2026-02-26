@@ -20,6 +20,8 @@ export class ReceiverLibraryDetailComponent implements OnInit {
   loading = false;
   saving = false;
   error: string | null = null;
+  /** Shown when Save is clicked but required fields are missing (form stays visible). */
+  validationMessage: string | null = null;
   isNew = false;
   currentId: string | null = null;
 
@@ -33,11 +35,13 @@ export class ReceiverLibraryDetailComponent implements OnInit {
   ngOnInit(): void {
     this.buildForm();
     this.loadExportFormats();
-    
+    this.form.valueChanges.subscribe(() => { this.validationMessage = null; });
+
     const idParam = this.route.snapshot.paramMap.get('id');
-    if (idParam === 'new') {
+    if (idParam === 'new' || idParam === 'null' || !idParam || (typeof idParam === 'string' && idParam.trim() === '')) {
       this.isNew = true;
-    } else if (idParam) {
+      this.currentId = null;
+    } else {
       this.currentId = idParam;
       this.loadLibrary(idParam);
     }
@@ -84,11 +88,14 @@ export class ReceiverLibraryDetailComponent implements OnInit {
   private loadExportFormats(): void {
     this.service.getExportFormats().subscribe({
       next: (formats) => {
-        this.exportFormats = formats;
+        this.exportFormats = formats || [];
       },
       error: (err) => {
-        this.error = 'Failed to load export formats';
-        console.error(err);
+        console.error('Export formats load failed', err);
+        this.exportFormats = [
+          { value: '1', name: 'ANSI 837 w/~' },
+          { value: '2', name: 'Eligibility Inquiry 270' }
+        ];
       }
     });
   }
@@ -139,15 +146,23 @@ export class ReceiverLibraryDetailComponent implements OnInit {
   }
 
   onSaveAndNew(): void {
-    if (this.form.invalid) return;
-    
+    console.log('Save & New clicked');
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.validationMessage = 'Please fill in required fields: Library Entry Name and Export Format.';
+      return;
+    }
+    this.validationMessage = null;
+    this.error = null;
     this.saving = true;
     const formValue = this.prepareFormValue(this.form.value);
-    
+    console.log('Sending create payload', formValue);
+
     if (this.isNew) {
       this.service.create(formValue).subscribe({
         next: () => {
           this.saving = false;
+          this.service.notifyListRefresh(); // So Entry Name list shows the new entry
           this.form.reset();
           this.form.patchValue({
             testProdIndicator: 'P',
@@ -161,17 +176,18 @@ export class ReceiverLibraryDetailComponent implements OnInit {
             senderIdQualifier: '01',
             interchangeReceiverIdQualifier: '01'
           });
-          // Stay on new route
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to create receiver library';
+          this.error = err?.error?.message || err?.message || 'Failed to create receiver library';
           this.saving = false;
+          console.error('Receiver library create failed', err);
         }
       });
     } else if (this.currentId) {
       this.service.update(this.currentId, formValue).subscribe({
         next: () => {
           this.saving = false;
+          this.service.notifyListRefresh(); // So Entry Name list stays up to date
           this.form.reset();
           this.form.patchValue({
             testProdIndicator: 'P',
@@ -190,41 +206,58 @@ export class ReceiverLibraryDetailComponent implements OnInit {
           this.router.navigate(['../new'], { relativeTo: this.route });
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to update receiver library';
+          this.error = err?.error?.message || err?.message || 'Failed to update receiver library';
           this.saving = false;
+          console.error('Receiver library update failed', err);
         }
       });
     }
   }
 
   onSaveAndClose(): void {
-    if (this.form.invalid) return;
-    
+    console.log('Save & Close clicked');
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.validationMessage = 'Please fill in required fields: Library Entry Name and Export Format.';
+      return;
+    }
+    this.validationMessage = null;
+    this.error = null;
     this.saving = true;
     const formValue = this.prepareFormValue(this.form.value);
-    
+    console.log('Sending save payload', formValue);
+
     if (this.isNew) {
       this.service.create(formValue).subscribe({
-        next: (created) => {
+        next: () => {
+          console.log('Create success, navigating to list');
           this.saving = false;
           this.router.navigate(['../'], { relativeTo: this.route });
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to create receiver library';
+          const msg = err?.error?.message || err?.message || 'Failed to create receiver library';
+          this.error = msg;
           this.saving = false;
+          console.error('Receiver library create failed', err?.status, err?.error, msg);
         }
       });
     } else if (this.currentId) {
       this.service.update(this.currentId, formValue).subscribe({
         next: () => {
+          console.log('Update success, navigating to list');
           this.saving = false;
           this.router.navigate(['../'], { relativeTo: this.route });
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to update receiver library';
+          const msg = err?.error?.message || err?.message || 'Failed to update receiver library';
+          this.error = msg;
           this.saving = false;
+          console.error('Receiver library update failed', err?.status, err?.error, msg);
         }
       });
+    } else {
+      console.warn('Save & Close: neither isNew nor currentId');
+      this.saving = false;
     }
   }
 
@@ -250,7 +283,13 @@ export class ReceiverLibraryDetailComponent implements OnInit {
   private prepareFormValue(formValue: any): any {
     // Send separate qualifier and value fields to backend (matching backend DTO structure)
     const result = { ...formValue };
-    
+    // Backend expects exportFormat as enum number (1 or 2)
+    const ef = formValue.exportFormat;
+    result.exportFormat = typeof ef === 'number' ? ef : (ef != null ? Number(ef) : undefined);
+    // Backend expects submitterType as int
+    const st = formValue.submitterType;
+    result.submitterType = typeof st === 'number' ? st : (st != null && st !== '' ? Number(st) : 0);
+
     // Map frontend field names to backend field names
     result.authorizationInfoQualifier = formValue.authorizationInfoQualifier || '00';
     result.authorizationInfo = formValue.authorizationInfo || '';

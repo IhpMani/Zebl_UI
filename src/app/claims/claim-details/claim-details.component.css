@@ -320,6 +320,33 @@ textarea {
   padding: 16px;
 }
 
+.notes-section header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.notes-section header h3 {
+  margin: 0;
+}
+
+.notes-section .btn-refresh-notes {
+  padding: 4px 12px;
+  font-size: 13px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #475569;
+}
+
+.notes-section .btn-refresh-notes:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
 .notes-input textarea {
   min-height: 48px;
   height: 48px;

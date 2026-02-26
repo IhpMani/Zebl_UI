@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { EdiReportsApiService, EdiReportDto } from '../core/services/edi-reports-api.service';
 import { ConnectionLibraryApiService } from '../core/services/connection-library-api.service';
 import { ReceiverLibraryApiService, ReceiverLibraryDto } from '../core/services/receiver-library-api.service';
+import { EdiReportCountService } from '../core/services/edi-report-count.service';
 
 @Component({
   selector: 'app-edi-reports',
@@ -26,16 +27,27 @@ export class EdiReportsComponent implements OnInit {
   addFormError: string | null = null;
   previewContent: string | null = null;
   previewFileName: string | null = null;
+  quickViewMessage: string | null = null;
   selectedReport: EdiReportDto | null = null;
   noteEditText = '';
   showNoteModal = false;
   noteSaving = false;
+  checkedIds = new Set<string>();
+  showCheckAllMenu = false;
+  colFilters: Record<string, string> = {
+    fileName: '', createdAt: '', fileType: '', fileSize: '', note: '', payerName: '', paymentAmount: '', date: '', traceNumber: '', direction: ''
+  };
 
   constructor(
     private ediApi: EdiReportsApiService,
     private connectionApi: ConnectionLibraryApiService,
-    private receiverApi: ReceiverLibraryApiService
+    private receiverApi: ReceiverLibraryApiService,
+    private ediReportCountService: EdiReportCountService
   ) {}
+
+  @HostListener('document:click') closeCheckAllMenu(): void {
+    this.showCheckAllMenu = false;
+  }
 
   ngOnInit(): void {
     this.loadConnections();
@@ -73,6 +85,7 @@ export class EdiReportsComponent implements OnInit {
       next: (list) => {
         this.reports = Array.isArray(list) ? list : [];
         this.loading = false;
+        this.ediReportCountService.setCount(this.reports.length);
       },
       error: (err) => {
         this.error = err?.error?.message || err?.message || 'Failed to load reports';
@@ -94,6 +107,15 @@ export class EdiReportsComponent implements OnInit {
         (r.note || '').toLowerCase().includes(q)
       );
     }
+    Object.keys(this.colFilters).forEach(col => {
+      const v = (this.colFilters[col] || '').trim().toLowerCase();
+      if (!v) return;
+      list = list.filter(r => {
+        let val: unknown = (r as unknown as Record<string, unknown>)[col];
+        if (col === 'date') val = this.dateDisplay(r);
+        return String(val ?? '').toLowerCase().includes(v);
+      });
+    });
     if (this.sortColumn) {
       const col = this.sortColumn;
       list.sort((a, b) => {
@@ -104,6 +126,91 @@ export class EdiReportsComponent implements OnInit {
       });
     }
     return list;
+  }
+
+  get singleSelected(): EdiReportDto | null {
+    if (this.checkedIds.size !== 1) return null;
+    const id = Array.from(this.checkedIds)[0];
+    return this.reports.find(r => r.id === id) || null;
+  }
+
+  get isAllChecked(): boolean {
+    const list = this.filteredReports;
+    return list.length > 0 && list.every(r => this.checkedIds.has(r.id));
+  }
+
+  get isSomeChecked(): boolean {
+    const list = this.filteredReports;
+    const checked = list.filter(r => this.checkedIds.has(r.id)).length;
+    return checked > 0 && checked < list.length;
+  }
+
+  isChecked(r: EdiReportDto): boolean {
+    return this.checkedIds.has(r.id);
+  }
+
+  toggleCheck(r: EdiReportDto): void {
+    if (this.checkedIds.has(r.id)) this.checkedIds.delete(r.id);
+    else this.checkedIds.add(r.id);
+    this.checkedIds = new Set(this.checkedIds);
+  }
+
+  toggleCheckAll(): void {
+    if (this.isAllChecked) this.checkNone();
+    else this.checkAll();
+  }
+
+  checkAll(): void {
+    this.filteredReports.forEach(r => this.checkedIds.add(r.id));
+    this.checkedIds = new Set(this.checkedIds);
+    this.showCheckAllMenu = false;
+  }
+
+  checkNone(): void {
+    this.checkedIds.clear();
+    this.checkedIds = new Set(this.checkedIds);
+    this.showCheckAllMenu = false;
+  }
+
+  openSelected(): void {
+    const one = this.singleSelected;
+    if (one) this.openFullViewer(one);
+  }
+
+  saveNotesSelected(): void {
+    const one = this.singleSelected;
+    if (one) this.openNoteEditor(one);
+  }
+
+  exportSelected(): void {
+    const one = this.singleSelected;
+    if (one) this.exportFile(one);
+  }
+
+  archiveChecked(): void {
+    if (this.checkedIds.size === 0) return;
+    if (!confirm(`Archive ${this.checkedIds.size} selected report(s)?`)) return;
+    const ids = Array.from(this.checkedIds);
+    let done = 0;
+    ids.forEach(id => {
+      this.ediApi.archive(id).subscribe({
+        next: () => { done++; if (done === ids.length) { this.checkedIds.clear(); this.loadReports(); } },
+        error: (err) => this.error = err?.error?.error || err?.message || 'Archive failed'
+      });
+    });
+  }
+
+  deleteChecked(): void {
+    if (this.checkedIds.size === 0) return;
+    if (!confirm(`Permanently delete ${this.checkedIds.size} selected report(s)? This cannot be undone.`)) return;
+    const ids = Array.from(this.checkedIds);
+    let done = 0;
+    ids.forEach(id => {
+      this.ediApi.delete(id).subscribe({
+        next: () => { done++; if (done === ids.length) { this.checkedIds.clear(); this.loadReports(); } },
+        error: (err) => this.error = err?.error?.error || err?.message || 'Delete failed'
+      });
+    });
   }
 
   sortBy(col: string): void {
@@ -172,6 +279,7 @@ export class EdiReportsComponent implements OnInit {
   close(): void {
     this.previewContent = null;
     this.previewFileName = null;
+    this.quickViewMessage = null;
   }
 
   archiveReport(r: EdiReportDto): void {
@@ -184,28 +292,36 @@ export class EdiReportsComponent implements OnInit {
   }
 
   onRowDoubleClick(r: EdiReportDto): void {
-    this.openFullViewer(r);
+    this.openQuickView(r);
   }
 
   openFullViewer(r: EdiReportDto): void {
     this.selectedReport = r;
+    this.quickViewMessage = null;
     this.ediApi.getContent(r.id, false).subscribe({
       next: (content) => {
         this.previewContent = content;
         this.previewFileName = r.fileName;
       },
-      error: () => this.error = 'Could not load file content.'
+      error: () => {
+        this.quickViewMessage = "Could not load file content.";
+        this.previewContent = null;
+      }
     });
   }
 
   openQuickView(r: EdiReportDto): void {
     this.selectedReport = r;
+    this.quickViewMessage = null;
     this.ediApi.getContent(r.id, true).subscribe({
       next: (content) => {
         this.previewContent = content;
         this.previewFileName = r.fileName;
       },
-      error: () => this.error = 'Could not load file content.'
+      error: () => {
+        this.quickViewMessage = "'Quick View' is only intended for non-ANSI, non-HTML, text-based reports.";
+        this.previewContent = null;
+      }
     });
   }
 

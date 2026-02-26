@@ -9,12 +9,13 @@
   </div>
 
   <form [formGroup]="form" *ngIf="!loading && !error" class="receiver-library-form">
+    <div *ngIf="validationMessage" class="validation-message">{{ validationMessage }}</div>
     <!-- Action Buttons Top Right -->
     <div class="action-buttons-top">
-      <button type="button" class="btn-action" (click)="onSaveAndNew()" [disabled]="form.invalid || saving">
+      <button type="button" class="btn-action" (click)="onSaveAndNew()" [disabled]="saving">
         Save & New
       </button>
-      <button type="button" class="btn-action" (click)="onSaveAndClose()" [disabled]="form.invalid || saving">
+      <button type="button" class="btn-action" (click)="onSaveAndClose()" [disabled]="saving">
         Save & Close
       </button>
       <button type="button" class="btn-action" (click)="onClose()">

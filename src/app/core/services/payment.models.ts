@@ -37,3 +37,43 @@ export interface PaginationMeta {
   pageSize: number;
   totalCount: number;
 }
+
+/** Payment data for edit form (GET /api/payments/:id). */
+export interface PaymentForEdit {
+  paymentId: number;
+  paymentSource: 0 | 1; // 0 Patient, 1 Payer
+  payerId: number | null;
+  patientId: number;
+  amount: number;
+  date: string; // ISO date
+  method: string | null;
+  reference1: string | null;
+  reference2: string | null;
+  note: string | null;
+  remaining: number | null;
+}
+
+/** One row for the payment entry grid (from GET /api/payments/service-lines). */
+export interface PaymentEntryServiceLine {
+  serviceLineId: number;
+  name: string | null;
+  dos: string | null;
+  proc: string | null;
+  charge: number;
+  responsible: string | null;
+  applied: number;
+  balance: number;
+}
+
+/** User input per adjustment slot (UI only; backend gets groupCode, reasonCode, amount). */
+export interface AdjustmentInput {
+  groupCode?: string;
+  reasonCode?: string;
+  amount?: number;
+}
+
+/** Payment entry grid row: API data + user-editable paid amount and adjustments. No financial math in UI. */
+export interface PaymentEntryRow extends PaymentEntryServiceLine {
+  paidAmount: number;
+  adjustments: AdjustmentInput[];
+}

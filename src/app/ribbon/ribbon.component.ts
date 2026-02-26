@@ -1,17 +1,20 @@
-import { Component, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, HostListener, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { take } from 'rxjs';
+import { take, Subscription } from 'rxjs';
 import { RibbonContextService } from '../core/services/ribbon-context.service';
 import { ClaimApiService } from '../core/services/claim-api.service';
+import { EdiReportCountService } from '../core/services/edi-report-count.service';
 
 @Component({
   selector: 'app-ribbon',
   templateUrl: './ribbon.component.html',
   styleUrls: ['./ribbon.component.css']
 })
-export class RibbonComponent {
+export class RibbonComponent implements OnInit, OnDestroy {
   showFindDropdown: boolean = false;
   showLibrariesDropdown: boolean = false;
+  ediReportCount = 0;
+  private countSub?: Subscription;
 
   // Raised when the user wants to review incoming HL7 files.
   @Output() reviewIncoming = new EventEmitter<void>();
@@ -19,8 +22,18 @@ export class RibbonComponent {
   constructor(
     private router: Router,
     private ribbonContext: RibbonContextService,
-    private claimApiService: ClaimApiService
+    private claimApiService: ClaimApiService,
+    private ediReportCountService: EdiReportCountService
   ) { }
+
+  ngOnInit(): void {
+    this.ediReportCountService.refresh();
+    this.countSub = this.ediReportCountService.getCount().subscribe(n => this.ediReportCount = n);
+  }
+
+  ngOnDestroy(): void {
+    this.countSub?.unsubscribe();
+  }
 
   /** Navigate to the patient for the current claim (Claim Details) or open Find Patient */
   onPatientClick(): void {
@@ -31,6 +44,11 @@ export class RibbonComponent {
     } else {
       this.router.navigate(['patients/find-patient']);
     }
+  }
+
+  /** Open Payment Entry screen (manual payment posting). */
+  onPaymentClick(): void {
+    this.router.navigate(['payments/entry']);
   }
 
   /** Navigate to the claim for the current patient (Patient Details) or open Find Claim */

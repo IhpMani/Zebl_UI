@@ -197,7 +197,9 @@ export class PaymentListComponent implements OnInit, OnDestroy {
 
   onPageChange(page: number): void { this.loadPayments(page, this.pageSize); }
   onPageSizeChange(pageSize: number): void { this.pageSize = pageSize; this.loadPayments(1, pageSize); }
-  onRowClick(payment: PaymentListItem): void { }
+  onRowClick(payment: PaymentListItem): void {
+    this.router.navigate(['payments/entry', payment.pmtID]);
+  }
   getTotalPages(): number { if (!this.meta) return 0; return Math.ceil(this.meta.totalCount / this.meta.pageSize); }
   get visibleColumns() { return this.columns.filter(c => c.visible); }
   hideColumn(columnKey: string): void { const col = this.columns.find(c => c.key === columnKey); if (col) col.visible = false; }

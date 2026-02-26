@@ -26,7 +26,7 @@ export class ConnectionLibraryListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadConnections();
     
-    // Track route changes to update selected ID
+    // Track route changes to update selected ID and refresh list when returning to it
     this.routeSub = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -36,6 +36,7 @@ export class ConnectionLibraryListComponent implements OnInit, OnDestroy {
         this.selectedId = idParam === 'new' ? null : idParam;
       } else {
         this.selectedId = null;
+        this.loadConnections(); // Refresh list when navigating back so new/updated entries appear
       }
     });
     
@@ -58,10 +59,11 @@ export class ConnectionLibraryListComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.connections = data;
         this.loading = false;
-        // Select first item if available and no selection
+        // Select first item only when it has a valid id and we're not on 'new' or 'null'
         const childId = this.route.firstChild?.snapshot?.paramMap?.get('id');
-        if (this.connections.length > 0 && !this.selectedId && childId !== 'new') {
-          this.selectConnection(this.connections[0].id);
+        const first = this.connections[0];
+        if (this.connections.length > 0 && !this.selectedId && childId !== 'new' && childId !== 'null' && first?.id) {
+          this.selectConnection(first.id);
         }
       },
       error: (err) => {

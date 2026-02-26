@@ -16,6 +16,7 @@ export class ReceiverLibraryListComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   private routeSub?: Subscription;
+  private refreshSub?: Subscription;
 
   constructor(
     private service: ReceiverLibraryService,
@@ -25,17 +26,27 @@ export class ReceiverLibraryListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadLibraries();
-    
-    // Track route changes to update selected ID
+
+    // Refresh list when detail triggers it (e.g. Save and New)
+    this.refreshSub = this.service.onListRefresh.subscribe(() => this.loadLibraries());
+
+    // Track route changes to update selected ID and refresh list when returning to it
     this.routeSub = this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event) => {
+      const url = (event.urlAfterRedirects || event.url || this.router.url || '').replace(/\/$/, '');
+      const isListView = url === '/receiver-library' || url.endsWith('/receiver-library');
+
       const childRoute = this.route.firstChild;
       if (childRoute) {
         const idParam = childRoute.snapshot.paramMap.get('id');
         this.selectedId = idParam === 'new' ? null : idParam;
       } else {
         this.selectedId = null;
+      }
+      // When we're on the list view (no child segment), refresh so new/updated entries appear
+      if (isListView) {
+        this.loadLibraries();
       }
     });
     
@@ -49,6 +60,7 @@ export class ReceiverLibraryListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.refreshSub?.unsubscribe();
   }
 
   loadLibraries(): void {
@@ -58,8 +70,10 @@ export class ReceiverLibraryListComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.libraries = data;
         this.loading = false;
-        // Select first item if available
-        if (this.libraries.length > 0 && !this.selectedId) {
+        // Only auto-select first when we have a child route (not on list-only view), so after Save & Close the new entry stays visible
+        const child = this.route.firstChild;
+        const childId = child?.snapshot?.paramMap?.get('id');
+        if (child && this.libraries.length > 0 && !this.selectedId && childId && childId !== 'new') {
           this.selectLibrary(this.libraries[0].id);
         }
       },

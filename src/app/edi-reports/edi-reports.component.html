@@ -1,86 +1,145 @@
 <div class="edi-reports-container">
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <label class="dropdown-label">Connection:</label>
-      <select [(ngModel)]="selectedConnectionId" class="dropdown" (ngModelChange)="loadReports()">
+  <!-- Top header bar -->
+  <header class="edi-header">
+    <div class="header-left">
+      <label class="header-label">Connection:</label>
+      <select [(ngModel)]="selectedConnectionId" class="header-dropdown" (ngModelChange)="loadReports()">
         <option value="">-- Select --</option>
         <option *ngFor="let c of connections" [value]="c.id">{{ c.name }}</option>
       </select>
-      <label class="dropdown-label">Receiver:</label>
-      <select [(ngModel)]="selectedReceiverId" class="dropdown">
-        <option value="">-- Select --</option>
-        <option *ngFor="let r of receivers" [value]="r.id">{{ r.libraryEntryName }}</option>
-      </select>
-      <label class="filter-label">
-        <input type="checkbox" [(ngModel)]="showArchived" (ngModelChange)="loadReports()" />
-        Show archived
-      </label>
-      <input type="text" class="filter-input" [(ngModel)]="filterText" placeholder="Filter..." />
+      <span class="header-hint">Double click to View</span>
     </div>
-    <div class="toolbar-buttons">
-      <button type="button" class="btn btn-primary" (click)="getReports()" [disabled]="loading || !selectedConnectionId || !selectedReceiverId">Get Reports</button>
-      <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Reports</button>
-      <button type="button" class="btn btn-secondary" (click)="refreshReports()" [disabled]="loading">Refresh Reports</button>
-      <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+    <div class="header-right">
+      <div class="search-row">
+        <input type="text" class="search-input" [(ngModel)]="filterText" placeholder="Search for Keyword" />
+        <button type="button" class="btn btn-clear" (click)="filterText = ''">Clear</button>
+        <button type="button" class="btn btn-icon" title="Search" aria-label="Search">
+          <span class="icon-search">⌕</span>
+        </button>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-action" (click)="openSelected()" [disabled]="!singleSelected">Open</button>
+        <button type="button" class="btn btn-action" (click)="saveNotesSelected()" [disabled]="!singleSelected">Save Notes</button>
+        <button type="button" class="btn btn-action" (click)="exportSelected()" [disabled]="!singleSelected">Export File</button>
+      </div>
     </div>
-  </div>
+  </header>
 
   <div *ngIf="error" class="error-bar">{{ error }}</div>
 
-  <div class="grid-wrapper">
-    <table class="reports-grid">
-      <thead>
-        <tr>
-          <th (click)="sortBy('fileName')" class="sortable">Name {{ sortColumn === 'fileName' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('createdAt')" class="sortable">Date Created {{ sortColumn === 'createdAt' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('fileType')" class="sortable">Type {{ sortColumn === 'fileType' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('fileSize')" class="sortable">Size {{ sortColumn === 'fileSize' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('status')" class="sortable">Status {{ sortColumn === 'status' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('note')" class="sortable">Note {{ sortColumn === 'note' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('payerName')" class="sortable">Payer {{ sortColumn === 'payerName' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('paymentAmount')" class="sortable">Pmt Amt {{ sortColumn === 'paymentAmount' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th>Date</th>
-          <th (click)="sortBy('traceNumber')" class="sortable">Trace Number {{ sortColumn === 'traceNumber' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th (click)="sortBy('direction')" class="sortable">Method {{ sortColumn === 'direction' ? (sortAsc ? '↑' : '↓') : '' }}</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="loading"><td colspan="12" class="loading-cell">Loading...</td></tr>
-        <tr *ngFor="let r of filteredReports" (dblclick)="onRowDoubleClick(r)" [class.archived]="r.isArchived" [class.unread]="!r.isRead">
-          <td>{{ r.fileName }}</td>
-          <td>{{ r.createdAt | date:'short' }}</td>
-          <td>{{ r.fileType }}</td>
-          <td>{{ formatFileSize(r.fileSize) }}</td>
-          <td><span [class]="'status ' + statusClass(r.status)">{{ r.status }}</span></td>
-          <td>{{ r.note || '—' }}</td>
-          <td>{{ r.payerName || '—' }}</td>
-          <td>{{ r.paymentAmount != null ? (r.paymentAmount | number:'1.2-2') : '—' }}</td>
-          <td>{{ dateDisplay(r) }}</td>
-          <td>{{ r.traceNumber || '—' }}</td>
-          <td>{{ r.direction }}</td>
-          <td class="action-buttons">
-            <button type="button" class="btn-link" (click)="openFullViewer(r); $event.stopPropagation()" title="Open">Open</button>
-            <button type="button" class="btn-link" (click)="openNoteEditor(r); $event.stopPropagation()" title="Save Notes">Notes</button>
-            <button type="button" class="btn-link" (click)="exportFile(r); $event.stopPropagation()" title="Export File">Export</button>
-            <button type="button" class="btn-link" (click)="markAsRead(r); $event.stopPropagation()" [disabled]="r.isRead" title="Mark as Read">Read</button>
-            <button type="button" class="btn-link" (click)="archiveReport(r); $event.stopPropagation()" [disabled]="r.isArchived" title="Archive">Archive</button>
-            <button type="button" class="btn-link btn-danger" (click)="deleteReport(r); $event.stopPropagation()" title="Delete">Delete</button>
-          </td>
-        </tr>
-        <tr *ngIf="!loading && filteredReports.length === 0"><td colspan="12" class="empty-cell">No reports.</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Main content: grid + quick view -->
+  <div class="main-body">
+    <div class="content-area">
+      <!-- Grouping bar -->
+      <div class="grouping-bar">
+        <span class="grouping-hint">Drag a column header here to group by that column</span>
+      </div>
 
-  <div *ngIf="previewContent !== null" class="preview-panel">
-    <div class="preview-header">
-      <strong>{{ previewFileName }}</strong>
-      <button type="button" class="btn btn-sm" (click)="close()">×</button>
+      <!-- Reports grid -->
+      <div class="grid-wrapper">
+        <table class="reports-grid">
+          <thead>
+            <tr class="header-row">
+              <th class="col-check"><input type="checkbox" [checked]="isAllChecked" (change)="toggleCheckAll()" [indeterminate]="isSomeChecked" title="Check All" /></th>
+              <th (click)="sortBy('fileName')" class="sortable">Name</th>
+              <th (click)="sortBy('createdAt')" class="sortable">Date Created</th>
+              <th (click)="sortBy('fileType')" class="sortable">Type</th>
+              <th (click)="sortBy('fileSize')" class="sortable">Size</th>
+              <th (click)="sortBy('note')" class="sortable">Note</th>
+              <th (click)="sortBy('payerName')" class="sortable">Payer</th>
+              <th (click)="sortBy('paymentAmount')" class="sortable">Pmt Amt</th>
+              <th>Date</th>
+              <th (click)="sortBy('traceNumber')" class="sortable">Trace Number</th>
+              <th (click)="sortBy('direction')" class="sortable">Method</th>
+            </tr>
+            <tr class="filter-row">
+              <th class="col-check"></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['fileName']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['createdAt']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['fileType']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['fileSize']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['note']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['payerName']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['paymentAmount']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['date']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['traceNumber']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['direction']" (ngModelChange)="0" placeholder="Filter" /></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loading"><td colspan="11" class="loading-cell">Loading...</td></tr>
+            <tr *ngFor="let r of filteredReports" (dblclick)="onRowDoubleClick(r)" [class.archived]="r.isArchived" [class.unread]="!r.isRead" [class.selected]="isChecked(r)">
+              <td class="col-check"><input type="checkbox" [checked]="isChecked(r)" (change)="toggleCheck(r)" (click)="$event.stopPropagation()" /></td>
+              <td>{{ r.fileName }}</td>
+              <td>{{ r.createdAt | date:'short' }}</td>
+              <td>{{ r.fileType }}</td>
+              <td>{{ formatFileSize(r.fileSize) }}</td>
+              <td>{{ r.note || '—' }}</td>
+              <td>{{ r.payerName || '—' }}</td>
+              <td>{{ r.paymentAmount != null ? (r.paymentAmount | number:'1.2-2') : '—' }}</td>
+              <td>{{ dateDisplay(r) }}</td>
+              <td>{{ r.traceNumber || '—' }}</td>
+              <td>{{ r.direction }}</td>
+            </tr>
+            <tr *ngIf="!loading && filteredReports.length === 0"><td colspan="11" class="empty-cell">No reports.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Quick View panel (always visible) -->
+      <div class="quick-view-panel">
+        <p class="quick-view-hint">Double click the report file to view the contents.</p>
+        <div class="quick-view-content">
+          <ng-container *ngIf="!previewContent && !quickViewMessage">
+            <span class="quick-view-placeholder">Select a report to preview.</span>
+          </ng-container>
+          <ng-container *ngIf="quickViewMessage">
+            <span class="quick-view-message">{{ quickViewMessage }}</span>
+          </ng-container>
+          <pre *ngIf="previewContent && !quickViewMessage" class="quick-view-pre">{{ previewContent }}</pre>
+        </div>
+      </div>
     </div>
-    <pre class="preview-content">{{ previewContent }}</pre>
+
+    <!-- Right sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-receiver" *ngIf="receivers.length">
+        <label class="sidebar-label">Receiver:</label>
+        <select [(ngModel)]="selectedReceiverId" class="sidebar-dropdown">
+          <option value="">-- Select --</option>
+          <option *ngFor="let r of receivers" [value]="r.id">{{ r.libraryEntryName }}</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-sidebar" (click)="getReports()" [disabled]="loading || !selectedConnectionId || !selectedReceiverId">Get Reports</button>
+      <button type="button" class="btn btn-sidebar" (click)="openAddForm()">Add Reports</button>
+      <button type="button" class="btn btn-sidebar" (click)="refreshReports()" [disabled]="loading">Refresh Reports</button>
+      <button type="button" class="btn btn-sidebar" (click)="close()">Close</button>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-check-all" (click)="$event.stopPropagation()">
+        <button type="button" class="btn btn-sidebar btn-dropdown" (click)="showCheckAllMenu = !showCheckAllMenu; $event.stopPropagation()">
+          Check All <span class="dropdown-arrow">▼</span>
+        </button>
+        <ul class="dropdown-menu" *ngIf="showCheckAllMenu">
+          <li><a href="#" (click)="checkAll(); $event.preventDefault()">Check All</a></li>
+          <li><a href="#" (click)="checkNone(); $event.preventDefault()">Check None</a></li>
+        </ul>
+      </div>
+      <label class="sidebar-checkbox">
+        <input type="checkbox" [(ngModel)]="showArchived" (ngModelChange)="loadReports()" />
+        Show Archived
+      </label>
+
+      <div class="sidebar-label">Apply to Checked</div>
+      <button type="button" class="btn btn-sidebar btn-dropdown" (click)="archiveChecked()" [disabled]="checkedIds.size === 0">
+        Archive <span class="dropdown-arrow">▼</span>
+      </button>
+      <button type="button" class="btn btn-sidebar btn-danger" (click)="deleteChecked()" [disabled]="checkedIds.size === 0">Delete</button>
+    </aside>
   </div>
 
+  <!-- Modals -->
   <div *ngIf="showAddForm" class="modal-overlay" (click)="cancelAddForm()">
     <div class="modal" (click)="$event.stopPropagation()">
       <h3>Add Reports (Generate 837/270)</h3>

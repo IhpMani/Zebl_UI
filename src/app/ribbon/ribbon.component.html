@@ -47,7 +47,7 @@
       <div class="toolbar-group">
         <button class="toolbar-button" (click)="onPatientClick()"><img src="assets/icons/patient.png" alt="Patient">Patient</button>
         <button class="toolbar-button" (click)="onClaimClick()"><img src="assets/icons/claim.png" alt="Claim">Claim</button>
-        <button class="toolbar-button"><img src="assets/icons/payment.png" alt="Payment">Payment</button>
+        <button class="toolbar-button" (click)="onPaymentClick()"><img src="assets/icons/payment.png" alt="Payment">Payment</button>
         <button class="toolbar-button"><img src="assets/icons/task.png" alt="Task">Task</button>
         <button class="toolbar-button"><img src="assets/icons/statement.png" alt="Statement">Statement</button>
         <button class="toolbar-button" (click)="libraryOptionSelected('Payer')"><img src="assets/icons/payer.png" alt="Payer">Payer</button>
@@ -78,7 +78,7 @@
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
-        <button class="toolbar-button" (click)="goToEdiReports()"><img src="assets/icons/edi-reports.png" alt="EDI Reports">EDI Reports (5237 NEW)</button>
+        <button class="toolbar-button" (click)="goToEdiReports()"><img src="assets/icons/edi-reports.png" alt="EDI Reports">EDI Reports ({{ ediReportCount }})</button>
         <button class="toolbar-button" (click)="goToReceiverLibrary()"><img src="assets/icons/edi-reports.png" alt="EDI Library">EDI Library</button>
       </div>
       <div class="toolbar-label">Alerts</div>

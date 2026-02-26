@@ -7,6 +7,7 @@ import { PatientListComponent } from './patients/patient-list/patient-list.compo
 import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
+import { PaymentEntryComponent } from './payments/payment-entry/payment-entry.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
 import { PayerListComponent } from './payers/payer-list/payer-list.component';
 import { PhysicianListComponent } from './physicians/physician-list/physician-list.component';
@@ -29,6 +30,8 @@ const routes: Routes = [
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
   { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
   { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },
+  { path: 'payments/entry/:id', component: PaymentEntryComponent, canActivate: [AuthGuard] },
+  { path: 'payments/entry', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/find-payment', component: PaymentListComponent, canActivate: [AuthGuard] },
   { path: 'adjustments/find-adjustment', component: AdjustmentListComponent, canActivate: [AuthGuard] },
   { path: 'payers/find-payer', component: PayerListComponent, canActivate: [AuthGuard] },

@@ -306,6 +306,15 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Account # column filter (exact match – one or more selected values)
+    if (this.columnValueFilters['patAccountNo'] && this.columnValueFilters['patAccountNo'].size > 0) {
+      const accountValues = Array.from(this.columnValueFilters['patAccountNo']).filter(v => v !== '(Blank)');
+      if (accountValues.length > 0) {
+        // Single account: send exact match; multiple: backend could support list – for now use first (exact match)
+        filters.patAccountNo = accountValues[0].trim();
+      }
+    }
+
     // Text search across columns (for non-numeric, non-status columns)
     const textFilterColumns = this.columns.filter(c => 
       c.filterValue && 

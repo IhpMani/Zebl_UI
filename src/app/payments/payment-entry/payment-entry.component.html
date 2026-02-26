@@ -1,0 +1,175 @@
+<div class="payment-entry-container">
+  <h2>Payment Entry</h2>
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+  <div *ngIf="successMessage" class="success-msg">{{ successMessage }}</div>
+
+  <!-- Top: Payment source + details (left), Action buttons (right) -->
+  <div class="top-row">
+    <form [formGroup]="paymentForm" class="payment-details">
+      <div class="detail-row">
+        <span class="label">Payment Source</span>
+        <label class="radio"><input type="radio" name="source" [(ngModel)]="paymentSource" [ngModelOptions]="{standalone: true}" value="Patient" (ngModelChange)="onSourceOrPayerChange()"> Patient</label>
+        <label class="radio"><input type="radio" name="source" [(ngModel)]="paymentSource" [ngModelOptions]="{standalone: true}" value="Payer" (ngModelChange)="onSourceOrPayerChange()"> Payer</label>
+      </div>
+      <div class="detail-row" *ngIf="paymentSource === 'Payer'">
+        <label>Payer</label>
+        <select formControlName="payerId" (change)="onSourceOrPayerChange()">
+          <option [ngValue]="null">None</option>
+          <option *ngFor="let p of payerList" [ngValue]="p.payID">{{ p.payName || ('Payer #' + p.payID) }}</option>
+        </select>
+        <span *ngIf="loadingPayers" class="loading-payers">Loading…</span>
+      </div>
+      <div class="detail-row">
+        <label>Amount</label>
+        <input type="number" formControlName="amount" step="0.01" placeholder="0.00" />
+      </div>
+      <div class="detail-row">
+        <label>Pmt Date</label>
+        <input type="date" formControlName="pmtDate" />
+      </div>
+      <div class="detail-row">
+        <label>Payment Method</label>
+        <select formControlName="method">
+          <option value="Check">Check</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="ACH">ACH</option>
+          <option value="Cash">Cash</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="detail-row">
+        <label>Ref #</label>
+        <input type="text" formControlName="reference1" placeholder="Ref #" />
+      </div>
+      <div class="detail-row">
+        <label>Addl Ref #</label>
+        <input type="text" formControlName="reference2" placeholder="Addl Ref #" />
+      </div>
+      <div class="detail-row">
+        <label>Note</label>
+        <input type="text" formControlName="note" placeholder="Note" class="note-input" />
+        <button type="button" class="btn-auto-apply" (click)="autoApply()">Auto Apply</button>
+      </div>
+      <div class="detail-row">
+        <label>Patient ID</label>
+        <input type="number" formControlName="patientId" placeholder="Patient ID" (blur)="onPatientIdBlur()" (keydown.enter)="$event.preventDefault(); loadServiceLines()" />
+      </div>
+    </form>
+    <div class="action-buttons-vertical">
+      <button type="button" class="btn-primary" (click)="saveAndClose()" [disabled]="saving">Save & Close</button>
+      <button type="button" class="btn-primary" (click)="save()" [disabled]="saving">Save</button>
+      <button type="button" class="btn-secondary" (click)="close()">Close</button>
+      <button type="button" class="btn-secondary btn-dropdown">Print Receipt <span class="arrow">▼</span></button>
+      <button type="button" class="btn-secondary" (click)="newPmt()">New Pmt</button>
+    </div>
+  </div>
+
+  <!-- Payments context header + summary (like reference) -->
+  <div class="payments-context-bar" *ngIf="paymentForm.get('patientId')?.value">
+    <span class="context-title">Payments from <strong>{{ patientDisplayName || ('Patient #' + paymentForm.get('patientId')?.value) }}</strong> with a balance:</span>
+    <div class="summary-bar">
+      <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
+      <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
+      <div class="summary-cell"><span class="summary-label">Remaining</span><span class="summary-value">{{ remaining | currency:'USD':'symbol':'1.2-2' }}</span></div>
+      <div class="summary-cell"><span class="summary-label">Date</span><span class="summary-value">{{ paymentForm.get('pmtDate')?.value || '—' }}</span></div>
+      <div class="summary-cell"><span class="summary-label">Method</span><span class="summary-value">{{ paymentForm.get('method')?.value || '—' }}</span></div>
+      <div class="summary-cell"><span class="summary-label">Ref #</span><span class="summary-value">{{ paymentForm.get('reference1')?.value || '—' }}</span></div>
+    </div>
+  </div>
+  <div class="summary-bar" *ngIf="!paymentForm.get('patientId')?.value">
+    <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
+    <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
+    <div class="summary-cell"><span class="summary-label">Remaining</span><span class="summary-value">{{ remaining | currency:'USD':'symbol':'1.2-2' }}</span></div>
+    <div class="summary-cell"><span class="summary-label">Date</span><span class="summary-value">{{ paymentForm.get('pmtDate')?.value || '—' }}</span></div>
+    <div class="summary-cell"><span class="summary-label">Method</span><span class="summary-value">{{ paymentForm.get('method')?.value || '—' }}</span></div>
+    <div class="summary-cell"><span class="summary-label">Ref #</span><span class="summary-value">{{ paymentForm.get('reference1')?.value || '—' }}</span></div>
+  </div>
+
+  <!-- Main: Grid (left) + Sidebar (right) -->
+  <div class="main-area">
+    <div class="grid-wrapper">
+      <table class="line-grid">
+        <thead>
+          <tr class="header-row">
+            <th>Name</th>
+            <th>DOS</th>
+            <th>Proc</th>
+            <th>Charge</th>
+            <th>Responsible..</th>
+            <th>Applied</th>
+            <th>Balance</th>
+            <th>Adjustment 1 Amt</th>
+            <th>Adjustment 1 Code</th>
+            <th>Adjustment 1 Reason</th>
+            <th>Adjustment 2 Amt</th>
+            <th>Adjustment 2 Code</th>
+            <th>Adjustment 2 Reason</th>
+          </tr>
+          <tr class="filter-row">
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+            <th><input type="text" placeholder="Filter" /></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loadingServiceLines" class="no-data-row">
+            <td [attr.colspan]="13">Loading service lines…</td>
+          </tr>
+          <tr *ngFor="let row of serviceLineRows" class="data-row">
+            <td>{{ row.name ?? '' }}</td>
+            <td>{{ row.dos ?? '' }}</td>
+            <td>{{ row.proc ?? '' }}</td>
+            <td>{{ row.charge | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ row.responsible ?? '' }}</td>
+            <td>{{ row.applied | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="balance-pay-cell">
+              <span class="pay-label">Pay</span>
+              <input type="number" class="cell-input balance-input" step="0.01" [(ngModel)]="row.paidAmount" (ngModelChange)="updateSummaryFromGrid()" (focus)="onPayFieldFocus(row)" placeholder="0.00" />
+            </td>
+            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[0].amount" (ngModelChange)="updateSummaryFromGrid()" /></td>
+            <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[0].groupCode" placeholder="e.g. PR" /></td>
+            <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[0].reasonCode" /></td>
+            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[1].amount" (ngModelChange)="updateSummaryFromGrid()" /></td>
+            <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[1].groupCode" placeholder="e.g. CO" /></td>
+            <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[1].reasonCode" /></td>
+          </tr>
+          <tr *ngIf="!loadingServiceLines && serviceLineRows.length === 0" class="no-data-row">
+            <td [attr.colspan]="13">No service lines. Enter a Patient ID and tab out to load lines.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Need to enter more adjustments?</div>
+        <div class="adjustment-buttons">
+          <button type="button" class="btn-icon">−</button>
+          <button type="button" class="btn-icon">+</button>
+        </div>
+      </div>
+      <div class="sidebar-section checkboxes">
+        <label><input type="checkbox" [(ngModel)]="showAdjReasonCodes" [ngModelOptions]="{standalone: true}"> Show Adj Reason Codes</label>
+        <label><input type="checkbox" [(ngModel)]="showAdjRemarkCodes" [ngModelOptions]="{standalone: true}"> Show Adj Remark Codes</label>
+        <label><input type="checkbox" [(ngModel)]="showAdjReasonAmount" [ngModelOptions]="{standalone: true}"> Show Adj Reason Amount</label>
+        <label><input type="checkbox" [(ngModel)]="showPaymentReasonCodes" [ngModelOptions]="{standalone: true}"> Show Payment Reason Codes</label>
+        <label><input type="checkbox" [(ngModel)]="showNotes" [ngModelOptions]="{standalone: true}"> Show Notes</label>
+      </div>
+      <div class="sidebar-section filter-options">
+        <div class="sidebar-title">Filter Settings:</div>
+        <label><input type="checkbox" [(ngModel)]="ignoreResponsibleParty" [ngModelOptions]="{standalone: true}"> Ignore Responsible Party</label>
+        <label><input type="checkbox" [(ngModel)]="matchByPayerId" [ngModelOptions]="{standalone: true}"> Match By Payer ID</label>
+        <button type="button" class="btn-secondary small">Filter Settings</button>
+      </div>
+    </div>
+  </div>
+</div>

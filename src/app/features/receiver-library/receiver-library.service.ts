@@ -1,11 +1,23 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { ReceiverLibraryApiService, ReceiverLibraryDto, CreateReceiverLibraryCommand, UpdateReceiverLibraryCommand, ExportFormatOption, ApiResponse } from '../../core/services/receiver-library-api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReceiverLibraryService {
+  /** Emits when the list should refresh (e.g. after Save and New). */
+  private listRefresh$ = new Subject<void>();
+
+  get onListRefresh(): Observable<void> {
+    return this.listRefresh$.asObservable();
+  }
+
+  /** Call after create/update/delete so the list can reload. */
+  notifyListRefresh(): void {
+    this.listRefresh$.next();
+  }
+
   constructor(private apiService: ReceiverLibraryApiService) {}
 
   getAll(): Observable<ReceiverLibraryDto[]> {

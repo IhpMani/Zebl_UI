@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PaymentsApiResponse } from './payment.models';
+import { map } from 'rxjs/operators';
+import { PaymentEntryServiceLine, PaymentForEdit, PaymentsApiResponse } from './payment.models';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -70,5 +71,38 @@ export class PaymentApiService {
 
   getPaymentsByClaim(claId: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/claims/${claId}`);
+  }
+
+  /** Create payment (POST /api/payments). Body: CreatePaymentCommand. */
+  createPayment(command: any): Observable<{ data: number }> {
+    return this.http.post<{ data: number }>(this.baseUrl, command);
+  }
+
+  /** Auto-apply remaining amount (POST /api/payments/{id}/auto-apply). */
+  autoApply(paymentId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${paymentId}/auto-apply`, {});
+  }
+
+  /** Get a single payment by ID for edit form (GET /api/payments/:id). */
+  getPaymentById(id: number): Observable<PaymentForEdit> {
+    return this.http.get<{ data: PaymentForEdit }>(`${this.baseUrl}/${id}`).pipe(
+      map(res => res.data)
+    );
+  }
+
+  /** Modify payment (PUT /api/payments/:id). Returns new payment ID. */
+  modifyPayment(id: number, command: any): Observable<{ data: number }> {
+    return this.http.put<{ data: number }>(`${this.baseUrl}/${id}`, command);
+  }
+
+  /** Get service lines for payment entry grid (GET /api/payments/entry/service-lines?patientId=&payerId=). */
+  getServiceLinesForEntry(patientId: number, payerId?: number | null): Observable<PaymentEntryServiceLine[]> {
+    let params = new HttpParams().set('patientId', patientId.toString());
+    if (payerId != null && payerId > 0) {
+      params = params.set('payerId', payerId.toString());
+    }
+    return this.http.get<{ data: PaymentEntryServiceLine[] }>(`${this.baseUrl}/entry/service-lines`, { params }).pipe(
+      map(res => res.data ?? [])
+    );
   }
 }

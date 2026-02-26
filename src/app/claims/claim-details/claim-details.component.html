@@ -405,6 +405,7 @@
     <section class="notes-section">
       <header>
         <h3>Notes / Audit Trail</h3>
+        <button type="button" class="btn-refresh-notes" (click)="refreshClaimAndNotes()" title="Reload claim to see latest notes (e.g. after payment applied)">Refresh</button>
       </header>
       <div [hidden]="!showNotes">
         <div class="notes-input">

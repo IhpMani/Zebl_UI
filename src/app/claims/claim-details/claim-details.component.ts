@@ -668,6 +668,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  /** Reload claim (and notes/activity) so that edits made elsewhere (e.g. Payment Entry) appear. */
+  refreshClaimAndNotes(): void {
+    if (this.claId) this.loadClaim(this.claId);
+  }
+
   addNote(event: Event): void {
     event.preventDefault();
     if (this.newNote.trim()) {
