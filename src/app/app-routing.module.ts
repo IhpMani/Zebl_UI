@@ -19,6 +19,7 @@ import { UserManagementComponent } from './admin/user-management/user-management
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -40,10 +41,13 @@ const routes: Routes = [
   { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
   { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
   { path: 'edi-reports', component: EdiReportsComponent, canActivate: [AuthGuard] },
+  { path: 'procedure-codes', component: ProcedureCodesPageComponent, canActivate: [AuthGuard] },
   { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },
   { path: 'receiver-library', loadChildren: () => import('./features/receiver-library/receiver-library.module').then(m => m.ReceiverLibraryModule), canActivate: [AuthGuard] },
   { path: 'connection-library', loadChildren: () => import('./features/connection-library/connection-library.module').then(m => m.ConnectionLibraryModule), canActivate: [AuthGuard] },
   { path: 'payer-library', loadChildren: () => import('./features/payer-library/payer-library.module').then(m => m.PayerLibraryModule), canActivate: [AuthGuard] },
+  { path: 'libraries/procedure-codes', loadChildren: () => import('./features/procedure-code-library/procedure-code-library.module').then(m => m.ProcedureCodeLibraryModule), canActivate: [AuthGuard] },
+  { path: 'libraries', redirectTo: '', pathMatch: 'full' },
 ];
 
 @NgModule({

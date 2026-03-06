@@ -1,0 +1,52 @@
+<div class="dialog-overlay" (click)="cancel.emit()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Rate Class</h3>
+    </div>
+
+    <div class="dialog-body">
+      <div class="row">
+        <label>Procedure Code File</label>
+        <div class="file-row">
+          <input
+            type="text"
+            [(ngModel)]="model.procedureCodeFile"
+            readonly
+            (click)="browseProcedureFile.emit()"
+          />
+          <button type="button" class="btn-small" (click)="browseProcedureFile.emit()">...</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>Rate Class</label>
+        <select [(ngModel)]="model.rateClass">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let rc of rateClassOptions" [ngValue]="rc">{{ rc }}</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label>Billing Physician</label>
+        <select [(ngModel)]="model.billingPhysicianId">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let phy of physicianOptions" [ngValue]="phy.value">{{ phy.label }}</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label>Payer</label>
+        <select [(ngModel)]="model.payerId">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let p of payerOptions" [ngValue]="p.value">{{ p.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button type="button" class="btn" (click)="cancel.emit()">Cancel</button>
+      <button type="button" class="btn-primary" (click)="submit()">OK</button>
+    </div>
+  </div>
+</div>
+

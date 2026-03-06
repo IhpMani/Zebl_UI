@@ -1,0 +1,21 @@
+<div class="dialog-overlay" (click)="ok.emit()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Add Column</h3>
+    </div>
+    <div class="dialog-body">
+      <p class="hint">Select columns to show in the grid:</p>
+      <div class="column-list">
+        <label *ngFor="let col of hiddenColumns" class="column-item">
+          <input type="checkbox" (change)="showColumn.emit(col.colId)" />
+          <span>{{ col.headerName }}</span>
+        </label>
+        <p *ngIf="hiddenColumns.length === 0" class="no-columns">No hidden columns</p>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn-clear" (click)="clearAll.emit()">Clear All</button>
+      <button type="button" class="btn-ok" (click)="ok.emit()">OK</button>
+    </div>
+  </div>
+</div>

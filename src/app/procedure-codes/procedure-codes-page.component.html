@@ -1,0 +1,94 @@
+<div class="procedure-codes-page">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="page-title">Procedure Code Library</span>
+      <input
+        type="text"
+        class="quick-search"
+        placeholder="Quick search (code)..."
+        [(ngModel)]="quickFilter"
+        (keyup.enter)="applyQuickFilter()"
+      />
+      <button type="button" class="btn-search" (click)="applyQuickFilter()">Search</button>
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="modifiedRows.size === 0 || saving"
+        (click)="saveChanges()"
+      >
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+      <span *ngIf="modifiedRows.size > 0" class="modified-count">{{ modifiedRows.size }} modified</span>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-bar">{{ error }}</div>
+  <div *ngIf="loading" class="loading-overlay">Loading...</div>
+
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine ag-dense"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="rowSelection"
+      [pagination]="false"
+      [domLayout]="'normal'"
+      [getRowId]="getRowId"
+      [components]="gridComponents"
+      (gridReady)="onGridReady($event)"
+      (cellValueChanged)="onCellValueChanged($event)"
+    >
+    </ag-grid-angular>
+  </div>
+
+  <div class="pagination-bar">
+    <span class="pagination-info">
+      {{ totalCount }} total · Page {{ currentPage }} of {{ totalPages || 1 }}
+    </span>
+    <div class="pagination-controls">
+      <button
+        type="button"
+        class="btn-page"
+        [disabled]="currentPage <= 1 || loading"
+        (click)="onPageChange(1)"
+      >««</button>
+      <button
+        type="button"
+        class="btn-page"
+        [disabled]="currentPage <= 1 || loading"
+        (click)="onPageChange(currentPage - 1)"
+      >‹</button>
+      <button
+        type="button"
+        class="btn-page"
+        [disabled]="currentPage >= totalPages || loading"
+        (click)="onPageChange(currentPage + 1)"
+      >›</button>
+      <button
+        type="button"
+        class="btn-page"
+        [disabled]="currentPage >= totalPages || loading"
+        (click)="onPageChange(totalPages)"
+      >»»</button>
+      <select
+        class="page-size-select"
+        [value]="pageSize"
+        (change)="onPageSizeChange(+$any($event.target).value)"
+        [disabled]="loading"
+      >
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+      </select>
+    </div>
+  </div>
+
+  <app-column-chooser-dialog
+    *ngIf="showColumnChooser"
+    [hiddenColumns]="hiddenColumnsForChooser"
+    (showColumn)="onShowColumn($event)"
+    (clearAll)="onColumnChooserClearAll()"
+    (ok)="onColumnChooserOk()"
+  />
+</div>

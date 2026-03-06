@@ -1,0 +1,80 @@
+<div class="dialog-overlay" (click)="cancel.emit()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Modify or Create New Procedure Code</h3>
+    </div>
+
+    <div class="dialog-body">
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyCharge" /> Charge</label>
+        <input type="number" [(ngModel)]="model.charge" [disabled]="!model.applyCharge" />
+      </div>
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyAllowed" /> Allowed</label>
+        <input type="number" [(ngModel)]="model.allowed" [disabled]="!model.applyAllowed" />
+      </div>
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyAdjust" /> Adjust</label>
+        <input type="number" [(ngModel)]="model.adjust" [disabled]="!model.applyAdjust" />
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyPayer" /> Payer</label>
+        <select [(ngModel)]="model.payerId" [disabled]="!model.applyPayer">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let p of payerOptions" [ngValue]="p.value">{{ p.label }}</option>
+        </select>
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyRateClass" /> Rate Class</label>
+        <select [(ngModel)]="model.rateClass" [disabled]="!model.applyRateClass">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let rc of rateClassOptions" [ngValue]="rc">{{ rc }}</option>
+        </select>
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyBillingProvider" /> Billing Provider</label>
+        <select [(ngModel)]="model.billingPhysicianId" [disabled]="!model.applyBillingProvider">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let phy of physicianOptions" [ngValue]="phy.value">{{ phy.label }}</option>
+        </select>
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyCategory" /> Category</label>
+        <input type="text" [(ngModel)]="model.category" [disabled]="!model.applyCategory" />
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applySubcategory" /> Subcategory</label>
+        <input type="text" [(ngModel)]="model.subcategory" [disabled]="!model.applySubcategory" />
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyStart" /> Start</label>
+        <input type="date" [(ngModel)]="model.startDate" [disabled]="!model.applyStart" />
+        <div></div>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" [(ngModel)]="model.applyEnd" /> End</label>
+        <input type="date" [(ngModel)]="model.endDate" [disabled]="!model.applyEnd" />
+        <div></div>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button type="button" class="btn-primary" (click)="apply()">Apply to Checked Items</button>
+      <button type="button" class="btn-secondary" (click)="createNew()">Create New from Checked Items</button>
+      <button type="button" class="btn" (click)="cancel.emit()">Cancel</button>
+    </div>
+  </div>
+</div>
+

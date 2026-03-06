@@ -1,0 +1,98 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 1600;
+}
+
+.dialog {
+  background: #fff;
+  border: 1px solid #a8d4f0;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+  width: 420px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #a8d4f0;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.dialog-body {
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px;
+  align-items: center;
+
+  label {
+    font-size: 12px;
+  }
+
+  input,
+  select {
+    font-size: 12px;
+    padding: 3px 6px;
+    border: 1px solid #93c5fd;
+    background: #fff;
+  }
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-row input[type='text'] {
+  flex: 1;
+  height: 22px;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.btn-small {
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.dialog-footer {
+  padding: 10px 12px;
+  border-top: 1px solid #a8d4f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  .btn,
+  .btn-primary {
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid #93c5fd;
+    background: #f0f8ff;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+  }
+}
+

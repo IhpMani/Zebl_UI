@@ -1,0 +1,264 @@
+<div class="procedure-code-library-page">
+  <div *ngIf="error" class="error-bar">{{ error }}</div>
+
+  <div class="content-split">
+    <div class="left-pane">
+      <div *ngIf="loading" class="loading-overlay">Loading...</div>
+
+      <div class="grid-wrapper">
+        <table class="claims-table procedure-code-table" (click)="$event.stopPropagation()">
+          <thead>
+            <tr>
+              <th class="select-col">
+                <div class="header-cell">
+                  <input type="checkbox" [checked]="allVisibleChecked" (change)="toggleCheckAll($event)" />
+                </div>
+                <div class="filter-row">
+                  <div class="filter-placeholder"></div>
+                </div>
+              </th>
+
+              <th class="add-column-header">
+                <div class="header-cell">
+                  <button class="add-column-btn" (click)="openColumnChooser()" title="Add Column">
+                    Add Column <span class="arrow">▼</span>
+                  </button>
+                </div>
+                <div class="filter-row">
+                  <div class="filter-placeholder"></div>
+                </div>
+              </th>
+
+              <th *ngFor="let col of visibleColumns">
+                <div class="header-cell">
+                  <span>{{ col.label }}</span>
+                  <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+                </div>
+                <div class="filter-row">
+                  <input
+                    class="filter-input"
+                    [placeholder]="'Filter'"
+                    [(ngModel)]="columnFilters[col.key]"
+                    (ngModelChange)="applyFilters()"
+                  />
+                </div>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <!-- Entry row -->
+            <tr class="row-entry" (click)="onEntryRowClick()">
+              <td class="select-col"></td>
+              <td class="entry-cell" [attr.colspan]="visibleColumns.length + 1">
+                {{ entryHint }}
+              </td>
+            </tr>
+
+            <tr
+              *ngFor="let row of filteredRows; trackBy: trackByRow"
+              class="data-row"
+              [class.row-new]="row.__isNew"
+              [class.row-dirty]="row.__dirty && !row.__isNew"
+            >
+              <td class="select-col">
+                <input type="checkbox" [checked]="isChecked(row)" (change)="toggleRowChecked(row, $event)" />
+              </td>
+
+              <td class="action-col"></td>
+
+              <td *ngFor="let col of visibleColumns">
+                <ng-container [ngSwitch]="col.editor">
+                  <input
+                    *ngSwitchCase="'text'"
+                    type="text"
+                    class="cell-input"
+                    [ngModel]="getCellValue(row, col.key)"
+                    (ngModelChange)="setCellValue(row, col.key, $event)"
+                  />
+
+                  <div *ngSwitchCase="'number'" class="cell-input-number" [class.currency]="col.key === 'procCharge'">
+                    <span *ngIf="col.key === 'procCharge'" class="currency-prefix">$</span>
+                    <input
+                      type="number"
+                      class="cell-input"
+                      [ngModel]="formatNumberForDisplay(getCellValue(row, col.key), col.key)"
+                      [attr.step]="col.key === 'procCharge' ? '0.01' : null"
+                      (ngModelChange)="setCellValue(row, col.key, $event)"
+                    />
+                  </div>
+
+                  <input
+                    *ngSwitchCase="'date'"
+                    type="date"
+                    class="cell-input"
+                    [ngModel]="asDateInputValue(getCellValue(row, col.key))"
+                    (ngModelChange)="setDateCellValue(row, col.key, $event)"
+                  />
+
+                  <input
+                    *ngSwitchCase="'bool'"
+                    type="checkbox"
+                    [checked]="!!getCellValue(row, col.key)"
+                    (change)="setBoolCellValue(row, col.key, $any($event.target).checked)"
+                  />
+
+                  <select
+                    *ngSwitchCase="'payer'"
+                    class="cell-input"
+                    [(ngModel)]="row.procPayFID"
+                    (change)="markDirty(row)"
+                  >
+                    <option [ngValue]="0"></option>
+                    <option *ngFor="let p of payerOptions" [ngValue]="p.value">{{ p.label }}</option>
+                  </select>
+
+                  <select
+                    *ngSwitchCase="'physician'"
+                    class="cell-input"
+                    [(ngModel)]="row.procBillingPhyFID"
+                    (change)="markDirty(row)"
+                  >
+                    <option [ngValue]="0"></option>
+                    <option *ngFor="let phy of physicianOptions" [ngValue]="phy.value">{{ phy.label }}</option>
+                  </select>
+
+                  <select
+                    *ngSwitchCase="'rateClass'"
+                    class="cell-input"
+                    [(ngModel)]="row.procRateClass"
+                    (change)="markDirty(row)"
+                  >
+                    <option [ngValue]="''"></option>
+                    <option *ngFor="let rc of rateClassOptions" [ngValue]="rc">{{ rc }}</option>
+                  </select>
+
+                  <span *ngSwitchDefault>{{ getCellValue(row, col.key) }}</span>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar">
+        <span class="pagination-info">
+          {{ totalCount }} total · Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <div class="pagination-controls">
+          <button type="button" class="btn-page" [disabled]="currentPage <= 1 || loading" (click)="onPageChange(1)">««</button>
+          <button type="button" class="btn-page" [disabled]="currentPage <= 1 || loading" (click)="onPageChange(currentPage - 1)">‹</button>
+          <button type="button" class="btn-page" [disabled]="currentPage >= totalPages || loading" (click)="onPageChange(currentPage + 1)">›</button>
+          <button type="button" class="btn-page" [disabled]="currentPage >= totalPages || loading" (click)="onPageChange(totalPages)">»»</button>
+          <select class="page-size-select" [value]="pageSize" (change)="onPageSizeChange(+$any($event.target).value)" [disabled]="loading">
+            <option [value]="100">100</option>
+            <option [value]="200">200</option>
+            <option [value]="500">500</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-pane">
+      <div class="command-panel">
+        <div class="command-title">Commands</div>
+
+        <button type="button" class="cmd-btn primary" (click)="saveAndClose()" [disabled]="saving">Save &amp; Close</button>
+        <button type="button" class="cmd-btn" (click)="saveChanges()" [disabled]="dirtyRowIds.size === 0 || saving">Save</button>
+        <button type="button" class="cmd-btn" (click)="close()">Close</button>
+
+        <div class="cmd-sep"></div>
+
+        <button
+          type="button"
+          class="cmd-btn"
+          [class.danger]="hasCheckedRows"
+          [disabled]="!hasCheckedRows"
+          (click)="deleteChecked()"
+        >
+          Delete Checked
+        </button>
+
+        <div class="cmd-sep"></div>
+
+        <button type="button" class="cmd-btn" (click)="checkAll()">Check All</button>
+        <button type="button" class="cmd-btn" (click)="uncheckAll()">Uncheck All</button>
+
+        <div class="cmd-sep"></div>
+
+        <button type="button" class="cmd-btn" (click)="openBulkEdit()">Modify or Create New</button>
+        <button type="button" class="cmd-btn" (click)="onImportClick()">Import</button>
+
+        <input
+          #importFileInput
+          type="file"
+          class="hidden-file-input"
+          accept=".tab,.txt,text/plain"
+          (change)="onImportFileSelected($event)"
+        />
+
+        <div class="cmd-footnote" *ngIf="dirtyRowIds.size > 0">{{ dirtyRowIds.size }} modified</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Column Dialog (same pattern as Claim List) -->
+  <div class="customization-overlay" *ngIf="showColumnChooser" (click)="onColumnChooserClose()">
+    <div class="customization-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h3>Add Column</h3>
+        <button class="close-btn" (click)="onColumnChooserClose()">×</button>
+      </div>
+      <div class="dialog-search">
+        <input
+          type="text"
+          [(ngModel)]="columnSearchText"
+          placeholder="Search columns..."
+          class="search-input"
+        />
+      </div>
+      <div class="dialog-content">
+        <div class="column-list">
+          <label
+            *ngFor="let col of getFilteredChooserColumns()"
+            class="column-item"
+            (click)="$event.stopPropagation(); toggleColumnVisibility(col.key)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible(col.key)"
+              (click)="$event.preventDefault(); $event.stopPropagation()"
+            />
+            <span>{{ col.label }}</span>
+          </label>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+        <button class="btn-primary" (click)="onColumnChooserClose()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <app-modify-procedure-code-dialog
+    *ngIf="showBulkEditDialog"
+    [payerOptions]="payerOptions"
+    [physicianOptions]="physicianOptions"
+    [rateClassOptions]="rateClassOptions"
+    [prefill]="bulkEditPrefill"
+    (cancel)="onBulkEditCancel()"
+    (applyToChecked)="onBulkEditApply($event)"
+    (createNewFromChecked)="onBulkEditCreateNew($event)"
+    (openRateClassSelector)="openRateClassSelector()"
+  />
+
+  <app-rate-class-selector-dialog
+    *ngIf="showRateClassDialog"
+    [payerOptions]="payerOptions"
+    [physicianOptions]="physicianOptions"
+    [rateClassOptions]="rateClassOptions"
+    (cancel)="onRateClassCancel()"
+    (ok)="onRateClassOk($event)"
+    (browseProcedureFile)="onBrowseProcedureFile()"
+  />
+</div>

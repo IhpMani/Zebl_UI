@@ -25,6 +25,10 @@ import { UserManagementComponent } from './admin/user-management/user-management
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { AgGridModule } from 'ag-grid-angular';
+import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
+import { ColumnChooserDialogComponent } from './procedure-codes/column-chooser-dialog.component';
+import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.component';
 
 @NgModule({
   declarations: [
@@ -47,11 +51,15 @@ import { EdiReportsComponent } from './edi-reports/edi-reports.component';
     LoginComponent,
     UserManagementComponent,
     InterfaceDataReviewComponent,
-    EdiReportsComponent
+    EdiReportsComponent,
+    ProcedureCodesPageComponent,
+    ColumnChooserDialogComponent,
+    AddColumnHeaderComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
+    AgGridModule,
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule

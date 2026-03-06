@@ -1,0 +1,92 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 12px 12px;
+  z-index: 1500;
+}
+
+.dialog {
+  background: #fff;
+  border: 1px solid #a8d4f0;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+  width: 520px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #a8d4f0;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.dialog-body {
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 190px 1fr 30px;
+  gap: 8px;
+  align-items: center;
+
+  label {
+    font-size: 12px;
+    user-select: none;
+  }
+
+  input,
+  select {
+    font-size: 12px;
+    padding: 3px 6px;
+    border: 1px solid #93c5fd;
+    background: #fff;
+  }
+
+  .btn-small {
+    height: 26px;
+    font-size: 12px;
+    border: 1px solid #93c5fd;
+    background: #f0f8ff;
+    cursor: pointer;
+  }
+}
+
+.dialog-footer {
+  padding: 10px 12px;
+  border-top: 1px solid #a8d4f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid #93c5fd;
+    background: #f0f8ff;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: #f0f8ff;
+  }
+}
+
