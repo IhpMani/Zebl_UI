@@ -231,7 +231,8 @@ export class EdiReportsComponent implements OnInit {
         this.loadReports();
       },
       error: (err) => {
-        this.error = err?.error?.error || err?.message || 'Download failed';
+        const msg = err?.error?.error ?? (typeof err?.error === 'string' ? err.error : null) ?? err?.message;
+        this.error = msg || 'Download failed';
         this.loading = false;
       }
     });

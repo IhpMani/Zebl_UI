@@ -1,0 +1,43 @@
+<div class="dialog-overlay" (click)="closeDialog()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <header class="dialog-header">
+      <h2>{{ dialogTitle }}</h2>
+      <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
+    </header>
+    <div class="dialog-body">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search..."
+        [(ngModel)]="keyword"
+        (keyup)="search()"
+        (keydown)="onKeydown($event)"
+      />
+      <div *ngIf="loading" class="loading">Loading...</div>
+      <ul class="result-list" *ngIf="!loading && results.length">
+        <li
+          *ngFor="let item of results; let i = index"
+          class="result-item"
+          [class.selected]="i === selectedIndex"
+          (dblclick)="choose(item)"
+          (click)="selectedIndex = i"
+        >
+          <span class="code">{{ item.code }}</span>
+          <span class="desc">{{ item.description || '' }}</span>
+        </li>
+      </ul>
+      <p *ngIf="!loading && keyword && !results.length" class="no-results">No results.</p>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="selectedIndex >= 0 && results[selectedIndex] && choose(results[selectedIndex])"
+        [disabled]="selectedIndex < 0 || !results.length"
+      >
+        Select
+      </button>
+    </footer>
+  </div>
+</div>

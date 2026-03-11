@@ -1,0 +1,84 @@
+<div class="code-library-page">
+  <div class="page-header">
+    <div class="page-title">Code Library</div>
+
+    <div class="library-select-row">
+      <label for="code-library-select">Select library:</label>
+      <select
+        id="code-library-select"
+        class="library-select"
+        [ngModel]="libraryKey"
+        (ngModelChange)="onLibraryChange($event)"
+      >
+        <option *ngFor="let opt of libraryOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="content-split">
+    <div class="left-pane">
+      <div class="entry-form">
+        <div class="form-row">
+          <label>Code:</label>
+          <input #codeInput type="text" class="code-input" [(ngModel)]="code" placeholder="Type code here..." />
+          <label>Description:</label>
+          <input type="text" class="description-input" [(ngModel)]="description" />
+        </div>
+      </div>
+
+      <div *ngIf="error" class="error-bar">{{ error }}</div>
+      <div *ngIf="loading" class="loading-overlay">Loading...</div>
+
+      <div class="grid-wrapper">
+        <table class="claims-table code-library-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-entry" (click)="onAddNewClick()">
+              <td colspan="2">Add new entry...</td>
+            </tr>
+            <tr
+              *ngFor="let row of dataRows; trackBy: trackByRow"
+              class="data-row"
+              [class.selected]="isSelected(row)"
+              (click)="onRowClick(row)"
+            >
+              <td>{{ row.code }}</td>
+              <td>{{ row.description }}</td>
+            </tr>
+            <tr *ngIf="dataRows.length === 0 && !loading">
+              <td colspan="2" class="no-data">No codes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="right-pane">
+      <div class="command-panel">
+        <div class="command-title">Commands</div>
+        <button type="button" class="cmd-btn primary" (click)="saveAndNew()" [disabled]="!canSave || saving">Save &amp; New</button>
+        <button type="button" class="cmd-btn" (click)="saveAndClose()" [disabled]="saving">Save &amp; Close</button>
+        <button type="button" class="cmd-btn" (click)="close()">Close</button>
+
+        <div class="cmd-sep"></div>
+
+        <button type="button" class="cmd-btn" (click)="openImport()">Import Codes</button>
+
+        <div class="cmd-sep"></div>
+
+        <button type="button" class="cmd-btn danger" [disabled]="!canDelete" (click)="deleteSelected()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <app-code-import-dialog
+    *ngIf="showImportDialog"
+    [libraryKey]="libraryKey"
+    (close)="onImportDone()"
+  ></app-code-import-dialog>
+</div>

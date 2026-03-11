@@ -192,6 +192,9 @@ export class RibbonComponent implements OnInit, OnDestroy {
       case 'Procedure Code':
         this.router.navigate(['/libraries/procedure-codes']);
         break;
+      case 'Code Library':
+        this.router.navigate(['/code-library']);
+        break;
       default:
         console.log(`Library option selected: ${option}`);
         // Placeholder for future routing/functionality

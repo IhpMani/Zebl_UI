@@ -604,44 +604,182 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+
+    // Guard: we only support text-based imports (tab or CSV), not raw .xlsx
+    const name = file.name.toLowerCase();
+    const isTextLike = name.endsWith('.tab') || name.endsWith('.txt') || name.endsWith('.tsv') || name.endsWith('.csv');
+    if (!isTextLike) {
+      alert('Import currently supports text/tab-delimited files only. In Excel, use "Save As" → Text (Tab delimited) or CSV, then import that file.');
+      input.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
-      const newRows = this.parseImportedProcedureCodes(text);
-      if (newRows.length === 0) return;
-      this.rowData = [...newRows, ...this.rowData];
-      newRows.forEach(r => {
-        if (r.__rowId) {
-          this.newRowIds.add(r.__rowId);
-          this.dirtyRowIds.add(r.__rowId);
+      const entries = this.parseImportedProcedureCodes(text);
+      if (entries.length === 0) return;
+
+      const newRows: ProcedureCodeRow[] = [];
+
+      for (const entry of entries) {
+        const code = entry.procCode;
+        const product = entry.procProductCode ?? '';
+
+        const matches = this.rowData.filter(
+          r =>
+            r.procCode === code &&
+            (r.procProductCode ?? '') === product
+        );
+
+        if (matches.length > 0) {
+          // Bulk-update existing rows (ProcCode + ProductCode match)
+          for (const row of matches) {
+            row.procCharge = entry.procCharge;
+            row.procAllowed = entry.procAllowed;
+            row.procAdjust = entry.procAdjust;
+            row.procDescription = entry.procDescription;
+            row.procProductCode = entry.procProductCode ?? row.procProductCode;
+            row.procModifier1 = entry.procModifier1 ?? row.procModifier1;
+            row.procCategory = entry.procCategory ?? row.procCategory;
+            row.procSubCategory = entry.procSubCategory ?? row.procSubCategory;
+            row.procRVUWork = entry.procRVUWork;
+            row.procRVUMalpractice = entry.procRVUMalpractice;
+            this.markDirty(row);
+          }
+        } else {
+          // No match → create new unsaved row
+          const row: ProcedureCodeRow = {
+            procID: 0,
+            procCode: entry.procCode,
+            procCharge: entry.procCharge,
+            procAllowed: entry.procAllowed,
+            procAdjust: entry.procAdjust,
+            procDescription: entry.procDescription,
+            procProductCode: entry.procProductCode ?? '',
+            procModifier1: entry.procModifier1 ?? '',
+            procCategory: entry.procCategory ?? '',
+            procSubCategory: entry.procSubCategory ?? '',
+            procRVUWork: entry.procRVUWork,
+            procRVUMalpractice: entry.procRVUMalpractice,
+            procBillingPhyFID: 0,
+            procPayFID: 0,
+            procUnits: 1,
+            procCost: 0,
+            procCMNReq: false,
+            procCoPayReq: false,
+            procDescriptionReq: false,
+            procDrugUnitCount: 0,
+            procModifiersCC: '',
+            __isNew: true,
+            __dirty: true,
+            __rowId: `new-${Date.now()}-${Math.random().toString(16).slice(2)}`
+          } as ProcedureCodeRow;
+
+          newRows.push(row);
         }
-      });
+      }
+
+      if (newRows.length > 0) {
+        this.rowData = [...newRows, ...this.rowData];
+        newRows.forEach(r => {
+          if (r.__rowId) {
+            this.newRowIds.add(r.__rowId);
+            this.dirtyRowIds.add(r.__rowId);
+          }
+        });
+      }
     };
     reader.readAsText(file);
     input.value = '';
   }
 
-  private parseImportedProcedureCodes(text: string): ProcedureCodeRow[] {
-    const lines = text.split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length > 0);
-    const rows: ProcedureCodeRow[] = [];
-    for (const line of lines) {
-      const parts = line.split('\t');
-      const procCode = (parts[0] ?? '').trim();
-      if (!procCode) continue;
+  private parseImportedProcedureCodes(
+    text: string
+  ): {
+    procCode: string;
+    procCharge: number;
+    procAllowed: number;
+    procAdjust: number;
+    procDescription: string;
+    procProductCode?: string;
+    procModifier1?: string;
+    procCategory?: string;
+    procSubCategory?: string;
+    procRVUWork: number;
+    procRVUMalpractice: number;
+  }[] {
+    const rawLines = text.split(/\r?\n/).map(l => l.trimEnd());
+    const nonEmpty = rawLines.filter(l => l.length > 0);
+    if (nonEmpty.length === 0) return [];
 
-      const charge = Number(parts[1] ?? 0) || 0;
-      const allowed = Number(parts[2] ?? 0) || 0;
-      const adjust = Number(parts[3] ?? 0) || 0;
-      const description = (parts[4] ?? '').trim();
+    // Detect delimiter: prefer tab, else comma
+    const sample = nonEmpty[0];
+    const delimiter = sample.includes('\t') ? '\t' : ',';
+
+    // Header-aware parsing: detect positions of key columns by header text
+    const headerParts = sample.split(delimiter).map(p => p.trim());
+    const headerLower = headerParts.map(p => p.toLowerCase());
+
+    const headerCodeIdx = headerLower.findIndex(h => h.includes('procedure') || h === 'code' || h === 'proccode');
+    const headerChargeIdx = headerLower.findIndex(h => h.includes('charge'));
+    const headerDescriptionIdx = headerLower.findIndex(h => h.includes('description') || h.includes('desc'));
+
+    const hasHeader =
+      headerCodeIdx >= 0 &&
+      headerChargeIdx >= 0 &&
+      headerDescriptionIdx >= 0;
+
+    const codeIdx = hasHeader ? headerCodeIdx : 0;
+    const chargeIdx = hasHeader ? headerChargeIdx : 1;
+    const allowedIdx = hasHeader ? -1 : 2;
+    const adjustIdx = hasHeader ? -1 : 3;
+    const descriptionIdx = hasHeader ? headerDescriptionIdx : 4;
+
+    const lines = hasHeader ? nonEmpty.slice(1) : nonEmpty;
+    const rows: {
+      procCode: string;
+      procCharge: number;
+      procAllowed: number;
+      procAdjust: number;
+      procDescription: string;
+      procProductCode?: string;
+      procModifier1?: string;
+      procCategory?: string;
+      procSubCategory?: string;
+      procRVUWork: number;
+      procRVUMalpractice: number;
+    }[] = [];
+    const parseNumberCell = (raw: string | undefined): number => {
+      if (!raw) return 0;
+      const cleaned = raw.replace(/[$,\s]/g, '');
+      if (!cleaned) return 0;
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    lines.forEach((line) => {
+      const parts = line.split(delimiter);
+      const procCode = (parts[codeIdx] ?? '').trim();
+      if (!procCode) {
+        return;
+      }
+      const charge = parseNumberCell(parts[chargeIdx]);
+      const allowed = allowedIdx >= 0 ? parseNumberCell(parts[allowedIdx]) : 0;
+      const adjust = adjustIdx >= 0 ? parseNumberCell(parts[adjustIdx]) : 0;
+
+      // Support both header-mapped files and legacy 11-column spec
+      const description =
+        (descriptionIdx >= 0 ? parts[descriptionIdx] : undefined) ??
+        (parts[4] ?? parts[2] ?? '');
+
       const productCode = (parts[5] ?? '').trim();
       const modifier = (parts[6] ?? '').trim();
       const category = (parts[7] ?? '').trim();
       const subcategory = (parts[8] ?? '').trim();
-      const workRVU = Number(parts[9] ?? 0) || 0;
-      const malRVU = Number(parts[10] ?? 0) || 0;
+      const workRVU = parseNumberCell(parts[9]);
+      const malRVU = parseNumberCell(parts[10]);
 
       rows.push({
-        procID: 0,
         procCode,
         procCharge: charge,
         procAllowed: allowed,
@@ -652,21 +790,9 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
         procCategory: category,
         procSubCategory: subcategory,
         procRVUWork: workRVU,
-        procRVUMalpractice: malRVU,
-        procBillingPhyFID: 0,
-        procPayFID: 0,
-        procUnits: 1,
-        procCost: 0,
-        procCMNReq: false,
-        procCoPayReq: false,
-        procDescriptionReq: false,
-        procDrugUnitCount: 0,
-        procModifiersCC: '',
-        __isNew: true,
-        __dirty: true,
-        __rowId: `new-${Date.now()}-${Math.random().toString(16).slice(2)}`
-      } as ProcedureCodeRow);
-    }
+        procRVUMalpractice: malRVU
+      });
+    });
     return rows;
   }
 

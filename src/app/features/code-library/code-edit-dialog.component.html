@@ -1,0 +1,35 @@
+<div class="dialog-overlay" (click)="closeDialog()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <header class="dialog-header">
+      <h2>{{ isNew ? 'New' : 'Edit' }} {{ activeTab }}</h2>
+      <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
+    </header>
+    <div class="dialog-body">
+      <div class="field">
+        <label>Code</label>
+        <input type="text" [(ngModel)]="model.code" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" [(ngModel)]="model.description" />
+      </div>
+      <div class="field" *ngIf="activeTab === 'icd9' || activeTab === 'icd10'">
+        <label>Code Type</label>
+        <select [(ngModel)]="model.codeType">
+          <option value="ICD9">ICD9</option>
+          <option value="ICD10">ICD10</option>
+        </select>
+      </div>
+      <div class="field" *ngIf="activeTab !== 'procedures'">
+        <label><input type="checkbox" [(ngModel)]="model.isActive" /> Active</label>
+      </div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+    </footer>
+  </div>
+</div>

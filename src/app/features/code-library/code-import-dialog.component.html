@@ -1,0 +1,22 @@
+<div class="dialog-overlay" (click)="closeDialog()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <header class="dialog-header">
+      <h2>Import Codes</h2>
+      <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
+    </header>
+    <div class="dialog-body">
+      <p class="hint">CSV format: Code[TAB]Description (tab-separated). Duplicates are skipped.</p>
+      <input type="file" accept=".csv,.txt" (change)="onFileSelect($event)" />
+      <div *ngIf="result" class="result">
+        Imported: {{ result.importedCount }} · Skipped: {{ result.skippedCount }}
+      </div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+    </div>
+    <footer class="dialog-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="import()" [disabled]="!file || importing">
+        {{ importing ? 'Importing...' : 'Import' }}
+      </button>
+    </footer>
+  </div>
+</div>

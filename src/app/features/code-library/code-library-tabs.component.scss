@@ -1,0 +1,27 @@
+.code-library-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid #a8d4f0;
+
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #555;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+
+    &:hover {
+      color: #333;
+    }
+
+    &.active {
+      color: #1d4ed8;
+      font-weight: 600;
+      border-bottom-color: #1d4ed8;
+    }
+  }
+}

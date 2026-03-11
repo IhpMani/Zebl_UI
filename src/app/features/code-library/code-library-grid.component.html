@@ -1,0 +1,78 @@
+<div class="code-library-grid">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search..."
+        [(ngModel)]="search"
+        (keyup.enter)="onSearch()"
+      />
+      <button type="button" class="btn btn-secondary" (click)="onSearch()">Search</button>
+    </div>
+    <div class="toolbar-right">
+      <button type="button" class="btn btn-primary" (click)="openNew()" *ngIf="activeTab !== 'procedures'">New</button>
+      <button type="button" class="btn btn-secondary" (click)="openEdit()" *ngIf="activeTab !== 'procedures'">Edit</button>
+      <button type="button" class="btn btn-secondary" (click)="deleteSelected()" *ngIf="activeTab !== 'procedures'">Delete</button>
+      <button type="button" class="btn btn-secondary" (click)="openImport()" *ngIf="activeTab !== 'procedures'">Import</button>
+      <button type="button" class="btn btn-secondary" (click)="loadPage()">Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-bar">{{ error }}</div>
+  <div *ngIf="loading" class="loading-overlay">Loading...</div>
+
+  <div class="grid-wrapper" (click)="$event.stopPropagation()">
+    <table class="claims-table code-library-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns" [class]="col.className || ''">{{ col.label }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let row of rowData; trackBy: trackByRow"
+          class="data-row"
+          [class.selected]="isSelected(row)"
+          (click)="onRowClick(row)"
+          (dblclick)="openEdit()"
+        >
+          <td *ngFor="let col of columns" [class]="col.className || ''">
+            {{ getCell(row, col.key) }}
+          </td>
+        </tr>
+        <tr *ngIf="rowData.length === 0 && !loading">
+          <td [attr.colspan]="columns.length" class="no-data">No codes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination-bar">
+    <span class="pagination-info">{{ totalCount }} total · Page {{ page }} of {{ totalPages || 1 }}</span>
+    <div class="pagination-controls">
+      <button type="button" class="btn-page" [disabled]="page <= 1 || loading" (click)="onPageChange(1)">««</button>
+      <button type="button" class="btn-page" [disabled]="page <= 1 || loading" (click)="onPageChange(page - 1)">‹</button>
+      <button type="button" class="btn-page" [disabled]="page >= totalPages || loading" (click)="onPageChange(page + 1)">›</button>
+      <button type="button" class="btn-page" [disabled]="page >= totalPages || loading" (click)="onPageChange(totalPages)">»»</button>
+      <select class="page-size-select" [value]="pageSize" (change)="onPageSizeChange(+$any($event.target).value)" [disabled]="loading">
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+      </select>
+    </div>
+  </div>
+
+  <app-code-import-dialog
+    *ngIf="showImportDialog"
+    [libraryKey]="activeTab"
+    (close)="onImportDone()"
+  ></app-code-import-dialog>
+
+  <app-code-edit-dialog
+    *ngIf="showEditDialog && editPayload"
+    [activeTab]="activeTab"
+    [payload]="editPayload"
+    (close)="onEditDone()"
+  ></app-code-edit-dialog>
+</div>
