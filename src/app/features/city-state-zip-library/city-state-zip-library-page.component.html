@@ -1,0 +1,109 @@
+<div class="city-state-zip-page">
+  <div class="header">
+    <div class="breadcrumb">City State Zip</div>
+  </div>
+
+  <div class="content">
+    <div class="grid-area">
+      <div class="grid-shell">
+        <div class="grid-top-bar">
+          <div class="grid-top-hint">Drag a column header here to group by that column</div>
+          <div class="grid-top-right">
+            <input class="grid-search" type="text" placeholder="" aria-label="Search" />
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="csz-table">
+            <thead>
+              <tr class="header-row">
+                <th class="col-check"></th>
+                <th>City</th>
+                <th class="col-state">State</th>
+                <th class="col-zip">Zip</th>
+              </tr>
+              <tr class="filter-row">
+                <th class="col-check"></th>
+                <th><input [(ngModel)]="filterCity" placeholder="Filter" /></th>
+                <th><input [(ngModel)]="filterState" placeholder="Filter" /></th>
+                <th><input [(ngModel)]="filterZip" placeholder="Filter" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Top "add" row -->
+              <tr class="add-row" *ngIf="!adding" (click)="startAdd()">
+                <td class="col-check"></td>
+                <td colspan="3" class="add-placeholder">Click here to add a new city state zip library entry</td>
+              </tr>
+
+              <tr class="add-row-edit" *ngIf="adding">
+                <td class="col-check"></td>
+                <td>
+                  <input
+                    #newCityInput
+                    [(ngModel)]="newCity"
+                    placeholder="City"
+                    (keyup.enter)="commitAdd()"
+                  />
+                </td>
+                <td><input [(ngModel)]="newState" placeholder="State" (keyup.enter)="commitAdd()" /></td>
+                <td><input [(ngModel)]="newZip" placeholder="Zip" (keyup.enter)="commitAdd()" /></td>
+              </tr>
+
+              <tr *ngFor="let r of filteredRows" class="data-row">
+                <td class="col-check">
+                  <input
+                    type="checkbox"
+                    [checked]="isChecked(r.id)"
+                    (change)="toggleChecked(r.id, $any($event.target).checked)"
+                  />
+                </td>
+                <td><input class="cell-input" [(ngModel)]="r.city" (ngModelChange)="markDirty(r)" /></td>
+                <td><input class="cell-input" [(ngModel)]="r.state" (ngModelChange)="markDirty(r)" /></td>
+                <td><input class="cell-input" [(ngModel)]="r.zip" (ngModelChange)="markDirty(r)" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button
+        class="action-btn btn-primary"
+        [disabled]="saving || rows.length === 0 || !dirtyIds.size"
+        (click)="saveAndClose()"
+      >
+        Save &amp; Close
+      </button>
+      <button
+        class="action-btn btn-primary"
+        [disabled]="saving || !dirtyIds.size"
+        (click)="save()"
+      >
+        Save
+      </button>
+      <button class="action-btn btn-secondary" (click)="close()">Close</button>
+
+      <div class="spacer"></div>
+
+      <button class="action-btn btn-secondary" (click)="checkAll()">Check All</button>
+      <button class="action-btn btn-secondary" (click)="uncheckAll()">Uncheck All</button>
+      <button
+        class="action-btn btn-secondary danger"
+        [disabled]="saving || selectedIds.size === 0"
+        (click)="deleteChecked()"
+      >
+        Delete Checked
+      </button>
+
+      <div class="auto-add">
+        <label>
+          <input type="checkbox" [(ngModel)]="autoAddNewEntriesToLibrary" />
+          Automatically add new entries to this library
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+

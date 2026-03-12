@@ -47,7 +47,9 @@ const routes: Routes = [
   { path: 'connection-library', loadChildren: () => import('./features/connection-library/connection-library.module').then(m => m.ConnectionLibraryModule), canActivate: [AuthGuard] },
   { path: 'payer-library', loadChildren: () => import('./features/payer-library/payer-library.module').then(m => m.PayerLibraryModule), canActivate: [AuthGuard] },
   { path: 'libraries/procedure-codes', loadChildren: () => import('./features/procedure-code-library/procedure-code-library.module').then(m => m.ProcedureCodeLibraryModule), canActivate: [AuthGuard] },
+  { path: 'libraries/city-state-zip', loadChildren: () => import('./features/city-state-zip-library/city-state-zip-library.module').then(m => m.CityStateZipLibraryModule), canActivate: [AuthGuard] },
   { path: 'code-library', loadChildren: () => import('./features/code-library/code-library.module').then(m => m.CodeLibraryModule), canActivate: [AuthGuard] },
+  { path: 'claim-template-library', loadChildren: () => import('./features/claim-template-library/claim-template-library.module').then(m => m.ClaimTemplateLibraryModule), canActivate: [AuthGuard] },
   { path: 'libraries', redirectTo: '', pathMatch: 'full' },
 ];
 

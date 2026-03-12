@@ -2,45 +2,18 @@
    Refined Clinical ERP Theme
 ========================= */
 
+:host {
+  display: block;
+  position: relative;
+  z-index: 2500;
+}
+
 .ribbon-container {
   background: linear-gradient(to bottom, #e8f4fc, #dceef9);
   border-bottom: 1px solid #a8d4f0;
   box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
-}
-
-/* Menu Bar */
-
-.menu-bar {
-  background: #fff;
-  border-bottom: 1px solid #a8d4f0;
-  padding: 3px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.menu-bar nav {
-  display: flex;
-  gap: 6px;
-}
-
-.menu-bar-trailing {
-  display: flex;
-  align-items: center;
-}
-
-.menu-item {
-  padding: 5px 12px;
-  cursor: pointer;
-  font-size: 0.85em;
-  color: #1f3b57;
-  border-radius: 8px;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.menu-item:hover {
-  background: #e8f4fc;
-  color: #1d4ed8;
+  position: relative;
+  z-index: 1;
 }
 
 /* Toolbar */
@@ -51,6 +24,7 @@
   gap: 10px;
   flex-wrap: wrap;
   align-items: flex-start;
+  overflow: visible;
 }
 
 .toolbar-section {
@@ -140,7 +114,7 @@
   background: #ffffff;
   min-width: 220px;
   box-shadow: 0 15px 35px rgba(0, 80, 160, 0.12);
-  z-index: 1000;
+  z-index: 3000;
   border: 1px solid #a8d4f0;
   border-radius: 14px;
   overflow: hidden;
@@ -176,4 +150,17 @@
   width: 18px;
   height: 18px;
   margin-right: 12px;
+}
+
+/* Trailing profile menu (projected from app-shell) */
+.toolbar-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toolbar-trailing {
+  display: flex;
+  align-items: flex-start;
+  padding-left: 12px;
+  margin-left: auto;
 }

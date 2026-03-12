@@ -1,0 +1,134 @@
+<div class="claim-template-library-page">
+  <div class="content-split">
+    <div class="left-pane">
+      <div class="template-list-header">Entry Name</div>
+      <div class="template-list">
+        <div class="template-row add-new" (click)="onAddNewClick()">Add new entry...</div>
+        <div
+          *ngFor="let t of templates"
+          class="template-row"
+          [class.selected]="t.id === selectedTemplateId"
+          (click)="onSelectTemplate(t)"
+        >
+          {{ t.templateName }}
+        </div>
+      </div>
+    </div>
+
+    <div class="right-pane">
+      <div class="editor-panel">
+        <div class="editor-header">
+          <div class="template-name-row">
+            <label>Template Name (Required):</label>
+            <input type="text" [(ngModel)]="template.templateName" />
+          </div>
+          <div class="command-buttons">
+            <button type="button" class="cmd-btn primary" (click)="onSaveNew()">Save &amp; New</button>
+            <button type="button" class="cmd-btn" (click)="onSaveClose()">Save &amp; Close</button>
+            <button type="button" class="cmd-btn" (click)="onClose()">Close</button>
+            <button type="button" class="cmd-btn danger" (click)="onDelete()">Delete</button>
+          </div>
+        </div>
+
+        <div class="editor-body">
+          <div class="provider-grid">
+            <div class="form-row">
+              <label>Available To:</label>
+              <select [(ngModel)]="template.availableToPatientId">
+                <option [ngValue]="null">Select a patient</option>
+                <option *ngFor="let p of patients" [ngValue]="p.id">{{ p.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Billing Provider:</label>
+              <select [(ngModel)]="template.billingProviderId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let phy of billingProviders" [ngValue]="phy.id">{{ phy.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Rendering Provider:</label>
+              <select [(ngModel)]="template.renderingProviderId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let phy of physicians" [ngValue]="phy.id">{{ phy.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Service Facility:</label>
+              <select [(ngModel)]="template.serviceFacilityId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let f of facilities" [ngValue]="f.id">{{ f.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Referring Provider:</label>
+              <select [(ngModel)]="template.referringProviderId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let phy of physicians" [ngValue]="phy.id">{{ phy.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Ordering Provider:</label>
+              <select [(ngModel)]="template.orderingProviderId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let phy of physicians" [ngValue]="phy.id">{{ phy.label }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Supervising Provider:</label>
+              <select [(ngModel)]="template.supervisingProviderId">
+                <option [ngValue]="null">None</option>
+                <option *ngFor="let phy of physicians" [ngValue]="phy.id">{{ phy.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="diagnosis-section">
+            <div class="diagnosis-header">Diagnoses A1–L12:</div>
+            <div class="diagnosis-grid">
+              <div *ngFor="let dx of diagnosisPositions" class="diagnosis-cell">
+                <label>{{ dx.label }}</label>
+                <input type="text" [(ngModel)]="template.diagnoses[dx.key]" />
+              </div>
+            </div>
+          </div>
+
+          <div class="service-lines-section">
+            <table class="service-lines-table">
+              <thead>
+                <tr>
+                  <th>Place</th>
+                  <th>Procedure</th>
+                  <th>Mod 1</th>
+                  <th>Diag #</th>
+                  <th>Units</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let line of serviceLines; let i = index"
+                  class="data-row"
+                >
+                  <td><input type="text" [(ngModel)]="line.placeOfService" /></td>
+                  <td><input type="text" [(ngModel)]="line.procedureCode" /></td>
+                  <td><input type="text" [(ngModel)]="line.modifier1" /></td>
+                  <td><input type="text" [(ngModel)]="line.diagnosisPointer" /></td>
+                  <td><input type="number" [(ngModel)]="line.units" /></td>
+                  <td><input type="text" [(ngModel)]="line.description" /></td>
+                </tr>
+                <tr class="add-line-row" (click)="onAddServiceLineClick()">
+                  <td colspan="6">Click here to add a new service line to this template</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <div *ngIf="saving" class="loading-overlay">Saving...</div>
+  <div *ngIf="error" class="error-bar">{{ error }}</div>
+  </div>
+</div>
+

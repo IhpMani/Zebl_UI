@@ -36,7 +36,9 @@ export class ListLibraryComponent implements OnInit {
 
     this.listApiService.getListTypes().subscribe({
       next: (response) => {
-        this.listTypes = response.data || [];
+        // Filter out list types that should not be shown in the UI
+        const allTypes = response.data || [];
+        this.listTypes = allTypes.filter(t => (t.listTypeName || '').toLowerCase() !== 'claim status');
         this.loading = false;
 
         // Auto-select first type if available

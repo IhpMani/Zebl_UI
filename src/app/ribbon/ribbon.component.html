@@ -1,16 +1,4 @@
 <div class="ribbon-container">
-  <div class="menu-bar">
-    <nav>
-      <div class="menu-item" (click)="goToHome()">Home</div>
-      <div class="menu-item">Electronic Billing</div>
-      <div class="menu-item">Tools</div>
-      <div class="menu-item">Support</div>
-      <div class="menu-item">Info</div>
-    </nav>
-    <div class="menu-bar-trailing">
-      <ng-content select="[menuBarTrailing]"></ng-content>
-    </div>
-  </div>
   <div class="toolbar">
     <div class="toolbar-section">
       <div class="toolbar-group">
@@ -97,6 +85,11 @@
         <button class="toolbar-button"><img src="assets/icons/ticket.png" alt="Ticket">Ticket</button>
       </div>
       <div class="toolbar-label">Support</div>
+    </div>
+
+    <div class="toolbar-spacer"></div>
+    <div class="toolbar-trailing">
+      <ng-content select="[menuBarTrailing]"></ng-content>
     </div>
   </div>
 </div>

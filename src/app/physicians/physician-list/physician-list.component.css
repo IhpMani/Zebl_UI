@@ -1,11 +1,14 @@
 .claim-list-container {
   padding: 20px;
   width: 100%;
+  min-height: calc(100vh - 60px);
+  box-sizing: border-box;
+  background: #e8f4fc;
 }
 
 h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: #334155;
 }
 
 .loading {
