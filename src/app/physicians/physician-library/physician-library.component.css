@@ -14,7 +14,7 @@
 .left-panel {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  border-right: 1px solid #a8d4f0;
+  border-right: 1px solid var(--color-border);
   min-width: 0;
 }
 
@@ -22,8 +22,8 @@
   padding: 4px 6px;
   font-size: 13px;
   font-weight: 600;
-  border-bottom: 1px solid #a8d4f0;
-  background: #cce5f5;
+  border-bottom: 1px solid var(--color-panel-header-border);
+  background: var(--color-panel-header-bg);
 }
 
 .search-section {
@@ -38,7 +38,7 @@
 .add-new-entry {
   padding: 4px 6px;
   font-size: 12px;
-  border-bottom: 1px solid #aaa;
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
 }
 
@@ -52,9 +52,9 @@
   padding: 6px;
   font-size: 12px;
   font-weight: 600;
-  border-bottom: 2px solid #a8d4f0;
-  background: #cce5f5;
-  color: #333;
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-body-bg);
+  color: var(--color-text);
 }
 
 .physician-name-header,
@@ -69,12 +69,12 @@
   grid-template-columns: 1fr 120px;
   padding: 3px 6px;
   font-size: 12px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
 }
 
 .physician-item.selected {
-  background: #dbe8f6;
+  background: var(--color-body-bg);
 }
 
 .physician-name,

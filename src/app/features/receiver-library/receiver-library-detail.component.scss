@@ -1,8 +1,8 @@
 .receiver-library-detail-container {
   padding: 16px;
-  background: #e8f4fc;
+  background: var(--color-body-bg);
   font-size: 13px;
-  color: #333;
+  color: var(--color-text);
   min-height: calc(100vh - 60px);
   height: 100%;
   position: relative;
@@ -21,20 +21,20 @@
 
 .loading {
   padding: 12px 24px;
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(30, 64, 175, 0.15);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .error-panel {
   padding: 12px 16px;
   margin-bottom: 20px;
   border-radius: 6px;
-  background: #fef3f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error);
   
   p {
     margin: 0 0 12px 0;
@@ -45,14 +45,14 @@
   padding: 10px 14px;
   margin-bottom: 12px;
   border-radius: 6px;
-  background: #fef9c3;
-  border: 1px solid #fde047;
-  color: #854d0e;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning);
 }
 
 .receiver-library-form {
-  background: #fff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   padding: 16px;
   padding-right: 150px;
   border-radius: 2px;
@@ -76,9 +76,9 @@
 .btn-action {
   padding: 6px 12px;
   font-size: 12px;
-  background: #fff;
-  color: #333;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
@@ -89,8 +89,8 @@
   margin: 0;
   
   &:hover:not(:disabled) {
-    background: #e8f4fc;
-    border-color: #93c5fd;
+    background: var(--color-body-bg);
+    border-color: var(--color-toolbar);
   }
   
   &:disabled {
@@ -102,9 +102,9 @@
 .btn-delete {
   padding: 6px 12px;
   font-size: 12px;
-  background: #dc2626;
-  color: #fff;
-  border: 1px solid #b91c1c;
+  background: var(--color-error);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-error);
   border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
@@ -115,7 +115,7 @@
   margin: 0;
   
   &:hover:not(:disabled) {
-    background: #b91c1c;
+    background: var(--color-error);
   }
   
   &:disabled {
@@ -130,7 +130,7 @@
   gap: 16px;
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #a8d4f0;
+  border-bottom: 1px solid var(--color-border);
   align-items: start;
   
   .form-field {
@@ -144,8 +144,8 @@
 }
 
 .section-panel {
-  border: 1px solid #a8d4f0;
-  background: #e8f4fc;
+  border: 1px solid var(--color-border);
+  background: var(--color-body-bg);
   padding: 0;
   margin-bottom: 12px;
   overflow: hidden;
@@ -153,17 +153,17 @@
 
 .section-title {
   padding: 8px 12px;
-  background: #cce5f5;
-  border-bottom: 1px solid #a8d4f0;
+  background: var(--color-body-bg);
+  border-bottom: 1px solid var(--color-border);
   font-weight: 600;
   font-size: 12px;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.4;
 }
 
 .panel-content {
   padding: 12px;
-  background: #fff;
+  background: var(--color-card-bg);
 }
 
 .grid-2-col {
@@ -197,7 +197,7 @@
       label {
         font-size: 12px;
         font-weight: 500;
-        color: #333;
+        color: var(--color-text);
         white-space: nowrap;
       }
       
@@ -217,7 +217,7 @@
       label {
         font-size: 12px;
         font-weight: 500;
-        color: #333;
+        color: var(--color-text);
         white-space: nowrap;
       }
       
@@ -230,7 +230,7 @@
   label {
     font-size: 12px;
     font-weight: 500;
-    color: #333;
+    color: var(--color-text);
     line-height: 1.3;
     word-break: break-word;
   }
@@ -238,19 +238,19 @@
 
 .form-input {
   padding: 4px 8px;
-  border: 1px solid #a8d4f0;
+  border: 1px solid var(--color-border);
   border-radius: 2px;
   font-size: 13px;
-  background: #fff;
+  background: var(--color-card-bg);
   height: 26px;
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
   
   &:focus {
-    outline: 1px solid #1d4ed8;
+    outline: 1px solid var(--color-primary-btn);
     outline-offset: -1px;
-    border-color: #1d4ed8;
+    border-color: var(--color-primary-btn);
   }
   
   &[type="checkbox"] {
@@ -336,16 +336,16 @@ select.form-input {
 
 .error-text {
   font-size: 11px;
-  color: #dc2626;
+  color: var(--color-error);
   margin-top: 2px;
 }
 
 .important-note {
   padding: 10px 12px;
-  background: #fff3cd;
-  border-top: 1px solid #a8d4f0;
+  background: var(--color-warning-bg);
+  border-top: 1px solid var(--color-border);
   font-size: 11px;
-  color: #856404;
+  color: var(--color-warning);
   font-style: italic;
   margin: 0;
   line-height: 1.4;
@@ -365,7 +365,7 @@ select.form-input {
     flex-wrap: wrap;
     margin-bottom: 16px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #a8d4f0;
+    border-bottom: 1px solid var(--color-border);
   }
   
   .grid-2-col {

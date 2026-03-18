@@ -1,0 +1,48 @@
+<div class="claim-rejections-page">
+  <div class="header-row">
+    <div class="title">Claim Rejections</div>
+    <button class="btn btn-secondary" (click)="load()" [disabled]="loading">
+      {{ loading ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </div>
+
+  <div class="error-row" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="grid-wrapper" *ngIf="!loading && rows.length > 0; else emptyTpl">
+    <table class="rejections-grid">
+      <thead>
+        <tr>
+          <th>Claim ID</th>
+          <th>Error Code</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td>{{ row.claimId }}</td>
+          <td>{{ row.errorCode }}</td>
+          <td>{{ row.description }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ row.createdAt | date:'short' }}</td>
+          <td>
+            <button class="btn-link" (click)="openClaim(row)" [disabled]="!row.claimId">Open Claim</button>
+            <button class="btn-link" (click)="resolve(row)" [disabled]="row.status === 'Resolved'">Resolve</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyTpl>
+    <div class="empty-state">
+      <span *ngIf="loading">Loading rejections…</span>
+      <span *ngIf="!loading">No claim rejections found.</span>
+    </div>
+  </ng-template>
+</div>
+

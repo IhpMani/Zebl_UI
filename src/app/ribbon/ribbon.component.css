@@ -9,9 +9,9 @@
 }
 
 .ribbon-container {
-  background: linear-gradient(to bottom, #e8f4fc, #dceef9);
-  border-bottom: 1px solid #a8d4f0;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+  background: var(--color-header);
+  border-bottom: 1px solid var(--color-header);
+  box-shadow: 0 2px 10px var(--shadow-overlay);
   position: relative;
   z-index: 1;
 }
@@ -25,6 +25,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   overflow: visible;
+  background-color: var(--color-toolbar);
 }
 
 .toolbar-section {
@@ -32,7 +33,7 @@
   flex-direction: column;
   align-items: center;
   padding: 0 16px;
-  border-right: 1px solid #a8d4f0;
+  border-right: 1px solid rgba(255, 255, 255, 0.24);
   height: 100%;
   justify-content: space-between;
 }
@@ -49,40 +50,40 @@
 /* Buttons */
 
 .toolbar-button {
-  background: #fff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   font-size: 0.7em;
-  color: #1f3b57;
+  color: var(--color-text);
   cursor: pointer;
   gap: 4px;
-  min-width: 60px;
-  height: 60px;
+  min-width: 54px;
+  height: 52px;
   justify-content: space-between;
   transition: all 0.2s ease;
 }
 
 .toolbar-button:hover {
-  background: #e8f4fc;
-  border-color: #93c5fd;
-  box-shadow: 0 6px 14px rgba(0, 80, 160, 0.12);
+  background: var(--color-body-bg);
+  border-color: var(--color-toolbar);
+  box-shadow: 0 6px 14px var(--shadow-card);
   transform: translateY(-2px);
 }
 
 .toolbar-button:active {
-  background: #dbeafe;
+  background: var(--color-border);
   transform: scale(0.96);
 }
 
 /* Black icons stay natural */
 
 .toolbar-button img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
   display: block;
 }
@@ -91,10 +92,10 @@
 
 .toolbar-label {
   font-size: 0.65em;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.88);
   text-align: center;
   padding-top: 3px;
-  border-top: 1px solid #a8d4f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
   width: 100%;
 }
 
@@ -111,11 +112,11 @@
   top: 100%;
   left: 0;
   margin-top: 8px;
-  background: #ffffff;
+  background: var(--color-card-bg);
   min-width: 220px;
-  box-shadow: 0 15px 35px rgba(0, 80, 160, 0.12);
+  box-shadow: 0 15px 35px var(--shadow-card);
   z-index: 3000;
-  border: 1px solid #a8d4f0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   overflow: hidden;
   opacity: 0;
@@ -132,7 +133,7 @@
 }
 
 .dropdown-content a {
-  color: #1f3b57;
+  color: var(--color-text);
   padding: 14px 18px;
   text-decoration: none;
   display: flex;
@@ -143,7 +144,7 @@
 }
 
 .dropdown-content a:hover {
-  background: #f0f6fd;
+  background: var(--color-body-bg);
 }
 
 .dropdown-content a img {
@@ -152,15 +153,8 @@
   margin-right: 12px;
 }
 
-/* Trailing profile menu (projected from app-shell) */
+/* Spacer at end of toolbar */
 .toolbar-spacer {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.toolbar-trailing {
-  display: flex;
-  align-items: flex-start;
-  padding-left: 12px;
-  margin-left: auto;
 }

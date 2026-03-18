@@ -20,7 +20,7 @@
         <button class="btn-primary ghost" (click)="saveAndClose()">Save &amp; Close</button>
         <button class="btn-secondary" (click)="close()">Close</button>
         <button class="btn-secondary" (click)="deleteClaim()">Delete</button>
-        <button class="btn-secondary" (click)="scrub()">Scrub</button>
+        <button class="btn-secondary" (click)="scrub()">Scrub Claim</button>
       </div>
     </header>
 
@@ -105,6 +105,36 @@
               <div class="field-row">
                 <label>Locked</label>
                 <input type="checkbox" [(ngModel)]="claim.claLocked" />
+              </div>
+            </div>
+          </article>
+
+          <article class="section-card">
+            <header>
+              <h3>Scrub Results</h3>
+            </header>
+            <div class="section-body">
+              <div *ngIf="scrubError" class="error-panel">
+                {{ scrubError }}
+              </div>
+              <table class="scrub-grid" *ngIf="scrubResults && scrubResults.length > 0">
+                <thead>
+                  <tr>
+                    <th>Rule</th>
+                    <th>Severity</th>
+                    <th>Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of scrubResults">
+                    <td>{{ r.ruleName }}</td>
+                    <td>{{ r.severity }}</td>
+                    <td>{{ r.message }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div *ngIf="(!scrubResults || scrubResults.length === 0) && !scrubError">
+                No scrub results yet. Click "Scrub Claim" to run rules.
               </div>
             </div>
           </article>
@@ -268,6 +298,43 @@
               </div>
             </div>
           </article>
+
+          <article class="section-card" *ngIf="claimCustomFieldDefinitions.length">
+            <header (click)="toggleSection('customFields')" class="collapsible-header">
+              <h3>Custom Fields</h3>
+              <span class="collapse-icon">{{ sectionsState.customFields ? '▼' : '▶' }}</span>
+            </header>
+            <div class="section-body additional-data-grid" [hidden]="!sectionsState.customFields">
+              <div class="additional-data-left" *ngFor="let def of claimCustomFieldDefinitions">
+                <div class="field-row" *ngIf="def.fieldType !== 'YESNO'">
+                  <label>{{ def.label }}</label>
+                  <input *ngIf="def.fieldType === 'TEXT' || def.fieldType === 'TEXT-LIST'" type="text"
+                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
+                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
+                  <input *ngIf="def.fieldType === 'CURRENCY'" type="number" step="0.01"
+                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
+                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
+                  <input *ngIf="def.fieldType === 'DATE'" type="date"
+                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
+                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
+                  <input *ngIf="def.fieldType === 'TIME'" type="time"
+                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
+                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
+                  <input *ngIf="def.fieldType === 'NUMBER'" type="number"
+                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
+                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
+                </div>
+                <div class="field-row" *ngIf="def.fieldType === 'YESNO'">
+                  <label class="checkbox-inline">
+                    <input type="checkbox"
+                      [checked]="getClaimCustomFieldValue(def.fieldKey) === '1' || getClaimCustomFieldValue(def.fieldKey) === 'true'"
+                      (change)="setClaimCustomFieldValue(def.fieldKey, $any($event.target).checked ? '1' : '0')" />
+                    {{ def.label }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
     </div>
@@ -316,6 +383,39 @@
             </tr>
           </tfoot>
         </table>
+      </div>
+      <div class="service-line-custom-fields" *ngIf="selectedServiceLineId != null && serviceLineCustomFieldDefinitions.length">
+        <h4>Service Line Custom Fields</h4>
+        <div class="additional-data-grid">
+          <div class="additional-data-left" *ngFor="let def of serviceLineCustomFieldDefinitions">
+            <div class="field-row" *ngIf="def.fieldType !== 'YESNO'">
+              <label>{{ def.label }}</label>
+              <input *ngIf="def.fieldType === 'TEXT' || def.fieldType === 'TEXT-LIST'" type="text"
+                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
+                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
+              <input *ngIf="def.fieldType === 'CURRENCY'" type="number" step="0.01"
+                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
+                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
+              <input *ngIf="def.fieldType === 'DATE'" type="date"
+                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
+                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
+              <input *ngIf="def.fieldType === 'TIME'" type="time"
+                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
+                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
+              <input *ngIf="def.fieldType === 'NUMBER'" type="number"
+                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
+                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
+            </div>
+            <div class="field-row" *ngIf="def.fieldType === 'YESNO'">
+              <label class="checkbox-inline">
+                <input type="checkbox"
+                  [checked]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey) === '1' || getServiceLineCustomValue(selectedServiceLineId, def.fieldKey) === 'true'"
+                  (change)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $any($event.target).checked ? '1' : '0')" />
+                {{ def.label }}
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

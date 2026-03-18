@@ -4,14 +4,14 @@
   height: 100%;
   min-height: 0;
   padding: 4px;
-  background: #f5f5f5;
+  background: var(--color-body-bg);
 }
 
 .toolbar {
   flex-shrink: 0;
   padding: 4px 8px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -33,7 +33,7 @@
     padding: 2px 8px;
     font-size: 12px;
     width: 180px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
   }
 
   .btn-search,
@@ -41,14 +41,14 @@
     padding: 2px 10px;
     font-size: 12px;
     cursor: pointer;
-    border: 1px solid #888;
-    background: #f0f0f0;
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
   }
 
   .btn-save {
-    background: #2c5aa0;
-    color: #fff;
-    border-color: #1e3d6b;
+    background: var(--color-primary-btn);
+    color: var(--color-primary-btn-text);
+    border-color: var(--color-primary-btn-hover);
   }
 
   .btn-save:disabled {
@@ -58,15 +58,15 @@
 
   .modified-count {
     font-size: 11px;
-    color: #666;
+    color: var(--color-text-muted);
   }
 }
 
 .error-bar {
   flex-shrink: 0;
   padding: 4px 8px;
-  background: #fdd;
-  color: #800;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 12px;
   margin-bottom: 4px;
 }
@@ -85,8 +85,8 @@
 .grid-wrapper {
   flex: 1;
   min-height: 200px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
 }
 
 ::ng-deep .procedure-codes-page .ag-dense {
@@ -112,8 +112,8 @@
 .pagination-bar {
   flex-shrink: 0;
   padding: 4px 8px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   border-top: none;
   display: flex;
   align-items: center;
@@ -121,7 +121,7 @@
   font-size: 12px;
 
   .pagination-info {
-    color: #555;
+    color: var(--color-text-muted);
   }
 
   .pagination-controls {
@@ -134,8 +134,8 @@
     padding: 2px 8px;
     font-size: 12px;
     cursor: pointer;
-    border: 1px solid #888;
-    background: #f0f0f0;
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
   }
 
   .btn-page:disabled {

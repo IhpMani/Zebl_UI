@@ -9,7 +9,7 @@
 }
 
 .dialog {
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
   min-width: 400px;
   max-width: 90vw;
@@ -21,7 +21,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 
   h2 { margin: 0; font-size: 1.15rem; }
   .btn-close {
@@ -29,7 +29,7 @@
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: #666;
+    color: var(--color-text-muted);
     line-height: 1;
   }
 }
@@ -37,10 +37,10 @@
 .dialog-body {
   padding: 1.25rem;
 
-  .hint { font-size: 0.85rem; color: #666; margin-bottom: 0.75rem; }
+  .hint { font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 0.75rem; }
   input[type="file"] { margin-bottom: 0.75rem; }
-  .result { color: #2e7d32; margin-top: 0.5rem; }
-  .error { color: #c62828; margin-top: 0.5rem; }
+  .result { color: var(--color-success); margin-top: 0.5rem; }
+  .error { color: var(--color-error); margin-top: 0.5rem; }
 }
 
 .dialog-footer {
@@ -48,14 +48,14 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border);
 
   .btn {
     padding: 0.4rem 1rem;
     border-radius: 4px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    background: #f5f5f5;
-    &.btn-primary { background: #1976d2; color: #fff; border-color: #1976d2; }
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
+    &.btn-primary { background: var(--color-primary-btn); color: var(--color-primary-btn-text); border-color: var(--color-primary-btn); }
   }
 }

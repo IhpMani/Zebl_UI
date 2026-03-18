@@ -7,7 +7,6 @@
         <button class="toolbar-button"><img src="assets/icons/save.png" alt="Save">Save</button>
         <button class="toolbar-button"><img src="assets/icons/close.png" alt="Close">Close</button>
       </div>
-      <div class="toolbar-label">File</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
@@ -29,7 +28,6 @@
           </div>
         </div>
       </div>
-      <div class="toolbar-label">Find</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
@@ -40,6 +38,7 @@
         <button class="toolbar-button"><img src="assets/icons/statement.png" alt="Statement">Statement</button>
         <button class="toolbar-button" (click)="libraryOptionSelected('Payer')"><img src="assets/icons/payer.png" alt="Payer">Payer</button>
         <button class="toolbar-button" (click)="goToPhysicianLibrary()"><img src="assets/icons/physician.png" alt="Physician">Physician</button>
+        <button class="toolbar-button" (click)="goToProgramSetup()"><img src="assets/icons/libraries.png" alt="Program Setup">Program Setup</button>
         <div class="dropdown-wrapper">
           <button class="toolbar-button dropdown" [class.active]="showLibrariesDropdown" (click)="toggleLibrariesDropdown($event)">
             <img src="assets/icons/libraries.png" alt="Libraries">Libraries
@@ -62,14 +61,12 @@
           </div>
         </div>
       </div>
-      <div class="toolbar-label">New</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
         <button class="toolbar-button" (click)="goToEdiReports()"><img src="assets/icons/edi-reports.png" alt="EDI Reports">EDI Reports ({{ ediReportCount }})</button>
         <button class="toolbar-button" (click)="goToReceiverLibrary()"><img src="assets/icons/edi-reports.png" alt="EDI Library">EDI Library</button>
       </div>
-      <div class="toolbar-label">Alerts</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
@@ -77,19 +74,14 @@
           <img src="assets/icons/review-incoming.png" alt="Review Incoming">Review Incoming
         </button>
       </div>
-      <div class="toolbar-label">Incoming</div>
     </div>
     <div class="toolbar-section">
       <div class="toolbar-group">
         <button class="toolbar-button"><img src="assets/icons/help-topics.png" alt="Help Topics">Help Topics</button>
         <button class="toolbar-button"><img src="assets/icons/ticket.png" alt="Ticket">Ticket</button>
       </div>
-      <div class="toolbar-label">Support</div>
     </div>
 
     <div class="toolbar-spacer"></div>
-    <div class="toolbar-trailing">
-      <ng-content select="[menuBarTrailing]"></ng-content>
-    </div>
   </div>
 </div>

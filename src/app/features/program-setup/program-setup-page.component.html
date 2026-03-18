@@ -1,0 +1,613 @@
+<div class="program-setup-container">
+  <div class="program-setup-header">
+    <div class="title">
+      Program Setup
+    </div>
+    <div class="actions">
+      <button type="button" class="btn primary" (click)="onSave()">Save</button>
+      <button type="button" class="btn primary" (click)="onSaveAndClose()">Save &amp; Close</button>
+      <button type="button" class="btn secondary" (click)="onClose()">Close</button>
+    </div>
+  </div>
+
+  <div class="program-setup-body">
+    <div class="left-panel">
+      <div class="left-panel-title">Options</div>
+      <ul class="section-list">
+        <li
+          *ngFor="let section of sections"
+          (click)="onSelectSection(section.id)"
+          [class.active]="section.id === selectedSection">
+          {{ section.label }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="right-panel">
+      <h2 class="section-title">
+        {{ selectedSectionLabel }}
+      </h2>
+
+      <div class="section-content">
+        <ng-container *ngIf="isLoading">
+          <div class="placeholder">Loading settings...</div>
+        </ng-container>
+
+        <ng-container *ngIf="!isLoading && (loadError || customFieldsLoadError)">
+          <div class="placeholder error">
+            {{ loadError || customFieldsLoadError }}
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="!isLoading && !loadError">
+          <ng-container [ngSwitch]="selectedSection">
+            <ng-container *ngSwitchCase="'patient'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.automaticAccountNumber" />
+                    Automatic Account Number
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Next Account Number</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="settingsData.nextAccountNumber"
+                      [disabled]="!settingsData.automaticAccountNumber"
+                    />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Next Account Number Prefix</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="settingsData.nextAccountPrefix"
+                    />
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.requireAccountNumbers" />
+                    Require Account Numbers
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.requireUniqueAccountNumbers" />
+                    Require Unique Account Numbers
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Automatic Patient Template</span>
+                    <select [(ngModel)]="settingsData.automaticPatientTemplateId">
+                      <option [ngValue]="null">(None)</option>
+                      <option *ngFor="let t of patientTemplates" [ngValue]="t.id">
+                        {{ t.name }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.initialAcceptAssignment" />
+                    Initial Accept Assignment
+                  </label>
+                </div>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'claim'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row">
+                  <label>
+                    <span>Initial Claim Status</span>
+                    <select [(ngModel)]="settingsData.initialClaimStatus">
+                      <option *ngFor="let s of claimStatusOptions" [ngValue]="s.code">
+                        {{ s.name }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Initial Place of Service</span>
+                    <select [(ngModel)]="settingsData.initialPlaceOfService">
+                      <option *ngFor="let p of posOptions" [ngValue]="p.code">
+                        {{ p.code }} - {{ p.description }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Initial ICD Indicator</span>
+                    <select [(ngModel)]="settingsData.initialICDIndicator">
+                      <option [ngValue]="'9'">9 - ICD-9</option>
+                      <option [ngValue]="'0'">0 - ICD-10</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.lockClaimsAfterPrint" />
+                    Automatic Lock Claims After Print or Export
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.checkDuplicateServiceLines" />
+                    Check for Duplicate Service Lines
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.validateICDLogic" />
+                    Validate ICD Logic When Saving Claim
+                  </label>
+                </div>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'patient-custom-fields'">
+              <div class="custom-fields-section">
+                <p class="restart-notice" *ngIf="customFieldDefinitionsModified">
+                  Program must be restarted for changes to take effect.
+                </p>
+                <div class="config-grid-header">
+                  <span class="config-label">Label</span>
+                  <span class="config-type">Field Type</span>
+                  <span class="config-actions"></span>
+                </div>
+                <div class="config-grid-row" *ngFor="let def of patientCustomFields">
+                  <span class="config-label">{{ def.label }}</span>
+                  <span class="config-type">{{ def.fieldType }}</span>
+                  <span class="config-actions">
+                    <button type="button" class="btn-link" (click)="openEditCustomField(def, 'Patient')">Edit</button>
+                    <button type="button" class="btn-link" (click)="deleteCustomField(def, 'Patient')">Delete</button>
+                  </span>
+                </div>
+                <div class="config-actions-row">
+                  <button type="button" class="btn primary" (click)="openAddCustomField('Patient')" [disabled]="patientCustomFields.length >= maxCustomFieldsPerEntity">
+                    Add Field
+                  </button>
+                  <span class="form-hint" *ngIf="patientCustomFields.length >= maxCustomFieldsPerEntity">Maximum {{ maxCustomFieldsPerEntity }} patient fields.</span>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'claim-custom-fields'">
+              <div class="custom-fields-section">
+                <p class="restart-notice" *ngIf="customFieldDefinitionsModified">
+                  Program must be restarted for changes to take effect.
+                </p>
+                <div class="custom-fields-group">
+                  <div class="form-group-label">Claim Fields ({{ claimCustomFields.length }}/{{ maxCustomFieldsPerEntity }})</div>
+                  <div class="config-grid-header">
+                    <span class="config-label">Label</span>
+                    <span class="config-type">Field Type</span>
+                    <span class="config-actions"></span>
+                  </div>
+                  <div class="config-grid-row" *ngFor="let def of claimCustomFields">
+                    <span class="config-label">{{ def.label }}</span>
+                    <span class="config-type">{{ def.fieldType }}</span>
+                    <span class="config-actions">
+                      <button type="button" class="btn-link" (click)="openEditCustomField(def, 'Claim')">Edit</button>
+                      <button type="button" class="btn-link" (click)="deleteCustomField(def, 'Claim')">Delete</button>
+                    </span>
+                  </div>
+                  <div class="config-actions-row">
+                    <button type="button" class="btn primary" (click)="openAddCustomField('Claim')" [disabled]="claimCustomFields.length >= maxCustomFieldsPerEntity">Add Field</button>
+                  </div>
+                </div>
+                <div class="custom-fields-group">
+                  <div class="form-group-label">Service Line Fields ({{ serviceLineCustomFields.length }}/{{ maxCustomFieldsPerEntity }})</div>
+                  <div class="config-grid-header">
+                    <span class="config-label">Label</span>
+                    <span class="config-type">Field Type</span>
+                    <span class="config-actions"></span>
+                  </div>
+                  <div class="config-grid-row" *ngFor="let def of serviceLineCustomFields">
+                    <span class="config-label">{{ def.label }}</span>
+                    <span class="config-type">{{ def.fieldType }}</span>
+                    <span class="config-actions">
+                      <button type="button" class="btn-link" (click)="openEditCustomField(def, 'ServiceLine')">Edit</button>
+                      <button type="button" class="btn-link" (click)="deleteCustomField(def, 'ServiceLine')">Delete</button>
+                    </span>
+                  </div>
+                  <div class="config-actions-row">
+                    <button type="button" class="btn primary" (click)="openAddCustomField('ServiceLine')" [disabled]="serviceLineCustomFields.length >= maxCustomFieldsPerEntity">Add Field</button>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'sending-claims'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row">
+                  <label>
+                    <span>Default Submitter / Receiver</span>
+                    <select [(ngModel)]="settingsData.defaultSubmitterReceiverId">
+                      <option [ngValue]="null">-- Select Submitter / Receiver --</option>
+                      <option *ngFor="let r of sendingClaimsReceivers" [ngValue]="r.id">
+                        {{ r.libraryEntryName }} – {{ r.exportFormat }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Export Format</span>
+                    <select [(ngModel)]="settingsData.exportFormat">
+                      <option *ngFor="let opt of exportFormatOptions" [ngValue]="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.autoMarkClaimsSent" />
+                    Automatically Mark Claims as Sent After Export
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.lockClaimsAfterExport" />
+                    Lock Claims After Export
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Export Batch Size</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="settingsData.exportBatchSize"
+                      min="1"
+                    />
+                  </label>
+                  <span class="form-hint">Number of claims per batch file. Default is 100.</span>
+                </div>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'company'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row">
+                  <label>
+                    <span>Company Name</span>
+                    <input type="text" [(ngModel)]="settingsData.companyName" />
+                    <span *ngIf="companyValidationErrors.companyName" class="field-error">{{ companyValidationErrors.companyName }}</span>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Address Line 1</span>
+                    <input type="text" [(ngModel)]="settingsData.address1" />
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>Address Line 2</span>
+                    <input type="text" [(ngModel)]="settingsData.address2" />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>City</span>
+                    <input type="text" [(ngModel)]="settingsData.city" />
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>State</span>
+                    <input type="text" [(ngModel)]="settingsData.state" />
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>Zip</span>
+                    <input type="text" [(ngModel)]="settingsData.zip" (blur)="onCompanyZipBlur()" />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Phone</span>
+                    <input type="text" [(ngModel)]="settingsData.phone" />
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>Fax</span>
+                    <input type="text" [(ngModel)]="settingsData.fax" />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Email</span>
+                    <input type="text" [(ngModel)]="settingsData.email" />
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>Website</span>
+                    <input type="text" [(ngModel)]="settingsData.website" />
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Tax ID</span>
+                    <input type="text" [(ngModel)]="settingsData.taxId" placeholder="###-##-#### or ##-#######" />
+                    <span *ngIf="companyValidationErrors.taxId" class="field-error">{{ companyValidationErrors.taxId }}</span>
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label>
+                    <span>NPI</span>
+                    <input type="text" [(ngModel)]="settingsData.npi" />
+                    <span *ngIf="companyValidationErrors.npi" class="field-error">{{ companyValidationErrors.npi }}</span>
+                  </label>
+                </div>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'patient-eligibility'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row">
+                  <label>
+                    <span>Source</span>
+                    <select [(ngModel)]="settingsData.source">
+                      <option value="">-- Select Source --</option>
+                      <option *ngFor="let opt of eligibilitySourceOptions" [ngValue]="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Receiver</span>
+                    <select [(ngModel)]="settingsData.receiverId">
+                      <option [ngValue]="null">-- Select Receiver --</option>
+                      <option *ngFor="let r of eligibilityReceivers" [ngValue]="r.id">
+                        {{ r.libraryEntryName }} – {{ r.exportFormat }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Provider Mode</span>
+                    <select [(ngModel)]="settingsData.providerMode">
+                      <option *ngFor="let opt of providerModeOptions" [ngValue]="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Specific Provider</span>
+                    <select
+                      [(ngModel)]="settingsData.specificProviderId"
+                      [disabled]="settingsData.providerMode !== 'SpecificProvider'">
+                      <option [ngValue]="null">-- Select Provider --</option>
+                      <option *ngFor="let p of physiciansList" [ngValue]="p.phyID">
+                        {{ p.phyFullNameCC || p.phyName || (p.phyLastName + ', ' + p.phyFirstName) }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label [attr.title]="'Clearinghouse account username used for eligibility 270 requests.'">
+                    <span>Username</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="settingsData.username"
+                      [disabled]="!eligibilityCredentialsEnabled"
+                      placeholder="Clearinghouse account username"
+                    />
+                  </label>
+                  <span class="form-hint">Clearinghouse account username used for eligibility 270 requests.</span>
+                </div>
+
+                <div class="form-row">
+                  <label [attr.title]="'Clearinghouse account password used for eligibility 270 requests.'">
+                    <span>Password</span>
+                    <input
+                      type="password"
+                      [(ngModel)]="settingsData.password"
+                      [disabled]="!eligibilityCredentialsEnabled"
+                      placeholder="Clearinghouse account password"
+                    />
+                  </label>
+                  <span class="form-hint">Clearinghouse account password used for eligibility 270 requests.</span>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Server</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="settingsData.server"
+                      [disabled]="!eligibilityCredentialsEnabled"
+                    />
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.showEligibilityResponseViewer" />
+                    Show Eligibility Response Viewer
+                  </label>
+                </div>
+                <p class="form-hint" *ngIf="!settingsData.showEligibilityResponseViewer">
+                  If unchecked, eligibility responses will skip the viewer screen and process automatically.
+                </p>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'interface'">
+              <div *ngIf="settingsData" class="patient-settings-form">
+                <div class="form-row form-group-label">Duplicate Service Line Detection Rules</div>
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.duplicateCheckFields.serviceDate" />
+                    Service Date
+                  </label>
+                </div>
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.duplicateCheckFields.procedureCode" />
+                    Procedure Code
+                  </label>
+                </div>
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.duplicateCheckFields.productCode" />
+                    Product Code
+                  </label>
+                </div>
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.duplicateCheckFields.modifiers" />
+                    Modifiers
+                  </label>
+                </div>
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.duplicateCheckFields.diagnosisPointer" />
+                    Diagnosis Pointer
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.assignPatientDiagnosisCodes" />
+                    Assign Patient Diagnosis Codes Automatically
+                  </label>
+                </div>
+
+                <div *ngIf="saveError" class="save-error">
+                  {{ saveError }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchDefault>
+              <div class="placeholder">
+                Settings form will be implemented here for the
+                <strong>{{ selectedSectionLabel }}</strong>.
+              </div>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showCustomFieldModal">
+  <div class="modal">
+    <h3>{{ customFieldModalId == null ? 'Add Field' : 'Edit Field' }}</h3>
+    <div class="modal-form">
+      <div class="form-row">
+        <label>
+          <span>Label</span>
+          <input type="text" [(ngModel)]="customFieldModalLabel" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label>
+          <span>Field Type</span>
+          <select [(ngModel)]="customFieldModalFieldType">
+            <option *ngFor="let opt of customFieldTypeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div *ngIf="customFieldModalError" class="field-error">{{ customFieldModalError }}</div>
+    <div class="modal-actions">
+      <button type="button" class="btn primary" (click)="saveCustomFieldModal()" [disabled]="customFieldModalSaving">Save</button>
+      <button type="button" class="btn secondary" (click)="closeCustomFieldModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showMissingAccountsModal">
+  <div class="modal">
+    <h3>Patients missing account numbers</h3>
+    <p>
+      One or more patients are missing account numbers. Please assign account numbers to the patients
+      listed below before enabling <strong>Require Account Numbers</strong>.
+    </p>
+
+    <div class="modal-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of missingAccountPatients">
+            <td>{{ p.patId }}</td>
+            <td>{{ p.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn primary" (click)="closeMissingAccountsModal()">Close</button>
+    </div>
+  </div>
+</div>

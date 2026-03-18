@@ -19,7 +19,10 @@ import { UserManagementComponent } from './admin/user-management/user-management
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions.component';
+import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
 import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
+import { PatientEligibilityComponent } from './patients/patient-eligibility/patient-eligibility.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -30,10 +33,13 @@ const routes: Routes = [
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
   { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
+  { path: 'patients/:patId/eligibility', component: PatientEligibilityComponent, canActivate: [AuthGuard] },
   { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },
   { path: 'payments/entry/:id', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/entry', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/find-payment', component: PaymentListComponent, canActivate: [AuthGuard] },
+  { path: 'payments/era-exceptions', component: EraExceptionsComponent, canActivate: [AuthGuard] },
+  { path: 'claims/rejections', component: ClaimRejectionsComponent, canActivate: [AuthGuard] },
   { path: 'adjustments/find-adjustment', component: AdjustmentListComponent, canActivate: [AuthGuard] },
   { path: 'payers/find-payer', component: PayerListComponent, canActivate: [AuthGuard] },
   { path: 'physicians/find-physician', component: PhysicianListComponent, canActivate: [AuthGuard] },
@@ -50,6 +56,7 @@ const routes: Routes = [
   { path: 'libraries/city-state-zip', loadChildren: () => import('./features/city-state-zip-library/city-state-zip-library.module').then(m => m.CityStateZipLibraryModule), canActivate: [AuthGuard] },
   { path: 'code-library', loadChildren: () => import('./features/code-library/code-library.module').then(m => m.CodeLibraryModule), canActivate: [AuthGuard] },
   { path: 'claim-template-library', loadChildren: () => import('./features/claim-template-library/claim-template-library.module').then(m => m.ClaimTemplateLibraryModule), canActivate: [AuthGuard] },
+  { path: 'tools/program-setup', loadComponent: () => import('./features/program-setup/program-setup-page.component').then(m => m.ProgramSetupPageComponent), canActivate: [AuthGuard] },
   { path: 'libraries', redirectTo: '', pathMatch: 'full' },
 ];
 

@@ -372,6 +372,43 @@
       </form>
     </section>
 
+    <section class="panel-card tan-panel" *ngIf="patientCustomFieldDefinitions.length">
+      <header (click)="toggleSection('customFields')" class="tan-panel-header">
+        <h3>Custom Fields</h3>
+        <span class="collapse-icon">{{ sectionsState.customFields ? '▲' : '▼' }}</span>
+      </header>
+      <div class="section-body tan-panel-body additional-data-two-col" [hidden]="!sectionsState.customFields">
+        <div class="additional-data-left" *ngFor="let def of patientCustomFieldDefinitions">
+          <div class="field-row" *ngIf="def.fieldType !== 'YESNO'">
+            <label>{{ def.label }}</label>
+            <input *ngIf="def.fieldType === 'TEXT' || def.fieldType === 'TEXT-LIST'" type="text"
+              [ngModel]="getCustomFieldValue(def.fieldKey)"
+              (ngModelChange)="setCustomFieldValue(def.fieldKey, $event)" />
+            <input *ngIf="def.fieldType === 'CURRENCY'" type="number" step="0.01"
+              [ngModel]="getCustomFieldValue(def.fieldKey)"
+              (ngModelChange)="setCustomFieldValue(def.fieldKey, $event)" />
+            <input *ngIf="def.fieldType === 'DATE'" type="date"
+              [ngModel]="getCustomFieldValue(def.fieldKey)"
+              (ngModelChange)="setCustomFieldValue(def.fieldKey, $event)" />
+            <input *ngIf="def.fieldType === 'TIME'" type="time"
+              [ngModel]="getCustomFieldValue(def.fieldKey)"
+              (ngModelChange)="setCustomFieldValue(def.fieldKey, $event)" />
+            <input *ngIf="def.fieldType === 'NUMBER'" type="number"
+              [ngModel]="getCustomFieldValue(def.fieldKey)"
+              (ngModelChange)="setCustomFieldValue(def.fieldKey, $event)" />
+          </div>
+          <div class="field-row checkbox-row" *ngIf="def.fieldType === 'YESNO'">
+            <label>
+              <input type="checkbox"
+                [checked]="getCustomFieldValue(def.fieldKey) === '1' || getCustomFieldValue(def.fieldKey) === 'true'"
+                (change)="setCustomFieldValue(def.fieldKey, $any($event.target).checked ? '1' : '0')" />
+              {{ def.label }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel-card tan-panel">
       <header (click)="toggleSection('statement')" class="tan-panel-header">
         <h3>Statement Information</h3>

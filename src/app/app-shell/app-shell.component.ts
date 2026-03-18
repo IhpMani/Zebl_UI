@@ -8,8 +8,10 @@ import { AuthService } from '../core/services/auth.service';
   selector: 'app-app-shell',
   template: `
     <div class="app-container">
-      <app-ribbon (reviewIncoming)="onReviewIncoming()">
-        <div menuBarTrailing class="user-menu" *ngIf="auth.isLoggedIn()">
+      <div class="topbar">
+        <img class="topbar-logo" src="assets/icons/broadbill.png" alt="Broadbill">
+        <div class="topbar-spacer"></div>
+        <div class="user-menu" *ngIf="auth.isLoggedIn()">
           <div class="profile-icon" (click)="toggleMenu()">
             {{ getInitials() }}
           </div>
@@ -24,10 +26,15 @@ import { AuthService } from '../core/services/auth.service';
             <div class="menu-item" (click)="logout()">Logout</div>
           </div>
         </div>
+      </div>
+      <app-ribbon (reviewIncoming)="onReviewIncoming()">
       </app-ribbon>
+      <app-workspace-tabs *ngIf="auth.isLoggedIn() && !showInterfaceDataReview"></app-workspace-tabs>
       <div class="content-area">
         <app-interface-data-review *ngIf="showInterfaceDataReview"></app-interface-data-review>
-        <router-outlet *ngIf="!showInterfaceDataReview"></router-outlet>
+        <div class="workspace-content" *ngIf="!showInterfaceDataReview">
+          <router-outlet></router-outlet>
+        </div>
       </div>
     </div>
   `,

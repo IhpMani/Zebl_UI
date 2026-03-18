@@ -1,0 +1,36 @@
+<div class="era-exceptions-page">
+  <h1>ERA Exceptions</h1>
+
+  <div *ngIf="loading" class="loading">Loading…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <table *ngIf="!loading && exceptions.length">
+    <thead>
+      <tr>
+        <th>Created At</th>
+        <th>Exception Type</th>
+        <th>Claim ID</th>
+        <th>Message</th>
+        <th>Status</th>
+        <th>Assigned User</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ex of exceptions">
+        <td>{{ ex.createdAt | date:'short' }}</td>
+        <td>{{ ex.exceptionType }}</td>
+        <td>{{ ex.claimId || '—' }}</td>
+        <td>{{ ex.message }}</td>
+        <td>{{ ex.status }}</td>
+        <td>{{ ex.assignedUserId || '—' }}</td>
+        <td>
+          <button type="button" (click)="resolve(ex)">Resolve</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!loading && !exceptions.length && !error">No open ERA exceptions.</p>
+</div>
+

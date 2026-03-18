@@ -12,6 +12,8 @@ import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
+import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 interface PhysicianOption {
   phyID: number;
@@ -81,10 +83,16 @@ export class PatientDetailsComponent implements OnInit {
     additionalClaim: true,
     otherPatient: true,
     additionalData: true,
+    customFields: true,
     statement: true,
     reminderNote: true,
     patientNotes: true
   };
+
+  /** Dynamic custom fields from Program Setup → Patient Custom Fields. */
+  patientCustomFieldDefinitions: CustomFieldDefinitionDto[] = [];
+  /** Current values keyed by fieldKey. */
+  customFieldValues: Record<string, string> = {};
 
 
   private requestInFlight = false;
@@ -98,6 +106,8 @@ export class PatientDetailsComponent implements OnInit {
     private physicianApi: PhysicianApiService,
     private payerApi: PayerApiService,
     private listApi: ListApiService,
+    private customFieldsApi: CustomFieldsApiService,
+    private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -258,6 +268,9 @@ export class PatientDetailsComponent implements OnInit {
         this.patientForm.patchValue(this.patientToFormValue(p));
         this.bindInsuranceFromApi(p);
         this.insuranceLoaded = true;
+        this.loadPatientCustomFieldsAndValues(patId);
+        const title = this.toFullName(p.patFirstName, p.patLastName, p.patFullNameCC);
+        if (title) this.workspace.updateActiveTabTitle(title);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -269,6 +282,17 @@ export class PatientDetailsComponent implements OnInit {
         console.error('Error loading patient:', err);
       }
     });
+  }
+
+  private toFullName(
+    firstName: string | null | undefined,
+    lastName: string | null | undefined,
+    fallback: string | null | undefined
+  ): string {
+    const fn = (firstName ?? '').trim();
+    const ln = (lastName ?? '').trim();
+    const full = [fn, ln].filter(Boolean).join(' ').trim();
+    return full || (fallback ?? '').trim();
   }
 
   private patientToFormValue(p: PatientDetail): Record<string, unknown> {
@@ -393,6 +417,52 @@ export class PatientDetailsComponent implements OnInit {
   private normalizeInsurance(ins: InsuranceInfo | null | undefined): InsuranceInfo | null {
     if (!ins) return null;
     return { ...ins, patInsGUID: ins.patInsGUID ?? '', insAcceptAssignment: ins.insAcceptAssignment ?? 0, patInsActive: ins.patInsActive ?? true, patInsLocked: ins.patInsLocked ?? false };
+  }
+
+  private loadPatientCustomFieldsAndValues(patId: number): void {
+    this.customFieldsApi.getByEntityType('Patient').subscribe({
+      next: defs => {
+        this.patientCustomFieldDefinitions = defs ?? [];
+        this.customFieldsApi.getValues('Patient', patId).subscribe({
+          next: values => {
+            this.customFieldValues = { ...values };
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.customFieldValues = {};
+            this.cdr.markForCheck();
+          }
+        });
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.patientCustomFieldDefinitions = [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getCustomFieldValue(fieldKey: string): string {
+    return this.customFieldValues[fieldKey] ?? '';
+  }
+
+  setCustomFieldValue(fieldKey: string, value: string): void {
+    this.customFieldValues = { ...this.customFieldValues, [fieldKey]: value };
+    this.cdr.markForCheck();
+  }
+
+  private saveCustomFieldValues(): void {
+    const patId = this.patId;
+    if (patId == null || this.patientCustomFieldDefinitions.length === 0) return;
+    this.patientCustomFieldDefinitions.forEach(def => {
+      const value = this.customFieldValues[def.fieldKey] ?? '';
+      this.customFieldsApi.saveValue({
+        entityType: 'Patient',
+        entityId: patId,
+        fieldKey: def.fieldKey,
+        value: value || null
+      }).subscribe({ error: () => { /* ignore per-field errors */ } });
+    });
   }
 
   refreshPhysicians(): void {
@@ -658,6 +728,7 @@ export class PatientDetailsComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.newNote = '';
+        this.saveCustomFieldValues();
         this.loadPatient(this.patId!);
       },
       error: (err) => {
@@ -682,6 +753,7 @@ export class PatientDetailsComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.newNote = '';
+        this.saveCustomFieldValues();
         this.goBackToList();
       },
       error: (err) => {

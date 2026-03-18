@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { ClaimApiService } from '../../core/services/claim-api.service';
+import { ClaimApiService, ScrubResult } from '../../core/services/claim-api.service';
 import { Claim, ClaimAdditionalData } from '../../core/services/claim.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
@@ -12,6 +12,8 @@ import { DisbursementApiService } from '../../core/services/disbursement-api.ser
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { ServiceApiService } from '../../core/services/service-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
+import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-claim-details',
@@ -107,8 +109,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     misc: true,
     resubmission: true,
     paperwork: true,
-    additionalData: true
+    additionalData: true,
+    customFields: true
   };
+
+  /** Claim-level custom field definitions and values. */
+  claimCustomFieldDefinitions: CustomFieldDefinitionDto[] = [];
+  claimCustomFieldValues: Record<string, string> = {};
+  /** Service line custom field definitions; values keyed by srvID. */
+  serviceLineCustomFieldDefinitions: CustomFieldDefinitionDto[] = [];
+  serviceLineCustomValuesBySrvId: Record<number, Record<string, string>> = {};
 
   payments: any[] = [];
   adjustments: any[] = [];
@@ -128,6 +138,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   serviceLoaded: boolean = false;
   selectedServiceLineId: number | null = null;
 
+  scrubResults: ScrubResult[] = [];
+  scrubError: string | null = null;
+
   private claimRequestInFlight = false;
   private serviceRequestInFlight = false;
   private paymentRequestInFlight = false;
@@ -145,6 +158,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private paymentApi: PaymentApiService,
     private adjustmentApi: AdjustmentApiService,
     private disbursementApi: DisbursementApiService,
+    private customFieldsApi: CustomFieldsApiService,
+    private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -304,10 +319,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         }
         const patId = claim.patient?.patID;
         this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
+        const title = this.toFullName(
+          claim.patient?.patFirstName,
+          claim.patient?.patLastName,
+          claim.patient?.patFullNameCC
+        );
+        if (title) this.workspace.updateActiveTabTitle(title);
         this.ensureCurrentStatusInOptions();
         this.ensureCurrentClassificationInOptions();
         this.ensureCurrentPhysiciansInOptions();
         this.patchClaimForm();
+        this.loadClaimCustomFieldsAndValues(claId);
       },
       error: (err) => {
         if (err.status === 404) {
@@ -322,6 +344,17 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         console.error('Error loading claim:', err);
       }
     });
+  }
+
+  private toFullName(
+    firstName: string | null | undefined,
+    lastName: string | null | undefined,
+    fallback: string | null | undefined
+  ): string {
+    const fn = (firstName ?? '').trim();
+    const ln = (lastName ?? '').trim();
+    const full = [fn, ln].filter(Boolean).join(' ').trim();
+    return full || (fallback ?? '').trim();
   }
 
   loadServiceLines(): void {
@@ -340,6 +373,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.serviceLines = Array.isArray(res) ? res : (res?.data ?? []) || [];
         this.serviceLoaded = true;
         this.selectedServiceLineId = this.serviceLines[0]?.srvID ?? null;
+        if (this.selectedServiceLineId != null) {
+          this.loadServiceLineCustomValuesFor(this.selectedServiceLineId);
+        }
       },
       error: (err) => {
         console.error('Error loading service lines:', err);
@@ -350,7 +386,90 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   selectServiceLine(line: any): void {
     this.selectedServiceLineId = line.srvID;
+    this.loadServiceLineCustomValuesFor(line.srvID);
     this.cdr.markForCheck();
+  }
+
+  private loadClaimCustomFieldsAndValues(claId: number): void {
+    this.customFieldsApi.getByEntityType('Claim').subscribe({
+      next: defs => {
+        this.claimCustomFieldDefinitions = defs ?? [];
+        this.customFieldsApi.getValues('Claim', claId).subscribe({
+          next: values => { this.claimCustomFieldValues = { ...values }; this.cdr.markForCheck(); },
+          error: () => { this.claimCustomFieldValues = {}; this.cdr.markForCheck(); }
+        });
+        this.cdr.markForCheck();
+      },
+      error: () => { this.claimCustomFieldDefinitions = []; this.cdr.markForCheck(); }
+    });
+    this.customFieldsApi.getByEntityType('ServiceLine').subscribe({
+      next: defs => {
+        this.serviceLineCustomFieldDefinitions = defs ?? [];
+        this.cdr.markForCheck();
+      },
+      error: () => { this.serviceLineCustomFieldDefinitions = []; this.cdr.markForCheck(); }
+    });
+  }
+
+  private loadServiceLineCustomValuesFor(srvID: number): void {
+    if (this.serviceLineCustomValuesBySrvId[srvID]) return;
+    this.customFieldsApi.getValues('ServiceLine', srvID).subscribe({
+      next: values => {
+        this.serviceLineCustomValuesBySrvId = { ...this.serviceLineCustomValuesBySrvId, [srvID]: { ...values } };
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.serviceLineCustomValuesBySrvId = { ...this.serviceLineCustomValuesBySrvId, [srvID]: {} };
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getClaimCustomFieldValue(fieldKey: string): string {
+    return this.claimCustomFieldValues[fieldKey] ?? '';
+  }
+
+  setClaimCustomFieldValue(fieldKey: string, value: string): void {
+    this.claimCustomFieldValues = { ...this.claimCustomFieldValues, [fieldKey]: value };
+    this.cdr.markForCheck();
+  }
+
+  getServiceLineCustomValue(srvID: number, fieldKey: string): string {
+    const row = this.serviceLineCustomValuesBySrvId[srvID];
+    return row?.[fieldKey] ?? '';
+  }
+
+  setServiceLineCustomValue(srvID: number, fieldKey: string, value: string): void {
+    const row = { ...(this.serviceLineCustomValuesBySrvId[srvID] ?? {}), [fieldKey]: value };
+    this.serviceLineCustomValuesBySrvId = { ...this.serviceLineCustomValuesBySrvId, [srvID]: row };
+    this.cdr.markForCheck();
+  }
+
+  private saveClaimCustomFieldValues(): void {
+    const claId = this.claId;
+    if (claId == null) return;
+    this.claimCustomFieldDefinitions.forEach(def => {
+      const value = this.claimCustomFieldValues[def.fieldKey] ?? '';
+      this.customFieldsApi.saveValue({
+        entityType: 'Claim',
+        entityId: claId,
+        fieldKey: def.fieldKey,
+        value: value || null
+      }).subscribe({ error: () => {} });
+    });
+    Object.keys(this.serviceLineCustomValuesBySrvId).forEach(srvIdStr => {
+      const srvID = +srvIdStr;
+      const row = this.serviceLineCustomValuesBySrvId[srvID] ?? {};
+      this.serviceLineCustomFieldDefinitions.forEach(def => {
+        const value = row[def.fieldKey] ?? '';
+        this.customFieldsApi.saveValue({
+          entityType: 'ServiceLine',
+          entityId: srvID,
+          fieldKey: def.fieldKey,
+          value: value || null
+        }).subscribe({ error: () => {} });
+      });
+    });
   }
 
   trackByServiceLine(index: number, item: any): number {
@@ -509,6 +628,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
+        this.saveClaimCustomFieldValues();
         this.goBackToList();
       },
       error: (err) => {
@@ -558,6 +678,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
+        this.saveClaimCustomFieldValues();
         if (this.claId) this.loadClaim(this.claId);
         this.cdr.markForCheck();
       },
@@ -579,7 +700,21 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   scrub(): void {
-    console.log('Scrub clicked');
+    if (!this.claId) {
+      return;
+    }
+    this.scrubError = null;
+    this.scrubResults = [];
+    this.claimApiService.scrubClaim(this.claId).subscribe({
+      next: (results) => {
+        this.scrubResults = results || [];
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.scrubError = err?.error?.message || err?.error?.error || 'Failed to scrub claim.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   formatCurrency(value: number | null | undefined): string {

@@ -1,0 +1,65 @@
+<div class="patient-eligibility-page">
+  <div class="header-row">
+    <div class="title">Eligibility</div>
+    <div class="actions">
+      <button class="btn btn-primary" (click)="checkEligibility()" [disabled]="checking || patientId <= 0">
+        {{ checking ? 'Checking...' : 'Check Eligibility' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="status-row" *ngIf="lastResult">
+    <div class="status-label">Last Result:</div>
+    <div class="status-value">
+      {{ lastResult.status || 'Unknown' }}
+      <span *ngIf="lastResult.planName"> — {{ lastResult.planName }}</span>
+    </div>
+  </div>
+
+  <div class="error-row" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="history-panel">
+    <div class="panel-header">
+      Eligibility History
+    </div>
+    <div class="panel-body" *ngIf="!loading; else loadingTpl">
+      <table class="history-grid" *ngIf="history.length > 0; else emptyTpl">
+        <thead>
+          <tr>
+            <th>Check Date</th>
+            <th>Status</th>
+            <th>Coverage Status</th>
+            <th>Plan Name</th>
+            <th>Copay</th>
+            <th>Deductible</th>
+            <th>Coverage Start</th>
+            <th>Coverage End</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of history">
+            <td>{{ row.checkDate | date:'short' }}</td>
+            <td>{{ row.status }}</td>
+            <td>{{ row.coverageStatus || '-' }}</td>
+            <td>{{ row.planName || '-' }}</td>
+            <td>{{ row.copayAmount != null ? (row.copayAmount | number:'1.2-2') : '-' }}</td>
+            <td>{{ row.deductibleAmount != null ? (row.deductibleAmount | number:'1.2-2') : '-' }}</td>
+            <td>{{ row.coverageStartDate ? (row.coverageStartDate | date:'shortDate') : '-' }}</td>
+            <td>{{ row.coverageEndDate ? (row.coverageEndDate | date:'shortDate') : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Loading eligibility history...</div>
+  </ng-template>
+
+  <ng-template #emptyTpl>
+    <div class="empty">No eligibility checks have been recorded for this patient.</div>
+  </ng-template>
+</div>
+

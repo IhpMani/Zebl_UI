@@ -3,7 +3,28 @@
   flex-direction: column;
   height: 100vh;
   font-family: Arial, sans-serif;
-  background-color: #e8f4fc;
+  background-color: var(--color-body-bg);
+}
+
+.topbar {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+
+  /* Primary application header */
+  background: var(--color-header);
+  border-bottom: 1px solid var(--color-header);
+}
+
+.topbar-logo {
+  height: 60px;
+  width: 130px;
+  display: block;
+}
+
+.topbar-spacer {
+  flex: 1 1 auto;
 }
 
 .user-menu {
@@ -16,7 +37,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--color-toolbar);
   color: white;
   display: flex;
   align-items: center;
@@ -29,17 +50,17 @@
 }
 
 .profile-icon:hover {
-  background: #2563eb;
+  background: var(--color-header);
 }
 
 .dropdown {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  background: #ffffff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
-  box-shadow: 0 15px 35px rgba(0, 80, 160, 0.12);
+  box-shadow: 0 15px 35px var(--shadow-card);
   min-width: 220px;
   z-index: 3000;
   overflow: hidden;
@@ -48,9 +69,9 @@
 .menu-item {
   padding: 12px 16px;
   cursor: pointer;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   transition: background 0.15s ease, color 0.15s ease;
-  color: #1f3b57;
+  color: var(--color-text);
   font-size: 0.9rem;
 }
 
@@ -59,48 +80,52 @@
 }
 
 .menu-item:hover {
-  background: #f0f6fd;
-  color: #1d4ed8;
+  background: var(--color-body-bg);
+  color: var(--color-link);
 }
 
 .username-display {
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text);
   cursor: default;
-  background: #cce5f5;
-  border-bottom: 1px solid #a8d4f0;
+  background: var(--color-toolbar);
+  border-bottom: 1px solid var(--color-header);
 }
 
 .username-display:hover {
   background: transparent;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .divider {
   height: 1px;
-  background: #e2e8f0;
+  background: var(--color-border);
   padding: 0;
   margin: 0;
   cursor: default;
 }
 
 .divider:hover {
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .content-area {
   flex-grow: 1;
-  background-color: #e8f4fc;
-  border: 1px solid #a8d4f0;
+  background-color: var(--color-body-bg);
   margin: 10px;
   overflow: auto;
-  padding: 10px;
+  padding: 0;
   position: relative;
   z-index: 1;
 }
 
-/* Remove router-outlet border for final look */
-router-outlet {
-  display: block;
-  padding: 5px;
+.workspace-content {
+  background: #ffffff;
+  border: 1px solid #1e6fb8;
+  border-radius: 6px;
+  margin-top: -1px; /* visually attaches to active tab */
+  padding: 16px;
+  position: relative;
+  z-index: 1;
+  min-height: calc(100% - 0px);
 }

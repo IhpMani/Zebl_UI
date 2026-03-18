@@ -1,0 +1,56 @@
+/* Global UI Theme Variables */
+
+:root {
+  /* Layout (required) */
+  --color-header: #0F5C9E;
+  --color-toolbar: #1E7DBA;
+  --color-body-bg: #F5F7FA;
+  --color-card-bg: #FFFFFF;
+  --color-border: #E3E8EE;
+
+  /* Aliases for consistency */
+  --header-color: #0F5C9E;
+  --toolbar-color: #1E7DBA;
+  --body-bg: #F5F7FA;
+  --card-bg: #FFFFFF;
+  --border-color: #E3E8EE;
+  --text-color: #1F2933;
+
+  /* Data grid row hover */
+  --row-hover: #F0F6FC;
+
+  /* Panel / section headers */
+  --color-panel-header-bg: #E8F2FB;
+  --color-panel-header-border: #CFE0F3;
+
+  /* Text */
+  --color-text: #1F2933;
+  --color-text-muted: #64748b;
+
+  /* Links & primary actions */
+  --color-link: #0F5C9E;
+  --color-primary-btn: #1E7DBA;
+  --color-primary-btn-hover: #0F5C9E;
+  --color-primary-btn-text: #FFFFFF;
+
+  /* Semantic: error */
+  --color-error: #b91c1c;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+
+  /* Semantic: warning */
+  --color-warning: #854d0e;
+  --color-warning-bg: #fef9c3;
+  --color-warning-border: #fde047;
+
+  /* Semantic: success (e.g. result text) */
+  --color-success: #15803d;
+  --color-success-bg: #f0fdf4;
+
+  /* Overlay & shadow */
+  --shadow-overlay: rgba(0, 0, 0, 0.4);
+  --shadow-overlay-light: rgba(255, 255, 255, 0.85);
+  --shadow-card: rgba(15, 92, 158, 0.08);
+  --shadow-focus: rgba(15, 92, 158, 0.18);
+}
+

@@ -9,7 +9,7 @@
 }
 
 .dialog {
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
   min-width: 420px;
   max-width: 90vw;
@@ -24,9 +24,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
   h2 { margin: 0; font-size: 1.15rem; }
-  .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; line-height: 1; }
+  .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-muted); line-height: 1; }
 }
 
 .dialog-body {
@@ -37,13 +37,13 @@
   .search-input {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     margin-bottom: 0.75rem;
   }
 
-  .loading { color: #666; margin: 0.5rem 0; }
-  .no-results { color: #666; margin: 0.5rem 0; }
+  .loading { color: var(--color-text-muted); margin: 0.5rem 0; }
+  .no-results { color: var(--color-text-muted); margin: 0.5rem 0; }
 
   .result-list {
     list-style: none;
@@ -51,7 +51,7 @@
     padding: 0;
     max-height: 320px;
     overflow-y: auto;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
   }
 
@@ -60,12 +60,12 @@
     cursor: pointer;
     display: flex;
     gap: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border);
 
     &:last-child { border-bottom: none; }
-    &:hover, &.selected { background: #e3f2fd; }
+    &:hover, &.selected { background: var(--row-hover); }
     .code { font-weight: 500; min-width: 100px; }
-    .desc { color: #555; }
+    .desc { color: var(--color-text-muted); }
   }
 }
 
@@ -74,14 +74,14 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border);
   .btn {
     padding: 0.4rem 1rem;
     border-radius: 4px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    background: #f5f5f5;
-    &.btn-primary { background: #1976d2; color: #fff; border-color: #1976d2; }
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
+    &.btn-primary { background: var(--color-primary-btn); color: var(--color-primary-btn-text); border-color: var(--color-primary-btn); }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
   }
 }

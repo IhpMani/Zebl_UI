@@ -1,0 +1,61 @@
+.claim-rejections-page {
+  padding: 12px;
+  font-size: 13px;
+  background-color: var(--color-body-bg);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.error-row {
+  color: var(--color-error);
+  margin-bottom: 8px;
+}
+
+.grid-wrapper {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card-bg);
+}
+
+.rejections-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rejections-grid th,
+.rejections-grid td {
+  border: 1px solid var(--color-border);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.rejections-grid thead {
+  background-color: var(--color-body-bg);
+}
+
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--color-link);
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.btn-link[disabled] {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.empty-state {
+  padding: 8px;
+  color: var(--color-text-muted);
+}
+

@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 60px);
-  background-color: #e8f4fc;
+  background-color: var(--color-body-bg);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
 }
@@ -20,25 +20,25 @@
 .list-type-panel {
   width: 280px;
   min-width: 0;
-  background-color: white;
-  border: 1px solid #a8d4f0;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
 }
 
 .panel-header {
-  background: #cce5f5;
-  border-bottom: 1px solid #a8d4f0;
+  background: var(--color-panel-header-bg);
+  border-bottom: 1px solid var(--color-panel-header-border);
   padding: 8px 10px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text);
   font-size: 13px;
 }
 
 .panel-body {
   flex: 1;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--color-card-bg);
 }
 
 .list-type-list {
@@ -51,65 +51,65 @@
   border: 1px solid transparent;
   margin: 1px;
   font-size: 13px;
-  color: #000;
-  background-color: white;
+  color: var(--color-text);
+  background-color: var(--color-card-bg);
 }
 
 .list-type-item:hover {
-  background-color: #e8f4f8;
+  background-color: var(--color-body-bg);
 }
 
 .list-type-item.selected {
-  background-color: #3b82f6;
+  background-color: var(--color-toolbar);
   color: white;
-  border-color: #2563eb;
+  border-color: var(--color-primary-btn-hover);
 }
 
 /* Middle Panel: List Entries */
 .list-entries-panel {
   flex: 1;
   min-width: 0;
-  background-color: white;
-  border: 1px solid #a8d4f0;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
 }
 
 .add-entry-container {
   padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #fafafa;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-body-bg);
 }
 
 .add-entry-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   font-size: 13px;
   font-style: italic;
-  color: #666;
+  color: var(--color-text-muted);
   box-sizing: border-box;
 }
 
 .add-entry-input:focus {
   outline: none;
-  border-color: #3399ff;
+  border-color: var(--color-toolbar);
   font-style: normal;
-  color: #000;
+  color: var(--color-text);
 }
 
 .add-entry-input::placeholder {
-  color: #999;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
 .add-error {
-  color: #d00;
+  color: var(--color-error);
   font-size: 11px;
   margin-top: 4px;
   padding: 3px 6px;
-  background-color: #fee;
-  border: 1px solid #fcc;
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
 }
 
 .entries-list {
@@ -126,25 +126,25 @@
   border: 1px solid transparent;
   margin: 1px;
   font-size: 13px;
-  background-color: white;
+  background-color: var(--color-card-bg);
 }
 
 .entry-item:hover {
-  background-color: #f5f5f5;
+  background-color: var(--color-body-bg);
 }
 
 .entry-item.selected {
-  background-color: #e0e0e0;
-  border-color: #ccc;
+  background-color: var(--color-border);
+  border-color: var(--color-border);
 }
 
 .btn-delete-x {
   width: 18px;
   height: 18px;
   min-width: 18px;
-  background-color: #e0e0e0;
-  border: 1px solid #999;
-  color: #333;
+  background-color: var(--color-border);
+  border: 1px solid var(--color-text-muted);
+  color: var(--color-text);
   font-size: 14px;
   font-weight: bold;
   line-height: 1;
@@ -158,21 +158,21 @@
 }
 
 .btn-delete-x:hover:not(:disabled) {
-  background-color: #d00;
+  background-color: var(--color-error);
   color: white;
-  border-color: #a00;
+  border-color: var(--color-error);
 }
 
 .btn-delete-x:disabled {
-  background-color: #f5f5f5;
-  color: #ccc;
-  border-color: #ddd;
+  background-color: var(--color-body-bg);
+  color: var(--color-border);
+  border-color: var(--color-border);
   cursor: not-allowed;
 }
 
 .entry-text {
   flex: 1;
-  color: #000;
+  color: var(--color-text);
 }
 
 /* Right Panel: Actions */
@@ -181,17 +181,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: #ffffff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   padding: 10px;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+  box-shadow: 0 2px 8px var(--shadow-card);
 }
 
 .action-btn {
   padding: 8px 12px;
-  background: #2563eb;
-  border: 1px solid #1d4ed8;
-  color: #ffffff;
+  background: var(--color-primary-btn-hover);
+  border: 1px solid var(--color-primary-btn);
+  color: var(--color-primary-btn-text);
   font-size: 13px;
   cursor: pointer;
   text-align: center;
@@ -200,26 +200,26 @@
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-  border-color: #1e40af;
+  background: var(--color-primary-btn);
+  border-color: var(--color-primary-btn-hover);
 }
 
 .action-btn:active:not(:disabled) {
-  background: #1e40af;
+  background: var(--color-primary-btn-hover);
 }
 
 .action-btn:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  border-color: #d1d5db;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
   cursor: not-allowed;
 }
 
 .auto-add-option {
   margin-top: 20px;
   padding: 10px;
-  background-color: white;
-  border: 1px solid #ccc;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
 }
 
@@ -228,7 +228,7 @@
   align-items: flex-start;
   cursor: pointer;
   font-size: 12px;
-  color: #333;
+  color: var(--color-text);
   gap: 8px;
 }
 
@@ -241,7 +241,7 @@
 .loading {
   text-align: center;
   padding: 20px;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 13px;
   font-style: italic;
 }
@@ -249,7 +249,7 @@
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 13px;
   font-style: italic;
 }
@@ -262,16 +262,16 @@
 
 .panel-body::-webkit-scrollbar-track,
 .entries-list::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: var(--color-body-bg);
 }
 
 .panel-body::-webkit-scrollbar-thumb,
 .entries-list::-webkit-scrollbar-thumb {
-  background: #c0c0c0;
-  border: 1px solid #999;
+  background: var(--color-border);
+  border: 1px solid var(--color-text-muted);
 }
 
 .panel-body::-webkit-scrollbar-thumb:hover,
 .entries-list::-webkit-scrollbar-thumb:hover {
-  background: #a0a0a0;
+  background: var(--color-text-muted);
 }

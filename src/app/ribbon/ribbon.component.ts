@@ -85,6 +85,10 @@ export class RibbonComponent implements OnInit, OnDestroy {
     this.router.navigate(['/physicians']);
   }
 
+  goToProgramSetup(): void {
+    this.router.navigate(['/tools/program-setup']);
+  }
+
   /** EDI Library = Submitter/Receiver library (configure receivers). */
   goToReceiverLibrary(): void {
     this.router.navigate(['/receiver-library']);

@@ -92,6 +92,10 @@ export class ClaimApiService {
     return this.http.get<Claim>(`${environment.apiUrl}/api/claims/${claId}`);
   }
 
+  scrubClaim(claimId: number): Observable<ScrubResult[]> {
+    return this.http.post<ScrubResult[]>(`${this.baseUrl}/scrub`, { claimId });
+  }
+
   /** Update claim. ClaStatus and ClaClassification from List Library. Physician FIDs map to Claim table. */
   updateClaim(claId: number, body: {
     claStatus?: string | null;
@@ -144,5 +148,12 @@ export class ClaimApiService {
     if (body.additionalData !== undefined) payload.additionalData = body.additionalData;
     return this.http.put<void>(`${environment.apiUrl}/api/claims/${claId}`, payload);
   }
+}
+
+export interface ScrubResult {
+  ruleName: string;
+  severity: string;
+  message: string;
+  affectedField: string;
 }
 

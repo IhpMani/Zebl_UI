@@ -10,8 +10,8 @@
 }
 
 .dialog {
-  background: #fff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
   width: 520px;
   max-width: 90vw;
@@ -21,7 +21,7 @@
 
 .dialog-header {
   padding: 8px 12px;
-  border-bottom: 1px solid #a8d4f0;
+  border-bottom: 1px solid var(--color-border);
 
   h3 {
     margin: 0;
@@ -51,22 +51,22 @@
   select {
     font-size: 12px;
     padding: 3px 6px;
-    border: 1px solid #93c5fd;
-    background: #fff;
+    border: 1px solid var(--color-border);
+    background: var(--color-card-bg);
   }
 
   .btn-small {
     height: 26px;
     font-size: 12px;
-    border: 1px solid #93c5fd;
-    background: #f0f8ff;
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
     cursor: pointer;
   }
 }
 
 .dialog-footer {
   padding: 10px 12px;
-  border-top: 1px solid #a8d4f0;
+  border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -74,19 +74,19 @@
   button {
     font-size: 12px;
     padding: 6px 10px;
-    border: 1px solid #93c5fd;
-    background: #f0f8ff;
+    border: 1px solid var(--color-border);
+    background: var(--color-body-bg);
     cursor: pointer;
   }
 
   .btn-primary {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-    color: #fff;
+    background: var(--color-primary-btn);
+    border-color: var(--color-primary-btn);
+    color: var(--color-primary-btn-text);
   }
 
   .btn-secondary {
-    background: #f0f8ff;
+    background: var(--color-body-bg);
   }
 }
 

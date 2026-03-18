@@ -3,7 +3,7 @@
   position: relative;
   padding: 20px;
   min-height: 100vh;
-  background: #e8f4fc;
+  background: var(--color-body-bg);
 }
 
 .patient-details-wrapper * {
@@ -54,8 +54,8 @@
 
 /* [ INSURANCE PANEL ] - light blue theme */
 .insurance-panel {
-  border: 1px solid #a8d4f0;
-  background: #e8f4fc;
+  border: 1px solid var(--color-border);
+  background: var(--color-body-bg);
   padding: 8px;
   margin-bottom: 10px;
 }
@@ -80,8 +80,8 @@
   height: 26px;
   font-size: 12px;
   padding: 2px 8px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   border-radius: 0;
   cursor: pointer;
 }
@@ -104,8 +104,8 @@
   grid-column: 1 / -1;
   padding: 4px 10px;
   font-size: 12px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   cursor: pointer;
   border-radius: 0;
   width: auto;
@@ -146,7 +146,7 @@
   margin-bottom: 2px;
   background: none;
   border: none;
-  color: #1d4ed8;
+  color: var(--color-primary-btn);
   cursor: pointer;
   text-decoration: underline;
   text-align: left;
@@ -158,8 +158,8 @@
   height: 26px;
   padding: 2px 6px;
   font-size: 13px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   border-radius: 2px;
 }
 
@@ -167,7 +167,7 @@
   font-size: 13px;
   font-weight: 500;
   margin: 0;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .insurance-form-grid .ins-inp-full {
@@ -177,8 +177,8 @@
 }
 
 .insurance-form-grid .ins-readonly {
-  background: #eee;
-  color: #555;
+  background: var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .insurance-form-grid .ins-inp-state {
@@ -205,8 +205,8 @@
   width: 28px;
   font-size: 11px;
   padding: 0;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   cursor: pointer;
   border-radius: 0;
   flex-shrink: 0;
@@ -248,8 +248,8 @@
   padding: 2px 8px;
   width: auto;
   text-align: left;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   border-radius: 0;
   cursor: pointer;
 }
@@ -285,8 +285,8 @@
 .insurance-tabs-compact .tab-btn {
   padding: 4px 12px;
   font-size: 13px;
-  border: 1px solid #ffffff;
-  background: #f3f2f2;
+  border: 1px solid var(--color-card-bg)fff;
+  background: var(--color-body-bg);
   cursor: pointer;
   border-radius: 0;
 }
@@ -296,25 +296,25 @@
 }
 
 .insurance-tabs-compact .tab-btn.active {
-  background: #d0d0d0;
-  color: #000;
+  background: var(--color-border);
+  color: var(--color-text);
   font-weight: 600;
-  border-color: #999;
+  border-color: var(--color-text-muted);
 }
 
 .insurance-tabs-compact .tab-btn.placeholder {
-  color: #888;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
 .insurance-tabs-compact .tab-btn.placeholder.active {
-  color: #ffffff;
+  color: var(--color-card-bg)fff;
   font-style: italic;
 }
 
 .insurance-panel .no-insurance {
   grid-column: 1;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-style: italic;
   margin: 0;
   font-size: 13px;
@@ -327,7 +327,7 @@
 .btn-link {
   background: none;
   border: none;
-  color: #1d4ed8;
+  color: var(--color-primary-btn);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0 0 8px 0;
@@ -340,7 +340,7 @@
   gap: 8px;
 }
 .copay-row input:first-child { width: 80px; }
-.copay-or { font-size: 0.85rem; color: #64748b; }
+.copay-or { font-size: 0.85rem; color: var(--color-text-muted); }
 .copay-pct { width: 60px; }
 
 .state-select { width: 70px; min-width: 70px; }
@@ -349,23 +349,23 @@
 
 /* Additional Claim Information - light blue theme */
 .additional-claim-panel {
-  background: #e8f4fc;
-  border-color: #a8d4f0;
+  background: var(--color-body-bg);
+  border-color: var(--color-border);
 }
 
 .additional-claim-header {
-  background: #cce5f5 !important;
+  background: var(--color-body-bg) !important;
   cursor: pointer;
   user-select: none;
 }
 
 .additional-claim-header:hover {
-  background: #b8dff5 !important;
+  background: var(--color-body-bg) !important;
 }
 
 .additional-claim-header .collapse-icon {
   font-size: 0.75rem;
-  color: #555;
+  color: var(--color-text-muted);
 }
 
 .additional-claim-inline {
@@ -391,7 +391,7 @@
 }
 
 .additional-claim-inline .inline-or {
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
@@ -414,14 +414,14 @@
 .additional-claim-inline .btn-initial-claim {
   padding: 4px 12px;
   font-size: 0.85rem;
-  background: #b8dff5;
-  border: 1px solid #7eb8e8;
+  background: var(--color-body-bg);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .additional-claim-inline .btn-initial-claim:hover {
-  background: #a8d9f2;
+  background: var(--color-body-bg);
 }
 
 .additional-claim-grid {
@@ -432,27 +432,27 @@
 
 /* Other Patient Information - light blue theme */
 .other-patient-panel {
-  background: #e8f4fc;
-  border-color: #a8d4f0;
+  background: var(--color-body-bg);
+  border-color: var(--color-border);
 }
 
 .other-patient-header {
-  background: #cce5f5 !important;
+  background: var(--color-body-bg) !important;
   cursor: pointer;
   user-select: none;
 }
 
 .other-patient-header:hover {
-  background: #b8dff5 !important;
+  background: var(--color-body-bg) !important;
 }
 
 .other-patient-header .collapse-icon {
   font-size: 0.75rem;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .other-patient-body {
-  background: #f0f8ff;
+  background: var(--color-body-bg);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -502,7 +502,7 @@
 
 .other-patient-field .unit {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-text-muted);
 }
 
 .checkbox-row label {
@@ -517,27 +517,27 @@
 
 /* Light blue panels - Additional Data, Statement, Reminder, Patient Notes */
 .tan-panel {
-  background: #e8f4fc;
-  border-color: #a8d4f0;
+  background: var(--color-body-bg);
+  border-color: var(--color-border);
 }
 
 .tan-panel-header {
-  background: #cce5f5 !important;
+  background: var(--color-body-bg) !important;
   cursor: pointer;
   user-select: none;
 }
 
 .tan-panel-header:hover {
-  background: #b8dff5 !important;
+  background: var(--color-body-bg) !important;
 }
 
 .tan-panel-header .collapse-icon {
   font-size: 0.75rem;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .tan-panel-body {
-  background: #f0f8ff;
+  background: var(--color-body-bg);
   grid-template-columns: unset;
 }
 
@@ -546,9 +546,9 @@
 }
 
 .readonly-field {
-  background: #e8f4fc;
+  background: var(--color-body-bg);
   cursor: not-allowed;
-  border-color: #93c5fd;
+  border-color: var(--color-border);
 }
 
 .notes-hide-tracking {
@@ -584,7 +584,7 @@
 
 .loading {
   padding: 12px 24px;
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(30, 64, 175, 0.15);
   font-weight: 600;
@@ -594,9 +594,9 @@
   padding: 12px 16px;
   margin-bottom: 20px;
   border-radius: 6px;
-  background: #fef3f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error);
 }
 
 .patient-header {
@@ -615,7 +615,7 @@
 .patient-context,
 .account-no {
   font-size: 0.85rem;
-  color: #475467;
+  color: var(--color-text-muted);
   margin-top: 4px;
 }
 
@@ -627,8 +627,8 @@
 
 /* Patient Information section - light blue theme */
 .section-panel {
-  border: 1px solid #a8d4f0;
-  background: #e8f4fc;
+  border: 1px solid var(--color-border);
+  background: var(--color-body-bg);
   padding: 12px;
   margin-bottom: 12px;
 }
@@ -715,12 +715,12 @@
 }
 
 .panel-card {
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
-  border: 1px solid #a8d4f0;
+  border: 1px solid var(--color-border);
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+  box-shadow: 0 2px 8px var(--shadow-card);
 }
 
 .panel-card header {
@@ -729,9 +729,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #cce5f5;
+  background: var(--color-panel-header-bg);
   border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid #a8d4f0;
+  border-bottom: 1px solid var(--color-panel-header-border);
   cursor: pointer;
 }
 
@@ -839,8 +839,8 @@
   height: 26px;
   padding: 2px 8px;
   font-size: 12px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   cursor: pointer;
   border-radius: 2px;
 }
@@ -871,8 +871,8 @@
 
 .insurance-tabs .tab-btn {
   padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  background: var(--color-body-bg);
   cursor: pointer;
   font-size: 0.9rem;
   border-radius: 0;
@@ -880,9 +880,9 @@
 .insurance-tabs .tab-btn:first-child { border-radius: 4px 0 0 4px; }
 .insurance-tabs .tab-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
 .insurance-tabs .tab-btn.active {
-  background: #1d4ed8;
-  color: #fff;
-  border-color: #1d4ed8;
+  background: var(--color-primary-btn);
+  color: var(--color-card-bg);
+  border-color: var(--color-primary-btn);
 }
 
 .insurance-actions {
@@ -918,8 +918,8 @@
   width: 24px;
   padding: 0;
   font-size: 12px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   cursor: pointer;
   border-radius: 2px;
 }
@@ -952,8 +952,8 @@
   width: 24px;
   font-size: 12px;
   padding: 0;
-  border: 1px solid #cfcfcf;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-card-bg);
   cursor: pointer;
   border-radius: 2px;
   line-height: 1;
@@ -963,7 +963,7 @@
 .physician-library-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--shadow-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -971,7 +971,7 @@
 }
 
 .physician-library-modal {
-  background: #fff;
+  background: var(--color-card-bg);
   border-radius: 8px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
   width: 95%;
@@ -988,7 +988,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -1006,12 +1006,12 @@
   background: transparent;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 
 .physician-library-close:hover {
-  color: #000;
+  color: var(--color-text);
 }
 
 .physician-library-modal-body {
@@ -1031,7 +1031,7 @@
 label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #475467;
+  color: var(--color-text-muted);
 }
 
 input,
@@ -1040,11 +1040,11 @@ textarea {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid #93c5fd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--color-card-bg);
   box-sizing: border-box;
 }
 
@@ -1079,14 +1079,14 @@ textarea {
 
 .no-insurance {
   grid-column: 1 / -1;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-style: italic;
   margin: 0;
 }
 
 .btn-icon {
   background: transparent;
-  border: 1px solid #cbd5f5;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 4px 8px;
   cursor: pointer;
@@ -1094,7 +1094,7 @@ textarea {
 }
 
 .btn-icon:hover {
-  background: #f1f5f9;
+  background: var(--color-body-bg);
 }
 
 .select-with-btn {
@@ -1109,9 +1109,9 @@ textarea {
 }
 
 .notes-section {
-  background: #f0f8ff;
+  background: var(--color-body-bg);
   border-radius: 8px;
-  border: 1px solid #a8d4f0;
+  border: 1px solid var(--color-border);
   padding: 16px;
   margin-top: 8px;
 }
@@ -1138,15 +1138,15 @@ textarea {
 .notes-history-table th,
 .notes-history-table td {
   padding: 8px 10px;
-  border: 1px solid #a8d4f0;
+  border: 1px solid var(--color-border);
   text-align: left;
   vertical-align: top;
 }
 
 .notes-history-table th {
-  background: #cce5f5;
+  background: var(--color-body-bg);
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .notes-history-table td.note-text {
@@ -1155,7 +1155,7 @@ textarea {
 }
 
 .notes-history-table td.no-data {
-  color: #64748b;
+  color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
 }
@@ -1170,19 +1170,19 @@ textarea {
 }
 
 .btn-primary {
-  background: #1d4ed8;
-  color: #fff;
+  background: var(--color-primary-btn);
+  color: var(--color-card-bg);
 }
 
 .btn-primary.ghost {
   background: transparent;
-  color: #1d4ed8;
-  border: 1px solid #1d4ed8;
+  color: var(--color-primary-btn);
+  border: 1px solid var(--color-primary-btn);
 }
 
 .btn-secondary {
-  background: #f8fafc;
-  border: 1px solid #cbd5f5;
+  background: var(--color-body-bg);
+  border: 1px solid var(--color-border);
 }
 
 @media (max-width: 1200px) {

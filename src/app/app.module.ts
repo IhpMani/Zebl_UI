@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { RouteReuseStrategy } from '@angular/router';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppShellComponent } from './app-shell/app-shell.component';
@@ -25,10 +26,15 @@ import { UserManagementComponent } from './admin/user-management/user-management
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
 import { ColumnChooserDialogComponent } from './procedure-codes/column-chooser-dialog.component';
 import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.component';
+import { PatientEligibilityComponent } from './patients/patient-eligibility/patient-eligibility.component';
+import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
+import { WorkspaceModule } from './workspace/workspace.module';
+import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
 
 @NgModule({
   declarations: [
@@ -52,9 +58,12 @@ import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.co
     UserManagementComponent,
     InterfaceDataReviewComponent,
     EdiReportsComponent,
+    EraExceptionsComponent,
     ProcedureCodesPageComponent,
     ColumnChooserDialogComponent,
-    AddColumnHeaderComponent
+    AddColumnHeaderComponent,
+    PatientEligibilityComponent,
+    ClaimRejectionsComponent
   ],
   imports: [
     BrowserModule,
@@ -62,10 +71,12 @@ import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.co
     AgGridModule,
     HttpClientModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    WorkspaceModule
   ],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: RouteReuseStrategy, useClass: WorkspaceRouteReuseStrategy }
   ],
   bootstrap: [AppShellComponent] // Bootstrap with AppShellComponent
 })

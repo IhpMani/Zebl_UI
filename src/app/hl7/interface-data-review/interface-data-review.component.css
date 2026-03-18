@@ -4,8 +4,8 @@
 
 .top-section, .bottom-section {
   margin-bottom: 16px;
-  background: #fff;
-  border: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
   padding: 10px;
 }
 
@@ -23,27 +23,27 @@
 
 .table th,
 .table td {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   padding: 6px 8px;
   text-align: left;
 }
 
 .empty {
   text-align: center;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .error {
-  color: #b00020;
+  color: var(--color-error);
 }
 
 .loading {
-  color: #333;
+  color: var(--color-text);
 }
 
 .review-panel {
   margin-top: 12px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--color-border);
   padding-top: 8px;
 }
 

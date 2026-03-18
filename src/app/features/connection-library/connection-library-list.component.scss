@@ -1,17 +1,17 @@
 .connection-library-list-container {
   display: flex;
   height: calc(100vh - 60px);
-  background: #e8f4fc;
+  background: var(--color-body-bg);
   font-size: 0.9rem;
-  color: #1f2937;
+  color: var(--color-text);
   overflow: hidden;
 }
 
 .left-panel {
   width: 280px;
   min-width: 280px;
-  background: #fff;
-  border-right: 1px solid #a8d4f0;
+  background: var(--color-card-bg);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -19,18 +19,18 @@
 
 .panel-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #a8d4f0;
+  border-bottom: 1px solid var(--color-panel-header-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--color-panel-header-bg);
   
   h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--color-text);
   }
 }
 
@@ -38,15 +38,15 @@
   padding: 6px 16px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #1d4ed8;
-  color: #fff;
+  background: var(--color-primary-btn);
+  color: var(--color-primary-btn-text);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
   
   &:hover {
-    background: #1e40af;
+    background: var(--color-primary-btn-hover);
   }
   
   &:active {
@@ -57,14 +57,14 @@
 .loading, .error {
   padding: 12px;
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-muted);
   flex-shrink: 0;
 }
 
 .error {
-  color: #c00;
-  background: #fee;
-  border: 1px solid #fcc;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
   margin: 8px;
   border-radius: 2px;
 }
@@ -78,30 +78,30 @@
 
 .connection-item {
   padding: 10px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
   transition: background 0.15s ease;
   font-size: 0.9rem;
-  color: #334155;
+  color: var(--color-text);
   word-break: break-word;
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--row-hover);
   }
 
   &.selected {
-    background: #2563eb;
-    color: #fff;
+    background: var(--color-primary-btn-hover);
+    color: var(--color-primary-btn-text);
     font-weight: 500;
   }
 
   &.add-entry {
     font-style: italic;
-    color: #64748b;
+    color: var(--color-text-muted);
 
     &:hover {
-      background: #f1f5f9;
-      color: #1d4ed8;
+      background: var(--row-hover);
+      color: var(--color-primary-btn);
     }
   }
 }
@@ -109,7 +109,7 @@
 .empty-state {
   padding: 24px 16px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.85rem;
   font-style: italic;
 }
@@ -117,7 +117,7 @@
 .right-panel {
   flex: 1;
   overflow: auto;
-  background: #e8f4fc;
+  background: var(--color-body-bg);
   position: relative;
   min-width: 0;
 }
@@ -127,7 +127,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   text-align: center;
   padding: 20px;

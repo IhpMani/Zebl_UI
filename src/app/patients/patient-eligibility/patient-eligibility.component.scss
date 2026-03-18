@@ -1,0 +1,73 @@
+.patient-eligibility-page {
+  padding: 12px;
+  font-size: 13px;
+  background-color: var(--color-body-bg);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.actions button {
+  min-width: 140px;
+}
+
+.status-row {
+  margin-bottom: 8px;
+}
+
+.status-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.history-panel {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card-bg);
+}
+
+.panel-header {
+  padding: 6px 8px;
+  background-color: var(--color-panel-header-bg);
+  border-bottom: 1px solid var(--color-panel-header-border);
+  font-weight: 600;
+}
+
+.panel-body {
+  padding: 6px 8px;
+}
+
+.history-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-grid th,
+.history-grid td {
+  border: 1px solid var(--color-border);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.history-grid thead {
+  background-color: var(--color-body-bg);
+}
+
+.error-row {
+  color: var(--color-error);
+  margin-bottom: 8px;
+}
+
+.loading,
+.empty {
+  padding: 8px;
+  color: var(--color-text-muted);
+}
+
