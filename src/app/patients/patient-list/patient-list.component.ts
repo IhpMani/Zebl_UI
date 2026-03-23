@@ -5,6 +5,7 @@ import { RibbonContextService } from '../../core/services/ribbon-context.service
 import { PatientListItem, PatientsApiResponse, PaginationMeta } from '../../core/services/patient.models';
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-patient-list',
@@ -163,7 +164,8 @@ export class PatientListComponent implements OnInit, OnDestroy {
     private patientApiService: PatientApiService,
     private listApiService: ListApiService,
     private router: Router,
-    private ribbonContext: RibbonContextService
+    private ribbonContext: RibbonContextService,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -172,6 +174,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Patients');
     this.loadAvailableColumns();
     this.loadPatients(this.currentPage, this.pageSize);
   }

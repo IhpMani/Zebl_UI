@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AdjustmentApiService } from '../../core/services/adjustment-api.service';
 import { AdjustmentListItem, AdjustmentsApiResponse, PaginationMeta } from '../../core/services/adjustment.models';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-adjustment-list',
@@ -69,7 +70,8 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
 
   constructor(
     private adjustmentApiService: AdjustmentApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -78,6 +80,7 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Adjustments');
     this.loadAvailableColumns();
     this.loadAdjustments(this.currentPage, this.pageSize);
   }

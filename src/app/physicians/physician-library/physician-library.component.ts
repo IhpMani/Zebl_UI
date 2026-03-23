@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnDestroy, Output } from '@angular/core';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 interface PhysicianListItem {
   phyID: number;
@@ -83,10 +84,12 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
 
   constructor(
     private physicianApiService: PhysicianApiService,
+    private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Physician Library');
     this.loadPhysicians();
   }
 

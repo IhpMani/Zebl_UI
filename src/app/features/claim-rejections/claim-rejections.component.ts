@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ClaimRejectionsApiService, ClaimRejectionDto } from '../../core/services/claim-rejections-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-claim-rejections',
@@ -14,10 +15,12 @@ export class ClaimRejectionsComponent implements OnInit {
 
   constructor(
     private api: ClaimRejectionsApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Claim Rejections');
     this.load();
   }
 

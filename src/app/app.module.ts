@@ -33,6 +33,7 @@ import { ColumnChooserDialogComponent } from './procedure-codes/column-chooser-d
 import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.component';
 import { PatientEligibilityComponent } from './patients/patient-eligibility/patient-eligibility.component';
 import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
+import { EligibilityResponseComponent } from './patients/eligibility-response/eligibility-response.component';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
 
@@ -63,6 +64,7 @@ import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspac
     ColumnChooserDialogComponent,
     AddColumnHeaderComponent,
     PatientEligibilityComponent,
+    EligibilityResponseComponent,
     ClaimRejectionsComponent
   ],
   imports: [

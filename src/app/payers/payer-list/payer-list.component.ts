@@ -4,6 +4,7 @@ import { PayerApiService } from '../../core/services/payer-api.service';
 import { PayerListItem, PayersApiResponse, PaginationMeta } from '../../core/services/payer.models';
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-payer-list',
@@ -98,7 +99,8 @@ export class PayerListComponent implements OnInit, OnDestroy {
   constructor(
     private payerApiService: PayerApiService,
     private listApiService: ListApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -107,6 +109,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Payers');
     this.loadAvailableColumns();
     this.loadPayers(this.currentPage, this.pageSize);
   }

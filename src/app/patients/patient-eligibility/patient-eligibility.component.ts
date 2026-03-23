@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { EligibilityApiService, EligibilityCheckResultDto, EligibilityHistoryItemDto } from '../../core/services/eligibility-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-patient-eligibility',
@@ -17,10 +18,12 @@ export class PatientEligibilityComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private eligibilityApi: EligibilityApiService
+    private eligibilityApi: EligibilityApiService,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Patient Eligibility');
     this.route.paramMap.subscribe(params => {
       const idParam = params.get('patId');
       this.patientId = idParam ? Number(idParam) : 0;

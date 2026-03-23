@@ -1,0 +1,104 @@
+.eligibility-window{
+  position:fixed;
+  /* Keep visible near the top, but not covering the ribbon */
+  top:190px;
+  left:50%;
+  transform:translateX(-50%);
+  width:900px;
+  max-height:85vh;
+  overflow:auto;
+  background:var(--color-card-bg);
+  border:1px solid var(--color-border);
+  z-index:2000; /* Ribbon host uses a higher z-index, so ribbon stays on top */
+  box-shadow:0 15px 35px var(--shadow-card);
+  color:var(--color-text);
+}
+
+.header{
+  background:var(--color-header);
+  color:#fff;
+  border-bottom:1px solid var(--color-panel-header-border);
+  padding:10px 12px;
+  font-weight:bold;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.close{
+  border:0;
+  background:transparent;
+  font-size:18px;
+  cursor:pointer;
+  color:#fff;
+}
+
+fieldset{
+  margin:10px;
+  border:1px solid var(--color-border);
+  background:transparent;
+}
+
+legend{
+  padding:0 6px;
+}
+
+.row{
+  display:flex;
+  gap:20px;
+  padding:5px;
+  align-items:center;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:150px 1fr 120px 1fr;
+  gap:5px;
+  padding:5px;
+}
+
+.benefit-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.benefit-table th,
+.benefit-table td{
+  border:1px solid var(--color-border);
+  padding:6px;
+}
+
+.coverage{
+  background:var(--color-success);
+  color:#fff;
+  padding:2px 10px;
+  border-radius:4px;
+  display:inline-block;
+}
+
+.footer{
+  padding:10px 15px 15px;
+}
+
+.buttons{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:10px;
+}
+
+.buttons button{
+  background:var(--color-primary-btn);
+  color:var(--color-primary-btn-text);
+  border:1px solid var(--color-primary-btn);
+  border-radius:10px;
+  padding:8px 14px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.buttons button:hover{
+  background:var(--color-primary-btn-hover);
+  border-color:var(--color-primary-btn-hover);
+}
+

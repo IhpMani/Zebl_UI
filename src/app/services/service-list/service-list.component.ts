@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ServiceApiService } from '../../core/services/service-api.service';
 import { ServiceListItem, ServicesApiResponse, PaginationMeta } from '../../core/services/service.models';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-service-list',
@@ -120,13 +121,15 @@ export class ServiceListComponent implements OnInit, OnDestroy {
 
   constructor(
     private serviceApiService: ServiceApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
   pageSize: number = 25;
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Services');
     this.loadAvailableColumns();
     this.loadServices(this.currentPage, this.pageSize);
   }

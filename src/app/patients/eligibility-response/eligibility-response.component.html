@@ -1,0 +1,100 @@
+<div class="eligibility-window" *ngIf="response">
+
+  <div class="header">
+    Eligibility Response
+    <button class="close" (click)="close()">X</button>
+  </div>
+
+  <!-- Payer Information -->
+  <fieldset>
+    <legend>Payer Information</legend>
+
+    <div class="row">
+      <label>Payer</label>
+      <span>{{response?.payerName}}</span>
+    </div>
+
+    <div class="row">
+      <label>Coverage</label>
+      <span class="coverage">{{response?.status}}</span>
+
+      <label>Plan</label>
+      <span>{{response?.planName || '-'}}</span>
+    </div>
+
+  </fieldset>
+
+
+  <!-- Insured Information -->
+  <fieldset>
+    <legend>Insured's Information</legend>
+
+    <div class="row">
+      <strong>{{response?.patientName}}</strong>
+    </div>
+
+    <div class="grid">
+      <div>Identification</div>
+      <div>{{response?.identification}}</div>
+
+      <div>DOB</div>
+      <div>{{formatDate(response?.dateOfBirth)}}</div>
+
+      <div>Gender</div>
+      <div>{{response?.gender}}</div>
+
+      <div>Eligibility Date</div>
+      <div>{{formatDate(response?.eligibilityDate)}}</div>
+
+      <div>Inquiry Date</div>
+      <div>{{formatDate(response?.inquiryDate)}}</div>
+    </div>
+
+  </fieldset>
+
+
+  <!-- Benefit Details -->
+  <fieldset>
+    <legend>Benefit Details</legend>
+
+    <table class="benefit-table">
+      <thead>
+        <tr>
+          <th>Service Type</th>
+          <th>Benefit Information</th>
+          <th>Amount</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let b of (response?.benefits || [])">
+          <td>{{b?.serviceType}}</td>
+          <td>{{b?.benefit}}</td>
+          <td>{{b?.amount}}</td>
+          <td>{{b?.description}}</td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </fieldset>
+
+
+  <div class="footer">
+
+    <p class="disclaimer">
+      This is not a guarantee of benefits or payment. Eligibility information
+      is based on data sent at the time shown above.
+    </p>
+
+    <div class="buttons">
+      <button type="button" (click)="close()">OK</button>
+    </div>
+
+  </div>
+
+</div>
+

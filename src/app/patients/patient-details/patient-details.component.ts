@@ -13,6 +13,7 @@ import { PayerApiService } from '../../core/services/payer-api.service';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
+import { EligibilityApiService } from '../../core/services/eligibility-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 interface PhysicianOption {
@@ -35,6 +36,7 @@ export class PatientDetailsComponent implements OnInit {
   patId: number | null = null;
   newNote = '';
   saving = false;
+  eligibilityResponse: any = null;
 
   physicians: PhysicianOption[] = [];
   payers: Array<{ payID: number; payName: string }> = [];
@@ -107,6 +109,7 @@ export class PatientDetailsComponent implements OnInit {
     private payerApi: PayerApiService,
     private listApi: ListApiService,
     private customFieldsApi: CustomFieldsApiService,
+    private eligibilityApi: EligibilityApiService,
     private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -469,6 +472,43 @@ export class PatientDetailsComponent implements OnInit {
     this.loadPhysicians();
   }
 
+  checkEligibility(): void {
+    if (!this.patient?.patID) return;
+
+    if (!this.hasPrimaryInsurance) {
+      alert('Patient has no primary insurance.');
+      return;
+    }
+
+    const id = this.patient.patID;
+    this.eligibilityApi.check(id).subscribe({
+      next: (res: any) => {
+        // Show popup with eligibility response.
+        this.eligibilityResponse = res;
+        // Reload patient to update insurance eligibility status/date.
+        this.loadPatient(id);
+      },
+      error: (err) => {
+        console.error('Eligibility check failed', err);
+        alert(err.error?.message ?? 'Eligibility check failed.');
+      }
+    });
+  }
+
+  viewEligibility(): void {
+    if (!this.patient?.patID) return;
+
+    const id = this.patient.patID;
+    this.eligibilityApi.getHistory(id).subscribe(history => {
+      if (!history?.length) return;
+
+      const latest = history[0];
+      this.eligibilityApi.getRaw(latest.requestId).subscribe(raw => {
+        alert(raw.raw271);
+      });
+    });
+  }
+
   openPhysicianPicker(controlName?: string): void {
     this.physicianPickerFor = controlName ?? null;
     this.physicianPickerOpen = true;
@@ -556,7 +596,7 @@ export class PatientDetailsComponent implements OnInit {
   }
 
   goBackToList(): void {
-    this.router.navigate(['/patients/find-patient']);
+    this.workspace.closeCurrentTab();
   }
 
   toggleSection(section: keyof typeof this.sectionsState): void {

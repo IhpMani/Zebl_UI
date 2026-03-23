@@ -5,6 +5,7 @@ import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { PaymentEntryRow } from '../../core/services/payment.models';
 import { PayerListItem } from '../../core/services/payer.models';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-payment-entry',
@@ -47,7 +48,8 @@ export class PaymentEntryComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private paymentApi: PaymentApiService,
-    private payerApi: PayerApiService
+    private payerApi: PayerApiService,
+    private workspace: WorkspaceService
   ) {
     this.paymentForm = this.fb.group({
       payerId: [null],
@@ -62,6 +64,7 @@ export class PaymentEntryComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Payment Entry');
     this.updateSummaryFromGrid();
     this.loadPayers();
     this.paymentForm.get('amount')?.valueChanges.subscribe(() => this.updateSummaryFromGrid());

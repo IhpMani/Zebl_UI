@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { DisbursementApiService } from '../../core/services/disbursement-api.service';
 import { DisbursementListItem, DisbursementsApiResponse, PaginationMeta } from '../../core/services/disbursement.models';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-disbursement-list',
@@ -60,7 +61,8 @@ export class DisbursementListComponent implements OnInit, OnDestroy {
 
   constructor(
     private disbursementApiService: DisbursementApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -69,6 +71,7 @@ export class DisbursementListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Disbursements');
     this.loadAvailableColumns();
     this.loadDisbursements(this.currentPage, this.pageSize);
   }

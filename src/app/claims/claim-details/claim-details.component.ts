@@ -578,7 +578,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   goBackToList(): void {
-    this.router.navigate(['/claims/find-claim']);
+    this.workspace.closeCurrentTab();
   }
 
   addServiceLine(): void {

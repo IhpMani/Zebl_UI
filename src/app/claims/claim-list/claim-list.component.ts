@@ -4,6 +4,7 @@ import { ClaimApiService } from '../../core/services/claim-api.service';
 import { ClaimListItem, ClaimsApiResponse, PaginationMeta } from '../../core/services/claim.models';
 import { Subject, takeUntil } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from './claim-list-additional-columns';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-claim-list',
@@ -215,7 +216,8 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   constructor(
     private claimApiService: ClaimApiService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -224,6 +226,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Claims');
     // Load curated additional columns from registry
     this.loadAdditionalColumnsFromRegistry();
     // Load saved column preferences

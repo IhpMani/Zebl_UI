@@ -256,9 +256,22 @@
                     <input type="date" class="ins-inp" [(ngModel)]="currentInsurance.insBirthDate" [ngModelOptions]="ngModelStandalone" />
                     <label class="ins-lbl">Eligibility</label>
                     <div class="ins-cell-with-btns">
-                      <input type="text" class="ins-inp ins-readonly" [value]="currentInsurance.patInsEligStatus || ''" readonly />
-                      <button type="button" class="btn-sm-icon" disabled>CHECK</button>
-                      <button type="button" class="btn-sm-icon" disabled>VIEW</button>
+                      <span
+                        [ngClass]="{
+                          'text-success': currentInsurance.patInsEligStatus === 'Active' || currentInsurance.patInsEligStatus === 'A',
+                          'text-danger': currentInsurance.patInsEligStatus === 'Inactive' || currentInsurance.patInsEligStatus === 'I',
+                          'text-muted': !currentInsurance.patInsEligStatus || (
+                            currentInsurance.patInsEligStatus !== 'Active' &&
+                            currentInsurance.patInsEligStatus !== 'A' &&
+                            currentInsurance.patInsEligStatus !== 'Inactive' &&
+                            currentInsurance.patInsEligStatus !== 'I'
+                          )
+                        }"
+                      >
+                        {{ currentInsurance.patInsEligStatus || 'Unknown' }}
+                      </span>
+                      <button type="button" class="btn-sm-icon" (click)="checkEligibility()">CHECK</button>
+                      <button type="button" class="btn-sm-icon" (click)="viewEligibility()">VIEW</button>
                     </div>
                     <label class="ins-lbl">Address</label>
                     <input type="text" class="ins-inp ins-inp-full" [(ngModel)]="currentInsurance.insAddress" [ngModelOptions]="ngModelStandalone" />
@@ -482,6 +495,12 @@
         </div>
       </div>
     </section>
+
+    <app-eligibility-response
+      *ngIf="eligibilityResponse"
+      [response]="eligibilityResponse"
+      (closed)="eligibilityResponse = null"
+    ></app-eligibility-response>
 
     <!-- Physician Library Modal (full page in popup) -->
     <div class="physician-library-overlay" *ngIf="physicianPickerOpen" (click)="closePhysicianPicker()">

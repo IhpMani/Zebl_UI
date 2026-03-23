@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PaymentListItem, PaymentsApiResponse, PaginationMeta } from '../../core/services/payment.models';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-payment-list',
@@ -56,13 +57,14 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'pmt835Ref', label: 'Ref #', visible: true, filterValue: '' },
   ];
 
-  constructor(private paymentApiService: PaymentApiService, private router: Router) { }
+  constructor(private paymentApiService: PaymentApiService, private router: Router, private workspace: WorkspaceService) { }
   currentPage: number = 1;
   pageSize: number = 25;
 
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Payments');
     this.loadAvailableColumns();
     this.loadPayments(this.currentPage, this.pageSize);
   }

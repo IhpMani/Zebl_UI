@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { EraExceptionsApiService, EraExceptionDto } from '../../core/services/era-exceptions-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-era-exceptions',
@@ -11,9 +12,10 @@ export class EraExceptionsComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  constructor(private api: EraExceptionsApiService) {}
+  constructor(private api: EraExceptionsApiService, private workspace: WorkspaceService) {}
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('ERA Exceptions');
     this.load();
   }
 

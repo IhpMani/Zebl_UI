@@ -63,7 +63,8 @@ export class ProgramSetupPageComponent implements OnInit {
     { value: 'PracticeInsight', label: 'Practice Insight' },
     { value: 'ZirMed', label: 'ZirMed' },
     { value: 'OfficeAlly', label: 'Office Ally' },
-    { value: 'Waystar', label: 'Waystar' }
+    { value: 'Waystar', label: 'Waystar' },
+    { value: 'EDIConnection', label: 'EDI Connection (Mock EDI)' }
   ];
   /** Sources that require clearinghouse credentials (username/password/server). */
   readonly eligibilitySourcesRequiringCredentials = ['Capario', 'TriZetto', 'Navicure', 'PracticeInsight', 'ZirMed', 'OfficeAlly', 'Waystar'];

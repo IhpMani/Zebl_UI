@@ -122,6 +122,12 @@ export class WorkspaceService {
     this.updateTabTitle(state.activeTabId, title);
   }
 
+  closeCurrentTab(): void {
+    const state = this.stateSubject.value;
+    if (!state.activeTabId) return;
+    this.closeTab(state.activeTabId);
+  }
+
   closeTab(tabId: string): void {
     const state = this.stateSubject.value;
     const closing = state.tabs.find((t) => t.id === tabId);
@@ -251,17 +257,46 @@ export class WorkspaceService {
     return { path, params };
   }
 
+  private static readonly ROUTE_TITLES: Record<string, string> = {
+    '/claims/find-claim': 'Find Claims',
+    '/claims/rejections': 'Claim Rejections',
+    '/patients/find-patient': 'Find Patients',
+    '/services/find-service': 'Find Services',
+    '/payments/find-payment': 'Find Payments',
+    '/payments/entry': 'Payment Entry',
+    '/payments/era-exceptions': 'ERA Exceptions',
+    '/adjustments/find-adjustment': 'Find Adjustments',
+    '/payers/find-payer': 'Find Payers',
+    '/physicians/find-physician': 'Find Physicians',
+    '/physicians': 'Physician Library',
+    '/disbursements/find-disbursement': 'Find Disbursements',
+    '/claim-notes/find-claim-note': 'Find Claim Notes',
+    '/edi-reports': 'EDI Reports',
+    '/procedure-codes': 'Procedure Codes',
+    '/libraries/procedure-codes': 'Procedure Code Library',
+    '/libraries/city-state-zip': 'City State Zip Library',
+    '/receiver-library': 'Receiver Library',
+    '/connection-library': 'Connection Library',
+    '/payer-library': 'Payer Library',
+    '/code-library': 'Code Library',
+    '/claim-template-library': 'Claim Template Library',
+    '/tools/program-setup': 'Program Setup',
+    '/admin/users': 'User Management',
+    '/lists': 'Lists'
+  };
+
   private generateTitle(path: string, params: Record<string, unknown>): string {
+    const staticTitle = WorkspaceService.ROUTE_TITLES[path];
+    if (staticTitle) return staticTitle;
+
     const segs = path.split('/').filter(Boolean);
     const first = segs[0] ?? '';
-    if (first === 'claims') {
-      return 'Loading...';
-    }
-    if (first === 'patients') {
-      return 'Loading...';
-    }
-    if (first === 'edi' && segs[1] === 'reports') return 'EDI Reports';
-    if (first === 'payments') return 'Payments';
+
+    // Detail pages with a dynamic ID param → placeholder until component loads data
+    if (first === 'claims' && segs.length >= 2) return 'Loading...';
+    if (first === 'patients' && segs.length >= 2) return 'Loading...';
+    if (first === 'payments' && segs[1] === 'entry' && segs.length >= 3) return 'Loading...';
+
     const last = segs.at(-1) ?? 'Tab';
     return last.charAt(0).toUpperCase() + last.slice(1);
   }

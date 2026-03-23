@@ -3,6 +3,7 @@ import { EdiReportsApiService, EdiReportDto } from '../core/services/edi-reports
 import { ConnectionLibraryApiService } from '../core/services/connection-library-api.service';
 import { ReceiverLibraryApiService, ReceiverLibraryDto } from '../core/services/receiver-library-api.service';
 import { EdiReportCountService } from '../core/services/edi-report-count.service';
+import { WorkspaceService } from '../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-edi-reports',
@@ -42,7 +43,8 @@ export class EdiReportsComponent implements OnInit {
     private ediApi: EdiReportsApiService,
     private connectionApi: ConnectionLibraryApiService,
     private receiverApi: ReceiverLibraryApiService,
-    private ediReportCountService: EdiReportCountService
+    private ediReportCountService: EdiReportCountService,
+    private workspace: WorkspaceService
   ) {}
 
   @HostListener('document:click') closeCheckAllMenu(): void {
@@ -50,6 +52,7 @@ export class EdiReportsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('EDI Reports');
     this.loadConnections();
     this.loadReceivers();
     this.loadReports();

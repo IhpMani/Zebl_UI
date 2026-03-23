@@ -4,6 +4,7 @@ import { ClaimNoteApiService } from '../../core/services/claim-note-api.service'
 import { ClaimNoteListItem, ClaimNotesApiResponse, PaginationMeta } from '../../core/services/claim-note.models';
 import { Subject, takeUntil } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from '../../claims/claim-list/claim-list-additional-columns';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-claim-note-list',
@@ -74,13 +75,14 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     return out;
   }
 
-  constructor(private claimNoteApiService: ClaimNoteApiService, private router: Router) { }
+  constructor(private claimNoteApiService: ClaimNoteApiService, private router: Router, private workspace: WorkspaceService) { }
   currentPage: number = 1;
   pageSize: number = 25;
 
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Claim Notes');
     this.loadAvailableColumns();
     this.loadClaimNotes(this.currentPage, this.pageSize);
   }

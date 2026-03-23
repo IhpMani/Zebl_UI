@@ -15,6 +15,15 @@ export interface EligibilityCheckResultDto {
   coinsurancePercent?: number | null;
   coverageStartDate?: string | null;
   coverageEndDate?: string | null;
+
+  // Insured/Patient fields shown in Eligibility popup.
+  patientName?: string | null;
+  patientAddress?: string | null;
+  identification?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  eligibilityDate?: string | null;
+  inquiryDate?: string | null;
 }
 
 export interface EligibilityHistoryItemDto {
@@ -28,6 +37,11 @@ export interface EligibilityHistoryItemDto {
   coinsurancePercent?: number | null;
   coverageStartDate?: string | null;
   coverageEndDate?: string | null;
+}
+
+export interface EligibilityRawResponseDto {
+  requestId: number;
+  raw271: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +58,10 @@ export class EligibilityApiService {
 
   getHistory(patientId: number): Observable<EligibilityHistoryItemDto[]> {
     return this.http.get<EligibilityHistoryItemDto[]>(`${this.baseUrl}/history/${patientId}`);
+  }
+
+  getRaw(requestId: number): Observable<EligibilityRawResponseDto> {
+    return this.http.get<EligibilityRawResponseDto>(`${this.baseUrl}/${requestId}/raw`);
   }
 }
 

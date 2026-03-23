@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PhysicianListItem, PhysiciansApiResponse, PaginationMeta } from '../../core/services/physician.models';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-physician-list',
@@ -80,7 +81,8 @@ export class PhysicianListComponent implements OnInit, OnDestroy {
 
   constructor(
     private physicianApiService: PhysicianApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) { }
 
   currentPage: number = 1;
@@ -89,6 +91,7 @@ export class PhysicianListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Find Physicians');
     this.loadAvailableColumns();
     this.loadPhysicians(this.currentPage, this.pageSize);
   }

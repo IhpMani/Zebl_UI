@@ -6,6 +6,7 @@ import { ProcedureCodesApiService, ProcedureCode } from '../core/services/proced
 import { AddColumnHeaderComponent } from './add-column-header.component';
 import { ColumnChooserItem } from './column-chooser-dialog.component';
 import { Subject, takeUntil } from 'rxjs';
+import { WorkspaceService } from '../workspace/application/workspace.service';
 
 const PAGE_SIZE = 50;
 
@@ -99,9 +100,10 @@ export class ProcedureCodesPageComponent implements OnInit, OnDestroy {
     editable: false
   };
 
-  constructor(private api: ProcedureCodesApiService) {}
+  constructor(private api: ProcedureCodesApiService, private workspace: WorkspaceService) {}
 
   ngOnInit(): void {
+    this.workspace.updateActiveTabTitle('Procedure Codes');
     this.loadPage();
   }
 
