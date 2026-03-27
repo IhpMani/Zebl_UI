@@ -12,6 +12,13 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
   styleUrls: ['./claim-list.component.css']
 })
 export class ClaimListComponent implements OnInit, OnDestroy {
+  private readonly columnPreferenceVersion = 2;
+  private readonly defaultClaimColumns: Array<{ key: string; label: string }> = [
+    { key: 'claID', label: 'Claim ID' },
+    { key: 'claStatus', label: 'Status' },
+    { key: 'patFullNameCC', label: 'Name' }
+  ];
+
   claims: ClaimListItem[] = [];
   filteredClaims: ClaimListItem[] = [];
   loading: boolean = false;
@@ -51,7 +58,8 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'claDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: true, filterValue: '' },
     { key: 'claTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
-    { key: 'claClassification', label: 'Facility', visible: false, filterValue: '' },
+    { key: 'facilityName', label: 'Facility', visible: false, filterValue: '' },
+    { key: 'claClassification', label: 'Facility Classification', visible: false, filterValue: '' },
     { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
     { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
     { key: 'claBillTo', label: 'Bill To', visible: false, filterValue: '' },
@@ -231,6 +239,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     this.loadAdditionalColumnsFromRegistry();
     // Load saved column preferences
     this.loadColumnPreferences();
+    this.deduplicateColumns();
     // React to query param changes (e.g. patientId from ribbon Claim button)
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.loadClaims(this.currentPage, this.pageSize);
@@ -337,9 +346,17 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Add selected additional columns
-    if (this.selectedAdditionalColumns.size > 0) {
-      filters.additionalColumns = Array.from(this.selectedAdditionalColumns);
+    // Always request visible curated additional columns, even if selectedAdditionalColumns
+    // got out of sync with visibility from legacy/localStorage preferences.
+    const visibleAdditionalKeys = this.columns
+      .filter(c => c.visible && ClaimListAdditionalColumns.isValidColumn(c.key))
+      .map(c => c.key);
+    const requestedAdditionalColumns = Array.from(new Set([
+      ...Array.from(this.selectedAdditionalColumns),
+      ...visibleAdditionalKeys
+    ]));
+    if (requestedAdditionalColumns.length > 0) {
+      filters.additionalColumns = requestedAdditionalColumns;
     }
 
     // Patient filter from query params (ribbon: Claim from Patient Details)
@@ -436,11 +453,30 @@ export class ClaimListComponent implements OnInit, OnDestroy {
 
   getCellValue(claim: ClaimListItem, key: string): any {
     // Check if it's a related column
-    if (claim.additionalColumns && claim.additionalColumns[key] !== undefined) {
-      return claim.additionalColumns[key];
+    if (claim.additionalColumns && Object.prototype.hasOwnProperty.call(claim.additionalColumns, key)) {
+      const relatedValue = claim.additionalColumns[key];
+      // If related mapper returned null/empty for an aliased key, fall back to base claim property.
+      if (relatedValue !== null && relatedValue !== undefined && relatedValue !== '') {
+        return relatedValue;
+      }
     }
     // Otherwise, get from main claim object
     return (claim as any)[key];
+  }
+
+  private deduplicateColumns(): void {
+    const seenKeys = new Set<string>();
+    const seenLabels = new Set<string>();
+    this.columns = this.columns.filter(col => {
+      const key = (col.key || '').toLowerCase();
+      const label = (col.label || '').toLowerCase();
+      if (seenKeys.has(key)) return false;
+      // Avoid duplicated headings with different legacy alias keys.
+      if (seenLabels.has(label)) return false;
+      seenKeys.add(key);
+      seenLabels.add(label);
+      return true;
+    });
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {
@@ -741,6 +777,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
    */
   saveColumnPreferences(): void {
     const preferences = {
+      version: this.columnPreferenceVersion,
       visibleColumns: this.columns.filter(c => c.visible).map(c => c.key),
       selectedAdditional: Array.from(this.selectedAdditionalColumns)
     };
@@ -752,9 +789,21 @@ export class ClaimListComponent implements OnInit, OnDestroy {
    */
   loadColumnPreferences(): void {
     const saved = localStorage.getItem('claimListColumnPreferences');
+    if (!saved) {
+      this.applyDefaultColumnConfiguration();
+      return;
+    }
+
     if (saved) {
       try {
         const preferences = JSON.parse(saved);
+        const savedVersion = typeof preferences?.version === 'number' ? preferences.version : 0;
+        if (savedVersion < this.columnPreferenceVersion) {
+          // One-time migration: reset older saved layouts to current product default.
+          this.applyDefaultColumnConfiguration();
+          this.saveColumnPreferences();
+          return;
+        }
         
         // Apply visibility to existing columns
         this.columns.forEach(col => {
@@ -764,8 +813,11 @@ export class ClaimListComponent implements OnInit, OnDestroy {
         // Add additional columns that were previously selected
         if (preferences.selectedAdditional) {
           preferences.selectedAdditional.forEach((key: string) => {
-            // Migrate legacy key: patFullName -> patFullNameCC (sync with backend)
-            const resolvedKey = key === 'patFullName' ? 'patFullNameCC' : key;
+            // Migrate legacy keys to current keys
+            const resolvedKey =
+              key === 'patFullName' ? 'patFullNameCC' :
+              key === 'claClassification' ? 'facilityName' :
+              key;
             const additionalCol = ClaimListAdditionalColumns.findByKey(resolvedKey);
             if (additionalCol && !this.columns.find(c => c.key === resolvedKey)) {
               this.columns.push({
@@ -779,10 +831,43 @@ export class ClaimListComponent implements OnInit, OnDestroy {
             }
           });
         }
+
+        // Keep selection set in sync with currently visible curated additional columns.
+        this.columns.forEach(col => {
+          if (col.visible && ClaimListAdditionalColumns.isValidColumn(col.key)) {
+            this.selectedAdditionalColumns.add(col.key);
+          }
+        });
       } catch (e) {
         console.error('Error loading column preferences:', e);
+        this.applyDefaultColumnConfiguration();
       }
     }
+  }
+
+  private applyDefaultColumnConfiguration(): void {
+    const defaultKeys = new Set(this.defaultClaimColumns.map(c => c.key));
+
+    this.columns.forEach(col => {
+      col.visible = defaultKeys.has(col.key);
+      const configured = this.defaultClaimColumns.find(c => c.key === col.key);
+      if (configured) col.label = configured.label;
+    });
+
+    // Ensure additional/default related columns exist when not in base list.
+    this.defaultClaimColumns.forEach(def => {
+      if (!this.columns.some(c => c.key === def.key)) {
+        this.columns.push({
+          key: def.key,
+          label: def.label,
+          visible: true,
+          filterValue: '',
+          isAdditionalColumn: true
+        });
+      }
+    });
+
+    this.selectedAdditionalColumns = new Set(['patFullNameCC']);
   }
 
   clearAllColumns(): void {

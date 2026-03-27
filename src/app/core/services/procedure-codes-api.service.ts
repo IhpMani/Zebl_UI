@@ -33,7 +33,8 @@ export interface ProcedureCode {
   procModifier4?: string;
   procNote?: string;
   procNDCCode?: string;
-  procPayFID: number;
+  /** Null = not restricted to a payer (applies to all). */
+  procPayFID: number | null;
   procProductCode?: string;
   procRateClass?: string;
   procRevenueCode?: string;
@@ -49,6 +50,14 @@ export interface ProcedureCode {
 export interface ProcedureCodesPagedResponse {
   items: ProcedureCode[];
   totalCount: number;
+}
+
+export interface ProcedureCodeLookupResponse {
+  procedureCode: ProcedureCode | null;
+  overwriteCharge: boolean;
+  overwriteAllowed: boolean;
+  overwriteAdjustment: boolean;
+  nocDescription?: string | null;
 }
 
 @Injectable({
@@ -80,7 +89,13 @@ export class ProcedureCodesApiService {
   }
 
   getById(id: number): Observable<ProcedureCode> {
-    return this.http.get<ProcedureCode>(`${this.baseUrl}/${id}`);
+    return this.http.get<ProcedureCode>(`${this.baseUrl}/id/${id}`);
+  }
+
+  getByCode(code: string): Observable<ProcedureCode | null> {
+    const trimmed = (code || '').trim();
+    if (!trimmed) return new Observable<null>((observer) => { observer.next(null); observer.complete(); });
+    return this.http.get<ProcedureCode>(`${this.baseUrl}/${encodeURIComponent(trimmed)}`);
   }
 
   create(body: ProcedureCode): Observable<ProcedureCode> {
@@ -93,6 +108,23 @@ export class ProcedureCodesApiService {
 
   delete(id: number): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`${this.baseUrl}/${id}`);
+  }
+
+  lookup(
+    procedureCode: string,
+    payerId?: number | null,
+    billingPhysicianId?: number | null,
+    rateClass?: string | null,
+    serviceDate?: string | null,
+    productCode?: string | null
+  ): Observable<ProcedureCodeLookupResponse> {
+    let params = new HttpParams().set('procedureCode', procedureCode);
+    if (payerId != null) params = params.set('payerId', String(payerId));
+    if (billingPhysicianId != null) params = params.set('billingPhysicianId', String(billingPhysicianId));
+    if (rateClass) params = params.set('rateClass', rateClass);
+    if (serviceDate) params = params.set('serviceDate', serviceDate);
+    if (productCode) params = params.set('productCode', productCode);
+    return this.http.get<ProcedureCodeLookupResponse>(`${this.baseUrl}/lookup`, { params });
   }
 
   /**
@@ -116,8 +148,7 @@ export class ProcedureCodesApiService {
       ProcAdjust: r.procAdjust ?? 0,
       ProcUnits: r.procUnits ?? 1,
       ProcDescription: r.procDescription ?? null,
-      // Backend entity types are non-nullable ints/bools. Use 0/false defaults (not null).
-      ProcPayFID: r.procPayFID ?? 0,
+      ProcPayFID: r.procPayFID ?? null,
       ProcBillingPhyFID: r.procBillingPhyFID ?? 0,
       ProcCategory: r.procCategory ?? null,
       ProcSubCategory: r.procSubCategory ?? null,

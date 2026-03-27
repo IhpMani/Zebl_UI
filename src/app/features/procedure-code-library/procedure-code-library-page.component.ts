@@ -9,8 +9,10 @@ import { PayerListItem } from '../../core/services/payer.models';
 import { PhysicianListItem } from '../../core/services/physician.models';
 import { ModifyProcedureCodeDialogPayload } from './modify-procedure-code-dialog.component';
 import { RateClassSelectorResult } from './rate-class-selector-dialog.component';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 const PAGE_SIZE = 100;
+const PROCEDURE_LIBRARY_TAB_ROUTE = '/libraries/procedure-codes';
 const ENTRY_HINT = 'Click here to add a new procedure code library entry';
 
 export interface ProcedureCodeRow extends ProcedureCode {
@@ -99,7 +101,8 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
     private payerApi: PayerApiService,
     private physicianApi: PhysicianApiService,
     private listApi: ListApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
@@ -429,7 +432,7 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.saving = false;
-          this.router.navigate(['/libraries']);
+          this.leaveLibrary();
         },
         error: (err) => {
           this.error = err?.message || 'Failed to save.';
@@ -440,6 +443,12 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
 
   close(): void {
     if (this.dirtyRowIds.size > 0 && !confirm('You have unsaved changes. Close anyway?')) return;
+    this.leaveLibrary();
+  }
+
+  /** Drop workspace tab and go home so the tab strip does not stay on this screen as “active”. */
+  private leaveLibrary(): void {
+    this.workspace.dismissTabForRoute(PROCEDURE_LIBRARY_TAB_ROUTE);
     this.router.navigate(['/libraries']);
   }
 

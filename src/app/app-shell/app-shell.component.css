@@ -116,7 +116,7 @@
   overflow: auto;
   padding: 0;
   position: relative;
-  z-index: 1;
+  /* z-index omitted: a stacking context here traps position:fixed modals below the ribbon */
 }
 
 .workspace-content {
@@ -126,6 +126,6 @@
   margin-top: -1px; /* visually attaches to active tab */
   padding: 16px;
   position: relative;
-  z-index: 1;
+  /* z-index omitted: same as .content-area — modals must stack above the ribbon */
   min-height: calc(100% - 0px);
 }

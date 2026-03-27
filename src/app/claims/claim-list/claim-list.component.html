@@ -54,8 +54,20 @@
               <span *ngSwitchCase="'claTotalChargeTRIG'">
                 {{ claim.claTotalChargeTRIG | currency:'USD':'symbol':'1.2-2' }}
               </span>
+              <span *ngSwitchCase="'claTotalInsBalanceTRIG'">
+                {{ getCellValue(claim, col.key) | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claTotalPatBalanceTRIG'">
+                {{ getCellValue(claim, col.key) | currency:'USD':'symbol':'1.2-2' }}
+              </span>
               <span *ngSwitchCase="'claTotalBalanceCC'">
                 {{ claim.claTotalBalanceCC | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claDateTotalFrom'">
+                {{ getCellValue(claim, col.key) | date:'shortDate' }}
+              </span>
+              <span *ngSwitchCase="'claLastDateTRIG'">
+                {{ getCellValue(claim, col.key) | date:'shortDate' }}
               </span>
               <span *ngSwitchDefault>
                 {{ getCellValue(claim, col.key) }}

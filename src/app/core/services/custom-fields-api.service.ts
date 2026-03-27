@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 export interface CustomFieldDefinitionDto {
@@ -50,12 +51,18 @@ export const CUSTOM_FIELD_TYPES = [
 })
 export class CustomFieldsApiService {
   private baseUrl = `${environment.apiUrl}/api/custom-fields`;
+  private definitionsCache = new Map<string, Observable<CustomFieldDefinitionDto[]>>();
 
   constructor(private http: HttpClient) {}
 
   getByEntityType(entityType: string): Observable<CustomFieldDefinitionDto[]> {
     const normalized = this.normalizeEntityType(entityType);
-    return this.http.get<CustomFieldDefinitionDto[]>(`${this.baseUrl}/${encodeURIComponent(normalized)}`);
+    const key = normalized.toLowerCase();
+    const cached = this.definitionsCache.get(key);
+    if (cached) return cached;
+    const req$ = this.http.get<CustomFieldDefinitionDto[]>(`${this.baseUrl}/${encodeURIComponent(normalized)}`).pipe(shareReplay(1));
+    this.definitionsCache.set(key, req$);
+    return req$;
   }
 
   create(request: CreateCustomFieldRequest): Observable<CustomFieldDefinitionDto> {

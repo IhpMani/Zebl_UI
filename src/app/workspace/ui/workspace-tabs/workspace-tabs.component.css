@@ -8,6 +8,8 @@
   white-space: nowrap;
   border-bottom: 1px solid #1e6fb8; /* aligns with content border */
   font-size: 12px;
+  position: relative;
+  z-index: 2; /* keep active tab overlap above workspace panel without trapping fixed modals in content */
 }
 
 .tab {

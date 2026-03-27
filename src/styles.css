@@ -3,6 +3,20 @@
 @import 'ag-grid-community/styles/ag-theme-alpine.css';
 @import './theme.css';
 
+/*
+  Modal stacking vs ribbon:
+  - app-ribbon :host uses z-index ~1000.
+  - Procedure / library dialogs use position:fixed overlays at z-index 3500.
+  - Do not add z-index to .content-area / .workspace-content — that creates a stacking
+    context that traps fixed modals below the ribbon.
+  If Angular Material is added later, use panelClass: "procedure-dialog" and set:
+  .cdk-overlay-container { z-index: 3500; }
+*/
+:root {
+  --z-ribbon: 1000;
+  --z-modal-overlay: 3500;
+}
+
 /* =========================
    GLOBAL LIGHT BLUE THEME
 ========================= */

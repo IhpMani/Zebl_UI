@@ -4,6 +4,10 @@
     <div class="left-panel">
       <div class="panel-header">
         <h2>Physician / Facility Library</h2>
+        <button type="button" class="btn btn-primary" (click)="fileInput.click()">
+          Import Physicians
+        </button>
+        <input #fileInput type="file" accept=".csv" hidden (change)="importCsv($event)" />
       </div>
       <div class="search-section">
         <input

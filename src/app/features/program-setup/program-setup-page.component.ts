@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Component, OnInit } from '@angular/core';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { PatientTemplatesApiService, PatientTemplateDto } from '../../core/services/patient-templates-api.service';
-import { ClaimStatusApiService, ClaimStatusDto } from '../../core/services/claim-status-api.service';
+import { CLAIM_STATUS_OPTIONS, ClaimStatusOption } from '../../shared/constants/claim-status';
 import { CodeLibraryApiService, CodeLibraryRow } from '../../core/services/code-library-api.service';
 import { ReceiverLibraryApiService, ReceiverLibraryDto } from '../../core/services/receiver-library-api.service';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
@@ -52,7 +52,7 @@ export class ProgramSetupPageComponent implements OnInit {
   showMissingAccountsModal = false;
   missingAccountPatients: { patId: number; name?: string | null; accountNumber?: string | null }[] = [];
 
-  claimStatusOptions: ClaimStatusDto[] = [];
+  readonly claimStatusOptions: readonly ClaimStatusOption[] = CLAIM_STATUS_OPTIONS;
   posOptions: CodeLibraryRow[] = [];
 
   /** Patient Eligibility: source options (clearinghouse; value stored in settingsData.source). */
@@ -119,7 +119,6 @@ export class ProgramSetupPageComponent implements OnInit {
   constructor(
     private programSettingsApi: ProgramSettingsApiService,
     private patientTemplatesApi: PatientTemplatesApiService,
-    private claimStatusApi: ClaimStatusApiService,
     private codeLibraryApi: CodeLibraryApiService,
     private receiverLibraryApi: ReceiverLibraryApiService,
     private physicianApi: PhysicianApiService,
@@ -457,7 +456,7 @@ export class ProgramSetupPageComponent implements OnInit {
 
   private applyClaimDefaults(data: any): any {
     const defaults = {
-      initialClaimStatus: 'NEW',
+      initialClaimStatus: 'OnHold',
       initialPlaceOfService: '11',
       initialICDIndicator: '0',
       lockClaimsAfterPrint: false,
@@ -473,18 +472,6 @@ export class ProgramSetupPageComponent implements OnInit {
   }
 
   private loadClaimLookups(): void {
-    if (this.claimStatusOptions.length === 0) {
-      this.claimStatusApi.getAll().subscribe({
-        next: statuses => {
-          this.claimStatusOptions = statuses ?? [];
-        },
-        error: err => {
-          // eslint-disable-next-line no-console
-          console.error('Error loading claim statuses', err);
-        }
-      });
-    }
-
     if (this.posOptions.length === 0) {
       this.codeLibraryApi.loadLibraryCodes('pos').subscribe({
         next: rows => {

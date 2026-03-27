@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { Subject, forkJoin, of } from 'rxjs';
+import { catchError, filter, finalize, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ClaimApiService, ScrubResult } from '../../core/services/claim-api.service';
 import { Claim, ClaimAdditionalData } from '../../core/services/claim.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
+import { CLAIM_STATUS_OPTIONS, ClaimStatusOption } from '../../shared/constants/claim-status';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PhysicianListItem } from '../../core/services/physician.models';
 import { AdjustmentApiService } from '../../core/services/adjustment-api.service';
@@ -14,6 +16,9 @@ import { ServiceApiService } from '../../core/services/service-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
+import { PatientApiService } from '../../core/services/patient-api.service';
+import { PatientDetail } from '../../core/services/patient.models';
 
 @Component({
   selector: 'app-claim-details',
@@ -50,8 +55,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   /** Classification options from Libraries → List → Claim Classification */
   classificationOptions: ListValueDto[] = [];
-  /** Status options from Libraries → List → Claim Status */
-  statusOptions: ListValueDto[] = [];
+  /** Canonical claim statuses (shared with Program Setup). Legacy DB values appended in ensureCurrentStatusInOptions. */
+  claimStatuses: ClaimStatusOption[] = [...CLAIM_STATUS_OPTIONS];
 
   /** Static options for Method (ClaSubmissionMethod) */
   methodOptions = ['Electronic', 'Paper', 'Other'];
@@ -137,15 +142,31 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   serviceLoading: boolean = false;
   serviceLoaded: boolean = false;
   selectedServiceLineId: number | null = null;
+  editingServiceLineIds = new Set<number>();
+  serviceLineDrafts: Record<number, any> = {};
+  nextTempServiceLineId = -1;
+  showProcedureLookupDialog = false;
+  procedureLookupServiceLineId: number | null = null;
+  procedureLookupKeyword = '';
+  procedureLookupLoading = false;
+  procedureLookupResults: Array<{ code: string; description: string }> = [];
 
   scrubResults: ScrubResult[] = [];
   scrubError: string | null = null;
 
+  /** Responsible party payer options (from claim insureds). */
+  primaryPayerId: number | null = null;
+  primaryPayerName: string | null = null;
+  secondaryPayerId: number | null = null;
+  secondaryPayerName: string | null = null;
+
   private claimRequestInFlight = false;
   private serviceRequestInFlight = false;
+  private readonly destroy$ = new Subject<void>();
   private paymentRequestInFlight = false;
   private adjustmentRequestInFlight = false;
   private disbursementRequestInFlight = false;
+  private responsibleRequestInFlight = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -158,23 +179,38 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private paymentApi: PaymentApiService,
     private adjustmentApi: AdjustmentApiService,
     private disbursementApi: DisbursementApiService,
+    private procedureCodesApi: ProcedureCodesApiService,
     private customFieldsApi: CustomFieldsApiService,
     private workspace: WorkspaceService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private patientApi: PatientApiService
   ) { }
 
   ngOnInit(): void {
     this.loadClassificationOptions();
-    this.loadStatusOptions();
     this.loadPhysicians();
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.claId = +idParam;
       this.loadClaim(this.claId);
-      this.loadServiceLines();
     } else {
       this.error = 'Invalid claim ID';
     }
+
+    // Route reuse (workspace tabs): returning from Payment Entry does not re-run ngOnInit — refresh lines from DB.
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((e) => {
+        if (!this.claId || this.claId <= 0) return;
+        if (this.loading || this.claimRequestInFlight) return;
+        const url = e.urlAfterRedirects || '';
+        if (!this.isUrlForThisClaim(url)) return;
+        this.refreshServiceLinesFromApi();
+        this.refreshResponsiblePayerOptionsFromPatient();
+      });
   }
 
   loadClassificationOptions(): void {
@@ -186,18 +222,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: () => { this.classificationOptions = []; this.cdr.markForCheck(); }
-    });
-  }
-
-  loadStatusOptions(): void {
-    this.listApiService.getListValues('Claim Status').subscribe({
-      next: (r) => {
-        const items = (r.data || []).slice().sort((a, b) => (a.value || '').localeCompare(b.value || ''));
-        this.statusOptions = items;
-        this.ensureCurrentStatusInOptions();
-        this.cdr.markForCheck();
-      },
-      error: () => { this.statusOptions = []; this.cdr.markForCheck(); }
     });
   }
 
@@ -244,13 +268,15 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Ensure the claim's current ClaStatus appears in dropdown (for legacy values not in list) */
+  /** Ensure the claim's current ClaStatus appears in dropdown (legacy DB values until corrected). */
   private ensureCurrentStatusInOptions(): void {
     if (!this.claim?.claStatus?.trim()) return;
     const current = this.claim.claStatus.trim();
-    if (!this.statusOptions.some(o => o.value === current)) {
-      this.statusOptions = [...this.statusOptions, { value: current, usageCount: 0 }]
-        .sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+    if (current === 'Imported') return;
+    if (!this.claimStatuses.some(o => o.value === current)) {
+      this.claimStatuses = [...this.claimStatuses, { value: current, label: current }].sort((a, b) =>
+        (a.value || '').localeCompare(b.value || '')
+      );
     }
   }
 
@@ -279,7 +305,173 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Drain any subscriptions if necessary (currently none).
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private isUrlForThisClaim(url: string): boolean {
+    if (!this.claId) return false;
+    return new RegExp(`/claims/${this.claId}(?:[/?#]|$)`).test(url);
+  }
+
+  /**
+   * Merge GET /api/services/claims/{id} rows over embedded claim lines so totals stay current
+   * while preserving fields not returned by the services endpoint (e.g. responsiblePartyName, place).
+   */
+  private applyFreshServiceLines(fresh: any[], embedded: any[]): void {
+    const embeddedById = new Map<number, any>();
+    for (const row of embedded ?? []) {
+      const id = row?.srvID ?? row?.srvId;
+      if (id != null && id > 0) embeddedById.set(Number(id), row);
+    }
+
+    this.serviceLines = (fresh ?? []).map((line) => {
+      const id = Number(line?.srvID ?? line?.srvId ?? 0);
+      const base = id > 0 ? embeddedById.get(id) : undefined;
+      return this.normalizeServiceLine({ ...(base ?? {}), ...line });
+    });
+
+    if (this.claim) {
+      this.claim.serviceLines = this.serviceLines as Claim['serviceLines'];
+    }
+
+    this.serviceLoaded = true;
+    const sel = this.selectedServiceLineId;
+    if (sel != null && !this.serviceLines.some((l) => l.srvID === sel)) {
+      this.selectedServiceLineId = this.serviceLines[0]?.srvID ?? null;
+    } else if (sel == null && this.serviceLines.length > 0) {
+      this.selectedServiceLineId = this.serviceLines[0]?.srvID ?? null;
+    }
+
+    if (this.selectedServiceLineId != null) {
+      this.loadServiceLineCustomValuesFor(this.selectedServiceLineId);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private refreshServiceLinesFromApi(): void {
+    if (!this.claId || this.serviceRequestInFlight) return;
+    this.serviceRequestInFlight = true;
+    this.serviceLoading = true;
+    this.serviceApi
+      .getServicesByClaim(this.claId)
+      .pipe(
+        finalize(() => {
+          this.serviceRequestInFlight = false;
+          this.serviceLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (rows) => this.applyFreshServiceLines(rows ?? [], this.serviceLines),
+        error: (err) => {
+          console.error('Failed to refresh service lines', err);
+        }
+      });
+  }
+
+  private refreshResponsiblePayerOptionsFromPatient(): void {
+    if (this.responsibleRequestInFlight) return;
+    const patId = this.claim?.patient?.patID;
+    if (!patId || patId <= 0) return;
+    this.responsibleRequestInFlight = true;
+
+    this.patientApi.getPatientById(patId).subscribe({
+      next: (patient) => {
+        this.loadResponsiblePayerOptionsFromPatient(patient);
+        this.responsibleRequestInFlight = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.responsibleRequestInFlight = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private loadResponsiblePayerOptionsFromClaim(claim: Claim): void {
+    // ClaimsController returns ClaimInsured; it's not strongly typed in our Claim model,
+    // so we access it as `any`.
+    const anyClaim = claim as any;
+    const insureds = anyClaim?.claimInsured ?? anyClaim?.ClaimInsured ?? [];
+    if (!Array.isArray(insureds)) {
+      this.primaryPayerId = null;
+      this.primaryPayerName = null;
+      this.secondaryPayerId = null;
+      this.secondaryPayerName = null;
+      return;
+    }
+
+    const parsed = insureds
+      .map((i: any) => {
+        const seq = Number(i?.claInsSequence ?? i?.claInsSeq ?? 0);
+        const payId = Number(i?.claInsPayFID ?? i?.claInsPayFid ?? i?.claInsPayId ?? 0);
+        const name = i?.payerName ?? i?.PayerName ?? null;
+        return { seq, payId, name };
+      })
+      .filter(x => x.payId > 0);
+
+    parsed.sort((a, b) => a.seq - b.seq);
+
+    const primary =
+      parsed.find(x => x.seq === 1) ??
+      parsed[0] ??
+      null;
+
+    const secondary =
+      parsed.find(x => x.seq === 2) ??
+      parsed.find(x => primary && x.payId !== primary.payId) ??
+      parsed[1] ??
+      null;
+
+    this.primaryPayerId = primary?.payId ?? null;
+    this.primaryPayerName = primary?.name ?? null;
+    this.secondaryPayerId = secondary?.payId ?? null;
+    this.secondaryPayerName = secondary?.name ?? null;
+  }
+
+  private loadResponsiblePayerOptionsFromPatient(patient: PatientDetail): void {
+    const primary =
+      patient.primaryInsurance ??
+      patient.insuranceList?.find((i) => i.patInsSequence === 1) ??
+      null;
+
+    const secondary =
+      patient.secondaryInsurance ??
+      patient.insuranceList?.find((i) => i.patInsSequence === 2) ??
+      null;
+
+    this.primaryPayerId = primary?.payID ?? null;
+    this.primaryPayerName = primary?.payerName ?? null;
+
+    this.secondaryPayerId = secondary?.payID ?? null;
+    this.secondaryPayerName = secondary?.payerName ?? null;
+  }
+
+  getResponsiblePartyLabel(payerId: number | null | undefined): string {
+    const id = payerId != null ? Number(payerId) : 0;
+    if (!id) return 'Patient';
+    if (this.primaryPayerId && id === this.primaryPayerId) return `Primary payer - ${this.primaryPayerName ?? ''}`.trim();
+    if (this.secondaryPayerId && id === this.secondaryPayerId) return `Secondary payer - ${this.secondaryPayerName ?? ''}`.trim();
+    // Unknown payer ID: show Patient to avoid displaying raw IDs in UI.
+    return 'Patient';
+  }
+
+  onResponsiblePartyChanged(line: any): void {
+    const id = Number(line?.srvResponsibleParty ?? 0);
+    if (!id) {
+      line.responsiblePartyName = null;
+      return;
+    }
+    if (this.primaryPayerId && id === this.primaryPayerId) {
+      line.responsiblePartyName = this.primaryPayerName;
+      return;
+    }
+    if (this.secondaryPayerId && id === this.secondaryPayerId) {
+      line.responsiblePartyName = this.secondaryPayerName;
+      return;
+    }
+    line.responsiblePartyName = null;
   }
 
   getEmptyAdditionalData(): ClaimAdditionalData {
@@ -305,45 +497,75 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.error = null;
     this.claimRequestInFlight = true;
 
-    this.claimApiService.getClaimById(claId).pipe(
-      finalize(() => {
-        this.loading = false;
-        this.claimRequestInFlight = false;
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: (claim: Claim) => {
-        this.claim = claim;
-        if (!this.claim.additionalData) {
-          this.claim.additionalData = this.getEmptyAdditionalData();
+    forkJoin({
+      claim: this.claimApiService.getClaimById(claId),
+      services: this.serviceApi.getServicesByClaim(claId).pipe(
+        catchError((e) => {
+          console.warn('GET /api/services/claims failed; falling back to claim payload for service lines', e);
+          return of(undefined);
+        })
+      )
+    })
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.claimRequestInFlight = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: ({ claim, services }) => {
+          this.claimStatuses = [...CLAIM_STATUS_OPTIONS];
+          this.claim = claim;
+          if (!this.claim.additionalData) {
+            this.claim.additionalData = this.getEmptyAdditionalData();
+          }
+          const patId = claim.patient?.patID;
+          this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
+          const title = this.toFullName(
+            claim.patient?.patFirstName,
+            claim.patient?.patLastName,
+            claim.patient?.patFullNameCC
+          );
+          if (title) this.workspace.updateActiveTabTitle(title);
+          this.ensureCurrentStatusInOptions();
+          this.ensureCurrentClassificationInOptions();
+          this.ensureCurrentPhysiciansInOptions();
+          this.loadResponsiblePayerOptionsFromClaim(claim);
+          this.patchClaimForm();
+          const embedded = claim.serviceLines ?? [];
+          const fresh = services !== undefined ? (services ?? []) : embedded;
+          this.applyFreshServiceLines(fresh, embedded);
+          this.loadClaimCustomFieldsAndValues(claId);
+
+          // Override payer names/options with current patient insurance snapshot.
+          // This fixes stale "Primary payer - <old payer>" labels when patient insurance changes.
+          if (patId && patId > 0) {
+            this.patientApi.getPatientById(patId).subscribe({
+              next: (patient) => {
+                this.loadResponsiblePayerOptionsFromPatient(patient);
+                this.cdr.markForCheck();
+              },
+              error: () => {
+                // Keep claim snapshot fallback if patient insurance fails.
+                this.cdr.markForCheck();
+              }
+            });
+          }
+        },
+        error: (err) => {
+          if (err.status === 404) {
+            this.error = `Claim ${claId} not found.`;
+          } else if (err.status === 503) {
+            this.error = 'The server is taking too long to respond. Please try again.';
+          } else if (err.status === 500) {
+            this.error = 'An error occurred while loading the claim. Please try again.';
+          } else {
+            this.error = 'Failed to load claim details.';
+          }
+          console.error('Error loading claim:', err);
         }
-        const patId = claim.patient?.patID;
-        this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
-        const title = this.toFullName(
-          claim.patient?.patFirstName,
-          claim.patient?.patLastName,
-          claim.patient?.patFullNameCC
-        );
-        if (title) this.workspace.updateActiveTabTitle(title);
-        this.ensureCurrentStatusInOptions();
-        this.ensureCurrentClassificationInOptions();
-        this.ensureCurrentPhysiciansInOptions();
-        this.patchClaimForm();
-        this.loadClaimCustomFieldsAndValues(claId);
-      },
-      error: (err) => {
-        if (err.status === 404) {
-          this.error = `Claim ${claId} not found.`;
-        } else if (err.status === 503) {
-          this.error = 'The server is taking too long to respond. Please try again.';
-        } else if (err.status === 500) {
-          this.error = 'An error occurred while loading the claim. Please try again.';
-        } else {
-          this.error = 'Failed to load claim details.';
-        }
-        console.error('Error loading claim:', err);
-      }
-    });
+      });
   }
 
   private toFullName(
@@ -355,33 +577,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const ln = (lastName ?? '').trim();
     const full = [fn, ln].filter(Boolean).join(' ').trim();
     return full || (fallback ?? '').trim();
-  }
-
-  loadServiceLines(): void {
-    if (!this.claId || this.serviceRequestInFlight || this.serviceLoaded) return;
-    this.serviceLoading = true;
-    this.serviceRequestInFlight = true;
-
-    this.serviceApi.getServicesByClaim(this.claId).pipe(
-      finalize(() => {
-        this.serviceLoading = false;
-        this.serviceRequestInFlight = false;
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: (res: any) => {
-        this.serviceLines = Array.isArray(res) ? res : (res?.data ?? []) || [];
-        this.serviceLoaded = true;
-        this.selectedServiceLineId = this.serviceLines[0]?.srvID ?? null;
-        if (this.selectedServiceLineId != null) {
-          this.loadServiceLineCustomValuesFor(this.selectedServiceLineId);
-        }
-      },
-      error: (err) => {
-        console.error('Error loading service lines:', err);
-        this.serviceLines = [];
-      }
-    });
   }
 
   selectServiceLine(line: any): void {
@@ -474,6 +669,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   trackByServiceLine(index: number, item: any): number {
     return item.srvID;
+  }
+
+  trackBySrvId(index: number, row: any): number {
+    return row.srvID;
   }
 
   /** Safe array for *ngFor - API may return wrapped { data: [] } */
@@ -582,7 +781,363 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   addServiceLine(): void {
-    console.log('Add service line clicked');
+    if (!this.claId || this.serviceLoading) return;
+    const selected = this.serviceLinesArray.find(l => l.srvID === this.selectedServiceLineId) ?? null;
+    const previous = selected ?? this.serviceLinesArray[0] ?? null;
+    const previousFrom = previous?.srvFromDate ? this.toDateInputValue(previous.srvFromDate) : '';
+    const previousTo = previous?.srvToDate ? this.toDateInputValue(previous.srvToDate) : '';
+    const baseDate = this.claim?.claBillDate ? this.toDateInputValue(this.claim.claBillDate) : '';
+    const defaultFromDate = previousFrom || previousTo || baseDate || null;
+    const defaultToDate = previousTo || previousFrom || baseDate || null;
+    const previousResponsible = Number(previous?.srvResponsibleParty ?? 0);
+    const defaultResponsibleParty = previousResponsible > 0
+      ? previousResponsible
+      : (this.primaryPayerId ?? null);
+    const tempId = this.nextTempServiceLineId--;
+    const row = this.normalizeServiceLine({
+      srvID: tempId,
+      srvClaFID: this.claId,
+      srvFromDate: defaultFromDate,
+      srvToDate: defaultToDate,
+      srvProcedureCode: '',
+      srvModifier1: '',
+      srvModifier2: '',
+      srvModifier3: '',
+      srvModifier4: '',
+      srvUnits: 1,
+      srvCharges: 0,
+      srvAllowedAmt: 0,
+      srvTotalInsAmtPaidTRIG: 0,
+      srvTotalPatAmtPaidTRIG: 0,
+      srvTotalBalanceCC: 0,
+      // Default Responsible should follow the previous line, otherwise primary payer.
+      srvResponsibleParty: defaultResponsibleParty,
+      srvDesc: '',
+      srvNationalDrugCode: '',
+      srvDrugUnitCount: null,
+      srvDrugUnitMeasurement: '',
+      srvPrescriptionNumber: '',
+      isNew: true
+    });
+    this.serviceLines = [row, ...this.serviceLinesArray];
+    this.selectedServiceLineId = tempId;
+    this.startEditServiceLine(row);
+    this.cdr.markForCheck();
+  }
+
+  canAddServiceLine(): boolean {
+    const lines = this.serviceLinesArray;
+    if (lines.length === 0) return true;
+    const selected = lines.find(l => l.srvID === this.selectedServiceLineId) ?? lines[0];
+    return !!selected?.srvFromDate;
+  }
+
+  startEditServiceLine(line: any): void {
+    this.editingServiceLineIds.add(line.srvID);
+    this.serviceLineDrafts[line.srvID] = JSON.parse(JSON.stringify(line));
+  }
+
+  cancelEditServiceLine(line: any): void {
+    const draft = this.serviceLineDrafts[line.srvID];
+    if (line?.isNew) {
+      this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+      this.editingServiceLineIds.delete(line.srvID);
+      delete this.serviceLineDrafts[line.srvID];
+      this.selectedServiceLineId = this.serviceLinesArray[0]?.srvID ?? null;
+      this.cdr.markForCheck();
+      return;
+    }
+    if (draft) {
+      Object.assign(line, draft);
+    }
+    this.editingServiceLineIds.delete(line.srvID);
+    delete this.serviceLineDrafts[line.srvID];
+    this.cdr.markForCheck();
+  }
+
+  isEditingServiceLine(line: any): boolean {
+    return this.editingServiceLineIds.has(line.srvID);
+  }
+
+  saveServiceLine(line: any): void {
+    if (!this.claId) return;
+    const draftPayload = this.toServiceLinePayload(line);
+    if (!draftPayload.srvFromDate) {
+      alert('DOS From is required.');
+      return;
+    }
+
+    const code = this.normalizeProcedureCodeInput(line.srvProcedureCode);
+    if (code !== line.srvProcedureCode) {
+      line.srvProcedureCode = code;
+    }
+
+    const charge = Number(line?.srvCharges ?? 0);
+    const needsProcedureHydrateBeforeSave = !!code && (!Number.isFinite(charge) || charge <= 0);
+    const afterHydrate$ = needsProcedureHydrateBeforeSave
+      ? this.fetchProcedureAndHydrateLine(line, code)
+      : of(null);
+
+    afterHydrate$
+      .pipe(
+        switchMap(() => {
+          const payload = this.toServiceLinePayload(line);
+          return line.isNew
+            ? this.serviceApi.createServiceLine(this.claId!, payload)
+            : this.serviceApi.updateServiceLine(this.claId!, line.srvID, payload);
+        }),
+        finalize(() => this.cdr.markForCheck())
+      )
+      .subscribe({
+        next: (res: any) => {
+          const updated = this.normalizeServiceLine(res?.data ?? res);
+          if (line.isNew) {
+            this.serviceLines = this.serviceLinesArray.map(l => l.srvID === line.srvID ? updated : l);
+          } else {
+            Object.assign(line, updated);
+          }
+          this.editingServiceLineIds.delete(updated.srvID);
+          delete this.serviceLineDrafts[line.srvID];
+          this.selectedServiceLineId = updated.srvID;
+        },
+        error: (err) => {
+          console.error('Failed to save service line', err);
+          alert('Failed to save service line.');
+        }
+      });
+  }
+
+  deleteServiceLine(line: any): void {
+    if (!this.claId) return;
+    if (line?.isNew) {
+      this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+      this.cdr.markForCheck();
+      return;
+    }
+    if (!confirm('Delete this service line?')) return;
+    this.serviceApi.deleteServiceLine(this.claId, line.srvID).subscribe({
+      next: () => {
+        this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+        this.selectedServiceLineId = this.serviceLinesArray[0]?.srvID ?? null;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to delete service line', err);
+        alert('Failed to delete service line.');
+      }
+    });
+  }
+
+  onServiceLineUnitsChanged(line: any): void {
+    const draft = this.serviceLineDrafts[line.srvID];
+    const oldUnitsRaw = draft?.srvUnits;
+    const oldUnits = oldUnitsRaw && Number(oldUnitsRaw) > 0 ? Number(oldUnitsRaw) : 1;
+    const newUnits = line.srvUnits && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : oldUnits;
+    if (oldUnits <= 0 || newUnits <= 0 || oldUnits === newUnits) return;
+    const oldCharge = Number(draft?.srvCharges ?? line.srvCharges ?? 0);
+    const oldAllowed = Number(draft?.srvAllowedAmt ?? line.srvAllowedAmt ?? 0);
+    line.srvCharges = Number(((oldCharge / oldUnits) * newUnits).toFixed(2));
+    line.srvAllowedAmt = Number(((oldAllowed / oldUnits) * newUnits).toFixed(2));
+  }
+
+  openProcedureLookup(line: any): void {
+    if (!this.isEditingServiceLine(line)) return;
+    this.procedureLookupServiceLineId = line.srvID;
+    this.showProcedureLookupDialog = true;
+    this.procedureLookupKeyword = line.srvProcedureCode || '';
+    this.procedureLookupResults = [];
+    this.searchProcedureLookup();
+  }
+
+  searchProcedureLookup(): void {
+    const q = (this.procedureLookupKeyword || '').trim();
+    if (!q) {
+      this.procedureLookupResults = [];
+      return;
+    }
+    this.procedureLookupLoading = true;
+    this.procedureCodesApi.getPaged(1, 30, { code: q }).subscribe({
+      next: (res) => {
+        const items = res?.items ?? [];
+        this.procedureLookupResults = items.map(i => ({ code: i.procCode, description: i.procDescription || '' }));
+        this.procedureLookupLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.procedureLookupResults = [];
+        this.procedureLookupLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onProcedureLookupSelect(item: { code: string; description?: string }): void {
+    const targetId = this.procedureLookupServiceLineId;
+    const line = this.serviceLinesArray.find(l => l.srvID === targetId);
+    if (!line || !item?.code) {
+      this.closeProcedureLookup();
+      return;
+    }
+    line.srvProcedureCode = item.code;
+    this.applyProcedureCodeToServiceLine(line, item.code);
+
+    this.closeProcedureLookup();
+  }
+
+  onServiceLineProcedureCodeChanged(line: any): void {
+    const raw = line?.srvProcedureCode;
+    const code = this.normalizeProcedureCodeInput(typeof raw === 'string' ? raw : String(raw ?? ''));
+    if (code !== line.srvProcedureCode) {
+      line.srvProcedureCode = code;
+    }
+    if (!code) return;
+    this.applyProcedureCodeToServiceLine(line, code);
+  }
+
+  /** Paste updates ngModel after the event; re-resolve charge on the next tick. */
+  onServiceLineProcedureCodePaste(line: any): void {
+    setTimeout(() => {
+      this.onServiceLineProcedureCodeChanged(line);
+      this.cdr.markForCheck();
+    }, 0);
+  }
+
+  /** Some browsers fire `input` for paste before ngModel syncs — handle insertFromPaste explicitly. */
+  onServiceLineProcedureCodeInput(line: any, ev: Event): void {
+    const ie = ev as InputEvent;
+    if (ie.inputType !== 'insertFromPaste' && ie.inputType !== 'insertReplacementText') {
+      return;
+    }
+    const el = ie.target as HTMLInputElement | null;
+    const v = this.normalizeProcedureCodeInput(el?.value ?? '');
+    line.srvProcedureCode = v;
+    if (v) {
+      this.applyProcedureCodeToServiceLine(line, v);
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** Last-charge sync when leaving the field (covers missed events under OnPush). */
+  onServiceLineProcedureCodeBlur(line: any): void {
+    this.onServiceLineProcedureCodeChanged(line);
+  }
+
+  private normalizeProcedureCodeInput(raw: string): string {
+    return String(raw ?? '')
+      .replace(/\r?\n/g, '')
+      .trim();
+  }
+
+  private fetchProcedureAndHydrateLine(line: any, rawCode: string) {
+    const code = this.normalizeProcedureCodeInput(rawCode);
+    if (!code) return of(null);
+    return this.procedureCodesApi.getByCode(code).pipe(
+      tap((proc) => this.hydrateLineFromProcedure(line, proc)),
+      catchError((err) => {
+        console.error('Failed to load procedure code', err);
+        return of(null);
+      })
+    );
+  }
+
+  private hydrateLineFromProcedure(line: any, proc: ProcedureCode | null | undefined): void {
+    if (!proc) return;
+    line.srvProcedureCode = proc.procCode ?? line.srvProcedureCode;
+    // Keep the user's current units if already set (>0), otherwise fall back to procedure defaults.
+    const currentUnits = Number(line.srvUnits ?? 0);
+    const procUnits = proc.procUnits != null && Number(proc.procUnits) > 0 ? Number(proc.procUnits) : 1;
+    const unitsToUse = currentUnits > 0 ? currentUnits : procUnits;
+    line.srvUnits = unitsToUse;
+
+    // Procedure lookup returns the default per-unit charge; scale by the service line units.
+    const defaultCharge = proc.procCharge ?? 0;
+    const defaultAllowed = proc.procAllowed ?? 0;
+    line.srvCharges = Number((defaultCharge * unitsToUse).toFixed(2));
+    line.srvAllowedAmt = Number((defaultAllowed * unitsToUse).toFixed(2));
+    line.srvModifier1 = proc.procModifier1 ?? '';
+    line.srvModifier2 = proc.procModifier2 ?? '';
+    line.srvModifier3 = proc.procModifier3 ?? '';
+    line.srvModifier4 = proc.procModifier4 ?? '';
+    line.srvDesc = proc.procDescription ?? line.srvDesc ?? '';
+  }
+
+  private applyProcedureCodeToServiceLine(line: any, procedureCode: string): void {
+    this.fetchProcedureAndHydrateLine(line, procedureCode).subscribe({
+      next: () => this.cdr.markForCheck(),
+      error: () => this.cdr.markForCheck()
+    });
+  }
+
+  closeProcedureLookup(): void {
+    this.showProcedureLookupDialog = false;
+    this.procedureLookupServiceLineId = null;
+    this.procedureLookupKeyword = '';
+    this.procedureLookupResults = [];
+  }
+
+  private normalizeServiceLine(line: any): any {
+    const existingResponsiblePartyId = Number(line?.srvResponsibleParty ?? 0);
+    let srvResponsibleParty = existingResponsiblePartyId;
+    let responsiblePartyName = line?.responsiblePartyName ?? null;
+
+    // Do NOT auto-mutate srvResponsibleParty on load.
+    // The stored value (payerId or 0 for patient) should remain stable even if
+    // patient insurance changes; we only use it to select the right dropdown label.
+
+    return {
+      ...line,
+      srvFromDate: this.toDateInputValue(line?.srvFromDate),
+      srvToDate: this.toDateInputValue(line?.srvToDate),
+      srvUnits: line?.srvUnits ?? 1,
+      srvCharges: line?.srvCharges ?? 0,
+      srvAllowedAmt: line?.srvAllowedAmt ?? 0,
+      srvTotalInsAmtPaidTRIG: line?.srvTotalInsAmtPaidTRIG ?? line?.SrvTotalInsAmtPaidTRIG ?? 0,
+      srvTotalPatAmtPaidTRIG: line?.srvTotalPatAmtPaidTRIG ?? line?.SrvTotalPatAmtPaidTRIG ?? 0,
+      srvTotalAmtAppliedCC: line?.srvTotalAmtAppliedCC ?? line?.SrvTotalAmtAppliedCC ?? null,
+      srvTotalBalanceCC: line?.srvTotalBalanceCC ?? line?.SrvTotalBalanceCC ?? 0,
+      srvResponsibleParty,
+      responsiblePartyName,
+      srvModifier1: line?.srvModifier1 ?? '',
+      srvModifier2: line?.srvModifier2 ?? '',
+      srvModifier3: line?.srvModifier3 ?? '',
+      srvModifier4: line?.srvModifier4 ?? '',
+      srvNationalDrugCode: line?.srvNationalDrugCode ?? '',
+      srvDrugUnitCount: line?.srvDrugUnitCount ?? null,
+      srvDrugUnitMeasurement: line?.srvDrugUnitMeasurement ?? '',
+      srvPrescriptionNumber: line?.srvPrescriptionNumber ?? '',
+      isNew: line?.isNew ?? false
+    };
+  }
+
+  private toServiceLinePayload(line: any): any {
+    const responsibleParty = Number(line?.srvResponsibleParty ?? 0);
+    return {
+      srvFromDate: line.srvFromDate || null,
+      srvToDate: line.srvToDate || null,
+      srvProcedureCode: line.srvProcedureCode || null,
+      srvModifier1: line.srvModifier1 || null,
+      srvModifier2: line.srvModifier2 || null,
+      srvModifier3: line.srvModifier3 || null,
+      srvModifier4: line.srvModifier4 || null,
+      srvUnits: line.srvUnits != null ? Number(line.srvUnits) : null,
+      srvCharges: line.srvCharges != null ? Number(line.srvCharges) : null,
+      srvAllowedAmt: line.srvAllowedAmt != null ? Number(line.srvAllowedAmt) : null,
+      srvDesc: line.srvDesc || null,
+      srvResponsibleParty: responsibleParty > 0 ? responsibleParty : null,
+      srvNationalDrugCode: line.srvNationalDrugCode || null,
+      srvDrugUnitCount: line.srvDrugUnitCount != null ? Number(line.srvDrugUnitCount) : null,
+      srvDrugUnitMeasurement: line.srvDrugUnitMeasurement || null,
+      srvPrescriptionNumber: line.srvPrescriptionNumber || null
+    };
+  }
+
+  private toDateInputValue(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
   }
 
   saveAndClose(): void {
@@ -596,30 +1151,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
     const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
     const noteText = this.newNote?.trim() || null;
-    this.claimApiService.updateClaim(this.claId, {
+    const payload = this.buildClaimUpdatePayload({
       claStatus: claStatus || null,
       claClassification: claClassification || null,
       claSubmissionMethod: claSubmissionMethod ?? null,
       claRenderingPhyFID,
       claFacilityPhyFID,
-      claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
-      claAdmittedDate: this.claim.claAdmittedDate ?? null,
-      claDischargedDate: this.claim.claDischargedDate ?? null,
-      claDateLastSeen: this.claim.claDateLastSeen ?? null,
-      claEDINotes: this.claim.claEDINotes ?? null,
-      claRemarks: this.claim.claRemarks ?? null,
-      claRelatedTo: this.claim.claRelatedTo ?? null,
-      claRelatedToState: this.claim.claRelatedToState ?? null,
-      claLocked: this.claim.claLocked,
-      claDelayCode: this.claim.claDelayCode ?? null,
-      claMedicaidResubmissionCode: this.claim.claMedicaidResubmissionCode ?? null,
-      claOriginalRefNo: this.claim.claOriginalRefNo ?? null,
-      claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
-      claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
-      claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
-      noteText,
-      additionalData: this.claim.additionalData ?? undefined
-    }).subscribe({
+      noteText
+    });
+    console.log('[ClaimDetails] PUT payload', payload);
+    this.claimApiService.updateClaim(this.claId, payload).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
@@ -646,30 +1187,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
     const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
     const noteText = this.newNote?.trim() || null;
-    this.claimApiService.updateClaim(this.claId, {
+    const payload = this.buildClaimUpdatePayload({
       claStatus: claStatus || null,
       claClassification: claClassification || null,
       claSubmissionMethod: claSubmissionMethod ?? null,
       claRenderingPhyFID,
       claFacilityPhyFID,
-      claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
-      claAdmittedDate: this.claim.claAdmittedDate ?? null,
-      claDischargedDate: this.claim.claDischargedDate ?? null,
-      claDateLastSeen: this.claim.claDateLastSeen ?? null,
-      claEDINotes: this.claim.claEDINotes ?? null,
-      claRemarks: this.claim.claRemarks ?? null,
-      claRelatedTo: this.claim.claRelatedTo ?? null,
-      claRelatedToState: this.claim.claRelatedToState ?? null,
-      claLocked: this.claim.claLocked,
-      claDelayCode: this.claim.claDelayCode ?? null,
-      claMedicaidResubmissionCode: this.claim.claMedicaidResubmissionCode ?? null,
-      claOriginalRefNo: this.claim.claOriginalRefNo ?? null,
-      claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
-      claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
-      claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
-      noteText,
-      additionalData: this.claim.additionalData ?? undefined
-    }).subscribe({
+      noteText
+    });
+    console.log('[ClaimDetails] PUT payload', payload);
+    this.claimApiService.updateClaim(this.claId, payload).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
@@ -679,7 +1206,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         }
         this.newNote = '';
         this.saveClaimCustomFieldValues();
-        if (this.claId) this.loadClaim(this.claId);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -815,5 +1341,42 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       this.newNote = '';
       this.cdr.markForCheck();
     }
+  }
+
+  private buildClaimUpdatePayload(partial: {
+    claStatus: string | null;
+    claClassification: string | null;
+    claSubmissionMethod: string | null;
+    claRenderingPhyFID: number | null;
+    claFacilityPhyFID: number | null;
+    noteText: string | null;
+  }): any {
+    if (!this.claim) return partial;
+
+    // Always send the full claim update DTO so backend gets consistent shape.
+    return {
+      claStatus: this.claim.claStatus ?? null,
+      claClassification: this.claim.claClassification ?? null,
+      claSubmissionMethod: partial.claSubmissionMethod ?? this.claim.claSubmissionMethod ?? null,
+      claRenderingPhyFID: partial.claRenderingPhyFID ?? this.claim.renderingPhysician?.phyID ?? 0,
+      claFacilityPhyFID: partial.claFacilityPhyFID ?? this.claim.facilityPhysician?.phyID ?? 0,
+      claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
+      claAdmittedDate: this.claim.claAdmittedDate ?? null,
+      claDischargedDate: this.claim.claDischargedDate ?? null,
+      claDateLastSeen: this.claim.claDateLastSeen ?? null,
+      claEDINotes: this.claim.claEDINotes ?? null,
+      claRemarks: this.claim.claRemarks ?? null,
+      claRelatedTo: this.claim.claRelatedTo ?? null,
+      claRelatedToState: this.claim.claRelatedToState ?? null,
+      claLocked: this.claim.claLocked,
+      claDelayCode: this.claim.claDelayCode ?? null,
+      claMedicaidResubmissionCode: this.claim.claMedicaidResubmissionCode ?? null,
+      claOriginalRefNo: this.claim.claOriginalRefNo ?? null,
+      claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
+      claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
+      claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
+      additionalData: this.claim.additionalData ?? undefined,
+      noteText: partial.noteText
+    };
   }
 }

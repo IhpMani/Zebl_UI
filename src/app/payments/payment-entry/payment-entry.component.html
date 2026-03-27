@@ -131,15 +131,17 @@
             <td>{{ row.proc ?? '' }}</td>
             <td>{{ row.charge | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ row.responsible ?? '' }}</td>
-            <td>{{ row.applied | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>
+              <input type="number" class="cell-input" step="0.01" [(ngModel)]="row.applied" (ngModelChange)="recalculatePaymentTotals()" placeholder="0.00" />
+            </td>
             <td class="balance-pay-cell">
               <span class="pay-label">Pay</span>
-              <input type="number" class="cell-input balance-input" step="0.01" [(ngModel)]="row.paidAmount" (ngModelChange)="updateSummaryFromGrid()" (focus)="onPayFieldFocus(row)" placeholder="0.00" />
+              <input type="number" class="cell-input balance-input" step="0.01" [(ngModel)]="row.payAmount" (ngModelChange)="recalculatePaymentTotals()" (focus)="onPayFieldFocus(row)" placeholder="0.00" />
             </td>
-            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[0].amount" (ngModelChange)="updateSummaryFromGrid()" /></td>
+            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[0].amount" (ngModelChange)="recalculatePaymentTotals()" /></td>
             <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[0].groupCode" placeholder="e.g. PR" /></td>
             <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[0].reasonCode" /></td>
-            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[1].amount" (ngModelChange)="updateSummaryFromGrid()" /></td>
+            <td><input type="number" class="cell-input" step="0.01" [(ngModel)]="row.adjustments[1].amount" (ngModelChange)="recalculatePaymentTotals()" /></td>
             <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[1].groupCode" placeholder="e.g. CO" /></td>
             <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[1].reasonCode" /></td>
           </tr>

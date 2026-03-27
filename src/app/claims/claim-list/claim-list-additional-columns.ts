@@ -115,8 +115,10 @@ export class ClaimListAdditionalColumns {
     { key: 'primaryInsuredEmployer', label: "Primary Insured's Employer", category: 'Primary Insured', dataType: 'string', width: '200px' },
     { key: 'primaryInsuredPlan', label: "Primary Insured's Plan", category: 'Primary Insured', dataType: 'string', width: '180px' },
     
-    // Facility - displays Claim Classification (values from Libraries → List → Claim Classification)
-    { key: 'claClassification', label: 'Facility', category: 'Facility', dataType: 'string', width: '180px' },
+    // Facility name from Claim -> Facility Physician (related table join)
+    { key: 'facilityName', label: 'Facility', category: 'Facility', dataType: 'string', width: '180px' },
+    // Claim classification from Libraries -> List -> Claim Classification
+    { key: 'claClassification', label: 'Facility Classification', category: 'Facility', dataType: 'string', width: '180px' },
     
     // Admission
     { key: 'claAdmissionType', label: 'Admission Type', category: 'Admission', dataType: 'string', width: '140px' },

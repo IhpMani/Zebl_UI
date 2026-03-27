@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface ListTypeConfigDto {
@@ -42,6 +43,7 @@ export interface AddValueResponse {
 })
 export class ListApiService {
   private baseUrl = `${environment.apiUrl}/api/lists`;
+  private listValuesCache = new Map<string, Observable<ListValuesResponse>>();
 
   constructor(private http: HttpClient) { }
 
@@ -50,9 +52,16 @@ export class ListApiService {
   }
 
   getListValues(listType: string): Observable<ListValuesResponse> {
-    return this.http.get<ListValuesResponse>(`${this.baseUrl}/values`, {
+    const key = (listType || '').trim().toLowerCase();
+    const cached = this.listValuesCache.get(key);
+    if (cached) return cached;
+
+    const req$ = this.http.get<ListValuesResponse>(`${this.baseUrl}/values`, {
       params: { type: listType }
-    });
+    }).pipe(shareReplay(1));
+
+    this.listValuesCache.set(key, req$);
+    return req$;
   }
 
   addListValue(request: AddListValueRequest): Observable<AddValueResponse> {

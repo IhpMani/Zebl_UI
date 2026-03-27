@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ClaimsApiResponse, Claim } from './claim.models';
+import { ClaimsApiResponse, Claim, UserKpiDashboard } from './claim.models';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -92,6 +92,11 @@ export class ClaimApiService {
     return this.http.get<Claim>(`${environment.apiUrl}/api/claims/${claId}`);
   }
 
+  getUserKpis(trendDays: number = 30): Observable<UserKpiDashboard> {
+    const params = new HttpParams().set('trendDays', trendDays.toString());
+    return this.http.get<UserKpiDashboard>(`${this.baseUrl}/user-kpis`, { params });
+  }
+
   scrubClaim(claimId: number): Observable<ScrubResult[]> {
     return this.http.post<ScrubResult[]>(`${this.baseUrl}/scrub`, { claimId });
   }
@@ -122,7 +127,7 @@ export class ClaimApiService {
     noteText?: string | null;
     /** Additional data (ClaAdditionalData XML) */
     additionalData?: import('./claim.models').ClaimAdditionalData;
-  }): Observable<void> {
+  }): Observable<any> {
     const payload: any = {};
     if (body.claStatus !== undefined) payload.claStatus = body.claStatus;
     if (body.claClassification !== undefined) payload.claClassification = body.claClassification;
@@ -146,7 +151,7 @@ export class ClaimApiService {
     if (body.claPaperWorkInd !== undefined) payload.claPaperWorkInd = body.claPaperWorkInd;
     if (body.noteText !== undefined) payload.noteText = body.noteText;
     if (body.additionalData !== undefined) payload.additionalData = body.additionalData;
-    return this.http.put<void>(`${environment.apiUrl}/api/claims/${claId}`, payload);
+    return this.http.put<any>(`${environment.apiUrl}/api/claims/${claId}`, payload);
   }
 }
 

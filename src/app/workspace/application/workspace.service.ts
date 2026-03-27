@@ -37,7 +37,10 @@ export class WorkspaceService {
         this.isHandlingNavigation = true;
         try {
           const { path, params } = this.extractRouteAndParams();
-          if (!this.isTabbableRoute(path)) return;
+          if (!this.isTabbableRoute(path)) {
+            this.clearActiveTabForBaseRoute();
+            return;
+          }
           const title = this.generateTitle(path, params);
           const tabType = this.deriveTabType(path);
           this.openTab(path, title, params, tabType);
@@ -128,6 +131,34 @@ export class WorkspaceService {
     this.closeTab(state.activeTabId);
   }
 
+  /**
+   * Removes the tab for a route without navigating. Call before router.navigate to home (or other
+   * non-tabbable targets) so the tab bar does not keep a stale active tab.
+   */
+  dismissTabForRoute(route: string): void {
+    const normalized = route.startsWith('/') ? route : `/${route}`;
+    const state = this.stateSubject.value;
+    const closing = state.tabs.find((t) => t.route === normalized);
+    if (!closing) return;
+
+    const remaining = state.tabs.filter((t) => t.id !== closing.id);
+    const wasActive = state.activeTabId === closing.id;
+    let nextActiveId = wasActive ? null : state.activeTabId;
+    if (nextActiveId && !remaining.some((t) => t.id === nextActiveId)) {
+      nextActiveId = null;
+    }
+
+    const nextTabs = remaining.map((t) => ({
+      ...t,
+      isActive: nextActiveId != null && t.id === nextActiveId
+    }));
+    this.commit({ tabs: nextTabs, activeTabId: nextActiveId });
+
+    if (nextTabs.length === 0) {
+      this.navigateToHome();
+    }
+  }
+
   closeTab(tabId: string): void {
     const state = this.stateSubject.value;
     const closing = state.tabs.find((t) => t.id === tabId);
@@ -149,6 +180,12 @@ export class WorkspaceService {
     }));
 
     this.commit({ tabs: nextTabs, activeTabId: nextActiveId });
+
+    if (nextTabs.length === 0) {
+      this.navigateToHome();
+      return;
+    }
+
     // If a new active tab was chosen after closing, navigate to it
     if (nextActiveId) {
       const active = nextTabs.find((t) => t.id === nextActiveId)!;
@@ -194,6 +231,14 @@ export class WorkspaceService {
   private navigateToTab(tab: WorkspaceTab): void {
     this.suppressNextNavigationHandling = true;
     this.router.navigate([tab.route], { queryParams: tab.params ?? {} });
+  }
+
+  /** When all workspace tabs are closed, return to the home route. */
+  private navigateToHome(): void {
+    this.suppressNextNavigationHandling = true;
+    void this.router.navigate(['/']).catch(() => {
+      // Ignore cancel/redirect races; avoids unhandled promise rejection.
+    });
   }
 
   private isSameTarget(
@@ -311,12 +356,24 @@ export class WorkspaceService {
     return 'generic';
   }
 
+  /** Home / dashboard URLs are not tied to a workspace tab; clear any stale active highlight. */
+  private clearActiveTabForBaseRoute(): void {
+    const state = this.stateSubject.value;
+    const needsUpdate =
+      state.activeTabId != null || state.tabs.some((t) => t.isActive);
+    if (!needsUpdate) return;
+
+    const nextTabs = state.tabs.map((t) => ({ ...t, isActive: false }));
+    this.commit({ tabs: nextTabs, activeTabId: null });
+  }
+
   private isTabbableRoute(path: string): boolean {
     const normalized = path && path.startsWith('/') ? path : `/${path ?? ''}`;
     return !(
       normalized === '/' ||
       normalized === '/home' ||
-      normalized === '/dashboard'
+      normalized === '/dashboard' ||
+      normalized === '/libraries' // redirect-only (→ home); not a real screen
     );
   }
 

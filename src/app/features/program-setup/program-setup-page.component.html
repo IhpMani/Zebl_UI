@@ -116,8 +116,8 @@
                   <label>
                     <span>Initial Claim Status</span>
                     <select [(ngModel)]="settingsData.initialClaimStatus">
-                      <option *ngFor="let s of claimStatusOptions" [ngValue]="s.code">
-                        {{ s.name }}
+                      <option *ngFor="let s of claimStatusOptions" [ngValue]="s.value">
+                        {{ s.label }}
                       </option>
                     </select>
                   </label>

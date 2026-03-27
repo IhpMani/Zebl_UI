@@ -13,9 +13,15 @@ export interface ClaimListItem {
   claStatus: string | null;
   claDateTimeCreated: string | null;
   claTotalChargeTRIG: number | null;
+  claTotalInsBalanceTRIG?: number | null;
+  claTotalPatBalanceTRIG?: number | null;
   claTotalAmtPaidCC: number | null;
   claTotalBalanceCC: number | null;
   claClassification: string | null;
+  claDateTotalFrom?: string | null;
+  claBillTo?: number | null;
+  patFullNameCC?: string | null;
+  primaryPayerName?: string | null;
   claPatFID: number;
   claAttendingPhyFID: number;
   claBillingPhyFID: number;
@@ -24,6 +30,8 @@ export interface ClaimListItem {
   claTypeOfBill: string | null;
   claAdmissionType: string | null;
   claPatientStatus: string | null;
+  claCreatedUserName?: string | null;
+  claLastUserName?: string | null;
   claDiagnosis1: string | null;
   claDiagnosis2: string | null;
   claDiagnosis3: string | null;
@@ -42,6 +50,28 @@ export interface PaginationMeta {
 export interface ClaimsApiResponse {
   data: ClaimListItem[];
   meta: PaginationMeta;
+}
+
+export interface UserKpiDashboard {
+  userName: string;
+  totalClaims: number;
+  totalCharge: number;
+  totalPaid: number;
+  totalBalance: number;
+  claimsByStatus: UserKpiPoint[];
+  claimsTrend: UserKpiPoint[];
+  agingBuckets: UserKpiValuePoint[];
+  topPayers: UserKpiPoint[];
+}
+
+export interface UserKpiPoint {
+  label: string;
+  value: number;
+}
+
+export interface UserKpiValuePoint {
+  label: string;
+  value: number;
 }
 
 export interface Claim {
@@ -150,6 +180,10 @@ export interface Claim {
     srvUnits: number | null;
     srvPlace: string | null;
     srvDiagnosisPointer: string | null;
+    /** Insurance payments applied to the line (DB: SrvTotalInsAmtPaidTRIG) */
+    srvTotalInsAmtPaidTRIG?: number | null;
+    /** Patient payments applied to the line (DB: SrvTotalPatAmtPaidTRIG) */
+    srvTotalPatAmtPaidTRIG?: number | null;
     srvTotalBalanceCC: number | null;
     srvTotalAmtPaidCC: number | null;
     srvTotalAdjCC: number | null;

@@ -252,6 +252,28 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
     };
   }
 
+  importCsv(event: any): void {
+    const file: File | undefined = event?.target?.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.physicianApiService.importPhysiciansCsv(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          alert(res?.message ?? 'Import completed.');
+          this.loadPhysicians();
+          if (event?.target) event.target.value = '';
+        },
+        error: () => {
+          alert('Import failed');
+          if (event?.target) event.target.value = '';
+        }
+      });
+  }
+
   private save(andNew: boolean): void {
     if (!this.formData.phyName?.trim()) {
       this.error = 'Display Name is required.';

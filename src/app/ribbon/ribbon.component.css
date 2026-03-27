@@ -5,7 +5,7 @@
 :host {
   display: block;
   position: relative;
-  z-index: 2500;
+  z-index: 1000; /* below app modals (see procedure dialog overlays ~3500) */
 }
 
 .ribbon-container {

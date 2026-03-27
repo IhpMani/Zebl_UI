@@ -77,8 +77,8 @@
                 <label>Status</label>
                 <select formControlName="ClaStatus">
                   <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let option of statusOptions" [ngValue]="option.value">
-                    {{ option.value }}
+                  <option *ngFor="let s of claimStatuses" [ngValue]="s.value">
+                    {{ s.label }}
                   </option>
                 </select>
               </div>
@@ -343,46 +343,128 @@
       <div class="section-header">
         <h2>Service Lines</h2>
         <div class="service-actions">
-          <button class="btn-secondary" (click)="addServiceLine()" [disabled]="serviceLoading">Add</button>
-          <button class="btn-secondary" [disabled]="!selectedServiceLineId">Edit</button>
-          <button class="btn-danger" [disabled]="!selectedServiceLineId">Delete</button>
+          <button class="btn-secondary" (click)="addServiceLine()" [disabled]="serviceLoading || !canAddServiceLine()">Add</button>
         </div>
       </div>
       <div class="service-lines-table-wrapper">
         <table class="service-lines-table">
           <thead>
             <tr>
-              <th>Date</th>
+              <th>From</th>
+              <th>To</th>
               <th>Procedure</th>
-              <th>Charges</th>
+              <th>M1</th>
+              <th>M2</th>
+              <th>M3</th>
+              <th>M4</th>
               <th>Units</th>
-              <th>Paid</th>
+              <th>Charges</th>
+              <th>Allowed</th>
+              <th>Ins Paid</th>
+              <th>Pat Paid</th>
               <th>Balance</th>
+              <th>Responsible</th>
+              <th>Description</th>
+              <th>NDC</th>
+              <th>Drug Count</th>
+              <th>Drug UOM</th>
+              <th>Rx #</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              *ngFor="let line of serviceLinesArray; trackBy: trackByServiceLine"
+              *ngFor="let line of serviceLinesArray; trackBy: trackBySrvId"
               [class.selected]="line.srvID === selectedServiceLineId"
               (click)="selectServiceLine(line)">
-              <td>{{ formatDate(line.srvFromDate) }}</td>
-              <td>{{ line.srvProcedureCode || line.srvDesc || '—' }}</td>
-              <td>{{ formatCurrency(line.srvCharges) }}</td>
-              <td>{{ line.srvUnits ?? '—' }}</td>
-              <td>{{ formatCurrency(line.srvTotalAmtPaidCC) }}</td>
+              <td>
+                <input *ngIf="isEditingServiceLine(line)" type="date" [(ngModel)]="line.srvFromDate" />
+                <span *ngIf="!isEditingServiceLine(line)">{{ formatDate(line.srvFromDate) }}</span>
+              </td>
+              <td>
+                <input *ngIf="isEditingServiceLine(line)" type="date" [(ngModel)]="line.srvToDate" />
+                <span *ngIf="!isEditingServiceLine(line)">{{ formatDate(line.srvToDate) }}</span>
+              </td>
+              <td (dblclick)="openProcedureLookup(line)">
+                <input
+                  *ngIf="isEditingServiceLine(line)"
+                  [(ngModel)]="line.srvProcedureCode"
+                  (ngModelChange)="onServiceLineProcedureCodeChanged(line)"
+                  (input)="onServiceLineProcedureCodeInput(line, $event)"
+                  (paste)="onServiceLineProcedureCodePaste(line)"
+                  (change)="onServiceLineProcedureCodeChanged(line)"
+                  (blur)="onServiceLineProcedureCodeBlur(line)"
+                />
+                <span *ngIf="!isEditingServiceLine(line)">{{ line.srvProcedureCode || '—' }}</span>
+              </td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier1" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier1 || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier2" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier2 || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier3" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier3 || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier4" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier4 || '—' }}</span></td>
+              <td>
+                <input *ngIf="isEditingServiceLine(line)" type="number" step="1" min="1" [(ngModel)]="line.srvUnits" (ngModelChange)="onServiceLineUnitsChanged(line)" />
+                <span *ngIf="!isEditingServiceLine(line)">{{ line.srvUnits ?? '—' }}</span>
+              </td>
+              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvCharges" /><span *ngIf="!isEditingServiceLine(line)">{{ formatCurrency(line.srvCharges) }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvAllowedAmt" /><span *ngIf="!isEditingServiceLine(line)">{{ formatCurrency(line.srvAllowedAmt) }}</span></td>
+              <td>{{ formatCurrency(line.srvTotalInsAmtPaidTRIG) }}</td>
+              <td>{{ formatCurrency(line.srvTotalPatAmtPaidTRIG) }}</td>
               <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
+              <td>
+                <select
+                  *ngIf="isEditingServiceLine(line)"
+                  [(ngModel)]="line.srvResponsibleParty"
+                  (ngModelChange)="onResponsiblePartyChanged(line)"
+                >
+                  <option *ngIf="primaryPayerId" [ngValue]="primaryPayerId">Primary payer - {{ primaryPayerName }}</option>
+                  <option *ngIf="secondaryPayerId" [ngValue]="secondaryPayerId">Secondary payer - {{ secondaryPayerName }}</option>
+                  <option [ngValue]="0">Patient</option>
+                </select>
+                <span *ngIf="!isEditingServiceLine(line)">{{ getResponsiblePartyLabel(line.srvResponsibleParty) }}</span>
+              </td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvDesc" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDesc || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvNationalDrugCode" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvNationalDrugCode || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvDrugUnitCount" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDrugUnitCount ?? '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvDrugUnitMeasurement" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDrugUnitMeasurement || '—' }}</span></td>
+              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvPrescriptionNumber" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvPrescriptionNumber || '—' }}</span></td>
+              <td>
+                <button *ngIf="!isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); startEditServiceLine(line)">Edit</button>
+                <button *ngIf="isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); saveServiceLine(line)">Save</button>
+                <button *ngIf="isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); cancelEditServiceLine(line)">Cancel</button>
+                <button class="btn-danger" (click)="$event.stopPropagation(); deleteServiceLine(line)">Delete</button>
+              </td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="2"><strong>{{ serviceLinesArray.length }} line(s)</strong></td>
-              <td><strong>{{ formatCurrency(getServiceTotalCharges()) }}</strong></td>
-              <td></td>
-              <td><strong>{{ formatCurrency(getServiceTotalPaid()) }}</strong></td>
-              <td><strong>{{ formatCurrency(getServiceTotalBalance()) }}</strong></td>
-            </tr>
-          </tfoot>
         </table>
+      </div>
+      <div *ngIf="showProcedureLookupDialog" class="dialog-overlay" (click)="closeProcedureLookup()">
+        <div class="dialog" (click)="$event.stopPropagation()">
+          <header class="dialog-header">
+            <h2>Procedure Code Lookup</h2>
+            <button type="button" class="btn-close" (click)="closeProcedureLookup()">&times;</button>
+          </header>
+          <div class="dialog-body">
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Search procedure code..."
+              [(ngModel)]="procedureLookupKeyword"
+              (keyup)="searchProcedureLookup()"
+            />
+            <div *ngIf="procedureLookupLoading" class="loading">Loading...</div>
+            <ul class="result-list" *ngIf="!procedureLookupLoading && procedureLookupResults.length">
+              <li
+                *ngFor="let item of procedureLookupResults"
+                class="result-item"
+                (dblclick)="onProcedureLookupSelect(item)"
+                (click)="onProcedureLookupSelect(item)"
+              >
+                <span class="code">{{ item.code }}</span>
+                <span class="desc">{{ item.description }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
       <div class="service-line-custom-fields" *ngIf="selectedServiceLineId != null && serviceLineCustomFieldDefinitions.length">
         <h4>Service Line Custom Fields</h4>
@@ -416,89 +498,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="secondary-section">
-      <div class="secondary-tabs">
-        <button [class.active]="secondaryTab === 'payments'" (click)="onSecondaryTabChange('payments')">Payments</button>
-        <button [class.active]="secondaryTab === 'adjustments'" (click)="onSecondaryTabChange('adjustments')">Adjustments</button>
-        <button [class.active]="secondaryTab === 'disbursements'" (click)="onSecondaryTabChange('disbursements')">Disbursements</button>
-      </div>
-
-      <div class="secondary-panel" *ngIf="secondaryTab === 'payments'">
-        <p *ngIf="loadingPayments">Loading payments…</p>
-        <p *ngIf="!loadingPayments && payments.length === 0">No payments for this claim.</p>
-        <table *ngIf="!loadingPayments && payments.length > 0">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let payment of payments">
-              <td>{{ payment.pmtID }}</td>
-              <td>{{ formatDate(payment.pmtDate) }}</td>
-              <td>{{ formatCurrency(payment.pmtAmount) }}</td>
-              <td>{{ payment.pmtMethod }}</td>
-              <td>{{ payment.pmtNote || payment.pmt835Ref }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="secondary-panel" *ngIf="secondaryTab === 'adjustments'">
-        <p *ngIf="loadingAdjustments">Loading adjustments…</p>
-        <p *ngIf="!loadingAdjustments && adjustments.length === 0">No adjustments for this claim.</p>
-        <table *ngIf="!loadingAdjustments && adjustments.length > 0">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Group</th>
-              <th>Reason</th>
-              <th>Amount</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let adj of adjustments">
-              <td>{{ adj.AdjID }}</td>
-              <td>{{ adj.AdjGroupCode }}</td>
-              <td>{{ adj.AdjReasonCode }}</td>
-              <td>{{ formatCurrency(adj.AdjAmount) }}</td>
-              <td>{{ formatDate(adj.AdjDateTimeCreated) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="secondary-panel" *ngIf="secondaryTab === 'disbursements'">
-        <p *ngIf="loadingDisbursements">Loading disbursements…</p>
-        <p *ngIf="!loadingDisbursements && disbursements.length === 0">No disbursements for this claim.</p>
-        <table *ngIf="!loadingDisbursements && disbursements.length > 0">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Code</th>
-              <th>Amount</th>
-              <th>Note</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let disb of disbursements">
-              <td>{{ disb.DisbID }}</td>
-              <td>{{ disb.DisbCode }}</td>
-              <td>{{ formatCurrency(disb.DisbAmount) }}</td>
-              <td>{{ disb.DisbNote }}</td>
-              <td>{{ formatDate(disb.DisbDateTimeCreated) }}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </section>
 

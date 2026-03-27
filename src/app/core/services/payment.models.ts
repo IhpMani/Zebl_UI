@@ -53,15 +53,18 @@ export interface PaymentForEdit {
   remaining: number | null;
 }
 
-/** One row for the payment entry grid (from GET /api/payments/service-lines). */
+/** One row for the payment entry grid (GET /api/payments/entry/service-lines). */
 export interface PaymentEntryServiceLine {
   serviceLineId: number;
   name: string | null;
   dos: string | null;
   proc: string | null;
+  /** DB: SrvCharges */
   charge: number;
   responsible: string | null;
+  /** DB: SrvTotalAmtAppliedCC (total applied to line; falls back to ins+pat if null) */
   applied: number;
+  /** DB: SrvTotalBalanceCC */
   balance: number;
 }
 
@@ -74,6 +77,6 @@ export interface AdjustmentInput {
 
 /** Payment entry grid row: API data + user-editable paid amount and adjustments. No financial math in UI. */
 export interface PaymentEntryRow extends PaymentEntryServiceLine {
-  paidAmount: number;
+  payAmount: number;
   adjustments: AdjustmentInput[];
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { PayersApiResponse, PayerDetailDto } from './payer.models';
 import { environment } from 'src/environments/environment';
 
@@ -9,6 +10,7 @@ import { environment } from 'src/environments/environment';
 })
 export class PayerApiService {
   private baseUrl = `${environment.apiUrl}/api/payers`;
+  private payersCache = new Map<string, Observable<PayersApiResponse>>();
 
   constructor(private http: HttpClient) { }
 
@@ -26,7 +28,12 @@ export class PayerApiService {
     if (filters?.classificationList && filters.classificationList.trim()) {
       params = params.set('classificationList', filters.classificationList.trim());
     }
-    return this.http.get<PayersApiResponse>(this.baseUrl, { params });
+    const cacheKey = params.toString();
+    const cached = this.payersCache.get(cacheKey);
+    if (cached) return cached;
+    const req$ = this.http.get<PayersApiResponse>(this.baseUrl, { params }).pipe(shareReplay(1));
+    this.payersCache.set(cacheKey, req$);
+    return req$;
   }
 
   getById(id: number): Observable<PayerDetailDto> {

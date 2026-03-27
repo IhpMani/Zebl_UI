@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+import { ClaimDetailsBootstrapCacheService } from '../core/services/claim-details-bootstrap-cache.service';
 
 @Component({
   selector: 'app-app-shell',
@@ -45,7 +46,14 @@ export class AppShellComponent implements OnDestroy {
   showInterfaceDataReview = false;
   private navSub?: Subscription;
 
-  constructor(public auth: AuthService, private router: Router) {
+  constructor(
+    public auth: AuthService,
+    private router: Router,
+    private claimDetailsCache: ClaimDetailsBootstrapCacheService
+  ) {
+    if (this.auth.isLoggedIn()) {
+      this.claimDetailsCache.preload();
+    }
     // Close Review Incoming when user navigates (Find Claim, Home, etc.) so router-outlet shows
     this.navSub = this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)

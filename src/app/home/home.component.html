@@ -1,1 +1,98 @@
-<p>Broadbill</p>
+<section class="home-dashboard">
+  <header class="home-header">
+    <h2>Home Dashboard</h2>
+    <p *ngIf="currentUserName">User: {{ dashboard?.userName || currentUserName }}</p>
+  </header>
+
+  <div class="state loading" *ngIf="isLoading">Loading your dashboard...</div>
+  <div class="state error" *ngIf="!isLoading && errorMessage">
+    {{ errorMessage }}
+    <button type="button" (click)="loadDashboard()">Retry</button>
+  </div>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && dashboard as kpi">
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <span class="kpi-label">Total Claims Edited</span>
+        <strong class="kpi-value">{{ kpi.totalClaims }}</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Total Charge</span>
+        <strong class="kpi-value">{{ formatMoney(kpi.totalCharge) }}</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Total Paid</span>
+        <strong class="kpi-value">{{ formatMoney(kpi.totalPaid) }}</strong>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Total Balance</span>
+        <strong class="kpi-value">{{ formatMoney(kpi.totalBalance) }}</strong>
+      </article>
+    </div>
+
+    <div class="state empty" *ngIf="!hasData()">No claims found for this user yet.</div>
+
+    <div class="charts-grid" *ngIf="hasData()">
+      <section class="chart-card">
+        <h3>Status Distribution</h3>
+        <div class="pie-wrap">
+          <div class="pie" [style.background]="pieStyle(kpi.claimsByStatus)"></div>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h3>Claims By Status</h3>
+        <div class="bar-row" *ngFor="let s of kpi.claimsByStatus">
+          <span class="bar-label">{{ s.label }}</span>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="getBarWidth(s.value, maxPointValue(kpi.claimsByStatus))"></div>
+          </div>
+          <span class="bar-value">{{ s.value }}</span>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h3>Claims Trend (Last 30 Days)</h3>
+        <svg class="line-chart" viewBox="0 0 320 140" preserveAspectRatio="none">
+          <polyline
+            class="line-chart-path"
+            [attr.points]="trendPolyline(kpi.claimsTrend)">
+          </polyline>
+        </svg>
+        <div class="line-footer">
+          <span>{{ kpi.claimsTrend[0].label }}</span>
+          <span>{{ kpi.claimsTrend[kpi.claimsTrend.length - 1].label }}</span>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h3>Aging Distribution</h3>
+        <div class="pie-wrap">
+          <div class="pie" [style.background]="pieStyle(kpi.agingBuckets)"></div>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h3>Aging Buckets (Balance)</h3>
+        <div class="bar-row" *ngFor="let a of kpi.agingBuckets">
+          <span class="bar-label">{{ a.label }}</span>
+          <div class="bar-track">
+            <div class="bar-fill aging" [style.width.%]="getBarWidth(a.value, maxPointValue(kpi.agingBuckets))"></div>
+          </div>
+          <span class="bar-value">{{ formatMoney(a.value) }}</span>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <h3>Top Payers</h3>
+        <div class="bar-row" *ngFor="let p of kpi.topPayers">
+          <span class="bar-label">{{ p.label }}</span>
+          <div class="bar-track">
+            <div class="bar-fill payer" [style.width.%]="getBarWidth(p.value, maxPointValue(kpi.topPayers))"></div>
+          </div>
+          <span class="bar-value">{{ p.value }}</span>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+</section>

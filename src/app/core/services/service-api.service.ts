@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ServicesApiResponse } from './service.models';
 import { environment } from 'src/environments/environment';
 
@@ -9,6 +10,7 @@ import { environment } from 'src/environments/environment';
 })
 export class ServiceApiService {
   private baseUrl = `${environment.apiUrl}/api/services`;
+  private claimBaseUrl = `${environment.apiUrl}/api/claims`;
 
   constructor(private http: HttpClient) { }
 
@@ -68,7 +70,22 @@ export class ServiceApiService {
     return this.http.get<any>(`${this.baseUrl}/available-columns`);
   }
 
+  /** Fresh service lines for a claim (totals from DB). GET /api/services/claims/{claId} */
   getServicesByClaim(claId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/claims/${claId}`);
+    return this.http
+      .get<{ data: any[] }>(`${this.baseUrl}/claims/${claId}`)
+      .pipe(map((res) => res?.data ?? []));
+  }
+
+  createServiceLine(claimId: number, body: any): Observable<any> {
+    return this.http.post<any>(`${this.claimBaseUrl}/${claimId}/services`, body);
+  }
+
+  updateServiceLine(claimId: number, srvId: number, body: any): Observable<any> {
+    return this.http.put<any>(`${this.claimBaseUrl}/${claimId}/services/${srvId}`, body);
+  }
+
+  deleteServiceLine(claimId: number, srvId: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.claimBaseUrl}/${claimId}/services/${srvId}`);
   }
 }
