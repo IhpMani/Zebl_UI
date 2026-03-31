@@ -1,5 +1,9 @@
 .home-dashboard {
-  padding: 16px;
+  margin: -16px;
+  padding: 20px;
+  min-height: calc(100% + 32px);
+  background: transparent;
+  color: var(--color-primary-btn-text);
 }
 
 .home-header {
@@ -9,14 +13,14 @@
   margin-bottom: 12px;
 }
 
-.home-header h2 {
+.home-header h2.title {
   margin: 0;
+  color: var(--color-primary-btn-text);
 }
 
-.home-header p {
+.home-header p.subtitle {
   margin: 0;
-  color: #586577;
-  font-size: 13px;
+  color: var(--color-nav-icon-hover);
 }
 
 .kpi-grid {
@@ -27,44 +31,51 @@
 }
 
 .kpi-card {
-  background: #fff;
-  border: 1px solid #dce3ec;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 64%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .kpi-label {
-  color: #586577;
+  color: var(--color-nav-icon-hover);
   font-size: 12px;
 }
 
 .kpi-value {
   font-size: 20px;
   line-height: 1.1;
+  color: var(--color-primary-btn-text);
 }
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 360px));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
 }
 
 .chart-card {
-  background: #fff;
-  border: 1px solid #dce3ec;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 66%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
   padding: 12px;
-  width: 360px;
   min-height: 250px;
   box-sizing: border-box;
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .chart-card h3 {
   margin: 0 0 12px;
   font-size: 14px;
+  color: var(--color-nav-icon-hover);
 }
 
 .bar-row {
@@ -81,7 +92,7 @@
 
 .bar-label {
   font-size: 12px;
-  color: #2f3d4a;
+  color: var(--color-primary-btn-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -90,31 +101,31 @@
 .bar-track {
   width: 100%;
   height: 10px;
-  background: #eef2f7;
-  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-nav-item-active-bg) 78%, transparent);
+  border-radius: var(--color-radius-pill);
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  background: #3f7ee8;
+  background: var(--color-chart-primary);
 }
 
 .bar-fill.trend {
-  background: #24a45a;
+  background: var(--color-chart-success);
 }
 
 .bar-fill.aging {
-  background: #e08a1f;
+  background: var(--color-chart-warning);
 }
 
 .bar-fill.payer {
-  background: #7a4de8;
+  background: var(--color-chart-accent);
 }
 
 .bar-value {
   font-size: 12px;
-  color: #2f3d4a;
+  color: var(--color-primary-btn-text);
 }
 
 .pie-wrap {
@@ -128,22 +139,26 @@
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 24px #fff;
-  border: 1px solid #dce3ec;
+  box-shadow: inset 0 0 0 24px color-mix(in srgb, var(--color-nav-item-active-bg) 76%, transparent);
+  border: 1px solid var(--color-nav-glass-border);
 }
 
 .line-chart {
   width: 100%;
   height: 170px;
   display: block;
-  background: linear-gradient(to top, #f7f9fc 0%, #ffffff 100%);
-  border: 1px solid #e7edf5;
-  border-radius: 8px;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-nav-item-hover-bg) 80%, transparent) 0%,
+    color-mix(in srgb, var(--color-nav-item-active-bg) 68%, transparent) 100%
+  );
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: var(--color-radius-sm);
 }
 
 .line-chart-path {
   fill: none;
-  stroke: #24a45a;
+  stroke: var(--color-chart-success);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -154,24 +169,33 @@
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #586577;
+  color: var(--color-nav-icon-hover);
 }
 
 .state {
-  border: 1px solid #dce3ec;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 66%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 12px;
   margin-bottom: 12px;
+  color: var(--color-primary-btn-text);
 }
 
 .state.error {
-  border-color: #f5c3c3;
-  background: #fff6f6;
+  border-color: color-mix(in srgb, var(--color-error) 55%, transparent);
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
 }
 
 .state.error button {
   margin-left: 10px;
+  background: var(--color-nav-item-active-bg);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
 @media (max-width: 420px) {

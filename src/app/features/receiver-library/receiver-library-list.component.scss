@@ -281,3 +281,110 @@
     line-height: 1.5;
   }
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.receiver-library-list-container {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.left-panel {
+  background: var(--color-nav-glass-tint);
+  border-right: 1px solid var(--color-nav-glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.right-panel {
+  background: transparent;
+}
+
+.panel-header,
+.checkboxes-section,
+.notes-section {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.panel-header h3,
+.library-name,
+.checkbox-label,
+.notes-hint {
+  color: var(--color-primary-btn-text) !important;
+}
+
+.library-item {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
+}
+
+.library-item:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+}
+
+.library-item.selected {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 80%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+}
+
+.library-item.add-entry {
+  color: var(--color-nav-icon-hover);
+}
+
+.library-meta,
+.format {
+  color: var(--color-nav-icon-hover);
+}
+
+.status.active,
+.library-item.selected .status.active,
+.library-item.selected .status.inactive {
+  background: color-mix(in srgb, var(--color-success) 28%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.status.inactive {
+  background: color-mix(in srgb, var(--color-error) 24%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.notes-textarea {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-nav-glass-border);
+}
+
+.notes-textarea::placeholder {
+  color: var(--color-nav-icon);
+}
+
+.btn-add {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  border: 1px solid transparent;
+  color: var(--color-primary-btn-text);
+}
+
+/* Match rounded button style used elsewhere */
+.receiver-library-list-container .btn-add {
+  border-radius: 10px !important;
+  min-height: 34px;
+  padding: 6px 12px;
+}
+
+/* Ensure middle/right card uses exact glass surface */
+.receiver-library-list-container .right-panel {
+  background: var(--color-nav-glass-tint) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  overflow: hidden;
+}
+
+.receiver-library-list-container .empty-detail {
+  color: var(--color-nav-icon-hover) !important;
+}

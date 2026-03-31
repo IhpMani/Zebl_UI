@@ -161,3 +161,272 @@
   border-radius: 0;
   padding: 2px 8px;
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.physician-library-container {
+  height: calc(100vh - 60px);
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.library-panels {
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  grid-template-columns: 340px 1fr;
+}
+
+.left-panel,
+.right-panel {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+}
+
+.left-panel {
+  border-right: 1px solid var(--color-nav-glass-border);
+  overflow: hidden;
+}
+
+.panel-header {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent);
+  border-bottom: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+  padding: 10px 12px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: var(--color-primary-btn-text);
+}
+
+.right-panel .panel-header {
+  display: block;
+}
+
+.add-new-entry,
+.physician-list-header,
+.physician-item {
+  color: var(--color-primary-btn-text);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+}
+
+.add-new-entry {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 45%, transparent);
+  font-weight: 600;
+}
+
+.physician-list-header {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
+}
+
+.physician-item {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 26%, transparent);
+}
+
+.physician-item:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 60%, transparent);
+}
+
+.physician-item.selected {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 80%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+}
+
+.form-section {
+  padding: 12px;
+}
+
+.physician-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px 16px;
+  align-items: start;
+}
+
+.form-group,
+.form-row {
+  display: contents;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-nav-icon-hover);
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-control {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-nav-glass-border);
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  color: var(--color-primary-btn-text);
+  font-size: 13px;
+}
+
+.form-control::placeholder {
+  color: var(--color-nav-icon);
+}
+
+.form-control option,
+.form-control optgroup {
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+}
+
+.checkbox-group {
+  grid-column: 1 / -1;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-nav-icon-hover);
+}
+
+.checkbox-group input[type="checkbox"] {
+  accent-color: var(--color-nav-icon-active);
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin-top: 8px;
+}
+
+.btn {
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  color: var(--color-primary-btn-text);
+}
+
+.btn-secondary {
+  background: var(--color-nav-item-active-bg);
+  border-color: var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+}
+
+.btn:hover {
+  background: var(--color-nav-item-hover-bg);
+}
+
+.error,
+.error-message,
+.loading {
+  color: var(--color-nav-icon-hover);
+}
+
+/* Hard overrides to remove white list surfaces */
+.physician-library-container .physician-list,
+.physician-library-container .list-section {
+  background: transparent !important;
+}
+
+.physician-library-container .physician-list-header {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 60%, transparent) !important;
+}
+
+.physician-library-container .physician-item {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 30%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent) !important;
+}
+
+.physician-library-container .physician-item:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent) !important;
+}
+
+.physician-library-container .physician-item.selected {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 82%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.physician-library-container .physician-name,
+.physician-library-container .physician-classification,
+.physician-library-container .physician-name-header,
+.physician-library-container .physician-classification-header {
+  color: inherit !important;
+}
+
+/* Stabilize form layout to prevent visual glitches from legacy grid rules */
+.physician-library-container .physician-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(260px, 1fr)) !important;
+  gap: 12px 16px !important;
+  align-items: start !important;
+}
+
+.physician-library-container .physician-form .form-group {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.physician-library-container .physician-form .form-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
+  gap: 12px !important;
+  grid-column: 1 / -1 !important;
+}
+
+.physician-library-container .physician-form .form-row .form-group {
+  min-width: 0;
+}
+
+.physician-library-container #phyCity,
+.physician-library-container #phyState,
+.physician-library-container #phyZip,
+.physician-library-container #phyTelephone,
+.physician-library-container #phyFax {
+  grid-column: auto !important;
+}
+
+.physician-library-container .form-actions {
+  grid-column: 1 / -1 !important;
+}
+
+/* Fix "Mark as Inactive" checkbox sizing/alignment */
+.physician-library-container .physician-form .checkbox-group {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-top: 2px;
+}
+
+.physician-library-container .physician-form .checkbox-group label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  color: var(--color-nav-icon-hover) !important;
+  font-weight: 500 !important;
+}
+
+.physician-library-container .physician-form .checkbox-group input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  accent-color: var(--color-nav-icon-active);
+}

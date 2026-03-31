@@ -105,6 +105,100 @@ textarea {
 }
 
 /* =========================
+   SHARED UI PRIMITIVES (design system)
+========================= */
+.card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--color-radius-md, 10px);
+  padding: var(--color-space-card-padding, 16px);
+}
+
+.page {
+  padding: var(--color-space-page, 20px);
+}
+
+.grid {
+  display: grid;
+  gap: var(--color-space-grid-gap, 16px);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* List / filter popup (replaces inline styles) */
+.filter-popup-field-group {
+  display: block;
+}
+
+.filter-popup-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.filter-popup-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--color-radius-sm, 8px);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.filter-popup-hint {
+  margin-top: 8px;
+  font-size: 0.85em;
+  color: var(--color-text-muted);
+}
+
+.filter-popup-row {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.filter-popup-row input[type='checkbox'] {
+  cursor: pointer;
+  pointer-events: auto;
+  margin-right: 10px;
+}
+
+.filter-popup-row-label {
+  cursor: pointer;
+  flex: 1;
+}
+
+.filter-popup-empty {
+  color: var(--color-text-muted);
+  font-size: 0.9em;
+  padding: 8px;
+}
+
+.u-hidden {
+  display: none !important;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+/* =========================
    GLOBAL DATA GRID & TABLE THEME
    Enforce white grids, body-bg headers, theme borders, row hover
 ========================= */

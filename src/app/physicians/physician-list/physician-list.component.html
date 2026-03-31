@@ -195,10 +195,9 @@
           <div *ngFor="let tableGroup of getRelatedColumnsByTable() | keyvalue" class="table-group">
             <h5>{{ tableGroup.key }} Table</h5>
             <div class="column-list">
-              <div 
-                *ngFor="let col of tableGroup.value" 
-                class="column-item related-column-option" 
-                style="cursor: pointer; user-select: none; display: flex; align-items: center;"
+              <div
+                *ngFor="let col of tableGroup.value"
+                class="column-item related-column-option filter-popup-row"
                 (click)="toggleRelatedColumn(col.key, col.label, col.table); $event.stopPropagation()"
               >
                 <input
@@ -206,9 +205,8 @@
                   [checked]="isRelatedColumnSelected(col.key)"
                   (change)="onRelatedColumnToggle(col.key, col.label, col.table, $event)"
                   (click)="$event.stopPropagation()"
-                  style="cursor: pointer; pointer-events: auto; margin-right: 10px;"
                 />
-                <span style="cursor: pointer; flex: 1;">
+                <span class="filter-popup-row-label">
                   {{ col.label }}
                 </span>
               </div>
@@ -216,7 +214,7 @@
           </div>
         </div>
         <div *ngIf="!availableRelatedColumns || availableRelatedColumns.length === 0" class="column-section">
-          <p style="color: #999; font-size: 0.9em; padding: 8px;">
+          <p class="filter-popup-empty">
             <span *ngIf="availableRelatedColumns && availableRelatedColumns.length === 0">No related columns available</span>
             <span *ngIf="!availableRelatedColumns">Loading related columns...</span>
           </p>

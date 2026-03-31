@@ -1,7 +1,7 @@
 <section class="home-dashboard">
   <header class="home-header">
-    <h2>Home Dashboard</h2>
-    <p *ngIf="currentUserName">User: {{ dashboard?.userName || currentUserName }}</p>
+    <h2 class="title">Home Dashboard</h2>
+    <p class="subtitle" *ngIf="currentUserName">User: {{ dashboard?.userName || currentUserName }}</p>
   </header>
 
   <div class="state loading" *ngIf="isLoading">Loading your dashboard...</div>

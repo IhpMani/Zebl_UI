@@ -117,3 +117,96 @@ tbody tr:hover {
   font-size: 12px;
 }
 
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.page {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.page h2,
+.card h3 {
+  color: var(--color-primary-btn-text);
+}
+
+.card {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+}
+
+input {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 8px;
+}
+
+input::placeholder {
+  color: var(--color-nav-icon-hover);
+  opacity: 1;
+}
+
+input:focus {
+  border-color: var(--color-nav-icon-active);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-nav-icon-active) 30%, transparent);
+}
+
+button {
+  background: var(--color-nav-item-active-bg);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 10px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-nav-item-hover-bg);
+  border-color: var(--color-nav-glass-border);
+}
+
+.form button,
+.row button {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  border: 1px solid transparent;
+}
+
+table,
+.page table,
+.page thead,
+.page tbody,
+.page tr,
+.page th,
+.page td {
+  background: transparent !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
+}
+
+thead th {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+}
+
+tbody tr td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 30%, transparent) !important;
+}
+
+tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent) !important;
+}
+
+.error {
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 55%, transparent);
+  color: var(--color-primary-btn-text);
+  border-radius: 12px;
+}
+
+.note {
+  color: var(--color-nav-icon-hover);
+}
+

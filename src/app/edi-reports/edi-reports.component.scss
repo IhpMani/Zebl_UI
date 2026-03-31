@@ -484,3 +484,192 @@
   border: 1px solid var(--color-error-border);
   border-radius: 4px;
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.edi-reports-container {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.edi-header,
+.content-area,
+.sidebar,
+.modal,
+.quick-view-panel,
+.quick-view-content {
+  background: var(--color-nav-glass-tint) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  color: var(--color-primary-btn-text);
+}
+
+.grouping-bar {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent);
+  color: var(--color-nav-icon-hover);
+  border-bottom: 1px solid var(--color-nav-glass-border);
+}
+
+.header-label,
+.header-hint,
+.sidebar-label,
+.quick-view-hint,
+.quick-view-placeholder,
+.quick-view-message {
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.reports-grid .header-row th {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent) !important;
+}
+
+.reports-grid .filter-row th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
+}
+
+.reports-grid tbody tr td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+  color: var(--color-primary-btn-text);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
+}
+
+.reports-grid tbody tr:hover td,
+.reports-grid tbody tr.selected td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent) !important;
+}
+
+.header-dropdown,
+.search-input,
+.sidebar-dropdown,
+.col-filter,
+.form-input,
+.quick-view-pre,
+textarea.form-input {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+}
+
+.header-dropdown option,
+.sidebar-dropdown option,
+.form-input option {
+  background: var(--color-card-bg);
+  color: var(--color-text);
+}
+
+.btn-action,
+.btn-sidebar,
+.btn-clear,
+.btn-icon,
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  color: var(--color-primary-btn-text);
+  border: 1px solid transparent;
+}
+
+.btn-secondary {
+  background: var(--color-nav-item-active-bg);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-nav-glass-border);
+}
+
+.btn-action:hover:not(:disabled),
+.btn-sidebar:hover:not(:disabled),
+.btn-clear:hover,
+.btn-icon:hover,
+.btn-primary:hover:not(:disabled),
+.btn-secondary:hover {
+  background: var(--color-nav-item-hover-bg);
+}
+
+.dropdown-menu {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+}
+
+.dropdown-menu li a {
+  color: var(--color-primary-btn-text);
+}
+
+.dropdown-menu li a:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 58%, transparent);
+}
+
+.error-bar,
+.error-text {
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 55%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+/* Hard table overrides for EDI Reports */
+.edi-reports-container .reports-grid,
+.edi-reports-container .reports-grid thead,
+.edi-reports-container .reports-grid tbody,
+.edi-reports-container .reports-grid tr,
+.edi-reports-container .reports-grid th,
+.edi-reports-container .reports-grid td {
+  background: transparent !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
+}
+
+.edi-reports-container .reports-grid .header-row th {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 82%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.edi-reports-container .reports-grid .filter-row th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 74%, transparent) !important;
+}
+
+.edi-reports-container .reports-grid tbody tr td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 30%, transparent) !important;
+}
+
+.edi-reports-container .reports-grid tbody tr:hover td,
+.edi-reports-container .reports-grid tbody tr.selected td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 64%, transparent) !important;
+}
+
+/* Softer button corners + consistent shape */
+.edi-reports-container .btn,
+.edi-reports-container .btn-action,
+.edi-reports-container .btn-sidebar,
+.edi-reports-container .btn-clear,
+.edi-reports-container .btn-icon,
+.edi-reports-container .btn-primary,
+.edi-reports-container .btn-secondary {
+  border-radius: 10px !important;
+  min-height: 34px;
+  padding: 6px 12px;
+}
+
+/* Placeholder/readability fixes */
+.edi-reports-container input::placeholder,
+.edi-reports-container textarea::placeholder,
+.edi-reports-container .col-filter::placeholder,
+.edi-reports-container .search-input::placeholder,
+.edi-reports-container .form-input::placeholder {
+  color: var(--color-nav-icon-hover) !important;
+  opacity: 1;
+}
+
+.edi-reports-container input,
+.edi-reports-container textarea,
+.edi-reports-container select,
+.edi-reports-container .col-filter,
+.edi-reports-container .search-input,
+.edi-reports-container .header-dropdown,
+.edi-reports-container .sidebar-dropdown,
+.edi-reports-container .form-input {
+  color: var(--color-primary-btn-text) !important;
+  caret-color: var(--color-primary-btn-text);
+}

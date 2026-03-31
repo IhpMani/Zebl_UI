@@ -392,3 +392,162 @@
 .btn-secondary:hover {
   background: var(--color-border);
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.payment-entry-container {
+  padding: 20px;
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.payment-entry-container h2 {
+  color: var(--color-primary-btn-text);
+}
+
+.top-row,
+.summary-bar,
+.grid-wrapper,
+.sidebar,
+.payments-context-bar {
+  background: var(--color-nav-glass-tint) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  color: var(--color-primary-btn-text);
+}
+
+.summary-label,
+.sidebar-title,
+.payment-details .detail-row .label,
+.payment-details .detail-row label,
+.payments-context-bar .context-title,
+.balance-pay-cell .pay-label {
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.summary-value,
+.line-grid .header-row th,
+.line-grid .data-row td,
+.sidebar label {
+  color: var(--color-primary-btn-text) !important;
+}
+
+.line-grid .header-row th,
+.line-grid .filter-row th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 65%, transparent) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+.line-grid .data-row td,
+.line-grid .no-data-row td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent) !important;
+}
+
+.line-grid .data-row:hover td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent);
+}
+
+.payment-entry-container input,
+.payment-entry-container select,
+.payment-entry-container textarea,
+.line-grid .cell-input,
+.line-grid .filter-row th input {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 8px !important;
+}
+
+.payment-entry-container input::placeholder,
+.payment-entry-container textarea::placeholder {
+  color: var(--color-nav-icon) !important;
+}
+
+.payment-entry-container select option,
+.payment-entry-container select optgroup {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text) !important;
+}
+
+.btn-primary,
+.btn-auto-apply {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link)) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: none !important;
+}
+
+.btn-secondary,
+.btn-icon {
+  background: var(--color-nav-item-active-bg) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.btn-secondary:hover,
+.btn-icon:hover,
+.btn-primary:hover:not(:disabled),
+.btn-auto-apply:hover {
+  background: var(--color-nav-item-hover-bg) !important;
+}
+
+.error-msg {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 55%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.success-msg {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-success) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 55%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+/* Enforce glass table theme over global table !important rules */
+.payment-entry-container .line-grid,
+.payment-entry-container .line-grid thead,
+.payment-entry-container .line-grid tbody,
+.payment-entry-container .line-grid tr,
+.payment-entry-container .line-grid th,
+.payment-entry-container .line-grid td {
+  background: transparent !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
+}
+
+.payment-entry-container .line-grid .header-row th {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.payment-entry-container .line-grid .filter-row th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
+}
+
+.payment-entry-container .line-grid .data-row td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 32%, transparent) !important;
+}
+
+.payment-entry-container .line-grid .data-row:hover td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent) !important;
+}
+
+.payment-entry-container .line-grid .no-data-row td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 26%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.payment-entry-container .line-grid .filter-row th input,
+.payment-entry-container .line-grid .cell-input {
+  background: color-mix(in srgb, var(--color-nav-item-active-bg) 90%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+}

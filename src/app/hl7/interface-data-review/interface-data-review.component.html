@@ -5,7 +5,7 @@
     <div class="header-row">
       <h3>Incoming / Pending Files</h3>
       <button (click)="onImportClick()">Import...</button>
-      <input #fileInput type="file" accept=".hl7" style="display:none" (change)="onFileSelected($event)" />
+      <input #fileInput type="file" accept=".hl7" class="u-hidden" (change)="onFileSelected($event)" />
     </div>
 
     <table class="table">

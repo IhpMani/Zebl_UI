@@ -1,11 +1,14 @@
 <div class="claim-list-container">
-  <h2>Claim List</h2>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Claim List</h2>
+    </div>
 
-  <div *ngIf="loading" class="loading">Loading claims...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading section">Loading claims...</div>
+    <div *ngIf="error" class="error section">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
-    <table class="claims-table">
+    <div *ngIf="!loading && !error" class="section card table-container">
+      <table class="claims-table">
       <thead>
         <tr>
           <th class="action-col add-column-header">
@@ -42,7 +45,7 @@
       <tbody>
         <tr *ngFor="let claim of filteredClaims" (click)="onRowClick(claim)" class="claim-row">
           <td class="action-col">
-            <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(claim)">
+            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(claim)">
               Open
             </button>
           </td>
@@ -79,53 +82,54 @@
           <td [attr.colspan]="visibleColumns.length + 1" class="no-data">No claims found</td>
         </tr>
       </tbody>
-    </table>
+      </table>
 
-    <div *ngIf="meta" class="pagination-container">
-      <div class="pagination-info">
-        Showing {{ filteredClaims.length }} of {{ meta.totalCount }} claims
-        (Page {{ meta.page }} of {{ getTotalPages() }})
-      </div>
-      <div class="pagination-controls">
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(1)"
-          [disabled]="meta.page === 1 || loading"
-          title="First page">
-          ««
-        </button>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(meta.page - 1)"
-          [disabled]="meta.page === 1 || loading"
-          title="Previous page">
-          ‹
-        </button>
-        <span class="page-info">Page {{ meta.page }} of {{ getTotalPages() }}</span>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(meta.page + 1)"
-          [disabled]="meta.page >= getTotalPages() || loading"
-          title="Next page">
-          ›
-        </button>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(getTotalPages())"
-          [disabled]="meta.page >= getTotalPages() || loading"
-          title="Last page">
-          »»
-        </button>
-        <select 
-          class="page-size-select"
-          [value]="pageSize"
-          (change)="onPageSizeChange(+$any($event.target).value)"
-          [disabled]="loading">
-          <option value="10">10 per page</option>
-          <option value="25">25 per page</option>
-          <option value="50">50 per page</option>
-          <option value="100">100 per page</option>
-        </select>
+      <div *ngIf="meta" class="pagination-container">
+        <div class="pagination-info">
+          Showing {{ filteredClaims.length }} of {{ meta.totalCount }} claims
+          (Page {{ meta.page }} of {{ getTotalPages() }})
+        </div>
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            (click)="onPageChange(1)"
+            [disabled]="meta.page === 1 || loading"
+            title="First page">
+            ««
+          </button>
+          <button 
+            class="pagination-btn" 
+            (click)="onPageChange(meta.page - 1)"
+            [disabled]="meta.page === 1 || loading"
+            title="Previous page">
+            ‹
+          </button>
+          <span class="page-info">Page {{ meta.page }} of {{ getTotalPages() }}</span>
+          <button 
+            class="pagination-btn" 
+            (click)="onPageChange(meta.page + 1)"
+            [disabled]="meta.page >= getTotalPages() || loading"
+            title="Next page">
+            ›
+          </button>
+          <button 
+            class="pagination-btn" 
+            (click)="onPageChange(getTotalPages())"
+            [disabled]="meta.page >= getTotalPages() || loading"
+            title="Last page">
+            »»
+          </button>
+          <select 
+            class="page-size-select"
+            [value]="pageSize"
+            (change)="onPageSizeChange(+$any($event.target).value)"
+            [disabled]="loading">
+            <option value="10">10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -143,18 +147,18 @@
       </div>
 
       <!-- Text/Numeric Input for numeric columns -->
-      <div *ngIf="activeFilterColumnKey && isNumericColumn(activeFilterColumnKey)" class="filter-popup-input">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">
+      <div *ngIf="activeFilterColumnKey && isNumericColumn(activeFilterColumnKey)" class="filter-popup-field-group">
+        <label class="filter-popup-label">
           {{ getColumnLabel(activeFilterColumnKey) }}
         </label>
         <input
           type="text"
           [(ngModel)]="popupTextFilter"
+          class="filter-popup-input"
           [placeholder]="activeFilterColumnKey === 'claID' ? 'Enter Claim ID (e.g., 123456 or 123,456,789)' : 'Enter value(s), comma-separated'"
-          style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
           (keyup.enter)="applyValueFilterAndClose()"
         />
-        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">
+        <div class="filter-popup-hint">
           <span *ngIf="activeFilterColumnKey === 'claID'">Enter one or more Claim IDs, separated by commas</span>
           <span *ngIf="activeFilterColumnKey !== 'claID'">Enter one or more values, separated by commas</span>
         </div>

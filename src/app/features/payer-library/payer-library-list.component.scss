@@ -91,3 +91,71 @@
   color: var(--color-text-muted);
   font-size: 0.95rem;
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.payer-library-list-container {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.left-panel {
+  background: var(--color-nav-glass-tint);
+  border-right: 1px solid var(--color-nav-glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+}
+
+.panel-header {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent);
+  border-bottom: 1px solid var(--color-nav-glass-border);
+
+  h3 {
+    color: var(--color-primary-btn-text);
+  }
+
+  .show-inactive {
+    color: var(--color-nav-icon-hover);
+  }
+}
+
+.payer-item {
+  color: var(--color-primary-btn-text);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+  }
+
+  &.selected {
+    background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
+    color: var(--color-nav-icon-hover);
+    box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+  }
+
+  &.inactive {
+    color: var(--color-nav-icon);
+  }
+
+  &.add-entry {
+    color: var(--color-nav-icon-hover);
+    font-weight: 600;
+  }
+}
+
+.loading,
+.empty-state,
+.empty-detail {
+  color: var(--color-nav-icon-hover);
+}
+
+.error {
+  color: #ffd4de;
+}
+
+.right-panel {
+  background: transparent;
+}

@@ -1,34 +1,35 @@
 <div class="claim-details-wrapper">
-  <div *ngIf="loading" class="loading-overlay">
-    <div class="loading">Loading claim data…</div>
-  </div>
+  <div class="page-container">
+    <div *ngIf="loading" class="loading-overlay">
+      <div class="loading">Loading claim data...</div>
+    </div>
 
-  <div *ngIf="error" class="error-panel">
-    <p>{{ error }}</p>
-    <button class="btn-secondary" (click)="goBackToList()">Back to List</button>
-  </div>
+    <div *ngIf="error" class="error-panel section">
+      <p>{{ error }}</p>
+      <button class="btn-secondary" (click)="goBackToList()">Back to List</button>
+    </div>
 
-  <ng-container *ngIf="!loading && !error && claim">
-    <header class="claim-header">
-      <div>
-        <p class="claim-context">Claim {{ claim.claID }} · {{ claim.claStatus || 'Unknown status' }}</p>
-        <h1>{{ getPatientName() }}</h1>
-        <p class="dos">DOS {{ formatDate(claim.claFirstDateTRIG) || 'N/A' }}</p>
-      </div>
-      <div class="header-actions">
-        <button class="btn-primary" (click)="save()">Save</button>
-        <button class="btn-primary ghost" (click)="saveAndClose()">Save &amp; Close</button>
-        <button class="btn-secondary" (click)="close()">Close</button>
-        <button class="btn-secondary" (click)="deleteClaim()">Delete</button>
-        <button class="btn-secondary" (click)="scrub()">Scrub Claim</button>
-      </div>
-    </header>
+    <ng-container *ngIf="!loading && !error && claim">
+      <header class="claim-header section card card-primary">
+        <div>
+          <p class="claim-context">Claim {{ claim.claID }} · {{ claim.claStatus || 'Unknown status' }}</p>
+          <h1 class="page-title">{{ getPatientName() }}</h1>
+          <p class="dos">DOS {{ formatDate(claim.claFirstDateTRIG) || 'N/A' }}</p>
+        </div>
+        <div class="actions">
+          <button class="btn-primary" (click)="save()">Save</button>
+          <button class="btn-primary ghost" (click)="saveAndClose()">Save &amp; Close</button>
+          <button class="btn-secondary" (click)="close()">Close</button>
+          <button class="btn-secondary" (click)="deleteClaim()">Delete</button>
+          <button class="btn-secondary" (click)="scrub()">Scrub Claim</button>
+        </div>
+      </header>
 
-    <div class="claim-panels">
-      <aside class="left-panel">
-        <section class="panel-card">
+      <div class="claim-panels section">
+        <aside class="left-panel">
+          <section class="panel-card card section">
           <header>
-            <h3>Prior Authorization &amp; Diagnosis</h3>
+            <h3 class="section-title">Prior Authorization &amp; Diagnosis</h3>
           </header>
           <div class="diag-grid">
             <div class="diag-row" *ngFor="let diag of diagnosisFields">
@@ -38,9 +39,9 @@
           </div>
         </section>
 
-        <section class="panel-card">
+          <section class="panel-card card section">
           <header>
-            <h3>Calendar</h3>
+            <h3 class="section-title">Calendar</h3>
           </header>
           <label>Date Received</label>
           <input type="date" [(ngModel)]="claim.claBillDate" />
@@ -50,9 +51,9 @@
           <input type="date" [(ngModel)]="claim.claLastDateTRIG" />
         </section>
 
-        <section class="panel-card">
+          <section class="panel-card card section">
           <header>
-            <h3>Claim Template</h3>
+            <h3 class="section-title">Claim Template</h3>
           </header>
           <select [(ngModel)]="claim.claSubmissionMethod">
             <option *ngFor="let template of claimTemplates" [value]="template.id">
@@ -60,15 +61,15 @@
             </option>
           </select>
         </section>
-      </aside>
+        </aside>
 
-      <section class="right-panel">
+        <section class="right-panel">
         <div class="sections-stack">
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Claim Information</h3>
+              <h3 class="section-title">Claim Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.claimInfo">
+            <div class="section-body form-grid" [hidden]="!sectionsState.claimInfo">
               <div class="field-row">
                 <label>Bill Date</label>
                 <input type="date" [(ngModel)]="claim.claBillDate" />
@@ -109,9 +110,9 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Scrub Results</h3>
+              <h3 class="section-title">Scrub Results</h3>
             </header>
             <div class="section-body">
               <div *ngIf="scrubError" class="error-panel">
@@ -139,11 +140,11 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Physician / Facility Information</h3>
+              <h3 class="section-title">Physician / Facility Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.physician">
+            <div class="section-body form-grid" [hidden]="!sectionsState.physician">
               <div class="field-row" [formGroup]="claimForm">
                 <label>Rendering Provider</label>
                 <select formControlName="ClaRenderingPhyFID">
@@ -161,11 +162,11 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Date Information</h3>
+              <h3 class="section-title">Date Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.dates">
+            <div class="section-body form-grid" [hidden]="!sectionsState.dates">
               <div class="field-row">
                 <label>Admitted Date</label>
                 <input type="date" [(ngModel)]="claim.claAdmittedDate" />
@@ -181,11 +182,11 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Misc Information</h3>
+              <h3 class="section-title">Misc Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.misc">
+            <div class="section-body form-grid" [hidden]="!sectionsState.misc">
               <div class="field-row">
                 <label>EDI Notes</label>
                 <input type="text" [(ngModel)]="claim.claEDINotes" />
@@ -203,11 +204,11 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Resubmission Information</h3>
+              <h3 class="section-title">Resubmission Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.resubmission">
+            <div class="section-body form-grid" [hidden]="!sectionsState.resubmission">
               <div class="field-row">
                 <label>Original Ref Number</label>
                 <input [(ngModel)]="claim.claOriginalRefNo" />
@@ -229,11 +230,11 @@
             </div>
           </article>
 
-          <article class="section-card">
+          <article class="section-card card section">
             <header>
-              <h3>Paperwork Information</h3>
+              <h3 class="section-title">Paperwork Information</h3>
             </header>
-            <div class="section-body" [hidden]="!sectionsState.paperwork">
+            <div class="section-body form-grid" [hidden]="!sectionsState.paperwork">
               <div class="field-row">
                 <label>Transmission Code</label>
                 <select [(ngModel)]="claim.claPaperWorkTransmissionCode">
@@ -255,9 +256,9 @@
             </div>
           </article>
 
-          <article class="section-card section-card-collapsible">
+          <article class="section-card section-card-collapsible card section">
             <header (click)="toggleSection('additionalData')" class="collapsible-header">
-              <h3>Additional Data</h3>
+              <h3 class="section-title">Additional Data</h3>
               <span class="collapse-icon">{{ sectionsState.additionalData ? '▼' : '▶' }}</span>
             </header>
             <div class="section-body additional-data-grid" [hidden]="!sectionsState.additionalData" *ngIf="claim.additionalData">
@@ -299,9 +300,9 @@
             </div>
           </article>
 
-          <article class="section-card" *ngIf="claimCustomFieldDefinitions.length">
+          <article class="section-card card section" *ngIf="claimCustomFieldDefinitions.length">
             <header (click)="toggleSection('customFields')" class="collapsible-header">
-              <h3>Custom Fields</h3>
+              <h3 class="section-title">Custom Fields</h3>
               <span class="collapse-icon">{{ sectionsState.customFields ? '▼' : '▶' }}</span>
             </header>
             <div class="section-body additional-data-grid" [hidden]="!sectionsState.customFields">
@@ -336,12 +337,12 @@
             </div>
           </article>
         </div>
-      </section>
-    </div>
+        </section>
+      </div>
 
-    <section class="service-lines-section">
+      <section class="service-lines-section card section">
       <div class="section-header">
-        <h2>Service Lines</h2>
+        <h2 class="section-title">Service Lines</h2>
         <div class="service-actions">
           <button class="btn-secondary" (click)="addServiceLine()" [disabled]="serviceLoading || !canAddServiceLine()">Add</button>
         </div>
@@ -501,9 +502,9 @@
       </div>
     </section>
 
-    <section class="notes-section">
+      <section class="notes-section card section">
       <header>
-        <h3>Notes / Audit Trail</h3>
+        <h3 class="section-title">Notes / Audit Trail</h3>
         <button type="button" class="btn-refresh-notes" (click)="refreshClaimAndNotes()" title="Reload claim to see latest notes (e.g. after payment applied)">Refresh</button>
       </header>
       <div [hidden]="!showNotes">
@@ -542,5 +543,6 @@
         </div>
       </div>
     </section>
-  </ng-container>
+    </ng-container>
+  </div>
 </div>

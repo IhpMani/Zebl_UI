@@ -1,37 +1,29 @@
-/* Global UI Theme Variables */
+/* Global design tokens — single source of truth (colors, spacing, radii, shadows). */
 
 :root {
-  /* Layout (required) */
-  --color-header: #0F5C9E;
-  --color-toolbar: #1E7DBA;
-  --color-body-bg: #F5F7FA;
-  --color-card-bg: #FFFFFF;
-  --color-border: #E3E8EE;
-
-  /* Aliases for consistency */
-  --header-color: #0F5C9E;
-  --toolbar-color: #1E7DBA;
-  --body-bg: #F5F7FA;
-  --card-bg: #FFFFFF;
-  --border-color: #E3E8EE;
-  --text-color: #1F2933;
+  /* Layout surfaces */
+  --color-header: #0f5c9e;
+  --color-toolbar: #1e7dba;
+  --color-body-bg: #f5f7fa;
+  --color-card-bg: #ffffff;
+  --color-border: #e3e8ee;
 
   /* Data grid row hover */
-  --row-hover: #F0F6FC;
+  --row-hover: #f0f6fc;
 
   /* Panel / section headers */
-  --color-panel-header-bg: #E8F2FB;
-  --color-panel-header-border: #CFE0F3;
+  --color-panel-header-bg: #e8f2fb;
+  --color-panel-header-border: #cfe0f3;
 
   /* Text */
-  --color-text: #1F2933;
+  --color-text: #1f2933;
   --color-text-muted: #64748b;
 
   /* Links & primary actions */
-  --color-link: #0F5C9E;
-  --color-primary-btn: #1E7DBA;
-  --color-primary-btn-hover: #0F5C9E;
-  --color-primary-btn-text: #FFFFFF;
+  --color-link: #0f5c9e;
+  --color-primary-btn: #1e7dba;
+  --color-primary-btn-hover: #0f5c9e;
+  --color-primary-btn-text: #ffffff;
 
   /* Semantic: error */
   --color-error: #b91c1c;
@@ -43,14 +35,74 @@
   --color-warning-bg: #fef9c3;
   --color-warning-border: #fde047;
 
-  /* Semantic: success (e.g. result text) */
+  /* Semantic: success */
   --color-success: #15803d;
   --color-success-bg: #f0fdf4;
+
+  /* Navigation / ribbon (glass chrome) */
+  --color-nav-bg-start: #1e5f8c;
+  --color-nav-bg-end: #2a7baa;
+  --color-nav-icon: rgba(255, 255, 255, 0.6);
+  --color-nav-icon-hover: rgba(255, 255, 255, 0.9);
+  --color-nav-icon-active: #22d3ee;
+  --color-nav-item-hover-bg: rgba(255, 255, 255, 0.08);
+  --color-nav-item-active-bg: rgba(255, 255, 255, 0.12);
+  --color-nav-glass-tint: rgba(255, 255, 255, 0.07);
+  --color-nav-glass-border: rgba(255, 255, 255, 0.14);
+  --color-nav-shell-shadow: rgba(15, 45, 72, 0.35);
+  --color-nav-active-glow: rgba(34, 211, 238, 0.5);
+  --color-nav-dropdown-surface: rgba(255, 255, 255, 0.94);
+  --color-nav-dropdown-border: rgba(30, 95, 140, 0.12);
+  --color-nav-dropdown-shadow: rgba(15, 45, 72, 0.22);
+  --color-nav-dropdown-text: #1a2f3d;
+  --color-nav-dropdown-hover-bg: rgba(30, 95, 140, 0.08);
+  --color-nav-dropdown-hover-text: #0d4a6e;
+  --color-nav-dropdown-icon: #3d6f8c;
+  --color-nav-dropdown-icon-hover: #1e5f8c;
+
+  /* Workspace tabs (below ribbon) */
+  --color-tab-inactive-gradient-start: #7ec3ff;
+  --color-tab-inactive-gradient-end: #2a87d8;
+  --color-tab-active-gradient-start: #3fa9ff;
+  --color-tab-active-gradient-end: #0c6bc2;
+  --color-tab-highlight-inset: rgba(255, 255, 255, 0.35);
+  --color-tab-active-highlight-inset: rgba(255, 255, 255, 0.2);
+  --color-tab-dirty-indicator: #ffe08a;
+  --color-tab-close: rgba(255, 255, 255, 0.9);
+
+  /* Workspace content panel */
+  --color-workspace-border: #1e6fb8;
+
+  /* Radius & spacing */
+  --color-radius-sm: 8px;
+  --color-radius-md: 10px;
+  --color-radius-lg: 12px;
+  --color-radius-pill: 999px;
+  --color-space-page: 20px;
+  --color-space-section: 16px;
+  --color-space-card-padding: 16px;
+  --color-space-grid-gap: 16px;
+
+  /* Extended surfaces (dashboards, tracks) */
+  --color-surface-muted: #f7f9fc;
+  --color-surface-track: #eef2f7;
+  --color-border-strong: #e7edf5;
+
+  /* Chart series (home / analytics) */
+  --color-chart-primary: #3f7ee8;
+  --color-chart-success: #24a45a;
+  --color-chart-warning: #e08a1f;
+  --color-chart-accent: #7a4de8;
 
   /* Overlay & shadow */
   --shadow-overlay: rgba(0, 0, 0, 0.4);
   --shadow-overlay-light: rgba(255, 255, 255, 0.85);
   --shadow-card: rgba(15, 92, 158, 0.08);
+  --shadow-card-soft: rgba(0, 0, 0, 0.04);
   --shadow-focus: rgba(15, 92, 158, 0.18);
+  --shadow-popup: rgba(0, 0, 0, 0.25);
+  --shadow-popup-strong: rgba(0, 0, 0, 0.3);
+  --shadow-scrim: rgba(0, 0, 0, 0.35);
+  --shadow-elevated: rgba(30, 64, 175, 0.08);
+  --shadow-overlay-lg: rgba(30, 64, 175, 0.15);
 }
-

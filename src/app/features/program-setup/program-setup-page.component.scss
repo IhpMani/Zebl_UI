@@ -318,4 +318,166 @@
   }
 }
 
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.program-setup-container {
+  padding: 16px;
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.program-setup-header .title {
+  color: var(--color-primary-btn-text);
+}
+
+.program-setup-header .actions .btn,
+.btn.primary,
+.btn.secondary {
+  border-radius: 10px;
+  padding: 7px 14px;
+}
+
+.program-setup-header .actions .btn.primary,
+.btn.primary {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  color: var(--color-primary-btn-text);
+  border: 1px solid transparent;
+}
+
+.program-setup-header .actions .btn.secondary,
+.btn.secondary {
+  background: var(--color-nav-item-active-bg);
+  color: var(--color-primary-btn-text);
+  border: 1px solid var(--color-nav-glass-border);
+}
+
+.program-setup-header .actions .btn:hover,
+.btn.primary:hover,
+.btn.secondary:hover {
+  background: var(--color-nav-item-hover-bg);
+}
+
+.program-setup-body {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  overflow: hidden;
+}
+
+.left-panel {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent);
+  border-right: 1px solid var(--color-nav-glass-border);
+}
+
+.left-panel .left-panel-title {
+  color: var(--color-nav-icon-hover);
+}
+
+.left-panel .section-list li {
+  border-radius: 8px;
+  color: var(--color-primary-btn-text);
+}
+
+.left-panel .section-list li:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 78%, transparent);
+}
+
+.left-panel .section-list li.active {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 84%, transparent);
+  color: var(--color-nav-icon-hover);
+  box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+}
+
+.right-panel .section-title {
+  color: var(--color-primary-btn-text);
+}
+
+.right-panel .placeholder {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent);
+  border: 1px dashed var(--color-nav-glass-border);
+  color: var(--color-nav-icon-hover);
+}
+
+.right-panel .placeholder.error,
+.save-error,
+.field-error {
+  color: #ffd4de !important;
+}
+
+.patient-settings-form .form-row label,
+.patient-settings-form .form-row span,
+.custom-fields-section .config-grid-header,
+.custom-fields-section .config-grid-row {
+  color: var(--color-primary-btn-text);
+}
+
+.patient-settings-form .form-row label input[type='text'],
+.patient-settings-form .form-row label input[type='number'],
+.patient-settings-form .form-row label input[type='password'],
+.patient-settings-form .form-row label select,
+.modal .modal-form input,
+.modal .modal-form select {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 8px;
+}
+
+.patient-settings-form .form-row label input::placeholder,
+.modal .modal-form input::placeholder {
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.patient-settings-form .form-row label select option,
+.modal .modal-form select option {
+  background: var(--color-card-bg);
+  color: var(--color-text);
+}
+
+.custom-fields-section .restart-notice {
+  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
+  color: var(--color-primary-btn-text);
+  border-radius: 10px;
+}
+
+.custom-fields-section .config-grid-header,
+.custom-fields-section .config-grid-row {
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+}
+
+.custom-fields-section .btn-link {
+  color: var(--color-nav-icon-hover);
+}
+
+.modal-backdrop .modal {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--color-primary-btn-text);
+}
+
+.modal-backdrop .modal h3,
+.modal-backdrop .modal p,
+.modal-backdrop .modal label,
+.modal-backdrop .modal th,
+.modal-backdrop .modal td {
+  color: var(--color-primary-btn-text);
+}
+
+.modal-backdrop .modal .modal-table-wrapper table th {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
+}
+
+.modal-backdrop .modal .modal-table-wrapper table th,
+.modal-backdrop .modal .modal-table-wrapper table td {
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+}
+
 

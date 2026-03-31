@@ -578,7 +578,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--shadow-overlay-light);
   z-index: 10;
 }
 
@@ -586,7 +586,7 @@
   padding: 12px 24px;
   background: var(--color-card-bg);
   border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(30, 64, 175, 0.15);
+  box-shadow: 0 10px 24px var(--shadow-overlay-lg);
   font-weight: 600;
 }
 
@@ -973,7 +973,7 @@
 .physician-library-modal {
   background: var(--color-card-bg);
   border-radius: 8px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 48px var(--shadow-popup);
   width: 95%;
   max-width: 1400px;
   height: 90vh;
@@ -1210,4 +1210,285 @@ textarea {
   .insurance-panel-body {
     overflow-x: auto;
   }
+}
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.patient-details-wrapper {
+  padding: 20px;
+  min-height: 100%;
+  width: 100%;
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.patient-header h1,
+.section-panel .section-title,
+.panel-card header h3,
+.tan-panel-header h3,
+.additional-claim-header h3,
+.other-patient-header h3 {
+  color: var(--color-primary-btn-text);
+}
+
+.patient-context,
+.account-no,
+label,
+.section-panel .form-row label,
+.contact-section .contact-grid label,
+.physician-section .form-row-inline label,
+.insurance-form-grid .ins-lbl {
+  color: var(--color-nav-icon-hover);
+}
+
+.section-panel,
+.panel-card,
+.insurance-panel,
+.additional-claim-panel,
+.other-patient-panel,
+.tan-panel,
+.notes-section {
+  background: var(--color-nav-glass-tint) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  color: var(--color-primary-btn-text);
+}
+
+.panel-card header,
+.tan-panel-header,
+.additional-claim-header,
+.other-patient-header,
+.insurance-panel-header {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+input,
+select,
+textarea,
+.insurance-form-grid input,
+.insurance-form-grid select,
+.section-panel .form-row input,
+.section-panel .form-row select,
+.contact-section .contact-grid input,
+.contact-section .contact-grid select,
+.physician-section .form-row-inline select {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 8px !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-nav-icon) !important;
+}
+
+.patient-details-wrapper select option,
+.patient-details-wrapper select optgroup {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text) !important;
+}
+
+/* Absolute fallback layer: wipe remaining legacy light blocks inside patient details */
+.patient-details-wrapper .section-body,
+.patient-details-wrapper .tan-panel-body,
+.patient-details-wrapper .other-patient-body,
+.patient-details-wrapper .insurance-panel-body,
+.patient-details-wrapper .insurance-container,
+.patient-details-wrapper .patient-grid,
+.patient-details-wrapper .contact-grid,
+.patient-details-wrapper .physician-list,
+.patient-details-wrapper .notes-history-table-wrapper {
+  background: transparent !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.patient-details-wrapper .readonly-field,
+.patient-details-wrapper .ins-readonly {
+  background: color-mix(in srgb, var(--color-nav-item-active-bg) 70%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+}
+
+.patient-details-wrapper .notes-history-table td,
+.patient-details-wrapper .notes-history-table th {
+  color: var(--color-primary-btn-text) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+.patient-details-wrapper .notes-history-table tbody tr td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent) !important;
+}
+
+/* Native select popup readability fallback (Windows/Chromium) */
+.patient-details-wrapper select {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  color-scheme: light;
+}
+
+.patient-details-wrapper select option,
+.patient-details-wrapper select optgroup,
+.patient-details-wrapper option {
+  background: var(--color-card-bg) !important;
+  color: var(--color-text) !important;
+}
+
+.patient-details-wrapper select optgroup {
+  color: var(--color-text-muted) !important;
+}
+
+/* Prevent white-on-white dropdown entries on native Windows select menus */
+.patient-details-wrapper select {
+  color-scheme: light;
+}
+
+.patient-details-wrapper select option:checked,
+.patient-details-wrapper select option:hover {
+  background-color: var(--color-body-bg) !important;
+  color: var(--color-text) !important;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  color: var(--color-primary-btn-text);
+}
+
+.btn-primary.ghost,
+.btn-secondary,
+.btn-email,
+.btn-physician-icon,
+.btn-physician-sm,
+.btn-ins-header,
+.btn-copy-from-patient,
+.btn-sm-icon,
+.btn-icon,
+.btn-initial-claim {
+  background: var(--color-nav-item-active-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 6px !important;
+}
+
+.btn-secondary:hover,
+.btn-email:hover,
+.btn-physician-icon:hover,
+.btn-physician-sm:hover,
+.btn-ins-header:hover,
+.btn-copy-from-patient:hover,
+.btn-sm-icon:hover,
+.btn-icon:hover,
+.btn-initial-claim:hover {
+  background: var(--color-nav-item-hover-bg) !important;
+}
+
+.insurance-tabs-compact .tab-btn,
+.insurance-tabs .tab-btn {
+  border: 1px solid var(--color-nav-glass-border) !important;
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.insurance-tabs-compact .tab-btn.active,
+.insurance-tabs .tab-btn.active {
+  background: color-mix(in srgb, var(--color-nav-icon-active) 35%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-nav-icon-active) 65%, transparent) !important;
+}
+
+.notes-history-table,
+.notes-history-table th,
+.notes-history-table td {
+  border-color: var(--color-nav-glass-border) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.notes-history-table {
+  background: transparent !important;
+}
+
+.notes-history-table th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 65%, transparent) !important;
+}
+
+.notes-history-table td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent) !important;
+}
+
+.notes-history-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent) !important;
+}
+
+.notes-history-table td.no-data,
+.insurance-panel .no-insurance,
+.no-insurance {
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.readonly-field,
+.ins-readonly {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent) !important;
+  color: var(--color-nav-icon-hover) !important;
+}
+
+.physician-library-overlay {
+  background: var(--shadow-scrim);
+}
+
+.physician-library-modal {
+  background: var(--color-nav-glass-tint);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px var(--color-nav-shell-shadow);
+}
+
+.physician-library-modal-header h3 {
+  color: var(--color-primary-btn-text);
+}
+
+/* Final consistency pass: force all cards and dropdown controls onto one glass system */
+.patient-details-wrapper .section-panel,
+.patient-details-wrapper .panel-card,
+.patient-details-wrapper .insurance-panel,
+.patient-details-wrapper .additional-claim-panel,
+.patient-details-wrapper .other-patient-panel,
+.patient-details-wrapper .tan-panel,
+.patient-details-wrapper .notes-section,
+.patient-details-wrapper .physician-library-modal {
+  background: var(--color-nav-glass-tint) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+}
+
+.patient-details-wrapper .panel-card header,
+.patient-details-wrapper .tan-panel-header,
+.patient-details-wrapper .additional-claim-header,
+.patient-details-wrapper .other-patient-header,
+.patient-details-wrapper .insurance-panel-header,
+.patient-details-wrapper .physician-library-modal-header {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+.patient-details-wrapper select,
+.patient-details-wrapper .ins-inp,
+.patient-details-wrapper .inline-select,
+.patient-details-wrapper .state-select,
+.patient-details-wrapper .sex-select,
+.patient-details-wrapper .marital-select {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+}
+
+.patient-details-wrapper select option,
+.patient-details-wrapper select optgroup {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text) !important;
 }

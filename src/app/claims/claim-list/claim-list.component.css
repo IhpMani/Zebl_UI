@@ -1,49 +1,95 @@
 .claim-list-container {
-  padding: 20px;
   width: 100%;
-  min-height: calc(100vh - 60px);
+  min-height: 100%;
   box-sizing: border-box;
-  background: var(--color-body-bg);
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
 }
 
-h2 {
+.page-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.section {
   margin-bottom: 20px;
-  color: var(--color-text);
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-primary-btn-text);
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-nav-icon-hover);
 }
 
 .loading {
-  padding: 20px;
+  padding: 16px;
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon-hover);
 }
 
 .error {
   padding: 15px;
-  background-color: var(--color-error-bg);
-  border: 1px solid var(--color-error-border);
-  color: var(--color-error);
-  border-radius: 4px;
-  margin-bottom: 20px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 55%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.card {
+  background: var(--color-nav-glass-tint);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  color: var(--color-primary-btn-text);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px var(--color-nav-shell-shadow);
+}
+
+.table-container {
+  padding: 12px;
 }
 
 .claims-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: var(--color-card-bg);
-  box-shadow: 0 2px 8px var(--shadow-card);
-  border: 1px solid var(--color-border);
+  background-color: transparent;
 }
 
 .claims-table thead {
-  background-color: var(--color-body-bg);
+  background-color: transparent;
 }
 
 .claims-table th {
-  padding: 12px;
+  padding: 10px 12px;
   text-align: left;
-  font-weight: 600;
-  color: var(--color-text);
-  border-bottom: 2px solid var(--color-border);
+  font-weight: 500;
+  color: var(--color-primary-btn-text);
+  border-bottom: 1px solid var(--color-nav-glass-border);
+  font-size: 13px;
+}
+
+.claims-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-nav-glass-border);
+  font-size: 13px;
+  color: var(--color-primary-btn-text);
 }
 
 .action-col {
@@ -53,33 +99,25 @@ h2 {
 }
 
 .open-btn {
-  padding: 4px 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
-  border-radius: 4px;
+  border: 1px solid var(--color-nav-glass-border);
+  background: var(--color-nav-item-active-bg);
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85em;
+  color: var(--color-primary-btn-text);
 }
 
 .open-btn:hover {
-  background: var(--color-body-bg);
+  background: var(--color-nav-item-hover-bg);
 }
 
-.claims-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.claims-table tbody tr:hover {
-  background-color: var(--row-hover);
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .claim-row {
   cursor: pointer;
-}
-
-.claim-row:hover {
-  background-color: var(--color-body-bg) !important;
 }
 
 .claims-table tbody tr:last-child td {
@@ -89,14 +127,56 @@ h2 {
 .no-data {
   text-align: center;
   padding: 30px;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon-hover);
   font-style: italic;
 }
 
 .pagination-info {
-  margin-top: 15px;
-  color: var(--color-text-muted);
-  font-size: 0.9em;
+  margin-top: 12px;
+  color: var(--color-nav-icon-hover);
+  font-size: 13px;
+}
+
+.pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pagination-btn {
+  background: var(--color-nav-item-active-bg);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-nav-item-hover-bg);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: var(--color-nav-icon-hover);
+  font-size: 13px;
+}
+
+.page-size-select {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .add-column-header {
@@ -107,22 +187,22 @@ h2 {
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 4px 8px;
-  font-size: 0.9em;
-  color: var(--color-text);
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--color-primary-btn-text);
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .add-column-btn:hover {
-  background-color: var(--color-border);
-  border-radius: 3px;
+  background-color: var(--color-nav-item-hover-bg);
+  border-radius: 6px;
 }
 
 .add-column-btn .arrow {
   font-size: 0.7em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon);
 }
 
 .filter-placeholder {
@@ -136,13 +216,17 @@ h2 {
   gap: 4px;
 }
 
+.header-cell > span {
+  color: var(--color-primary-btn-text);
+}
+
 .hide-col-btn {
   border: none;
   background: transparent;
   cursor: pointer;
   padding: 0 4px;
   font-size: 0.9em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon);
 }
 
 .hide-col-btn:hover {
@@ -153,33 +237,33 @@ h2 {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .filter-popup-btn {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  border: 1px solid var(--color-nav-glass-border);
+  background: var(--color-nav-item-hover-bg);
   cursor: pointer;
-  padding: 3px 6px;
-  font-size: 0.8em;
-  border-radius: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
 }
 
 .filter-popup-btn:hover {
-  background-color: var(--color-body-bg);
+  background-color: var(--color-nav-item-active-bg);
 }
 
 .filter-popup-btn .arrow {
   font-size: 0.7em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon);
 }
 
 .clear-filter-btn {
@@ -188,69 +272,80 @@ h2 {
   cursor: pointer;
   padding: 0 3px;
   font-size: 0.8em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon-hover);
 }
 
 .clear-filter-btn:hover {
   color: var(--color-error);
 }
 
-/* Filter Popup (Excel-like) */
+/* Filter Popup */
 .filter-popup-overlay {
   position: fixed;
   inset: 0;
-  background: transparent;
+  background: var(--shadow-scrim);
   z-index: 1100;
 }
 
 .filter-popup {
   position: fixed;
-  width: 260px;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  border-radius: 3px;
+  width: 280px;
+  background: var(--color-nav-glass-tint);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  border-radius: 14px;
   overflow: hidden;
+  color: var(--color-primary-btn-text);
 }
 
 .filter-popup-tabs {
   display: flex;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border-bottom: 1px solid var(--color-nav-glass-border);
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 50%, transparent);
 }
 
 .filter-popup-tabs .tab {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 6px 8px;
-  font-size: 0.8em;
+  padding: 8px 10px;
+  font-size: 12px;
   cursor: pointer;
-  color: var(--color-text);
+  color: var(--color-nav-icon-hover);
 }
 
 .filter-popup-tabs .tab.active {
-  background: var(--color-card-bg);
-  border-bottom: 2px solid var(--color-toolbar);
+  background: color-mix(in srgb, var(--color-nav-item-active-bg) 40%, transparent);
+  border-bottom: 2px solid var(--color-nav-icon-active);
   font-weight: 600;
+  color: var(--color-primary-btn-text);
 }
 
 .filter-popup-tabs .tab:disabled {
   cursor: not-allowed;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon);
 }
 
 .filter-popup-search {
   padding: 8px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-nav-glass-border);
 }
 
-.filter-popup-search input {
+.claim-list-container .filter-popup-search input {
   width: 100%;
   padding: 6px 8px;
   font-size: 0.85em;
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 8px;
+  background: var(--color-nav-item-hover-bg);
+  color: var(--color-primary-btn-text);
+  box-sizing: border-box;
+}
+
+.claim-list-container .filter-popup-search input::placeholder {
+  color: var(--color-nav-icon);
 }
 
 .filter-popup-values {
@@ -265,13 +360,14 @@ h2 {
   gap: 8px;
   padding: 4px 2px;
   font-size: 0.85em;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
   cursor: pointer;
   user-select: none;
 }
 
 .value-item input {
   cursor: pointer;
+  accent-color: var(--color-nav-icon-active);
 }
 
 .filter-popup-actions {
@@ -279,46 +375,78 @@ h2 {
   justify-content: space-between;
   gap: 8px;
   padding: 8px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border-top: 1px solid var(--color-nav-glass-border);
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 45%, transparent);
+}
+
+.claim-list-container .filter-popup .filter-popup-label {
+  color: var(--color-nav-icon-hover);
+}
+
+.claim-list-container .filter-popup .filter-popup-input {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--color-nav-glass-border) !important;
+  border-radius: 8px !important;
+}
+
+.claim-list-container .filter-popup .filter-popup-hint {
+  color: var(--color-nav-icon);
 }
 
 .btn-secondary,
 .btn-primary {
   padding: 6px 10px;
-  border-radius: 3px;
-  border: 1px solid var(--color-border);
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.85em;
+  font-weight: 600;
 }
 
 .btn-secondary {
-  background: var(--color-card-bg);
-  color: var(--color-text);
+  background: var(--color-nav-item-active-bg);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
 }
 
 .btn-secondary:hover {
-  background: var(--color-body-bg);
+  background: var(--color-nav-item-hover-bg);
 }
 
 .btn-primary {
-  border-color: var(--color-toolbar);
-  background: var(--color-toolbar);
+  border: none;
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
   color: var(--color-primary-btn-text);
 }
 
 .btn-primary:hover {
-  background: var(--color-primary-btn-hover);
+  filter: brightness(1.06);
 }
 
-/* Customization Dialog Styles */
+.claim-list-container select {
+  background: var(--color-nav-item-hover-bg) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.claim-list-container select option,
+.claim-list-container select optgroup {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text) !important;
+}
+
+.claim-list-container select optgroup {
+  font-weight: 700;
+  color: var(--color-text-muted) !important;
+}
+
+/* Customization dialog: same glass theme as Claim List page */
 .customization-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--shadow-overlay);
+  background: var(--shadow-scrim);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -326,13 +454,17 @@ h2 {
 }
 
 .customization-dialog {
-  background: var(--color-card-bg);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: var(--color-nav-glass-tint);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px var(--color-nav-shell-shadow);
   width: 400px;
   max-height: 600px;
   display: flex;
   flex-direction: column;
+  color: var(--color-primary-btn-text);
 }
 
 .dialog-header {
@@ -340,14 +472,14 @@ h2 {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-nav-glass-border);
 }
 
 .dialog-header h3 {
   margin: 0;
   font-size: 1.1em;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
 }
 
 .close-btn {
@@ -355,7 +487,7 @@ h2 {
   background: transparent;
   cursor: pointer;
   font-size: 1.5em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon-hover);
   padding: 0;
   width: 24px;
   height: 24px;
@@ -366,30 +498,38 @@ h2 {
 }
 
 .close-btn:hover {
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
 }
 
 .dialog-search {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-nav-glass-border);
   box-sizing: border-box;
   min-width: 0;
 }
 
-.search-input {
+.claim-list-container .customization-dialog .search-input {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 8px;
   font-size: 0.9em;
+  background: var(--color-nav-item-hover-bg);
+  color: var(--color-primary-btn-text);
+}
+
+.claim-list-container .customization-dialog .search-input::placeholder {
+  color: var(--color-nav-icon);
 }
 
 .dialog-content {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .column-list {
@@ -402,23 +542,24 @@ h2 {
   align-items: center;
   padding: 8px 12px;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 6px;
   margin-bottom: 2px;
 }
 
 .column-item:hover {
-  background-color: var(--color-body-bg);
+  background-color: var(--color-nav-item-hover-bg);
 }
 
-.column-item input[type="checkbox"] {
+.column-item input[type='checkbox'] {
   margin-right: 10px;
   cursor: pointer;
+  accent-color: var(--color-nav-icon-active);
 }
 
 .column-item span {
   flex: 1;
   font-size: 0.9em;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
 }
 
 .column-section {
@@ -428,14 +569,14 @@ h2 {
 .column-section h4 {
   margin: 0 0 10px 0;
   font-size: 1em;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
   font-weight: 600;
 }
 
 .column-section h5 {
   margin: 10px 0 5px 0;
   font-size: 0.9em;
-  color: var(--color-text-muted);
+  color: var(--color-nav-icon-hover);
   font-weight: 500;
 }
 
@@ -451,10 +592,10 @@ h2 {
 }
 
 .related-column-option:hover {
-  background-color: var(--color-body-bg) !important;
+  background-color: var(--color-nav-item-hover-bg) !important;
 }
 
-.related-column-option input[type="checkbox"] {
+.related-column-option input[type='checkbox'] {
   cursor: pointer;
   pointer-events: auto;
   position: relative;
@@ -465,14 +606,9 @@ h2 {
   pointer-events: none;
 }
 
-.dialog-content {
-  position: relative;
-  z-index: 1;
-}
-
 .dialog-footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-nav-glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -481,28 +617,59 @@ h2 {
 
 .clear-all-btn {
   padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
-  border-radius: 3px;
+  border: 1px solid var(--color-nav-glass-border);
+  background: var(--color-nav-item-active-bg);
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.9em;
-  color: var(--color-text);
+  color: var(--color-primary-btn-text);
 }
 
 .clear-all-btn:hover {
-  background-color: var(--color-body-bg);
+  background-color: var(--color-nav-item-hover-bg);
 }
 
-/* FK Badge for Foreign Key columns */
+.claim-list-container .dialog-footer .btn-primary {
+  border: none;
+}
+
+/* FK badge on glass dialog surface */
 .fk-badge {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 6px;
-  background-color: var(--color-body-bg);
-  color: var(--color-link);
-  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--color-nav-icon-active) 25%, transparent);
+  color: var(--color-nav-icon-active);
+  border-radius: 6px;
   font-size: 0.75em;
   font-weight: 600;
   vertical-align: middle;
 }
 
+/*
+  Global styles.css forces .claims-table / table to solid white with !important.
+  Light text on glass requires transparent table + tinted cells.
+*/
+.claim-list-container table.claims-table {
+  background: transparent !important;
+}
+
+.claim-list-container .claims-table thead th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 65%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+.claim-list-container .claims-table tbody td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+  border-color: var(--color-nav-glass-border) !important;
+}
+
+.claim-list-container .claims-table tbody tr {
+  background: transparent !important;
+}
+
+.claim-list-container .claims-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent) !important;
+}

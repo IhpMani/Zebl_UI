@@ -14,7 +14,7 @@
         <span *ngSwitchDefault>📁</span>
       </ng-container>
     </span>
-    <span class="title">
+    <span class="tab-title">
       {{ tab.title }}<span class="dirty" *ngIf="tab.isDirty" aria-label="Unsaved changes">*</span>
     </span>
     <button class="close" type="button" (click)="close(tab.id, $event)" aria-label="Close tab">
