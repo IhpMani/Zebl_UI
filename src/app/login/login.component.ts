@@ -21,7 +21,11 @@ export class LoginComponent {
     this.auth.login(this.userName, this.password).subscribe({
       next: () => {
         this.loading = false;
-        this.router.navigateByUrl('/');
+        if (this.auth.isSuperAdmin()) {
+          void this.router.navigateByUrl('/super-admin');
+        } else {
+          void this.router.navigateByUrl('/');
+        }
       },
       error: (err) => {
         this.loading = false;
@@ -30,4 +34,3 @@ export class LoginComponent {
     });
   }
 }
-

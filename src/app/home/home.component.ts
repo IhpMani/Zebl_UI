@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ClaimApiService } from '../core/services/claim-api.service';
 import { UserKpiDashboard, UserKpiPoint, UserKpiValuePoint } from '../core/services/claim.models';
 import { AuthService } from '../core/services/auth.service';
@@ -16,10 +17,15 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private readonly claimApi: ClaimApiService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isSuperAdmin()) {
+      void this.router.navigateByUrl('/super-admin');
+      return;
+    }
     this.currentUserName = this.authService.getUserName() ?? '';
     this.loadDashboard();
   }
@@ -98,5 +104,4 @@ export class HomeComponent implements OnInit {
       maximumFractionDigits: 2
     }).format(amount);
   }
-
 }

@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { FacilityService } from './facility.service';
 
 export interface Hl7ImportResponse {
   success: boolean;
@@ -11,7 +13,6 @@ export interface Hl7ImportResponse {
   failedMessages: number;
 }
 
-// Response used for pre-import review/analyze (existing backend logic).
 export interface Hl7ReviewResponse {
   fileName: string;
   interfaceName: string;
@@ -22,7 +23,6 @@ export interface Hl7ReviewResponse {
   totalAmount: number;
 }
 
-// History rows for Interface Data Review - from Interface_Import_Log.
 export interface Hl7ImportHistoryRow {
   importId: number;
   fileName: string;
@@ -41,34 +41,40 @@ export interface Hl7ImportHistoryRow {
   providedIn: 'root'
 })
 export class Hl7ImportService {
-  // In dev, /api is proxied to ASP.NET Core; in prod, apiUrl can be set to server URL.
   private baseUrl = `${environment.apiUrl}/api/hl7`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private facility: FacilityService
+  ) {}
 
-  /**
-   * Calls existing HL7 review/analyze endpoint BEFORE commit.
-   * NOTE: This assumes the backend exposes /api/hl7/review.
-   */
   reviewHl7File(file: File): Observable<Hl7ReviewResponse> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<Hl7ReviewResponse>(`${this.baseUrl}/review`, formData);
   }
 
-  /**
-   * Imports an HL7 DFT file using the existing backend endpoint /api/hl7/import.
-   */
   importHl7File(file: File): Observable<Hl7ImportResponse> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post<Hl7ImportResponse>(`${this.baseUrl}/import`, formData);
+    return defer(() => {
+      const facilityId = this.facility.getFacilityIdStrict();
+      return this.http
+        .get<{ integrationId: number }>(`${environment.apiUrl}/api/integrations/by-facility`, {
+          params: { facilityId: String(facilityId) }
+        })
+        .pipe(
+          switchMap((r) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return this.http.post<Hl7ImportResponse>(`${this.baseUrl}/import`, formData, {
+              headers: {
+                'X-Integration-Id': String(r.integrationId)
+              }
+            });
+          })
+        );
+    });
   }
 
-  /**
-   * Gets import history from DB via interface history endpoint.
-   * Reads directly from SQL table.
-   */
   getImportHistory(): Observable<Hl7ImportHistoryRow[]> {
     return this.http.get<Hl7ImportHistoryRow[]>(`${environment.apiUrl}/api/interface/history`);
   }

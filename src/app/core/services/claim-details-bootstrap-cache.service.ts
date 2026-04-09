@@ -18,6 +18,11 @@ export class ClaimDetailsBootstrapCacheService {
     private physicianApi: PhysicianApiService
   ) {}
 
+  /** Allow preload to run again (e.g. after switching facility). */
+  reset(): void {
+    this.initialized = false;
+  }
+
   preload(): void {
     if (this.initialized) return;
     this.initialized = true;

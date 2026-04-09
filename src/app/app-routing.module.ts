@@ -23,12 +23,18 @@ import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions
 import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
 import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
 import { PatientEligibilityComponent } from './patients/patient-eligibility/patient-eligibility.component';
+import { SuperAdminComponent } from './super-admin/super-admin.component';
+import { SuperAdminGuard } from './core/guards/super-admin.guard';
+import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'unauthorized', component: UnauthorizedComponent },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AdminGuard] },
+  { path: 'super-admin', component: SuperAdminComponent, canActivate: [SuperAdminGuard] },
 
   { path: '', component: HomeComponent, canActivate: [AuthGuard] },
+  { path: 'dashboard', component: HomeComponent, canActivate: [AuthGuard] },
   { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },

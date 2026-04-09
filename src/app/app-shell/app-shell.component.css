@@ -6,6 +6,36 @@
   background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
 }
 
+.facility-switch-bar {
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.facility-switch-bar label {
+  margin: 0;
+}
+
+.api-error-banner {
+  padding: 8px 16px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.facility-hint {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.facility-hint.warn {
+  color: #fbbf24;
+}
+
 .topbar {
   height: 50px;
   display: flex;

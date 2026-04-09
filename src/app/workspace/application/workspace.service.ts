@@ -211,6 +211,12 @@ export class WorkspaceService {
     return this.stateSubject.value.tabs;
   }
 
+  /** Clears all workspace tabs and persistence. Call before navigating to home after facility/tenant change. */
+  clearAllTabs(): void {
+    this.suppressNextNavigationHandling = true;
+    this.commit({ ...initialWorkspaceState });
+  }
+
   private commit(next: WorkspaceState): void {
     this.stateSubject.next(next);
     this.repo.saveTabs({ tabs: next.tabs, activeTabId: next.activeTabId });

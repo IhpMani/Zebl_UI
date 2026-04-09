@@ -1,0 +1,185 @@
+<div class="sa-page">
+  <header class="sa-toolbar">
+    <h1>Super Admin</h1>
+    <div class="sa-toolbar-fields">
+      <label>
+        Tenant
+        <select
+          name="ctxTenant"
+          [(ngModel)]="contextTenantId"
+          (ngModelChange)="onContextTenantIdChange($event)"
+        >
+          <option [ngValue]="null">— select —</option>
+          <option *ngFor="let t of tenantOptionsForToolbar" [ngValue]="t.tenantId">
+            {{ t.name }} ({{ t.tenantKey }})
+          </option>
+        </select>
+      </label>
+      <label>
+        Facility
+        <select
+          name="ctxFacility"
+          [(ngModel)]="contextFacilityId"
+          (ngModelChange)="onContextFacilityIdChange($event)"
+          [disabled]="
+            !contextTenantId || facilitiesLoading || facilityOptionsForToolbar.length === 0
+          "
+        >
+          <option [ngValue]="null">— select —</option>
+          <option *ngFor="let f of facilityOptionsForToolbar" [ngValue]="f.facilityId">
+            {{ f.name }} ({{ f.facilityId }})
+          </option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="sa-btn"
+        (click)="enterTenantAsUser()"
+        [disabled]="
+          enterTenantBusy || contextTenantId == null || contextTenantId <= 0
+        "
+      >
+        {{ enterTenantBusy ? 'Entering…' : 'Enter tenant' }}
+      </button>
+    </div>
+  </header>
+
+  <p class="sa-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="sa-grid">
+    <!-- TENANTS -->
+    <section class="sa-card">
+      <h2>Tenants</h2>
+      <div class="sa-form">
+        <label>New tenant name<input [(ngModel)]="tenantName" name="tn" /></label>
+        <label>Tenant key<input [(ngModel)]="tenantKey" name="tk" /></label>
+        <button type="button" class="sa-btn" (click)="createTenant()">
+          Create tenant
+        </button>
+      </div>
+      <div class="sa-table-wrap">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>TenantKey</th>
+              <th>Created</th>
+              <th class="sa-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let t of tenants"
+              [class.sa-row-selected]="isTenantSelected(t)"
+            >
+              <td>{{ t.name }}</td>
+              <td>{{ t.tenantKey }}</td>
+              <td>{{ formatDate(t.createdDate) }}</td>
+              <td class="sa-actions">
+                <button
+                  type="button"
+                  class="sa-btn sa-btn-ghost"
+                  (click)="selectTenantRow(t)"
+                >
+                  Select
+                </button>
+                <button
+                  type="button"
+                  class="sa-btn sa-btn-danger"
+                  (click)="deleteTenant(t)"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="tenants.length === 0" class="sa-muted">No tenants.</p>
+    </section>
+
+    <!-- FACILITIES -->
+    <section class="sa-card">
+      <h2>Facilities</h2>
+      <p class="sa-muted" *ngIf="!contextTenantId">Select a tenant to list facilities.</p>
+      <div class="sa-form" *ngIf="contextTenantId">
+        <label>New facility name<input [(ngModel)]="facilityName" name="fn" /></label>
+        <button
+          type="button"
+          class="sa-btn"
+          (click)="createFacility()"
+          [disabled]="!contextTenantId"
+        >
+          Create facility
+        </button>
+      </div>
+      <div class="sa-table-wrap" *ngIf="contextTenantId">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Tenant</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of facilities">
+              <td>{{ f.name }}</td>
+              <td>{{ f.tenantName }}</td>
+              <td>{{ formatDate(f.createdDate) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="contextTenantId && facilities.length === 0" class="sa-muted">
+        No facilities for this tenant.
+      </p>
+    </section>
+
+    <!-- USERS -->
+    <section class="sa-card">
+      <h2>Users</h2>
+      <p class="sa-muted" *ngIf="!contextTenantId">Select a tenant to list users.</p>
+      <div class="sa-form" *ngIf="contextTenantId">
+        <label>Username<input [(ngModel)]="userName" name="un" /></label>
+        <label>Password<input type="password" [(ngModel)]="userPassword" name="pw" /></label>
+        <label>
+          Assign facility (optional)
+          <select name="newUserFac" [(ngModel)]="newUserFacilityId">
+            <option [ngValue]="null">All facilities in tenant</option>
+            <option *ngFor="let f of facilities" [ngValue]="f.facilityId">
+              {{ f.name }} ({{ f.facilityId }})
+            </option>
+          </select>
+        </label>
+        <button
+          type="button"
+          class="sa-btn"
+          (click)="createUser()"
+          [disabled]="!contextTenantId"
+        >
+          Create user
+        </button>
+      </div>
+      <div class="sa-table-wrap" *ngIf="contextTenantId">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Tenant</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of users">
+              <td>{{ u.userName }}</td>
+              <td>{{ u.tenantName }}</td>
+              <td>{{ u.role }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="contextTenantId && users.length === 0" class="sa-muted">No users.</p>
+    </section>
+  </div>
+</div>

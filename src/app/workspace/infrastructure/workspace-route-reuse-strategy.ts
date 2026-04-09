@@ -3,6 +3,11 @@ import { ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy } from 
 export class WorkspaceRouteReuseStrategy implements RouteReuseStrategy {
   private readonly handlers = new Map<string, DetachedRouteHandle>();
 
+  /** Drop cached route handles (e.g. after facility/tenant switch) so components are not reused with stale data. */
+  clearDetachedRoutes(): void {
+    this.handlers.clear();
+  }
+
   shouldDetach(route: ActivatedRouteSnapshot): boolean {
     // Cache only leaf routes that render a component (or standalone component).
     if (route.firstChild) return false;

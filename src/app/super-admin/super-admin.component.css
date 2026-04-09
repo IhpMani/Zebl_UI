@@ -1,0 +1,190 @@
+.sa-page {
+  min-height: 100vh;
+  padding: 16px 20px 40px;
+  background: linear-gradient(145deg, #0a1628 0%, #0d2137 40%, #132f4c 100%);
+  color: #e8f4ff;
+}
+
+.sa-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(0, 123, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(100, 180, 255, 0.25);
+}
+
+.sa-toolbar h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex: 1;
+  min-width: 140px;
+}
+
+.sa-toolbar-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.sa-toolbar-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: rgba(232, 244, 255, 0.75);
+}
+
+.sa-toolbar-fields select {
+  min-width: 200px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  background: rgba(0, 40, 80, 0.5);
+  color: #e8f4ff;
+}
+
+.sa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.sa-card {
+  background: rgba(0, 123, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(100, 180, 255, 0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.sa-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #b8dcff;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.2);
+  padding-bottom: 10px;
+}
+
+.sa-error {
+  color: #ff8a8a;
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.sa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.sa-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: rgba(232, 244, 255, 0.85);
+}
+
+.sa-form input,
+.sa-form select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  background: rgba(0, 35, 70, 0.45);
+  color: #e8f4ff;
+}
+
+.sa-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 123, 255, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sa-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.45);
+}
+
+.sa-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sa-btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  border: 1px solid rgba(100, 180, 255, 0.35);
+}
+
+.sa-btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+  box-shadow: 0 4px 14px rgba(220, 53, 69, 0.35);
+}
+
+.sa-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(100, 180, 255, 0.18);
+}
+
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.sa-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: rgba(0, 40, 90, 0.55);
+  color: #9ecfff;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.2);
+}
+
+.sa-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.12);
+  background: rgba(0, 25, 55, 0.35);
+}
+
+.sa-table tr:hover td {
+  background: rgba(0, 123, 255, 0.14);
+}
+
+.sa-table .sa-actions {
+  white-space: nowrap;
+}
+
+.sa-table .sa-actions button {
+  margin-right: 6px;
+}
+
+.sa-muted {
+  color: rgba(232, 244, 255, 0.45);
+  font-size: 0.85rem;
+}
+
+.sa-row-selected {
+  outline: 1px solid rgba(0, 200, 255, 0.5);
+}

@@ -24,6 +24,7 @@ import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note
 import { LoginComponent } from './login/login.component';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { FacilityHeaderInterceptor } from './core/interceptors/facility-header.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
 import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions.component';
@@ -33,6 +34,8 @@ import { ColumnChooserDialogComponent } from './procedure-codes/column-chooser-d
 import { AddColumnHeaderComponent } from './procedure-codes/add-column-header.component';
 import { PatientEligibilityComponent } from './patients/patient-eligibility/patient-eligibility.component';
 import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
+import { SuperAdminComponent } from './super-admin/super-admin.component';
+import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 import { EligibilityResponseComponent } from './patients/eligibility-response/eligibility-response.component';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
@@ -65,7 +68,9 @@ import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspac
     AddColumnHeaderComponent,
     PatientEligibilityComponent,
     EligibilityResponseComponent,
-    ClaimRejectionsComponent
+    ClaimRejectionsComponent,
+    SuperAdminComponent,
+    UnauthorizedComponent
   ],
   imports: [
     BrowserModule,
@@ -78,6 +83,7 @@ import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspac
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: FacilityHeaderInterceptor, multi: true },
     { provide: RouteReuseStrategy, useClass: WorkspaceRouteReuseStrategy }
   ],
   bootstrap: [AppShellComponent] // Bootstrap with AppShellComponent
