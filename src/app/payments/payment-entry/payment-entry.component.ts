@@ -17,7 +17,6 @@ import { firstValueFrom } from 'rxjs';
 export class PaymentEntryComponent implements OnInit {
   paymentForm: FormGroup;
   paymentSource: 'Patient' | 'Payer' = 'Payer';
-  claimId: number | null = null;
   /** Display-only: sum of paid amounts in grid (no financial math; backend is source of truth). */
   appliedAmount = 0;
   remaining = 0;
@@ -46,6 +45,17 @@ export class PaymentEntryComponent implements OnInit {
       : '';
   }
 
+  /** Claim # for context bar (form or first loaded row). */
+  get displayClaimLabel(): string {
+    const raw = this.paymentForm.get('claimId')?.value;
+    const fromForm = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (!isNaN(fromForm) && fromForm > 0) {
+      return String(fromForm);
+    }
+    const fromRow = this.serviceLineRows[0]?.claimId;
+    return fromRow != null && fromRow > 0 ? String(fromRow) : '—';
+  }
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -58,7 +68,10 @@ export class PaymentEntryComponent implements OnInit {
   ) {
     this.paymentForm = this.fb.group({
       payerId: [null],
-      patientId: [null, Validators.required],
+      /** Search key for the grid: lines for this claim only (patient can have many claims). */
+      claimId: [null as number | null],
+      /** Filled from API when lines load; required for save payload. */
+      patientId: [null as number | null],
       amount: [0, [Validators.required, Validators.min(-999999.99)]],
       pmtDate: [new Date().toISOString().slice(0, 10), Validators.required],
       method: ['Check'],
@@ -70,7 +83,10 @@ export class PaymentEntryComponent implements OnInit {
 
   ngOnInit(): void {
     this.workspace.updateActiveTabTitle('Payment Entry');
-    this.claimId = this.resolveClaimIdFromContext();
+    const ctxClaim = this.resolveClaimIdFromContext();
+    if (ctxClaim != null && ctxClaim > 0) {
+      this.paymentForm.patchValue({ claimId: ctxClaim }, { emitEvent: false });
+    }
     this.recalculatePaymentTotals();
     this.loadPayers();
     this.paymentForm.get('amount')?.valueChanges.subscribe(() => this.recalculatePaymentTotals());
@@ -86,6 +102,17 @@ export class PaymentEntryComponent implements OnInit {
       this.isEditMode = false;
       this.currentPaymentId = null;
     });
+
+    const paymentIdSnap = this.route.snapshot.paramMap.get('id');
+    const openingPaymentEdit =
+      paymentIdSnap != null &&
+      paymentIdSnap !== '' &&
+      !isNaN(+paymentIdSnap) &&
+      +paymentIdSnap > 0;
+
+    if (!openingPaymentEdit && ctxClaim != null && ctxClaim > 0) {
+      this.loadServiceLines();
+    }
   }
 
   /** Load payment by id and fill form (edit mode). */
@@ -99,6 +126,7 @@ export class PaymentEntryComponent implements OnInit {
         const dateStr = p.date && p.date.toString().slice(0, 10) ? p.date.toString().slice(0, 10) : new Date().toISOString().slice(0, 10);
         this.paymentForm.patchValue({
           payerId: p.payerId,
+          claimId: p.claimId != null && p.claimId > 0 ? p.claimId : null,
           patientId: p.patientId,
           amount: p.amount,
           pmtDate: dateStr,
@@ -118,20 +146,30 @@ export class PaymentEntryComponent implements OnInit {
     });
   }
 
-  /** Load service lines for the current Patient ID (and Payer when source is Payer). Call when Patient ID is entered or Payer changes. */
+  /**
+   * Load service lines for Claim ID (preferred) or Patient ID fallback (e.g. edit with no claim on payment).
+   * When source is Payer, optional payer filter applies.
+   */
   loadServiceLines(): void {
-    const patientId = this.paymentForm.get('patientId')?.value;
-    if (patientId == null || patientId === '' || Number(patientId) <= 0) {
+    const claimIdRaw = this.paymentForm.get('claimId')?.value;
+    const patientIdRaw = this.paymentForm.get('patientId')?.value;
+    const cid = claimIdRaw != null && claimIdRaw !== '' ? Number(claimIdRaw) : NaN;
+    const pid = patientIdRaw != null && patientIdRaw !== '' ? Number(patientIdRaw) : NaN;
+
+    if (!(cid > 0) && !(pid > 0)) {
       this.serviceLineRows = [];
       return;
     }
-    const pid = Number(patientId);
+
     const payerId = this.paymentSource === 'Payer' ? this.paymentForm.get('payerId')?.value : null;
     this.loadingServiceLines = true;
     this.error = null;
-    this.paymentApi.getServiceLinesForEntry(pid, payerId).subscribe({
+    const opts = cid > 0 ? { claimId: cid, payerId } : { patientId: pid, payerId };
+    this.paymentApi.getServiceLinesForEntry(opts).subscribe({
       next: (lines) => {
         this.serviceLineRows = lines.map(line => ({
+          claimId: Number(line.claimId) || 0,
+          patientId: Number(line.patientId) || 0,
           serviceLineId: Number(line.serviceLineId) || 0,
           name: line.name ?? null,
           dos: line.dos ?? null,
@@ -143,6 +181,17 @@ export class PaymentEntryComponent implements OnInit {
           payAmount: 0,
           adjustments: [{}, {}] as { groupCode?: string; reasonCode?: string; amount?: number }[]
         }));
+        if (lines.length > 0) {
+          const row0 = lines[0];
+          if (row0.patientId > 0) {
+            this.paymentForm.patchValue({ patientId: row0.patientId }, { emitEvent: false });
+          }
+          if (row0.claimId > 0) {
+            this.paymentForm.patchValue({ claimId: row0.claimId }, { emitEvent: false });
+          }
+        } else if (cid > 0) {
+          this.paymentForm.patchValue({ patientId: null }, { emitEvent: false });
+        }
         this.loadingServiceLines = false;
         this.recalculatePaymentTotals();
       },
@@ -155,8 +204,8 @@ export class PaymentEntryComponent implements OnInit {
     });
   }
 
-  /** Called when user leaves Patient ID field – refresh the grid. */
-  onPatientIdBlur(): void {
+  /** Called when user leaves Claim ID field – refresh the grid. */
+  onClaimIdBlur(): void {
     this.loadServiceLines();
   }
 
@@ -258,10 +307,15 @@ export class PaymentEntryComponent implements OnInit {
           }))
         };
       });
+    const claimFromForm = Number(this.paymentForm.get('claimId')?.value);
+    const claimFromRows = this.serviceLineRows[0]?.claimId;
+    const resolvedClaimId =
+      claimFromForm > 0 ? claimFromForm : claimFromRows != null && claimFromRows > 0 ? claimFromRows : 0;
+
     return {
       paymentSource: this.paymentSource === 'Payer' ? 1 : 0,
       payerId: this.paymentSource === 'Payer' ? this.paymentForm.get('payerId')?.value ?? null : null,
-      claimId: this.claimId ?? 0,
+      claimId: resolvedClaimId,
       billingPhysicianId,
       patientId: Number(this.paymentForm.get('patientId')?.value),
       amount: Number(this.paymentForm.get('amount')?.value ?? 0),
@@ -279,10 +333,7 @@ export class PaymentEntryComponent implements OnInit {
     const fromQuery = claimIdFromQuery != null ? Number(claimIdFromQuery) : NaN;
     if (!isNaN(fromQuery) && fromQuery > 0) return fromQuery;
 
-    // Some flows may pass claim id as route param.
-    const routeId = this.route.snapshot.paramMap.get('id');
-    const fromRoute = routeId != null ? Number(routeId) : NaN;
-    if (!isNaN(fromRoute) && fromRoute > 0 && !this.isEditMode) return fromRoute;
+    // Do not use route `id` — on /payments/entry/:id that is the payment id (edit), not claim id.
 
     const ctxClaimId = this.ribbonContext.getContext().claimId;
     return ctxClaimId != null && ctxClaimId > 0 ? ctxClaimId : null;
@@ -291,14 +342,7 @@ export class PaymentEntryComponent implements OnInit {
   save(): void {
     this.error = null;
     this.successMessage = null;
-    this.claimId = this.resolveClaimIdFromContext();
-    if (!this.claimId || this.claimId <= 0) {
-      this.error = 'Claim context is missing. Open Payment Entry from a claim so claimId is available.';
-      return;
-    }
-    const patientId = this.paymentForm.get('patientId')?.value;
-    if (patientId == null || patientId === '') {
-      this.error = 'Patient is required.';
+    if (!this.validateClaimAndPatientForSave()) {
       return;
     }
     const amount = this.paymentForm.get('amount')?.value;
@@ -349,14 +393,7 @@ export class PaymentEntryComponent implements OnInit {
   saveAndClose(): void {
     this.error = null;
     this.successMessage = null;
-    this.claimId = this.resolveClaimIdFromContext();
-    if (!this.claimId || this.claimId <= 0) {
-      this.error = 'Claim context is missing. Open Payment Entry from a claim so claimId is available.';
-      return;
-    }
-    const patientId = this.paymentForm.get('patientId')?.value;
-    if (patientId == null || patientId === '') {
-      this.error = 'Patient is required.';
+    if (!this.validateClaimAndPatientForSave()) {
       return;
     }
     const amount = this.paymentForm.get('amount')?.value;
@@ -408,6 +445,8 @@ export class PaymentEntryComponent implements OnInit {
     this.router.navigate(['payments/entry']).then(() => {
       this.appliedAmount = 0;
       this.paymentForm.patchValue({
+        claimId: null,
+        patientId: null,
         amount: 0,
         pmtDate: new Date().toISOString().slice(0, 10),
         method: 'Check',
@@ -422,20 +461,32 @@ export class PaymentEntryComponent implements OnInit {
     });
   }
 
+  /** True when claim id and patient id are ready for save/auto-apply. */
+  private validateClaimAndPatientForSave(): boolean {
+    const claimFromForm = Number(this.paymentForm.get('claimId')?.value);
+    const claimFromRows = this.serviceLineRows[0]?.claimId;
+    const resolvedClaim =
+      claimFromForm > 0 ? claimFromForm : claimFromRows != null && claimFromRows > 0 ? claimFromRows : 0;
+    if (!resolvedClaim || resolvedClaim <= 0) {
+      this.error = 'Claim ID is required. Enter a claim number and load lines, or open Payment Entry with a claim context.';
+      return false;
+    }
+
+    const patientId = this.paymentForm.get('patientId')?.value;
+    if (patientId == null || patientId === '' || Number(patientId) <= 0) {
+      this.error = 'Patient could not be resolved. Enter a valid Claim ID and load service lines.';
+      return false;
+    }
+    return true;
+  }
+
   async autoApply(): Promise<void> {
     this.error = null;
     this.successMessage = null;
     try {
       // If not saved yet, auto-save first (user requested one-click behavior).
       if (this.currentPaymentId == null) {
-        this.claimId = this.resolveClaimIdFromContext();
-        if (!this.claimId || this.claimId <= 0) {
-          this.error = 'Claim context is missing. Open Payment Entry from a claim so claimId is available.';
-          return;
-        }
-        const patientId = this.paymentForm.get('patientId')?.value;
-        if (patientId == null || patientId === '') {
-          this.error = 'Patient is required.';
+        if (!this.validateClaimAndPatientForSave()) {
           return;
         }
         const amount = this.paymentForm.get('amount')?.value;

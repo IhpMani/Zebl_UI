@@ -43,6 +43,8 @@ export interface PaymentForEdit {
   paymentId: number;
   paymentSource: 0 | 1; // 0 Patient, 1 Payer
   payerId: number | null;
+  /** Set from disbursements when editing; used to load lines by claim. */
+  claimId?: number | null;
   patientId: number;
   amount: number;
   date: string; // ISO date
@@ -55,6 +57,8 @@ export interface PaymentForEdit {
 
 /** One row for the payment entry grid (GET /api/payments/entry/service-lines). */
 export interface PaymentEntryServiceLine {
+  claimId: number;
+  patientId: number;
   serviceLineId: number;
   name: string | null;
   dos: string | null;

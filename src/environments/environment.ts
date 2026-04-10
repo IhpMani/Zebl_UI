@@ -1,6 +1,8 @@
 export const environment = {
   production: false,
-  // Use the same URL as your API (https profile = 7183). Avoids redirect from 5226 → 7183 which breaks CORS.
-  apiUrl: 'https://broadbill.runasp.net'
+  // Call HTTPS directly. http://localhost:5226 redirects to https://localhost:7183; that redirect
+  // response usually has no Access-Control-Allow-Origin, so the browser blocks the CORS preflight.
+  apiUrl: 'https://broadbill.runasp.net',
+  //https://broadbill.runasp.net
 };
 

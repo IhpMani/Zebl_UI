@@ -835,6 +835,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   startEditServiceLine(line: any): void {
     this.editingServiceLineIds.add(line.srvID);
     this.serviceLineDrafts[line.srvID] = JSON.parse(JSON.stringify(line));
+    this.initServiceLineUnitBaseline(line);
   }
 
   cancelEditServiceLine(line: any): void {
@@ -929,15 +930,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   onServiceLineUnitsChanged(line: any): void {
-    const draft = this.serviceLineDrafts[line.srvID];
-    const oldUnitsRaw = draft?.srvUnits;
-    const oldUnits = oldUnitsRaw && Number(oldUnitsRaw) > 0 ? Number(oldUnitsRaw) : 1;
-    const newUnits = line.srvUnits && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : oldUnits;
-    if (oldUnits <= 0 || newUnits <= 0 || oldUnits === newUnits) return;
-    const oldCharge = Number(draft?.srvCharges ?? line.srvCharges ?? 0);
-    const oldAllowed = Number(draft?.srvAllowedAmt ?? line.srvAllowedAmt ?? 0);
-    line.srvCharges = Number(((oldCharge / oldUnits) * newUnits).toFixed(2));
-    line.srvAllowedAmt = Number(((oldAllowed / oldUnits) * newUnits).toFixed(2));
+    const newUnits = line.srvUnits != null && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : 1;
+    const oldUnits = Number(line._prevServiceLineUnits);
+    if (!Number.isFinite(oldUnits) || oldUnits <= 0) {
+      line._prevServiceLineUnits = newUnits;
+      return;
+    }
+    if (oldUnits === newUnits) return;
+    const charge = Number(line.srvCharges ?? 0);
+    const allowed = Number(line.srvAllowedAmt ?? 0);
+    line.srvCharges = Number(((charge / oldUnits) * newUnits).toFixed(2));
+    line.srvAllowedAmt = Number(((allowed / oldUnits) * newUnits).toFixed(2));
+    line._prevServiceLineUnits = newUnits;
   }
 
   openProcedureLookup(line: any): void {
@@ -1043,13 +1047,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   private hydrateLineFromProcedure(line: any, proc: ProcedureCode | null | undefined): void {
     if (!proc) return;
     line.srvProcedureCode = proc.procCode ?? line.srvProcedureCode;
-    // Keep the user's current units if already set (>0), otherwise fall back to procedure defaults.
     const currentUnits = Number(line.srvUnits ?? 0);
-    const procUnits = proc.procUnits != null && Number(proc.procUnits) > 0 ? Number(proc.procUnits) : 1;
-    const unitsToUse = currentUnits > 0 ? currentUnits : procUnits;
+    // Default 1 unit for new/pasted codes — not procedure-library default units (often 5).
+    const unitsToUse = currentUnits > 0 ? currentUnits : 1;
     line.srvUnits = unitsToUse;
 
-    // Procedure lookup returns the default per-unit charge; scale by the service line units.
+    // Procedure fee/allowed are per unit; scale by line units.
     const defaultCharge = proc.procCharge ?? 0;
     const defaultAllowed = proc.procAllowed ?? 0;
     line.srvCharges = Number((defaultCharge * unitsToUse).toFixed(2));
@@ -1059,6 +1062,13 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     line.srvModifier3 = proc.procModifier3 ?? '';
     line.srvModifier4 = proc.procModifier4 ?? '';
     line.srvDesc = proc.procDescription ?? line.srvDesc ?? '';
+    this.initServiceLineUnitBaseline(line);
+  }
+
+  /** Baseline for scaling charges when units change (draft is stale after procedure hydrate). */
+  private initServiceLineUnitBaseline(line: any): void {
+    const u = line.srvUnits != null && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : 1;
+    line._prevServiceLineUnits = u;
   }
 
   private applyProcedureCodeToServiceLine(line: any, procedureCode: string): void {

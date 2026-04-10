@@ -51,8 +51,8 @@
         <button type="button" class="btn-auto-apply" (click)="autoApply()">Auto Apply</button>
       </div>
       <div class="detail-row">
-        <label>Patient ID</label>
-        <input type="number" formControlName="patientId" placeholder="Patient ID" (blur)="onPatientIdBlur()" (keydown.enter)="$event.preventDefault(); loadServiceLines()" />
+        <label>Claim ID</label>
+        <input type="number" formControlName="claimId" placeholder="Claim ID" (blur)="onClaimIdBlur()" (keydown.enter)="$event.preventDefault(); loadServiceLines()" />
       </div>
     </form>
     <div class="action-buttons-vertical">
@@ -65,8 +65,8 @@
   </div>
 
   <!-- Payments context header + summary (like reference) -->
-  <div class="payments-context-bar" *ngIf="paymentForm.get('patientId')?.value">
-    <span class="context-title">Payments from <strong>{{ patientDisplayName || ('Patient #' + paymentForm.get('patientId')?.value) }}</strong> with a balance:</span>
+  <div class="payments-context-bar" *ngIf="paymentForm.get('claimId')?.value || serviceLineRows.length">
+    <span class="context-title">Claim <strong>#{{ displayClaimLabel }}</strong> — <strong>{{ patientDisplayName || 'Patient' }}</strong> (lines with a balance):</span>
     <div class="summary-bar">
       <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
       <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
@@ -76,7 +76,7 @@
       <div class="summary-cell"><span class="summary-label">Ref #</span><span class="summary-value">{{ paymentForm.get('reference1')?.value || '—' }}</span></div>
     </div>
   </div>
-  <div class="summary-bar" *ngIf="!paymentForm.get('patientId')?.value">
+  <div class="summary-bar" *ngIf="!paymentForm.get('claimId')?.value && !serviceLineRows.length">
     <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
     <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
     <div class="summary-cell"><span class="summary-label">Remaining</span><span class="summary-value">{{ remaining | currency:'USD':'symbol':'1.2-2' }}</span></div>
@@ -146,7 +146,7 @@
             <td><input type="text" class="cell-input" [(ngModel)]="row.adjustments[1].reasonCode" /></td>
           </tr>
           <tr *ngIf="!loadingServiceLines && serviceLineRows.length === 0" class="no-data-row">
-            <td [attr.colspan]="13">No service lines. Enter a Patient ID and tab out to load lines.</td>
+            <td [attr.colspan]="13">No service lines. Enter a Claim ID and tab out to load lines for that claim.</td>
           </tr>
         </tbody>
       </table>

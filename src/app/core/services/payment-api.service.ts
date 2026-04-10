@@ -95,11 +95,22 @@ export class PaymentApiService {
     return this.http.put<{ data: number }>(`${this.baseUrl}/${id}`, command);
   }
 
-  /** Get service lines for payment entry grid (GET /api/payments/entry/service-lines?patientId=&payerId=). */
-  getServiceLinesForEntry(patientId: number, payerId?: number | null): Observable<PaymentEntryServiceLine[]> {
-    let params = new HttpParams().set('patientId', patientId.toString());
-    if (payerId != null && payerId > 0) {
-      params = params.set('payerId', payerId.toString());
+  /**
+   * Payment entry grid lines. Prefer claimId (one claim); patientId is fallback (e.g. edit with no claim).
+   */
+  getServiceLinesForEntry(options: {
+    claimId?: number;
+    patientId?: number;
+    payerId?: number | null;
+  }): Observable<PaymentEntryServiceLine[]> {
+    let params = new HttpParams();
+    if (options.claimId != null && options.claimId > 0) {
+      params = params.set('claimId', options.claimId.toString());
+    } else if (options.patientId != null && options.patientId > 0) {
+      params = params.set('patientId', options.patientId.toString());
+    }
+    if (options.payerId != null && options.payerId > 0) {
+      params = params.set('payerId', options.payerId.toString());
     }
     return this.http.get<{ data: PaymentEntryServiceLine[] }>(`${this.baseUrl}/entry/service-lines`, { params }).pipe(
       map(res => res.data ?? [])
