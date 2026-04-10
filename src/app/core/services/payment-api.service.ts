@@ -106,7 +106,8 @@ export class PaymentApiService {
     let params = new HttpParams();
     if (options.claimId != null && options.claimId > 0) {
       params = params.set('claimId', options.claimId.toString());
-    } else if (options.patientId != null && options.patientId > 0) {
+    }
+    if (options.patientId != null && options.patientId > 0) {
       params = params.set('patientId', options.patientId.toString());
     }
     if (options.payerId != null && options.payerId > 0) {

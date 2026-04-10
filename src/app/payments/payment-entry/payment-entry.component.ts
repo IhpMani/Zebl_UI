@@ -3,7 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
-import { PaymentEntryRow } from '../../core/services/payment.models';
+import { PaymentEntryRow, PaymentEntryServiceLine } from '../../core/services/payment.models';
+import { ClaimApiService } from '../../core/services/claim-api.service';
+import { map, finalize } from 'rxjs/operators';
 import { PayerListItem } from '../../core/services/payer.models';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
@@ -61,6 +63,7 @@ export class PaymentEntryComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private paymentApi: PaymentApiService,
+    private claimApi: ClaimApiService,
     private payerApi: PayerApiService,
     private ribbonContext: RibbonContextService,
     private workspace: WorkspaceService,
@@ -148,7 +151,8 @@ export class PaymentEntryComponent implements OnInit {
 
   /**
    * Load service lines for Claim ID (preferred) or Patient ID fallback (e.g. edit with no claim on payment).
-   * When source is Payer, optional payer filter applies.
+   * When only claimId is known, resolves patient via GET /api/claims/{id} so older APIs that require
+   * patientId still receive it alongside claimId (new APIs use claimId for scoping).
    */
   loadServiceLines(): void {
     const claimIdRaw = this.paymentForm.get('claimId')?.value;
@@ -162,46 +166,95 @@ export class PaymentEntryComponent implements OnInit {
     }
 
     const payerId = this.paymentSource === 'Payer' ? this.paymentForm.get('payerId')?.value : null;
-    this.loadingServiceLines = true;
-    this.error = null;
-    const opts = cid > 0 ? { claimId: cid, payerId } : { patientId: pid, payerId };
-    this.paymentApi.getServiceLinesForEntry(opts).subscribe({
-      next: (lines) => {
-        this.serviceLineRows = lines.map(line => ({
-          claimId: Number(line.claimId) || 0,
-          patientId: Number(line.patientId) || 0,
-          serviceLineId: Number(line.serviceLineId) || 0,
-          name: line.name ?? null,
-          dos: line.dos ?? null,
-          proc: line.proc ?? null,
-          charge: Number(line.charge) || 0,
-          responsible: line.responsible ?? null,
-          applied: Number(line.applied) || 0,
-          balance: Number(line.balance) || 0,
-          payAmount: 0,
-          adjustments: [{}, {}] as { groupCode?: string; reasonCode?: string; amount?: number }[]
-        }));
-        if (lines.length > 0) {
-          const row0 = lines[0];
-          if (row0.patientId > 0) {
-            this.paymentForm.patchValue({ patientId: row0.patientId }, { emitEvent: false });
-          }
-          if (row0.claimId > 0) {
-            this.paymentForm.patchValue({ claimId: row0.claimId }, { emitEvent: false });
-          }
-        } else if (cid > 0) {
-          this.paymentForm.patchValue({ patientId: null }, { emitEvent: false });
+
+    const applyRows = (lines: PaymentEntryServiceLine[]) => {
+      this.serviceLineRows = lines.map(line => ({
+        claimId: Number(line.claimId) || 0,
+        patientId: Number(line.patientId) || 0,
+        serviceLineId: Number(line.serviceLineId) || 0,
+        name: line.name ?? null,
+        dos: line.dos ?? null,
+        proc: line.proc ?? null,
+        charge: Number(line.charge) || 0,
+        responsible: line.responsible ?? null,
+        applied: Number(line.applied) || 0,
+        balance: Number(line.balance) || 0,
+        payAmount: 0,
+        adjustments: [{}, {}] as { groupCode?: string; reasonCode?: string; amount?: number }[]
+      }));
+      if (lines.length > 0) {
+        const row0 = lines[0];
+        if (row0.patientId > 0) {
+          this.paymentForm.patchValue({ patientId: row0.patientId }, { emitEvent: false });
         }
-        this.loadingServiceLines = false;
-        this.recalculatePaymentTotals();
-      },
-      error: (err) => {
-        this.loadingServiceLines = false;
-        this.serviceLineRows = [];
-        this.error = err.error?.message || err.message || 'Failed to load service lines.';
-        this.recalculatePaymentTotals();
+        if (row0.claimId > 0) {
+          this.paymentForm.patchValue({ claimId: row0.claimId }, { emitEvent: false });
+        }
+      } else if (cid > 0) {
+        this.paymentForm.patchValue({ patientId: null }, { emitEvent: false });
       }
-    });
+      this.recalculatePaymentTotals();
+    };
+
+    const runRequest = (patientIdFromClaim?: number) => {
+      const effectivePatient = pid > 0 ? pid : (patientIdFromClaim != null && patientIdFromClaim > 0 ? patientIdFromClaim : 0);
+      const opts: { claimId?: number; patientId?: number; payerId?: number | null } = { payerId };
+      if (cid > 0) {
+        opts.claimId = cid;
+      }
+      if (effectivePatient > 0) {
+        opts.patientId = effectivePatient;
+      }
+
+      this.loadingServiceLines = true;
+      this.error = null;
+
+      this.paymentApi
+        .getServiceLinesForEntry(opts)
+        .pipe(
+          map((lines) => this.filterPaymentEntryLinesByClaim(lines, cid)),
+          finalize(() => {
+            this.loadingServiceLines = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: (lines) => applyRows(lines),
+          error: (err) => {
+            this.serviceLineRows = [];
+            this.error = err.error?.message || err.message || 'Failed to load service lines.';
+            this.recalculatePaymentTotals();
+          }
+        });
+    };
+
+    if (cid > 0 && !(pid > 0)) {
+      this.claimApi.getClaimById(cid).subscribe({
+        next: (claim) => {
+          const pat = claim?.patient?.patID;
+          if (pat != null && pat > 0) {
+            this.paymentForm.patchValue({ patientId: pat }, { emitEvent: false });
+          }
+          runRequest(pat);
+        },
+        error: () => runRequest(undefined)
+      });
+      return;
+    }
+
+    runRequest();
+  }
+
+  /** When API returns all lines for a patient, keep only the active claim once rows include claimId. */
+  private filterPaymentEntryLinesByClaim(lines: PaymentEntryServiceLine[], claimId: number): PaymentEntryServiceLine[] {
+    if (!(claimId > 0) || !lines?.length) {
+      return lines ?? [];
+    }
+    const tagged = lines.filter((l) => l.claimId != null && Number(l.claimId) > 0);
+    if (tagged.length !== lines.length) {
+      return lines;
+    }
+    return lines.filter((l) => Number(l.claimId) === claimId);
   }
 
   /** Called when user leaves Claim ID field – refresh the grid. */
@@ -484,62 +537,72 @@ export class PaymentEntryComponent implements OnInit {
     this.error = null;
     this.successMessage = null;
     try {
-      // If not saved yet, auto-save first (user requested one-click behavior).
-      if (this.currentPaymentId == null) {
-        if (!this.validateClaimAndPatientForSave()) {
+      if (!this.validateClaimAndPatientForSave()) {
+        return;
+      }
+      const amount = this.paymentForm.get('amount')?.value;
+      if (amount == null || amount === '') {
+        this.error = 'Amount is required.';
+        return;
+      }
+      if (this.paymentSource === 'Payer') {
+        const payerId = this.paymentForm.get('payerId')?.value;
+        if (payerId == null || payerId === '') {
+          this.error = 'Payer is required when payment source is Payer.';
           return;
         }
-        const amount = this.paymentForm.get('amount')?.value;
-        if (amount == null || amount === '') {
-          this.error = 'Amount is required.';
-          return;
-        }
-        if (this.paymentSource === 'Payer') {
-          const payerId = this.paymentForm.get('payerId')?.value;
-          if (payerId == null || payerId === '') {
-            this.error = 'Payer is required when payment source is Payer.';
-            return;
-          }
-        }
-
-        const command = this.buildCommand();
-        const res = await firstValueFrom(this.paymentApi.createPayment(command));
-        this.currentPaymentId = res.data;
-        this.isEditMode = true;
       }
 
+      const command = this.buildCommand();
+
+      // Auto-apply uses Amount − Disbursed on the server. If we only POST auto-apply in edit mode,
+      // the DB still has the old header (e.g. fully disbursed $24 patient payment) and applies $0
+      // while the UI lied using the form amount. Always persist the current form first.
+      if (this.currentPaymentId == null) {
+        const res = await firstValueFrom(this.paymentApi.createPayment(command));
+        this.currentPaymentId = res.data;
+      } else {
+        const res = await firstValueFrom(this.paymentApi.modifyPayment(this.currentPaymentId, command));
+        this.currentPaymentId = res.data;
+      }
+      this.isEditMode = true;
+
       await firstValueFrom(this.paymentApi.autoApply(this.currentPaymentId));
-      const applied = this.applyAutoAllocationToGrid();
-      this.successMessage = `Auto apply completed.${applied > 0 ? ` Applied ${applied.toFixed(2)}.` : ''}`;
-      // Re-read server-calculated applied/balance values to keep links accurate.
+
+      const p = await firstValueFrom(this.paymentApi.getPaymentById(this.currentPaymentId));
+      this.paymentForm.patchValue(
+        {
+          amount: p.amount,
+          payerId: p.payerId,
+          patientId: p.patientId,
+          claimId: p.claimId != null && p.claimId > 0 ? p.claimId : this.paymentForm.get('claimId')?.value,
+          pmtDate: p.date && p.date.toString().slice(0, 10) ? p.date.toString().slice(0, 10) : this.paymentForm.get('pmtDate')?.value,
+          method: p.method ?? 'Check',
+          reference1: p.reference1 ?? '',
+          reference2: p.reference2 ?? '',
+          note: p.note ?? ''
+        },
+        { emitEvent: false }
+      );
+      this.paymentSource = p.paymentSource === 1 ? 'Payer' : 'Patient';
+
+      const amt = Number(p.amount);
+      const remParsed =
+        p.remaining != null && p.remaining !== '' && !Number.isNaN(Number(p.remaining))
+          ? Number(p.remaining)
+          : null;
+      const disbursedOnPayment = remParsed != null ? Math.max(0, amt - remParsed) : null;
+      this.successMessage =
+        disbursedOnPayment != null && disbursedOnPayment > 0
+          ? `Auto apply completed. Disbursed ${disbursedOnPayment.toFixed(2)} on payment #${this.currentPaymentId}.`
+          : disbursedOnPayment === 0
+            ? `Auto apply completed. Nothing left to apply on payment #${this.currentPaymentId} (check amount and payer).`
+            : `Auto apply completed. Payment #${this.currentPaymentId} updated — verify balances in the grid.`;
+
       this.loadServiceLines();
       this.recalculatePaymentTotals();
     } catch (err: any) {
       this.error = err?.error?.message || err?.message || 'Auto apply failed.';
     }
-  }
-
-  /**
-   * Apply payment amount across grid rows so Pay column reflects allocation.
-   * Allocation rule: pay = min(remaining payment, service line balance), regardless of responsible party.
-   */
-  private applyAutoAllocationToGrid(): number {
-    let remaining = Math.max(0, this.pmtAmt);
-    let totalApplied = 0;
-
-    for (const row of this.serviceLineRows) {
-      const balance = Math.max(0, Number(row.balance) || 0);
-      if (remaining <= 0 || balance <= 0) {
-        row.payAmount = 0;
-        continue;
-      }
-
-      const pay = Math.min(remaining, balance);
-      row.payAmount = Number(pay.toFixed(2));
-      totalApplied += row.payAmount;
-      remaining = Number((remaining - row.payAmount).toFixed(2));
-    }
-
-    return Number(totalApplied.toFixed(2));
   }
 }
