@@ -1,22 +1,23 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, RouteReuseStrategy, Router } from '@angular/router';
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { PaymentEntryRow, PaymentEntryServiceLine } from '../../core/services/payment.models';
 import { ClaimApiService } from '../../core/services/claim-api.service';
-import { map, finalize } from 'rxjs/operators';
+import { filter, finalize, map, takeUntil } from 'rxjs/operators';
 import { PayerListItem } from '../../core/services/payer.models';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
-import { firstValueFrom } from 'rxjs';
+import { WorkspaceRouteReuseStrategy } from '../../workspace/infrastructure/workspace-route-reuse-strategy';
+import { Subject, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-payment-entry',
   templateUrl: './payment-entry.component.html',
   styleUrls: ['./payment-entry.component.css']
 })
-export class PaymentEntryComponent implements OnInit {
+export class PaymentEntryComponent implements OnInit, OnDestroy {
   paymentForm: FormGroup;
   paymentSource: 'Patient' | 'Payer' = 'Payer';
   /** Display-only: sum of paid amounts in grid (no financial math; backend is source of truth). */
@@ -40,6 +41,13 @@ export class PaymentEntryComponent implements OnInit {
   /** Payer library list for dropdown (when source is Payer). */
   payerList: PayerListItem[] = [];
   loadingPayers = false;
+
+  private readonly destroy$ = new Subject<void>();
+  private prevNavUrl = '';
+
+  private get pathBeforeQuery(): string {
+    return (this.router.url || '').split('?')[0];
+  }
   /** Patient name for context header (e.g. "Payments from MOAK, KELLY A with a balance"). */
   get patientDisplayName(): string {
     return this.serviceLineRows.length > 0 && this.serviceLineRows[0].name
@@ -67,7 +75,8 @@ export class PaymentEntryComponent implements OnInit {
     private payerApi: PayerApiService,
     private ribbonContext: RibbonContextService,
     private workspace: WorkspaceService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Optional() @Inject(RouteReuseStrategy) private routeReuseStrategy: RouteReuseStrategy | null
   ) {
     this.paymentForm = this.fb.group({
       payerId: [null],
@@ -85,6 +94,25 @@ export class PaymentEntryComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.successMessage = null;
+    this.prevNavUrl = this.pathBeforeQuery;
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((e) => {
+        const nowPath = e.urlAfterRedirects.split('?')[0];
+        const prevPath = this.prevNavUrl;
+        const nowOnEntry = nowPath.includes('/payments/entry');
+        const prevOnEntry = prevPath.includes('/payments/entry');
+        if (nowOnEntry && !prevOnEntry) {
+          this.successMessage = null;
+          this.error = null;
+        }
+        this.prevNavUrl = nowPath;
+      });
+
     this.workspace.updateActiveTabTitle('Payment Entry');
     const ctxClaim = this.resolveClaimIdFromContext();
     if (ctxClaim != null && ctxClaim > 0) {
@@ -118,9 +146,15 @@ export class PaymentEntryComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   /** Load payment by id and fill form (edit mode). */
   loadPaymentForEdit(id: number): void {
     this.error = null;
+    this.successMessage = null;
     this.paymentApi.getPaymentById(id).subscribe({
       next: (p) => {
         this.isEditMode = true;
@@ -533,6 +567,37 @@ export class PaymentEntryComponent implements OnInit {
     return true;
   }
 
+  /**
+   * Sync URL to the current payment id and fully reload the app so the grid, amounts, and banners
+   * match the server. Workspace tab reuse otherwise keeps stale success text when switching tabs.
+   */
+  private async hardRefreshPaymentEntry(): Promise<void> {
+    const reuse = this.routeReuseStrategy;
+    if (reuse instanceof WorkspaceRouteReuseStrategy) {
+      reuse.removeDetachedRoutesForPathPrefix('/payments/entry');
+    }
+
+    const id = this.currentPaymentId;
+    const qp = { ...this.route.snapshot.queryParams };
+    const hasQp = Object.keys(qp).length > 0;
+
+    if (id != null && id > 0) {
+      await this.router.navigate(['/payments/entry', id], {
+        queryParams: hasQp ? qp : undefined,
+        replaceUrl: true
+      });
+    } else {
+      await this.router.navigate(['/payments/entry'], {
+        queryParams: hasQp ? qp : undefined,
+        replaceUrl: true
+      });
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }
+
   async autoApply(): Promise<void> {
     this.error = null;
     this.successMessage = null;
@@ -569,38 +634,7 @@ export class PaymentEntryComponent implements OnInit {
 
       await firstValueFrom(this.paymentApi.autoApply(this.currentPaymentId));
 
-      const p = await firstValueFrom(this.paymentApi.getPaymentById(this.currentPaymentId));
-      this.paymentForm.patchValue(
-        {
-          amount: p.amount,
-          payerId: p.payerId,
-          patientId: p.patientId,
-          claimId: p.claimId != null && p.claimId > 0 ? p.claimId : this.paymentForm.get('claimId')?.value,
-          pmtDate: p.date && p.date.toString().slice(0, 10) ? p.date.toString().slice(0, 10) : this.paymentForm.get('pmtDate')?.value,
-          method: p.method ?? 'Check',
-          reference1: p.reference1 ?? '',
-          reference2: p.reference2 ?? '',
-          note: p.note ?? ''
-        },
-        { emitEvent: false }
-      );
-      this.paymentSource = p.paymentSource === 1 ? 'Payer' : 'Patient';
-
-      const amt = Number(p.amount);
-      const remParsed =
-        p.remaining != null && p.remaining !== '' && !Number.isNaN(Number(p.remaining))
-          ? Number(p.remaining)
-          : null;
-      const disbursedOnPayment = remParsed != null ? Math.max(0, amt - remParsed) : null;
-      this.successMessage =
-        disbursedOnPayment != null && disbursedOnPayment > 0
-          ? `Auto apply completed. Disbursed ${disbursedOnPayment.toFixed(2)} on payment #${this.currentPaymentId}.`
-          : disbursedOnPayment === 0
-            ? `Auto apply completed. Nothing left to apply on payment #${this.currentPaymentId} (check amount and payer).`
-            : `Auto apply completed. Payment #${this.currentPaymentId} updated — verify balances in the grid.`;
-
-      this.loadServiceLines();
-      this.recalculatePaymentTotals();
+      await this.hardRefreshPaymentEntry();
     } catch (err: any) {
       this.error = err?.error?.message || err?.message || 'Auto apply failed.';
     }

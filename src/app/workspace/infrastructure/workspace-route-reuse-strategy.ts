@@ -8,6 +8,20 @@ export class WorkspaceRouteReuseStrategy implements RouteReuseStrategy {
     this.handlers.clear();
   }
 
+  /**
+   * Remove detached tabs for routes under a path prefix (e.g. "/payments/entry").
+   * Keys are built as "/path/to/route?{params}" — compare the path segment before "?".
+   */
+  removeDetachedRoutesForPathPrefix(pathPrefix: string): void {
+    const norm = pathPrefix.startsWith('/') ? pathPrefix : `/${pathPrefix}`;
+    for (const key of [...this.handlers.keys()]) {
+      const pathOnly = key.split('?')[0];
+      if (pathOnly === norm || pathOnly.startsWith(`${norm}/`)) {
+        this.handlers.delete(key);
+      }
+    }
+  }
+
   shouldDetach(route: ActivatedRouteSnapshot): boolean {
     // Cache only leaf routes that render a component (or standalone component).
     if (route.firstChild) return false;
