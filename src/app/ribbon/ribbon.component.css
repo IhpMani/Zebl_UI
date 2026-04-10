@@ -1,4 +1,4 @@
-/* Ribbon uses tokens from theme.css only */
+/* Ribbon — blue glass chrome (Code Library / procedure pages parity; theme tokens only) */
 
 :host {
   display: block;
@@ -9,26 +9,35 @@
 .ribbon-shell {
   position: relative;
   background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--color-nav-bg-start) 90%, #0f3f5e) 0%,
-    color-mix(in srgb, var(--color-nav-bg-end) 90%, #0f3f5e) 100%
+    165deg,
+    var(--color-nav-bg-start) 0%,
+    #164a72 42%,
+    #0f3f5e 100%
   );
-  box-shadow: 0 10px 28px var(--color-nav-shell-shadow);
+  box-shadow:
+    0 10px 28px var(--color-nav-shell-shadow),
+    inset 0 1px 0 var(--color-nav-glass-border);
 }
 
+/* No backdrop-filter here — it traps descendant menus so their backdrop-filter cannot blur the workspace */
 .ribbon-glass {
-  background: var(--color-nav-glass-tint);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #ffffff 11%, transparent),
+    color-mix(in srgb, #ffffff 4%, transparent)
+  );
   border-bottom: 1px solid var(--color-nav-glass-border);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
 }
 
 .ribbon-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 20px;
-  padding: 14px 20px 16px;
+  gap: 6px 14px;
+  padding: 9px 16px 11px;
   overflow: visible;
 }
 
@@ -36,7 +45,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: 6px 10px;
 }
 
 .ribbon-spacer {
@@ -49,28 +58,35 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   margin: 0;
-  padding: 10px 14px;
-  min-width: 64px;
-  min-height: 58px;
-  border: none;
+  padding: 7px 11px;
+  min-width: 58px;
+  min-height: 50px;
+  border: 1px solid transparent;
   border-radius: var(--color-radius-md);
   background: transparent;
   color: var(--color-nav-icon-hover);
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 500;
   line-height: 1.15;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   box-sizing: border-box;
 }
 
 .nav-item:hover {
   background: var(--color-nav-item-hover-bg);
   color: var(--color-primary-btn-text);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 80%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-tab-highlight-inset) 40%, transparent);
   transform: translateY(-1px);
 }
 
@@ -79,19 +95,25 @@
 }
 
 .nav-item.active {
-  background: var(--color-nav-item-active-bg);
-  color: var(--color-nav-icon-active);
-  filter: drop-shadow(0 0 8px var(--color-nav-active-glow));
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  color: var(--color-primary-btn-text);
+  border-color: color-mix(in srgb, var(--color-nav-icon-active) 45%, transparent);
+  box-shadow:
+    0 2px 12px color-mix(in srgb, var(--color-nav-icon-active) 32%, transparent),
+    inset 0 1px 0 var(--color-tab-highlight-inset);
+  filter: none;
 }
 
 .nav-item.active:hover {
-  color: var(--color-nav-icon-active);
+  color: var(--color-primary-btn-text);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 
 .nav-item--icon-only {
-  min-width: 56px;
-  min-height: 56px;
-  padding: 10px 12px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 7px 9px;
 }
 
 .nav-item__icon {
@@ -102,14 +124,14 @@
 }
 
 .nav-item__icon svg {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   display: block;
 }
 
 .nav-item--icon-only .nav-item__icon svg {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
 }
 
 .nav-item__label {
@@ -127,32 +149,38 @@
 .dropdown-wrapper {
   position: relative;
   display: inline-block;
+  z-index: 5;
 }
 
+/* Local frost: blurs page content behind this panel only (needs ancestors without backdrop-filter) */
 .dropdown-content {
   display: none;
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   left: 0;
   min-width: 240px;
   max-height: min(420px, 70vh);
   overflow-y: auto;
   z-index: 3000;
-  background: var(--color-nav-dropdown-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-nav-dropdown-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-nav-bg-end) 42%, transparent),
+    color-mix(in srgb, var(--color-nav-bg-start) 52%, transparent)
+  );
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  border: 1px solid var(--color-nav-glass-border);
   border-radius: var(--color-radius-lg);
-  box-shadow: 0 20px 50px var(--color-nav-dropdown-shadow);
+  box-shadow:
+    0 20px 50px var(--color-nav-shell-shadow),
+    inset 0 1px 0 var(--color-nav-glass-border);
   opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.18s ease;
 }
 
 .dropdown-content.show {
   display: block;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .dropdown-content a {
@@ -160,16 +188,21 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: var(--color-nav-dropdown-text);
+  color: var(--color-primary-btn-text);
   font-size: 0.875rem;
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 45%, transparent);
+}
+
+.dropdown-content a:last-child {
+  border-bottom: none;
 }
 
 .dropdown-content a:hover {
-  background: var(--color-nav-dropdown-hover-bg);
-  color: var(--color-nav-dropdown-hover-text);
+  background: var(--color-nav-item-hover-bg);
+  color: var(--color-primary-btn-text);
 }
 
 .dropdown-link__icon {
@@ -177,7 +210,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--color-nav-dropdown-icon);
+  color: var(--color-nav-icon);
 }
 
 .dropdown-link__icon svg {
@@ -187,5 +220,5 @@
 }
 
 .dropdown-content a:hover .dropdown-link__icon {
-  color: var(--color-nav-dropdown-icon-hover);
+  color: var(--color-nav-icon-active);
 }

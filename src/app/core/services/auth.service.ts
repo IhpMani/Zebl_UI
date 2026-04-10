@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { FacilityService } from './facility.service';
 
 export interface LoginResponse {
@@ -27,7 +28,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private facility: FacilityService
+    private facility: FacilityService,
+    private readonly workspace: WorkspaceService
   ) {}
 
   login(userName: string, password: string): Observable<LoginResponse> {
@@ -44,6 +46,8 @@ export class AuthService {
           } else {
             this.facility.clearFacilityStorage();
           }
+          // New session: drop any tabs from a previous user/role (e.g. super admin → tenant).
+          this.workspace.clearAllTabs();
         })
       );
   }
@@ -69,6 +73,7 @@ export class AuthService {
     this.isAdminSubject.next(false);
     this.facility.clearTenantStorage();
     this.facility.clearFacilityStorage();
+    this.workspace.clearAllTabs();
   }
 
   isLoggedIn(): boolean {
@@ -111,6 +116,7 @@ export class AuthService {
     } else {
       this.facility.clearFacilityStorage();
     }
+    this.workspace.clearAllTabs();
   }
 
   /** After exit API — restore platform JWT and clear operational headers. */
@@ -118,6 +124,7 @@ export class AuthService {
     this.setToken(res.token);
     this.facility.clearTenantStorage();
     this.facility.clearFacilityStorage();
+    this.workspace.clearAllTabs();
   }
 
   getToken(): string | null {

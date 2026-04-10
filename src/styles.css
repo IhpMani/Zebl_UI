@@ -281,6 +281,11 @@ th, td,
   border-color: var(--color-border) !important;
 }
 
+/* Super Admin glass UI: row hover is styled on td in component; global tr:hover would flash light gray */
+.sa-page table.sa-table tbody tr:hover {
+  background: transparent !important;
+}
+
 /* Filter rows and secondary header rows */
 .ag-header-row:not(:first-child),
 .claims-table thead tr.filter-row th,

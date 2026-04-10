@@ -255,6 +255,11 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
   importCsv(event: any): void {
     const file: File | undefined = event?.target?.files?.[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert('Please select a valid CSV file.');
+      if (event?.target) event.target.value = '';
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', file);
@@ -263,12 +268,19 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-          alert(res?.message ?? 'Import completed.');
+          const inserted = res?.inserted ?? 0;
+          const skipped = res?.skipped ?? 0;
+          alert(`Import completed. Inserted: ${inserted}, Skipped: ${skipped}`);
           this.loadPhysicians();
           if (event?.target) event.target.value = '';
         },
-        error: () => {
-          alert('Import failed');
+        error: (err) => {
+          const apiMessage =
+            err?.error?.message ||
+            err?.error?.Message ||
+            err?.error?.title ||
+            err?.message;
+          alert(apiMessage ? `Import failed: ${apiMessage}` : 'Import failed');
           if (event?.target) event.target.value = '';
         }
       });

@@ -26,6 +26,7 @@ import { PatientEligibilityComponent } from './patients/patient-eligibility/pati
 import { SuperAdminComponent } from './super-admin/super-admin.component';
 import { SuperAdminGuard } from './core/guards/super-admin.guard';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
+import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -53,6 +54,7 @@ const routes: Routes = [
   { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
   { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
   { path: 'edi-reports', component: EdiReportsComponent, canActivate: [AuthGuard] },
+  { path: 'interface-data-review', component: InterfaceDataReviewComponent, canActivate: [AuthGuard] },
   { path: 'procedure-codes', component: ProcedureCodesPageComponent, canActivate: [AuthGuard] },
   { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },
   { path: 'receiver-library', loadChildren: () => import('./features/receiver-library/receiver-library.module').then(m => m.ReceiverLibraryModule), canActivate: [AuthGuard] },

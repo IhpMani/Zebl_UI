@@ -6,7 +6,7 @@ import {
   SuperAdminTenant,
   SuperAdminFacility,
   SuperAdminUserRow,
-  ImpersonateResponse,
+  UserFacilityAccessRow,
 } from './super-admin.service';
 import { SuperAdminContextService } from './super-admin-context.service';
 import { AuthService } from '../core/services/auth.service';
@@ -31,17 +31,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   userName = '';
   userPassword = '';
-  /** Optional: restrict new user to this facility only */
+  /** Required: initial facility access for a newly created user */
   newUserFacilityId: number | null = null;
+  selectedUserId: string | null = null;
+  selectedUserAccess: UserFacilityAccessRow[] = [];
 
-  /** Context: aligned with toolbar + table Select */
+  /** Context tenant from table <strong>Select</strong> */
   contextTenantId: number | null = null;
-  contextFacilityId: number | null = null;
 
-  /** True while facility list is loading after a tenant change (toolbar facility disabled). */
-  facilitiesLoading = false;
-
-  enterTenantBusy = false;
+  /** Server snapshot for facility-access checkboxes (detect unsaved toggles). */
+  private facilityAccessBaseline: string | null = null;
 
   constructor(
     private api: SuperAdminService,
@@ -62,42 +61,16 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     this.auth.syncOperationalContextFromJwt();
   }
 
-  get tenantOptionsForToolbar(): SuperAdminTenant[] {
-    return this.tenants;
-  }
-
-  get facilityOptionsForToolbar(): SuperAdminFacility[] {
-    return this.facilities;
-  }
-
-  onContextTenantIdChange(id: number | null): void {
-    if (id == null) {
-      this.setTenantContext(null);
-      return;
-    }
-    const t = this.tenants.find((x) => x.tenantId === id);
-    if (t) {
-      this.applyTenantContext(t);
-    }
-  }
-
-  onContextFacilityIdChange(id: number | null): void {
-    if (id == null || id <= 0) {
-      this.contextFacilityId = null;
-      this.ctx.setSelectedFacilityId(null);
-      return;
-    }
-    this.ctx.setSelectedFacilityId(id);
-  }
-
   selectTenantRow(t: SuperAdminTenant): void {
     this.applyTenantContext(t);
   }
 
   private applyTenantContext(t: SuperAdminTenant): void {
     this.contextTenantId = t.tenantId;
-    this.contextFacilityId = null;
     this.ctx.setSelectedTenant(t.tenantId);
+    this.userName = '';
+    this.userPassword = '';
+    this.newUserFacilityId = null;
     this.reloadFacilitiesAndUsers();
   }
 
@@ -106,8 +79,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       this.contextTenantId = null;
       this.facilities = [];
       this.users = [];
-      this.contextFacilityId = null;
-      this.facilitiesLoading = false;
       this.ctx.setSelectedTenant(null);
       return;
     }
@@ -116,6 +87,51 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   isTenantSelected(t: SuperAdminTenant): boolean {
     return this.contextTenantId === t.tenantId;
+  }
+
+  /** Glow Create tenant when name or key has any input. */
+  get tenantCreatePending(): boolean {
+    return !!(this.tenantName?.trim() || this.tenantKey?.trim());
+  }
+
+  /** Glow Create facility when new name has input and a tenant is in context. */
+  get facilityCreatePending(): boolean {
+    return !!(
+      this.contextTenantId &&
+      this.contextTenantId > 0 &&
+      this.facilityName?.trim()
+    );
+  }
+
+  /** Glow Create user when any create-user field is set and tenant is in context. */
+  get userCreatePending(): boolean {
+    if (!this.contextTenantId || this.contextTenantId <= 0) {
+      return false;
+    }
+    return !!(
+      this.userName?.trim() ||
+      this.userPassword?.trim() ||
+      (this.newUserFacilityId != null && this.newUserFacilityId > 0)
+    );
+  }
+
+  /** Glow Save facility access when checkboxes differ from last load. */
+  get facilityAccessSavePending(): boolean {
+    if (!this.selectedUserId || this.selectedUserAccess.length === 0) {
+      return false;
+    }
+    if (this.facilityAccessBaseline == null) {
+      return false;
+    }
+    return this.snapshotFacilityAccess(this.selectedUserAccess) !== this.facilityAccessBaseline;
+  }
+
+  private snapshotFacilityAccess(rows: UserFacilityAccessRow[]): string {
+    return JSON.stringify(
+      rows
+        .map((r) => ({ i: r.facilityId, h: r.hasAccess }))
+        .sort((a, b) => a.i - b.i)
+    );
   }
 
   reloadTenants(preferredTenantId?: number): void {
@@ -153,36 +169,28 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     if (tid == null || tid <= 0) {
       this.facilities = [];
       this.users = [];
-      this.facilitiesLoading = false;
       return;
     }
     this.errorMessage = '';
-    this.facilitiesLoading = true;
     this.facilities = [];
     this.api.getFacilities(tid).subscribe({
       next: (f) => {
         this.facilities = f;
-        const cur = this.ctx.getFacilityIdOptional();
-        if (cur != null) {
-          const still = f.find((x) => x.facilityId === cur && x.tenantId === tid);
-          if (still) {
-            this.contextFacilityId = cur;
-          } else {
-            this.contextFacilityId = null;
-            this.ctx.setSelectedFacilityId(null);
-          }
-        } else {
-          this.contextFacilityId = null;
-        }
-        this.facilitiesLoading = false;
       },
       error: (err) => {
-        this.facilitiesLoading = false;
         this.handleErr(err);
       },
     });
     this.api.getUsers(tid).subscribe({
-      next: (u) => (this.users = u),
+      next: (u) => {
+        this.users = u;
+        if (!this.selectedUserId || !u.some((x) => x.userGuid === this.selectedUserId)) {
+          this.selectedUserId = null;
+          this.selectedUserAccess = [];
+        } else {
+          this.loadSelectedUserAccess();
+        }
+      },
       error: (err) => this.handleErr(err),
     });
   }
@@ -207,7 +215,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   deleteTenant(t: SuperAdminTenant): void {
     if (
       !confirm(
-        `Deactivate tenant "${t.name}" (${t.tenantKey})? Users may lose access.`
+        `Deactivate tenant "${t.name}" (${t.tenantKey})? Users and facilities will be disabled; data is kept.`
       )
     ) {
       return;
@@ -272,31 +280,53 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  enterTenantAsUser(): void {
-    if (this.contextTenantId == null || this.contextTenantId <= 0) {
-      this.errorMessage = 'Select a tenant before entering tenant context.';
+  onSelectedUserChange(userId: string | null): void {
+    this.selectedUserId = userId;
+    this.facilityAccessBaseline = null;
+    this.loadSelectedUserAccess();
+  }
+
+  toggleFacilityAccess(facilityId: number, checked: boolean): void {
+    this.selectedUserAccess = this.selectedUserAccess.map((row) =>
+      row.facilityId === facilityId ? { ...row, hasAccess: checked } : row
+    );
+  }
+
+  saveSelectedUserAccess(): void {
+    if (!this.contextTenantId || !this.selectedUserId) {
+      this.errorMessage = 'Select tenant and user first.';
       return;
     }
+
+    const assignedIds = this.selectedUserAccess
+      .filter((x) => x.hasAccess)
+      .map((x) => x.facilityId);
+
     this.errorMessage = '';
-    this.enterTenantBusy = true;
     this.api
-      .impersonate({
-        tenantId: this.contextTenantId,
-        facilityId:
-          this.contextFacilityId != null && this.contextFacilityId > 0
-            ? this.contextFacilityId
-            : undefined,
-      })
+      .updateUserFacilityAccess(this.contextTenantId, this.selectedUserId, assignedIds)
       .subscribe({
-        next: (res: ImpersonateResponse) => {
-          this.enterTenantBusy = false;
-          this.auth.applyImpersonationSession(res);
-          void this.router.navigateByUrl('/');
+        next: () => {
+          this.loadSelectedUserAccess();
         },
-        error: (err) => {
-          this.enterTenantBusy = false;
-          this.handleErr(err);
+        error: (err) => this.handleErr(err),
+      });
+  }
+
+  private loadSelectedUserAccess(): void {
+    if (!this.contextTenantId || !this.selectedUserId) {
+      this.selectedUserAccess = [];
+      return;
+    }
+
+    this.api
+      .getUserFacilityAccess(this.contextTenantId, this.selectedUserId)
+      .subscribe({
+        next: (rows) => {
+          this.selectedUserAccess = rows;
+          this.facilityAccessBaseline = this.snapshotFacilityAccess(rows);
         },
+        error: (err) => this.handleErr(err),
       });
   }
 

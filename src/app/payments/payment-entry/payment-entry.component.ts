@@ -7,6 +7,7 @@ import { PaymentEntryRow } from '../../core/services/payment.models';
 import { PayerListItem } from '../../core/services/payer.models';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-payment-entry',
@@ -202,18 +203,23 @@ export class PaymentEntryComponent implements OnInit {
   }
 
   /**
-   * Header totals from grid: Applied Amt = Σ line applied + Σ Pay; Remaining = Pmt Amt − Applied Amt (floor at 0).
+   * Header totals in claim-balance context (EZClaim style):
+   * - Base balance comes from grid Balance column (already historical-aware from backend).
+   * - If user keyed per-line Pay values, use their sum as prospective apply.
+   * - Otherwise, use entered payment amount as prospective apply.
+   * - Remaining = total grid balance - prospective apply (floor at 0).
    */
   recalculatePaymentTotals(): void {
     const paymentAmount = Number(this.paymentForm.get('amount')?.value ?? 0) || 0;
-    let sumAppliedCol = 0;
+    let totalBalance = 0;
     let sumPay = 0;
     for (const r of this.serviceLineRows) {
-      sumAppliedCol += Number(r.applied) || 0;
+      totalBalance += Number(r.balance) || 0;
       sumPay += Number(r.payAmount) || 0;
     }
-    this.appliedAmount = sumAppliedCol + sumPay;
-    this.remaining = Math.max(0, paymentAmount - this.appliedAmount);
+    const prospectiveApply = sumPay > 0 ? sumPay : paymentAmount;
+    this.appliedAmount = Number(prospectiveApply.toFixed(2));
+    this.remaining = Number(Math.max(0, totalBalance - prospectiveApply).toFixed(2));
     this.cdr.markForCheck();
   }
 
@@ -416,22 +422,50 @@ export class PaymentEntryComponent implements OnInit {
     });
   }
 
-  autoApply(): void {
-    if (this.currentPaymentId == null) {
-      this.error = 'Save the payment first, then use Auto Apply.';
-      return;
-    }
+  async autoApply(): Promise<void> {
     this.error = null;
-    this.paymentApi.autoApply(this.currentPaymentId).subscribe({
-      next: () => {
-        const applied = this.applyAutoAllocationToGrid();
-        this.successMessage = `Auto apply completed.${applied > 0 ? ` Applied ${applied.toFixed(2)}.` : ''}`;
-        this.recalculatePaymentTotals();
-      },
-      error: (err) => {
-        this.error = err.error?.message || err.message || 'Auto apply failed.';
+    this.successMessage = null;
+    try {
+      // If not saved yet, auto-save first (user requested one-click behavior).
+      if (this.currentPaymentId == null) {
+        this.claimId = this.resolveClaimIdFromContext();
+        if (!this.claimId || this.claimId <= 0) {
+          this.error = 'Claim context is missing. Open Payment Entry from a claim so claimId is available.';
+          return;
+        }
+        const patientId = this.paymentForm.get('patientId')?.value;
+        if (patientId == null || patientId === '') {
+          this.error = 'Patient is required.';
+          return;
+        }
+        const amount = this.paymentForm.get('amount')?.value;
+        if (amount == null || amount === '') {
+          this.error = 'Amount is required.';
+          return;
+        }
+        if (this.paymentSource === 'Payer') {
+          const payerId = this.paymentForm.get('payerId')?.value;
+          if (payerId == null || payerId === '') {
+            this.error = 'Payer is required when payment source is Payer.';
+            return;
+          }
+        }
+
+        const command = this.buildCommand();
+        const res = await firstValueFrom(this.paymentApi.createPayment(command));
+        this.currentPaymentId = res.data;
+        this.isEditMode = true;
       }
-    });
+
+      await firstValueFrom(this.paymentApi.autoApply(this.currentPaymentId));
+      const applied = this.applyAutoAllocationToGrid();
+      this.successMessage = `Auto apply completed.${applied > 0 ? ` Applied ${applied.toFixed(2)}.` : ''}`;
+      // Re-read server-calculated applied/balance values to keep links accurate.
+      this.loadServiceLines();
+      this.recalculatePaymentTotals();
+    } catch (err: any) {
+      this.error = err?.error?.message || err?.message || 'Auto apply failed.';
+    }
   }
 
   /**

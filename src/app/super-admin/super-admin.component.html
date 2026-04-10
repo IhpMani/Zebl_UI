@@ -1,47 +1,9 @@
 <div class="sa-page">
-  <header class="sa-toolbar">
+  <header class="sa-page-header">
     <h1>Super Admin</h1>
-    <div class="sa-toolbar-fields">
-      <label>
-        Tenant
-        <select
-          name="ctxTenant"
-          [(ngModel)]="contextTenantId"
-          (ngModelChange)="onContextTenantIdChange($event)"
-        >
-          <option [ngValue]="null">— select —</option>
-          <option *ngFor="let t of tenantOptionsForToolbar" [ngValue]="t.tenantId">
-            {{ t.name }} ({{ t.tenantKey }})
-          </option>
-        </select>
-      </label>
-      <label>
-        Facility
-        <select
-          name="ctxFacility"
-          [(ngModel)]="contextFacilityId"
-          (ngModelChange)="onContextFacilityIdChange($event)"
-          [disabled]="
-            !contextTenantId || facilitiesLoading || facilityOptionsForToolbar.length === 0
-          "
-        >
-          <option [ngValue]="null">— select —</option>
-          <option *ngFor="let f of facilityOptionsForToolbar" [ngValue]="f.facilityId">
-            {{ f.name }} ({{ f.facilityId }})
-          </option>
-        </select>
-      </label>
-      <button
-        type="button"
-        class="sa-btn"
-        (click)="enterTenantAsUser()"
-        [disabled]="
-          enterTenantBusy || contextTenantId == null || contextTenantId <= 0
-        "
-      >
-        {{ enterTenantBusy ? 'Entering…' : 'Enter tenant' }}
-      </button>
-    </div>
+    <p class="sa-subtitle">
+      Choose a tenant with <strong>Select</strong> in the table below to manage facilities and users.
+    </p>
   </header>
 
   <p class="sa-error" *ngIf="errorMessage">{{ errorMessage }}</p>
@@ -53,7 +15,12 @@
       <div class="sa-form">
         <label>New tenant name<input [(ngModel)]="tenantName" name="tn" /></label>
         <label>Tenant key<input [(ngModel)]="tenantKey" name="tk" /></label>
-        <button type="button" class="sa-btn" (click)="createTenant()">
+        <button
+          type="button"
+          class="sa-btn sa-btn-action"
+          [class.sa-btn-action--pending]="tenantCreatePending"
+          (click)="createTenant()"
+        >
           Create tenant
         </button>
       </div>
@@ -106,7 +73,8 @@
         <label>New facility name<input [(ngModel)]="facilityName" name="fn" /></label>
         <button
           type="button"
-          class="sa-btn"
+          class="sa-btn sa-btn-action"
+          [class.sa-btn-action--pending]="facilityCreatePending"
           (click)="createFacility()"
           [disabled]="!contextTenantId"
         >
@@ -140,13 +108,43 @@
     <section class="sa-card">
       <h2>Users</h2>
       <p class="sa-muted" *ngIf="!contextTenantId">Select a tenant to list users.</p>
-      <div class="sa-form" *ngIf="contextTenantId">
-        <label>Username<input [(ngModel)]="userName" name="un" /></label>
-        <label>Password<input type="password" [(ngModel)]="userPassword" name="pw" /></label>
+      <form
+        *ngIf="contextTenantId"
+        class="sa-form"
+        autocomplete="off"
+        (submit)="$event.preventDefault()"
+      >
         <label>
-          Assign facility (optional)
-          <select name="newUserFac" [(ngModel)]="newUserFacilityId">
-            <option [ngValue]="null">All facilities in tenant</option>
+          Username
+          <input
+            [(ngModel)]="userName"
+            name="saCreateUserLogin"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            data-lpignore="true"
+            data-1p-ignore
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            [(ngModel)]="userPassword"
+            name="saCreateUserSecret"
+            autocomplete="new-password"
+            data-lpignore="true"
+            data-1p-ignore
+          />
+        </label>
+        <label>
+          Assign facility
+          <select
+            name="saNewUserFacility"
+            [(ngModel)]="newUserFacilityId"
+            autocomplete="off"
+          >
+            <option [ngValue]="null">— select facility —</option>
             <option *ngFor="let f of facilities" [ngValue]="f.facilityId">
               {{ f.name }} ({{ f.facilityId }})
             </option>
@@ -154,13 +152,14 @@
         </label>
         <button
           type="button"
-          class="sa-btn"
+          class="sa-btn sa-btn-action"
+          [class.sa-btn-action--pending]="userCreatePending"
           (click)="createUser()"
           [disabled]="!contextTenantId"
         >
           Create user
         </button>
-      </div>
+      </form>
       <div class="sa-table-wrap" *ngIf="contextTenantId">
         <table class="sa-table">
           <thead>
@@ -180,6 +179,53 @@
         </table>
       </div>
       <p *ngIf="contextTenantId && users.length === 0" class="sa-muted">No users.</p>
+
+      <div class="sa-form" *ngIf="contextTenantId && users.length > 0">
+        <label>
+          Select user
+          <select
+            name="selectedUser"
+            [(ngModel)]="selectedUserId"
+            (ngModelChange)="onSelectedUserChange($event)"
+          >
+            <option [ngValue]="null">— select user —</option>
+            <option *ngFor="let u of users" [ngValue]="u.userGuid">
+              {{ u.userName }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <div class="sa-table-wrap" *ngIf="selectedUserId && selectedUserAccess.length > 0">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Facility</th>
+              <th>Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of selectedUserAccess">
+              <td>{{ a.name }} ({{ a.facilityId }})</td>
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="a.hasAccess"
+                  (change)="toggleFacilityAccess(a.facilityId, $any($event.target).checked)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button
+          type="button"
+          class="sa-btn sa-btn-action sa-btn-below-table"
+          [class.sa-btn-action--pending]="facilityAccessSavePending"
+          (click)="saveSelectedUserAccess()"
+        >
+          Save facility access
+        </button>
+      </div>
     </section>
   </div>
 </div>

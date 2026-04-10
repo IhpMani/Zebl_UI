@@ -21,11 +21,18 @@ export interface SuperAdminFacility {
 }
 
 export interface SuperAdminUserRow {
+  userGuid: string;
   userName: string;
   tenantId: number;
   tenantName: string;
   role: string;
   createdAt?: string | null;
+}
+
+export interface UserFacilityAccessRow {
+  facilityId: number;
+  name: string;
+  hasAccess: boolean;
 }
 
 export interface ImpersonateResponse {
@@ -86,6 +93,28 @@ export class SuperAdminService {
     facilityId: number;
   }): Observable<unknown> {
     return this.http.post(`${this.superAdminBase()}/users`, data);
+  }
+
+  getUserFacilityAccess(
+    tenantId: number,
+    userId: string
+  ): Observable<UserFacilityAccessRow[]> {
+    return this.http
+      .get<UserFacilityAccessRow[] | null>(
+        `${this.superAdminBase()}/tenants/${tenantId}/users/${userId}/facilities`
+      )
+      .pipe(map((data) => (Array.isArray(data) ? data : [])));
+  }
+
+  updateUserFacilityAccess(
+    tenantId: number,
+    userId: string,
+    facilityIds: number[]
+  ): Observable<unknown> {
+    return this.http.put(
+      `${this.superAdminBase()}/tenants/${tenantId}/users/${userId}/facilities`,
+      { facilityIds }
+    );
   }
 
   impersonate(data: {
