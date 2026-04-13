@@ -51,6 +51,11 @@ export class ListApiService {
     return this.http.get<ListTypesResponse>(`${this.baseUrl}/types`);
   }
 
+  /** Drop cached list-value streams (facility / tenant / user change). */
+  clearResponseCache(): void {
+    this.listValuesCache.clear();
+  }
+
   getListValues(listType: string): Observable<ListValuesResponse> {
     const key = (listType || '').trim().toLowerCase();
     const cached = this.listValuesCache.get(key);

@@ -14,6 +14,11 @@ export class PayerApiService {
 
   constructor(private http: HttpClient) { }
 
+  /** Drop cached payer list streams (facility / tenant / user change). */
+  clearResponseCache(): void {
+    this.payersCache.clear();
+  }
+
   getPayers(
     page: number = 1,
     pageSize: number = 100,

@@ -55,6 +55,11 @@ export class CustomFieldsApiService {
 
   constructor(private http: HttpClient) {}
 
+  /** Drop cached definition streams (facility / tenant / user change). */
+  clearResponseCache(): void {
+    this.definitionsCache.clear();
+  }
+
   getByEntityType(entityType: string): Observable<CustomFieldDefinitionDto[]> {
     const normalized = this.normalizeEntityType(entityType);
     const key = normalized.toLowerCase();
