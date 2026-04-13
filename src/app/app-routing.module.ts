@@ -39,6 +39,7 @@ const routes: Routes = [
   { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
+  { path: 'patients/new', component: PatientDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/:patId/eligibility', component: PatientEligibilityComponent, canActivate: [AuthGuard] },
   { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },

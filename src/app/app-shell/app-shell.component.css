@@ -20,8 +20,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px 14px;
-  padding: 6px 14px;
-  min-height: 44px;
+  padding: 2px 14px;
+  min-height: 20px;
   position: relative;
   z-index: 2200;
   background: linear-gradient(
@@ -40,12 +40,12 @@
   display: flex;
   align-items: center;
   flex: 0 0 auto;
-  min-width: 124px;
+  min-width: 170px;
 }
 
 .topbar-logo {
-  height: 38px;
-  width: 126px;
+  height: 36px;
+  width: 170px;
   display: block;
   object-fit: contain;
   object-position: left center;

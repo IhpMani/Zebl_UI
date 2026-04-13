@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 
 export interface RateClassSelectorResult {
   procedureCodeFile: string | null;
@@ -12,10 +12,12 @@ export interface RateClassSelectorResult {
   templateUrl: './rate-class-selector-dialog.component.html',
   styleUrls: ['./rate-class-selector-dialog.component.scss']
 })
-export class RateClassSelectorDialogComponent {
+export class RateClassSelectorDialogComponent implements OnChanges {
   @Input() payerOptions: { value: number; label: string }[] = [];
   @Input() physicianOptions: { value: number; label: string }[] = [];
   @Input() rateClassOptions: string[] = [];
+  /** Filled when user picks a file from the parent (Import flow). */
+  @Input() importFileLabel: string | null = null;
 
   @Output() cancel = new EventEmitter<void>();
   @Output() ok = new EventEmitter<RateClassSelectorResult>();
@@ -27,6 +29,16 @@ export class RateClassSelectorDialogComponent {
     billingPhysicianId: null,
     payerId: null
   };
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['importFileLabel']) {
+      const v = this.importFileLabel?.trim();
+      this.model = {
+        ...this.model,
+        procedureCodeFile: v && v.length > 0 ? v : this.model.procedureCodeFile
+      };
+    }
+  }
 
   submit(): void {
     this.ok.emit({ ...this.model });

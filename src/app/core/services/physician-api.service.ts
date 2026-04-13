@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { shareReplay } from 'rxjs/operators';
 import { PhysiciansApiResponse } from './physician.models';
 import { environment } from 'src/environments/environment';
 
@@ -10,7 +9,6 @@ import { environment } from 'src/environments/environment';
 })
 export class PhysicianApiService {
   private baseUrl = `${environment.apiUrl}/api/physicians`;
-  private physiciansCache = new Map<string, Observable<PhysiciansApiResponse>>();
 
   constructor(private http: HttpClient) { }
 
@@ -62,12 +60,7 @@ export class PhysicianApiService {
     const url = this.baseUrl;
     console.log('[PhysicianApiService] GET', url, params.toString());
 
-    const cacheKey = params.toString();
-    const cached = this.physiciansCache.get(cacheKey);
-    if (cached) return cached;
-    const req$ = this.http.get<PhysiciansApiResponse>(url, { params }).pipe(shareReplay(1));
-    this.physiciansCache.set(cacheKey, req$);
-    return req$;
+    return this.http.get<PhysiciansApiResponse>(url, { params });
   }
 
   getAvailableColumns(): Observable<any> {

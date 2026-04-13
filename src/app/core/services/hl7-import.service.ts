@@ -11,6 +11,9 @@ export interface Hl7ImportResponse {
   totalMessages: number;
   successfulMessages: number;
   failedMessages: number;
+  errors?: number;
+  /** First N per-message failure reasons from the API (when failedMessages > 0). */
+  errorMessages?: string[];
 }
 
 export interface Hl7ReviewResponse {

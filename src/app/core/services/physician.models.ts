@@ -1,5 +1,6 @@
 export interface PhysicianListItem {
   phyID: number;
+  facilityId: number;
   phyDateTimeCreated: string;
   phyFirstName: string | null;
   phyLastName: string | null;

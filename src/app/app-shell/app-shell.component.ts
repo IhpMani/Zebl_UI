@@ -47,22 +47,12 @@ import { SuperAdminService } from '../super-admin/super-admin.service';
               >
                 <button
                   type="button"
-                  role="option"
-                  class="facility-option"
-                  [attr.aria-selected]="selectedFacilityId === null"
-                  [class.facility-option--active]="selectedFacilityId === null"
-                  (click)="pickFacility(null)"
-                >
-                  Select facility…
-                </button>
-                <button
-                  type="button"
                   *ngFor="let f of facilityOptions"
                   role="option"
                   class="facility-option"
-                  [attr.aria-selected]="selectedFacilityId === f.facilityId"
-                  [class.facility-option--active]="selectedFacilityId === f.facilityId"
-                  (click)="pickFacility(f.facilityId)"
+                  [attr.aria-selected]="isFacilitySelected(f.facilityId)"
+                  [class.facility-option--active]="isFacilitySelected(f.facilityId)"
+                  (click)="pickFacility(toFacilityId(f.facilityId))"
                 >
                   {{ f.name }}
                 </button>
@@ -119,6 +109,7 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
   private navSub?: Subscription;
   private httpErrSub?: Subscription;
+  private facilitiesLoadSub?: Subscription;
 
   constructor(
     public auth: AuthService,
@@ -159,6 +150,7 @@ export class AppShellComponent implements OnDestroy, OnInit {
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
     this.httpErrSub?.unsubscribe();
+    this.facilitiesLoadSub?.unsubscribe();
   }
 
   toggleMenu(): void {
@@ -170,13 +162,14 @@ export class AppShellComponent implements OnDestroy, OnInit {
   }
 
   onFacilityChange(id: number | null): void {
-    if (id == null || id <= 0) {
+    const n = id == null ? NaN : Math.floor(Number(id));
+    if (id == null || !Number.isFinite(n) || n <= 0) {
       this.facility.clearFacilityStorage();
       this.selectedFacilityId = null;
     } else {
       try {
-        this.facility.setFacilityId(id);
-        this.selectedFacilityId = id;
+        this.facility.setFacilityId(n);
+        this.selectedFacilityId = n;
       } catch {
         this.selectedFacilityId = null;
         return;
@@ -186,11 +179,12 @@ export class AppShellComponent implements OnDestroy, OnInit {
   }
 
   getSelectedFacilityLabel(): string {
-    if (this.selectedFacilityId == null) {
+    const id = this.selectedFacilityId ?? this.facility.getFacilityIdOptional();
+    if (id == null || id <= 0) {
       return 'Select facility…';
     }
-    const row = this.facilityOptions.find((r) => r.facilityId === this.selectedFacilityId);
-    return row?.name ?? 'Select facility…';
+    const row = this.facilityOptions.find((r) => this.sameFacilityId(r.facilityId, id));
+    return row?.name ?? `Facility #${id}`;
   }
 
   toggleFacilityMenu(event: Event): void {
@@ -204,6 +198,16 @@ export class AppShellComponent implements OnDestroy, OnInit {
   pickFacility(id: number | null): void {
     this.onFacilityChange(id);
     this.facilityMenuOpen = false;
+  }
+
+  isFacilitySelected(facilityId: unknown): boolean {
+    const id = this.selectedFacilityId ?? this.facility.getFacilityIdOptional();
+    return id != null && this.sameFacilityId(facilityId, id);
+  }
+
+  toFacilityId(raw: unknown): number | null {
+    const n = Math.floor(Number(raw));
+    return Number.isFinite(n) && n > 0 ? n : null;
   }
 
   getInitials(): string {
@@ -252,6 +256,16 @@ export class AppShellComponent implements OnDestroy, OnInit {
     alert('Reset Password feature - to be implemented');
   }
 
+  /** Compare facility ids from API/storage without strict === (avoids string/number mismatch). */
+  private sameFacilityId(a: unknown, b: unknown): boolean {
+    const na = Math.floor(Number(a));
+    const nb = Math.floor(Number(b));
+    if (!Number.isFinite(na) || !Number.isFinite(nb) || na <= 0 || nb <= 0) {
+      return false;
+    }
+    return na === nb;
+  }
+
   private loadOperationalFacilities(): void {
     this.facilityLoadError = null;
     if (!this.auth.isLoggedIn() || this.auth.isSuperAdmin()) {
@@ -259,17 +273,32 @@ export class AppShellComponent implements OnDestroy, OnInit {
       this.facilityOptionsLoaded = false;
       return;
     }
-    this.facilitiesApi.getMyFacilities().subscribe({
+    this.facilitiesLoadSub?.unsubscribe();
+    this.facilitiesLoadSub = this.facilitiesApi.getMyFacilities().subscribe({
       next: (rows) => {
         this.facilityOptions = Array.isArray(rows) ? rows : [];
         this.facilityOptionsLoaded = true;
-        const cur = this.facility.getFacilityIdOptional();
-        if (cur != null && !this.facilityOptions.some((r) => r.facilityId === cur)) {
-          this.facility.clearFacilityStorage();
-          this.selectedFacilityId = null;
-        } else {
-          this.selectedFacilityId = cur;
+        let cur = this.facility.getFacilityIdOptional();
+        if (cur != null) {
+          const inList = this.facilityOptions.some((r) => this.sameFacilityId(r.facilityId, cur));
+          if (this.facilityOptions.length > 0 && !inList) {
+            this.facility.clearFacilityStorage();
+            this.selectedFacilityId = null;
+            cur = null;
+          } else if (this.facilityOptions.length === 0) {
+            this.facility.clearFacilityStorage();
+            this.selectedFacilityId = null;
+            cur = null;
+          }
         }
+        if (this.facilityOptions.length === 1 && cur == null) {
+          const onlyId = Math.floor(Number(this.facilityOptions[0].facilityId));
+          if (Number.isFinite(onlyId) && onlyId > 0) {
+            this.onFacilityChange(onlyId);
+          }
+          return;
+        }
+        this.selectedFacilityId = cur ?? this.facility.getFacilityIdOptional();
       },
       error: () => {
         this.facilityLoadError = 'Could not load facilities.';

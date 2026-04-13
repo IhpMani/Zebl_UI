@@ -66,14 +66,16 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "proxyConfig": "proxy.conf.json"
+            "buildTarget": "EZClaimFrontend:build:development",
+            "proxyConfig": "proxy.conf.json",
+            "port": 4200
           },
           "configurations": {
             "production": {
-              "browserTarget": "EZClaimFrontend:build:production"
+              "buildTarget": "EZClaimFrontend:build:production"
             },
             "development": {
-              "browserTarget": "EZClaimFrontend:build:development"
+              "buildTarget": "EZClaimFrontend:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -81,7 +83,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "EZClaimFrontend:build"
+            "buildTarget": "EZClaimFrontend:build"
           }
         },
         "test": {

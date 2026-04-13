@@ -42,7 +42,7 @@ export class RibbonComponent implements OnInit, OnDestroy {
       const qp = ctx.claimId ? { claimId: ctx.claimId } : {};
       this.router.navigate(['patients', ctx.patientId], { queryParams: qp });
     } else {
-      this.router.navigate(['patients/find-patient']);
+      this.router.navigate(['patients/new']);
     }
   }
 

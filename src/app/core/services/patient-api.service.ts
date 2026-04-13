@@ -16,6 +16,10 @@ export class PatientApiService {
     return this.http.get<PatientDetail>(`${this.baseUrl}/${patId}`);
   }
 
+  createPatient(body: UpdatePatientRequest): Observable<{ patID: number }> {
+    return this.http.post<{ patID: number }>(this.baseUrl, body);
+  }
+
   updatePatient(id: number, body: UpdatePatientRequest): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/${id}`, body);
   }

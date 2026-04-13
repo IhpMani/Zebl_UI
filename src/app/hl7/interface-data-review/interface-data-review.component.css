@@ -37,6 +37,22 @@
   color: var(--color-error);
 }
 
+.import-outcome {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-card-bg) 92%, #22c55e);
+  border: 1px solid color-mix(in srgb, #22c55e 35%, var(--color-border));
+}
+
+.import-outcome--error {
+  background: color-mix(in srgb, var(--color-card-bg) 88%, #f87171);
+  border-color: color-mix(in srgb, #f87171 45%, var(--color-border));
+  color: var(--color-error, #b91c1c);
+}
+
 .loading {
   color: var(--color-text);
 }

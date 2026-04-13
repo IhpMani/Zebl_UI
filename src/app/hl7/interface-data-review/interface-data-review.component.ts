@@ -24,6 +24,9 @@ export class InterfaceDataReviewComponent implements OnInit {
 
   importing = false; // during actual import
   importError: string | null = null;
+  /** Shown after import completes (even when pending row clears) so failures stay visible. */
+  lastImportDetail: string | null = null;
+  lastImportHadFailures = false;
 
   constructor(private hl7Service: Hl7ImportService) {}
 
@@ -94,8 +97,23 @@ export class InterfaceDataReviewComponent implements OnInit {
     this.importing = true;
 
     this.hl7Service.importHl7File(this.currentFile).subscribe({
-      next: () => {
+      next: (res) => {
         this.importing = false;
+        this.importError = null;
+        if (res.failedMessages > 0) {
+          this.lastImportHadFailures = true;
+          const fromApi = res.errorMessages?.filter((m) => !!m?.trim()) ?? [];
+          this.lastImportDetail =
+            fromApi.length > 0
+              ? fromApi.join(' ')
+              : `${res.failedMessages} of ${res.totalMessages} HL7 message(s) failed. Check API logs for exceptions.`;
+        } else {
+          this.lastImportHadFailures = false;
+          this.lastImportDetail =
+            res.totalMessages > 0
+              ? `Imported ${res.successfulMessages} of ${res.totalMessages} message(s) successfully.`
+              : null;
+        }
         this.pendingFileName = null;
         this.currentFile = null;
         this.review = null;
@@ -114,6 +132,8 @@ export class InterfaceDataReviewComponent implements OnInit {
     this.review = null;
     this.reviewError = null;
     this.importError = null;
+    this.lastImportDetail = null;
+    this.lastImportHadFailures = false;
   }
 }
 

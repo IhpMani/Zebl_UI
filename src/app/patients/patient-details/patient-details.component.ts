@@ -15,11 +15,15 @@ import { RibbonContextService } from '../../core/services/ribbon-context.service
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
 import { EligibilityApiService } from '../../core/services/eligibility-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { FacilityService } from '../../core/services/facility.service';
+import { FacilitiesApiService } from '../../core/services/facilities-api.service';
 
 interface PhysicianOption {
   phyID: number;
+  facilityId: number;
   phyName: string;
   phyEntityType: string | null;
+  phyType: string | null;
 }
 
 @Component({
@@ -30,6 +34,7 @@ interface PhysicianOption {
 })
 export class PatientDetailsComponent implements OnInit {
   patient: PatientDetail | null = null;
+  isNewMode = false;
   patientForm!: FormGroup;
   loading = false;
   error: string | null = null;
@@ -39,6 +44,9 @@ export class PatientDetailsComponent implements OnInit {
   eligibilityResponse: any = null;
 
   physicians: PhysicianOption[] = [];
+  billingProviders: PhysicianOption[] = [];
+  selectedFacilityId: number | null = null;
+  selectedFacilityName: string | null = null;
   payers: Array<{ payID: number; payName: string }> = [];
 
   physicianPickerOpen = false;
@@ -110,6 +118,8 @@ export class PatientDetailsComponent implements OnInit {
     private listApi: ListApiService,
     private customFieldsApi: CustomFieldsApiService,
     private eligibilityApi: EligibilityApiService,
+    private facilityService: FacilityService,
+    private facilitiesApi: FacilitiesApiService,
     private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -117,7 +127,20 @@ export class PatientDetailsComponent implements OnInit {
   ngOnInit(): void {
     this.buildPatientForm();
     const idParam = this.route.snapshot.paramMap.get('patId');
-    if (idParam) {
+    if (this.route.snapshot.routeConfig?.path === 'patients/new') {
+      this.isNewMode = true;
+      this.patId = null;
+      this.patient = this.createEmptyPatient();
+      this.ribbonContext.clearContext();
+      this.loadClassificationOptions();
+      this.loadPhysicians();
+      this.loadSelectedFacilityName();
+      this.loadPayers();
+      this.insuranceList = [];
+      this.insuranceLoaded = true;
+      this.workspace.updateActiveTabTitle('New Patient');
+      this.cdr.markForCheck();
+    } else if (idParam && !Number.isNaN(Number(idParam))) {
       this.patId = +idParam;
       const claimIdParam = this.route.snapshot.queryParamMap.get('claimId');
       const fromClaimId = claimIdParam ? parseInt(claimIdParam, 10) : null;
@@ -127,12 +150,102 @@ export class PatientDetailsComponent implements OnInit {
       });
       this.loadClassificationOptions();
       this.loadPhysicians();
+      this.loadSelectedFacilityName();
       this.loadPayers();
       this.loadPatient(this.patId);
     } else {
       this.error = 'Invalid patient ID';
       this.cdr.markForCheck();
     }
+  }
+
+  private createEmptyPatient(): PatientDetail {
+    const nowIso = new Date().toISOString();
+    return {
+      patID: 0,
+      patFirstName: null,
+      patLastName: null,
+      patMI: null,
+      patFullNameCC: null,
+      patAccountNo: null,
+      patActive: true,
+      patBirthDate: null,
+      patSSN: null,
+      patSex: null,
+      patAddress: null,
+      patAddress2: null,
+      patCity: null,
+      patState: null,
+      patZip: null,
+      patPhoneNo: null,
+      patCellPhoneNo: null,
+      patHomePhoneNo: null,
+      patWorkPhoneNo: null,
+      patFaxNo: null,
+      patPriEmail: null,
+      patSecEmail: null,
+      patClassification: null,
+      patClaLibFID: 0,
+      patCoPayAmount: null,
+      patDiagnosis1: null,
+      patDiagnosis2: null,
+      patDiagnosis3: null,
+      patDiagnosis4: null,
+      patEmployed: null,
+      patMarried: null,
+      patRenderingPhyFID: 0,
+      patBillingPhyFID: 0,
+      patFacilityPhyFID: 0,
+      patReferringPhyFID: 0,
+      patOrderingPhyFID: 0,
+      patSupervisingPhyFID: 0,
+      patStatementName: null,
+      patStatementAddressLine1: null,
+      patStatementAddressLine2: null,
+      patStatementCity: null,
+      patStatementState: null,
+      patStatementZipCode: null,
+      patStatementMessage: null,
+      patReminderNote: null,
+      patEmergencyContactName: null,
+      patEmergencyContactPhoneNo: null,
+      patEmergencyContactRelation: null,
+      patWeight: null,
+      patHeight: null,
+      patMemberID: null,
+      patSigOnFile: false,
+      patInsuredSigOnFile: false,
+      patPrintSigDate: false,
+      patPhyPrintDate: false,
+      patDontSendPromotions: false,
+      patDontSendStatements: false,
+      patAuthTracking: false,
+      patAptReminderPref: null,
+      patReminderNoteEvent: null,
+      patSigSource: null,
+      patCoPayPercent: null,
+      patCustomField1: null,
+      patCustomField2: null,
+      patCustomField3: null,
+      patCustomField4: null,
+      patCustomField5: null,
+      patExternalFID: null,
+      patPaymentMatchingKey: null,
+      patLastStatementDateTRIG: null,
+      patTotalBalanceCC: null,
+      patDateTimeCreated: nowIso,
+      patDateTimeModified: nowIso,
+      primaryInsurance: null,
+      secondaryInsurance: null,
+      insuranceList: [],
+      renderingPhysician: null,
+      billingPhysician: null,
+      facilityPhysician: null,
+      referringPhysician: null,
+      orderingPhysician: null,
+      supervisingPhysician: null,
+      patientNotes: []
+    };
   }
 
   private buildPatientForm(): void {
@@ -227,16 +340,70 @@ export class PatientDetailsComponent implements OnInit {
         const data = r.data ?? [];
         this.physicians = data.map(p => ({
           phyID: p.phyID,
+          facilityId: p.facilityId,
           phyName: p.phyFullNameCC || p.phyName || 'Unknown',
-          phyEntityType: (p as any).phyEntityType ?? p.phyType ?? null
+          phyEntityType: (p as any).phyEntityType ?? p.phyType ?? null,
+          phyType: (p as any).phyType ?? null
         }));
+        this.refreshBillingProviders();
         this.cdr.markForCheck();
       },
       error: () => {
         this.physicians = [];
+        this.billingProviders = [];
         this.cdr.markForCheck();
       }
     });
+  }
+
+  private loadSelectedFacilityName(): void {
+    const selectedId = this.facilityService.getFacilityIdOptional();
+    this.selectedFacilityId = selectedId;
+    if (selectedId == null || selectedId <= 0) {
+      this.selectedFacilityName = null;
+      this.billingProviders = [];
+    }
+    this.facilitiesApi.getMyFacilities().subscribe({
+      next: (rows) => {
+        const list = rows ?? [];
+        let effectiveId = this.selectedFacilityId;
+        if ((!effectiveId || effectiveId <= 0) && list.length === 1) {
+          effectiveId = Number(list[0].facilityId) || null;
+          this.selectedFacilityId = effectiveId;
+        }
+        const matched = list.find((f) => Number(f.facilityId) === Number(effectiveId));
+        this.selectedFacilityName = matched?.name?.trim() || null;
+        this.refreshBillingProviders();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.selectedFacilityName = null;
+        this.selectedFacilityId = null;
+        this.billingProviders = [];
+      }
+    });
+  }
+
+  private refreshBillingProviders(): void {
+    const selectedFacilityId = this.selectedFacilityId ?? this.facilityService.getFacilityIdOptional();
+    const selectedFacilityName = (this.selectedFacilityName ?? '').trim().toLowerCase();
+    const nonPerson = this.physicians.filter(p => p.phyType === 'Non-Person');
+    let filtered = selectedFacilityId && selectedFacilityId > 0
+      ? nonPerson.filter(p => p.facilityId === selectedFacilityId)
+      : [];
+
+    // Enforce topbar facility context by name (e.g., NJ) with no broad fallback.
+    if (selectedFacilityName) {
+      filtered = filtered.filter(p => (p.phyName || '').toLowerCase().includes(selectedFacilityName));
+    }
+
+    this.billingProviders = filtered;
+  }
+
+  get billingProviderFacilityHint(): string | null {
+    if (this.billingProviders.length > 0) return null;
+    const name = this.selectedFacilityName?.trim();
+    return name && name.length > 0 ? name : null;
   }
 
   loadPayers(): void {
@@ -754,6 +921,38 @@ export class PatientDetailsComponent implements OnInit {
   }
 
   save(): void {
+    if (this.isNewMode) {
+      if (this.saving || !this.patient) return;
+      this.syncFormToPatient();
+      this.saving = true;
+      this.cdr.markForCheck();
+      const body = this.buildUpdateBody();
+      this.patientApi.createPatient(body).pipe(
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      ).subscribe({
+        next: (res) => {
+          const newId = Number(res?.patID);
+          if (!Number.isFinite(newId) || newId <= 0) {
+            alert('Patient saved, but could not open details.');
+            this.goBackToList();
+            return;
+          }
+          this.isNewMode = false;
+          this.patId = newId;
+          this.ribbonContext.setContext({ patientId: newId, claimId: null });
+          this.workspace.updateActiveTabTitle('Loading...');
+          this.loadPatient(newId);
+        },
+        error: (err) => {
+          console.error('Failed to create patient', err);
+          alert('Failed to create patient');
+        }
+      });
+      return;
+    }
     if (!this.patient || !this.patId || this.saving) return;
     this.syncFormToPatient();
     this.saving = true;
@@ -779,6 +978,28 @@ export class PatientDetailsComponent implements OnInit {
   }
 
   saveAndClose(): void {
+    if (this.isNewMode) {
+      if (this.saving || !this.patient) {
+        this.goBackToList();
+        return;
+      }
+      this.syncFormToPatient();
+      this.saving = true;
+      this.cdr.markForCheck();
+      const body = this.buildUpdateBody();
+      this.patientApi.createPatient(body).pipe(
+        finalize(() => { this.saving = false; this.cdr.markForCheck(); })
+      ).subscribe({
+        next: () => {
+          this.goBackToList();
+        },
+        error: (err) => {
+          console.error('Failed to create patient', err);
+          alert('Failed to create patient');
+        }
+      });
+      return;
+    }
     if (!this.patient || !this.patId || this.saving) {
       this.goBackToList();
       return;

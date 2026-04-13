@@ -44,6 +44,8 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
   showColumnChooser = false;
   showBulkEditDialog = false;
   showRateClassDialog = false;
+  /** Shown in the rate-class dialog after user picks an import file. */
+  rateClassImportFileName: string | null = null;
 
   dirtyRowIds = new Set<number | string>();
   newRowIds = new Set<string>();
@@ -513,10 +515,12 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
   }
 
   openRateClassSelector(): void {
+    this.rateClassImportFileName = null;
     this.showRateClassDialog = true;
   }
 
   onRateClassCancel(): void {
+    this.rateClassImportFileName = null;
     this.showRateClassDialog = false;
   }
 
@@ -622,11 +626,17 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
       input.value = '';
       return;
     }
+
+    this.rateClassImportFileName = file.name;
+
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
       const entries = this.parseImportedProcedureCodes(text);
-      if (entries.length === 0) return;
+      if (entries.length === 0) {
+        alert('No valid procedure codes found in the selected file.');
+        return;
+      }
 
       const newRows: ProcedureCodeRow[] = [];
 
@@ -697,6 +707,9 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
           }
         });
       }
+
+      this.rateClassImportFileName = null;
+      this.showRateClassDialog = false;
     };
     reader.readAsText(file);
     input.value = '';

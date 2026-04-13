@@ -210,3 +210,204 @@
   align-items: flex-start;
 }
 
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.city-state-zip-page {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.breadcrumb {
+  color: var(--color-primary-btn-text);
+}
+
+.grid-area,
+.actions {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+}
+
+.grid-top-bar,
+.csz-table thead .header-row th,
+.csz-table thead .filter-row th,
+.add-entry-container,
+.auto-add {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent) !important;
+  color: var(--color-primary-btn-text);
+}
+
+.table-wrap {
+  background: transparent;
+}
+
+.add-row td,
+.add-row-edit td,
+.data-row td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+}
+
+.data-row:hover td,
+.add-row:hover .add-placeholder {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+}
+
+.add-placeholder,
+.grid-top-hint {
+  color: var(--color-nav-icon-hover);
+}
+
+.csz-table th,
+.csz-table td {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.csz-table {
+  background: transparent;
+}
+
+.grid-search,
+.csz-table thead input,
+.add-row-edit input,
+.cell-input {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+  border-radius: 8px;
+}
+
+.grid-search {
+  color: var(--color-primary-btn-text) !important;
+}
+
+.grid-search:focus,
+.csz-table thead input:focus,
+.add-row-edit input:focus,
+.cell-input:focus {
+  outline: none;
+  border-color: var(--color-nav-icon-active);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-nav-icon-active) 30%, transparent);
+}
+
+.grid-search::placeholder,
+.csz-table thead input::placeholder,
+.add-row-edit input::placeholder,
+.cell-input::placeholder {
+  color: var(--color-nav-icon);
+}
+
+.action-btn {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  border: 1px solid transparent;
+  color: var(--color-primary-btn-text);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-nav-icon-hover), var(--color-nav-icon-active));
+}
+
+.action-btn:disabled {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 60%, transparent);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-nav-icon);
+}
+
+.action-btn.danger {
+  background: color-mix(in srgb, var(--color-error) 68%, white);
+  border: 1px solid color-mix(in srgb, var(--color-error) 74%, white);
+  color: #ffffff;
+}
+
+.action-btn.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 76%, white);
+  border-color: color-mix(in srgb, var(--color-error) 82%, white);
+  color: #ffffff;
+}
+
+/* Final pass: force all editable controls and checks into theme */
+.city-state-zip-page input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-nav-glass-border);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+}
+
+.city-state-zip-page input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid var(--color-primary-btn-text);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.city-state-zip-page input[type='checkbox']:checked {
+  background: var(--color-nav-icon-active);
+  border-color: var(--color-nav-icon-active);
+}
+
+.city-state-zip-page .add-row-edit input,
+.city-state-zip-page .cell-input,
+.city-state-zip-page .csz-table thead input {
+  border: 1px solid var(--color-nav-glass-border) !important;
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.city-state-zip-page .grid-top-right,
+.city-state-zip-page .auto-add label,
+.city-state-zip-page .spacer {
+  color: var(--color-nav-icon-hover);
+}
+
+/* Remove browser autofill white/yellow flash */
+.city-state-zip-page input:-webkit-autofill,
+.city-state-zip-page input:-webkit-autofill:hover,
+.city-state-zip-page input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-primary-btn-text);
+  -webkit-box-shadow: 0 0 0 1000px color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Absolute final override: prevent any white table slab */
+.city-state-zip-page .csz-table,
+.city-state-zip-page .csz-table thead,
+.city-state-zip-page .csz-table tbody,
+.city-state-zip-page .csz-table tr,
+.city-state-zip-page .csz-table th,
+.city-state-zip-page .csz-table td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent) !important;
+  color: var(--color-primary-btn-text) !important;
+}
+
+.city-state-zip-page .csz-table thead .header-row th,
+.city-state-zip-page .csz-table thead .filter-row th {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
+}
+
+.city-state-zip-page .add-row td,
+.city-state-zip-page .add-row-edit td,
+.city-state-zip-page .data-row td {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent) !important;
+}
+
+.city-state-zip-page .add-placeholder {
+  color: var(--color-nav-icon-hover) !important;
+}
+

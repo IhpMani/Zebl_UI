@@ -11,7 +11,8 @@
   <ng-container *ngIf="!loading && !error && patient">
     <header class="patient-header">
       <div>
-        <p class="patient-context">Patient {{ patient.patID }} · {{ patient.patActive ? 'Active' : 'Inactive' }} · Account {{ patient.patAccountNo || 'N/A' }}</p>
+        <p class="patient-context" *ngIf="!isNewMode">Patient {{ patient.patID }} · {{ patient.patActive ? 'Active' : 'Inactive' }} · Account {{ patient.patAccountNo || 'N/A' }}</p>
+        <p class="patient-context" *ngIf="isNewMode">New patient</p>
         <h1>{{ getPatientName() }}</h1>
       </div>
       <div class="header-actions">
@@ -161,7 +162,8 @@
                 <label>Billing Provider</label>
                 <select formControlName="patBillingPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngIf="billingProviderFacilityHint" [ngValue]="0">{{ billingProviderFacilityHint }} (current facility)</option>
+                  <option *ngFor="let phy of billingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patBillingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patBillingPhyFID')" title="Clear">×</button>

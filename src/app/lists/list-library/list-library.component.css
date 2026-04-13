@@ -275,3 +275,113 @@
 .entries-list::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+/* =========================
+   GLASS THEME OVERRIDES
+========================= */
+.list-library-container {
+  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
+  color: var(--color-primary-btn-text);
+}
+
+.list-type-panel,
+.list-entries-panel,
+.actions-panel {
+  background: var(--color-nav-glass-tint);
+  border: 1px solid var(--color-nav-glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+}
+
+.panel-header,
+.add-entry-container,
+.auto-add-option {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.panel-body,
+.entries-list {
+  background: transparent;
+}
+
+.list-type-item,
+.entry-item {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.list-type-item:hover,
+.entry-item:hover {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+}
+
+.list-type-item.selected,
+.entry-item.selected {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 80%, transparent);
+  color: var(--color-nav-icon-hover);
+  box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+}
+
+.entry-text,
+.auto-add-option label,
+.loading,
+.empty-state {
+  color: var(--color-nav-icon-hover);
+}
+
+.add-entry-input {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+  border-radius: 8px;
+}
+
+.add-entry-input::placeholder {
+  color: var(--color-nav-icon);
+}
+
+.add-entry-input:focus {
+  outline: none;
+  background: color-mix(in srgb, var(--color-nav-item-active-bg) 78%, transparent);
+  border-color: var(--color-nav-icon-active);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-nav-icon-active) 30%, transparent);
+  color: var(--color-primary-btn-text);
+}
+
+.action-btn {
+  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  border: 1px solid transparent;
+  color: var(--color-primary-btn-text);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-nav-icon-hover), var(--color-nav-icon-active));
+  border-color: transparent;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.action-btn:disabled {
+  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 60%, transparent);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-nav-icon);
+}
+
+.btn-delete-x {
+  background: var(--color-nav-item-active-bg);
+  border: 1px solid var(--color-nav-glass-border);
+  color: var(--color-primary-btn-text);
+}
+
+.btn-delete-x:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 70%, transparent);
+  border-color: var(--color-error);
+}
