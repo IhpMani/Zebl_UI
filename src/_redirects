@@ -1,0 +1,3 @@
+# Netlify: serve Angular index.html for all routes (client-side router).
+# Without this, a full reload on /payments/entry/14 returns Netlify’s 404 page.
+/*    /index.html   200
