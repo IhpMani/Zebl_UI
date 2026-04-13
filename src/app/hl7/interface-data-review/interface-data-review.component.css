@@ -148,3 +148,18 @@
   background: var(--color-nav-item-hover-bg);
 }
 
+.import-outcome {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 68%, var(--color-nav-icon-active)) !important;
+  border: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 45%, var(--color-nav-icon-active)) !important;
+  color: var(--color-primary-btn-text) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px var(--color-nav-shell-shadow);
+}
+
+.import-outcome--error {
+  background: color-mix(in srgb, var(--color-nav-bg-start) 62%, #fb7185) !important;
+  border-color: color-mix(in srgb, var(--color-nav-glass-border) 40%, #fb7185) !important;
+  color: #ffd4de !important;
+}
+
