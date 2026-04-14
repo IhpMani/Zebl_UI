@@ -1,5 +1,5 @@
 import { Injectable, Inject, Optional } from '@angular/core';
-import { RouteReuseStrategy, Router } from '@angular/router';
+import { RouteReuseStrategy } from '@angular/router';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { WorkspaceRouteReuseStrategy } from '../../workspace/infrastructure/workspace-route-reuse-strategy';
 import { ClaimDetailsBootstrapCacheService } from './claim-details-bootstrap-cache.service';
@@ -16,7 +16,6 @@ import { RibbonContextService } from './ribbon-context.service';
 export class ContextResetService {
   constructor(
     private readonly workspace: WorkspaceService,
-    private readonly router: Router,
     private readonly claimBootstrap: ClaimDetailsBootstrapCacheService,
     private readonly listApi: ListApiService,
     private readonly payerApi: PayerApiService,
@@ -44,10 +43,12 @@ export class ContextResetService {
     this.ediReportCount.setCount(0);
   }
 
+  /**
+   * Clears caches and reloads the whole app on `/dashboard` so every service re-inits with the new `X-Facility-Id`.
+   * (SPA router navigation alone leaves some singleton state; full `location.assign` matches a refresh.)
+   */
   resetAppState(): void {
     this.clearAllClientCaches();
-    void this.router.navigate(['/dashboard']).then(() => {
-      this.claimBootstrap.preload();
-    });
+    window.location.assign('/dashboard');
   }
 }

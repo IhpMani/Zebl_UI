@@ -319,7 +319,7 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
           this.newRowIds.clear();
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to load procedure codes.';
+          this.error = this.formatApiError(err, 'Failed to load procedure codes.');
           this.loading = false;
         }
       });
@@ -405,7 +405,7 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
           this.loadPage();
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to save.';
+          this.error = this.formatApiError(err, 'Failed to save.');
           this.saving = false;
         }
       });
@@ -437,10 +437,25 @@ export class ProcedureCodeLibraryPageComponent implements OnInit, OnDestroy {
           this.leaveLibrary();
         },
         error: (err) => {
-          this.error = err?.message || 'Failed to save.';
+          this.error = this.formatApiError(err, 'Failed to save.');
           this.saving = false;
         }
       });
+  }
+
+  /** Surfaces ASP.NET `{ message, code?, detail? }` bodies (bulk-save, validation). */
+  private formatApiError(err: unknown, fallback: string): string {
+    const http = err as { error?: unknown; message?: string };
+    const body = http?.error;
+    if (body && typeof body === 'object') {
+      const o = body as { message?: string; detail?: string; title?: string };
+      if (typeof o.message === 'string' && o.message.trim()) {
+        return o.detail?.trim() ? `${o.message} (${o.detail})` : o.message;
+      }
+      if (typeof o.title === 'string' && o.title.trim()) return o.title;
+    }
+    if (typeof http?.message === 'string' && http.message.trim()) return http.message;
+    return fallback;
   }
 
   close(): void {
