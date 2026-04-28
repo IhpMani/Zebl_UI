@@ -4,6 +4,8 @@ import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PaymentListItem, PaymentsApiResponse, PaginationMeta } from '../../core/services/payment.models';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
+import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-payment-list',
@@ -37,7 +39,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'pmtOtherReference1', label: 'Addl Ref #', visible: true, filterValue: '' },
     { key: 'pmtAmount', label: 'Amount', visible: true, filterValue: '' },
     { key: 'pmtChargedPlatformFee', label: 'Charged Platform Fee', visible: true, filterValue: '' },
-    { key: 'pmtDateTimeCreated', label: 'Created Timestamp', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'pmtCreatedUserName', label: 'Created User', visible: true, filterValue: '' },
     { key: 'pmtLastUserName', label: 'Modified User', visible: true, filterValue: '' },
     { key: 'pmtRemainingCC', label: 'Remaining Bal', visible: true, filterValue: '' },
@@ -46,7 +48,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'patFirstName', label: 'First Name', visible: true, filterValue: '' },
     { key: 'pmtMethod', label: 'Method', visible: true, filterValue: '' },
     { key: 'pmtPayerName', label: 'Payer Name', visible: true, filterValue: '' },
-    { key: 'pmtDateTimeModified', label: 'Modified Timestamp', visible: true, filterValue: '' },
+    { key: 'modifiedDate', label: 'Modified Date', visible: true, filterValue: '' },
     { key: 'pmtID', label: 'Payment ID', visible: true, filterValue: '' },
     { key: 'payClassification', label: 'Pay Classification', visible: true, filterValue: '' },
     { key: 'pmtDate', label: 'Pmt Date', visible: true, filterValue: '' },
@@ -75,7 +77,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
       .subscribe({
       next: (response: any) => {
         if (response) {
-          const columns = response.data || response;
+          const columns = response.data ?? response.Data ?? response;
           if (Array.isArray(columns) && columns.length > 0) {
             this.availableRelatedColumns = columns;
             this.availableRelatedColumns.forEach(col => {
@@ -214,12 +216,17 @@ export class PaymentListComponent implements OnInit, OnDestroy {
   }
   getCellValue(payment: PaymentListItem, key: string): any {
     if (key === 'pmtSource') return '';
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && payment.additionalColumns) {
-      return payment.additionalColumns[key];
-    }
-    return (payment as any)[key];
+    return getListCellValue(payment, key);
   }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  isDateTimeColumnKey(key: string): boolean {
+    return isApiDateTimeColumnKey(key);
+  }
+
   openFilterPopup(columnKey: string, event: MouseEvent): void {
     event.stopPropagation();
     this.activeFilterColumnKey = columnKey;

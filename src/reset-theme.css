@@ -1,0 +1,13 @@
+/* Keep reset minimal so design system styles can work */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

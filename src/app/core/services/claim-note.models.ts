@@ -9,6 +9,8 @@ export interface ClaimNoteListItem {
   insuranceBalance: number | null;
   patientBalance: number | null;
   patientName?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   /** Claim list fields (claStatus, claClassification, etc.) */
   [key: string]: unknown;
   additionalColumns?: { [key: string]: unknown };

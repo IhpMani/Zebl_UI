@@ -1,0 +1,72 @@
+:root {
+  --ps-blue: #2563eb;
+  --ps-blue-light: #eff6ff;
+  --ps-blue-mid: #dbeafe;
+  --ps-blue-dark: #1d4ed8;
+  --ps-green: #16a34a;
+  --ps-orange: #f59e0b;
+  --ps-red: #ef4444;
+  /* Sidebar: cool slate-blue tint — reads as chrome vs white canvas (not flat white-on-white) */
+  --ps-sidebar: #e8edf5;
+  --ps-bg: #f5f7fb;
+  --ps-card: #ffffff;
+  --ps-border: #e5e7eb;
+  --ps-text: #1e293b;
+  --ps-muted: #64748b;
+
+  /* Compatibility aliases for existing app styles */
+  --color-primary: var(--ps-blue);
+  --color-primary-light: var(--ps-blue-light);
+  --color-primary-dark: var(--ps-blue-dark);
+  --color-bg-main: var(--ps-bg);
+  --color-bg-card: var(--ps-card);
+  --color-bg-sidebar: var(--ps-sidebar);
+  --color-border: var(--ps-border);
+  --color-text-primary: var(--ps-text);
+  --color-text-secondary: var(--ps-muted);
+  --color-text-light: #ffffff;
+  --color-body-bg: var(--ps-bg);
+  --color-card-bg: var(--ps-card);
+  --color-text: var(--ps-text);
+  --color-text-muted: var(--ps-muted);
+  --color-primary-btn: var(--ps-blue);
+  --color-primary-btn-hover: var(--ps-blue-dark);
+  --color-primary-btn-text: #ffffff;
+  --color-link: var(--ps-blue);
+}
+
+body {
+  background: var(--ps-bg);
+  color: var(--ps-text);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+/* Unified app chrome */
+.topbar {
+  background: var(--ps-blue);
+  color: #ffffff;
+}
+
+.sidebar,
+.sidebar-nav {
+  background: var(--ps-sidebar);
+  color: var(--ps-text);
+}
+
+.main-content,
+.content-area,
+.app-container {
+  background: var(--ps-bg);
+}
+
+.menu-item.active,
+.nav-item.active {
+  background: var(--ps-blue);
+  color: #ffffff;
+}
+
+.menu-item:hover,
+.nav-item:hover {
+  background: var(--ps-blue-light);
+  color: var(--ps-text);
+}

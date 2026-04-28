@@ -1,79 +1,76 @@
-/* Super Admin — aligned with app glass theme (see user-management.component.css) */
+/* Super Admin - Claim Details theme parity (white + blue, no glass) */
 
 .sa-page {
   min-height: calc(100vh - 60px);
-  padding: var(--color-space-page, 20px);
+  padding: 16px;
   box-sizing: border-box;
   width: 100%;
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: #eef2f7;
+  color: #0f172a;
 }
 
 .sa-page-header {
-  margin-bottom: var(--color-space-section, 16px);
-  padding: var(--color-space-card-padding, 16px) 20px;
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 14px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  margin-bottom: 16px;
+  padding: 14px 16px 16px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .sa-page-header h1 {
   margin: 0 0 8px;
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--color-primary-btn-text);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #0c2744;
 }
 
 .sa-subtitle {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 13px;
   line-height: 1.45;
-  color: var(--color-nav-icon-hover);
+  color: #475569;
 }
 
 .sa-subtitle strong {
-  color: var(--color-primary-btn-text);
+  color: #1e3a5f;
   font-weight: 600;
 }
 
 .sa-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: var(--color-space-grid-gap, 16px);
+  gap: 16px;
   align-items: start;
 }
 
 .sa-card {
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 14px;
-  padding: var(--color-space-card-padding, 16px);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .sa-card h2 {
   margin: 0 0 14px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary-btn-text);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 70%, transparent);
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a5f;
+  border-bottom: 1px solid #e2e8f0;
   padding-bottom: 10px;
 }
 
 .sa-error {
   margin: 8px 0 16px;
   padding: 12px 16px;
-  background: color-mix(in srgb, var(--color-error) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-error) 55%, transparent);
-  color: var(--color-primary-btn-text);
-  border-radius: var(--color-radius-md, 10px);
-  font-size: 0.9rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .sa-form {
@@ -87,79 +84,186 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.8rem;
-  color: var(--color-nav-icon-hover);
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
 }
 
 .sa-form input,
 .sa-form select {
-  padding: 8px 10px;
-  border-radius: var(--color-radius-sm, 8px);
-  border: 1px solid var(--color-nav-glass-border) !important;
-  background: rgba(12, 40, 62, 0.82) !important;
-  color: #ffffff !important;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-nav-glass-border) 35%, transparent);
+  padding: 9px 12px;
+  border-radius: 10px !important;
+  border: 1px solid #cfd8e3 !important;
+  background: #fcfdff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.sa-page .sa-form select,
+.sa-page .sa-form input {
+  border-radius: 10px !important;
+}
+
+.sa-page .sa-form select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 9px 38px 9px 12px !important;
+  line-height: 1.2 !important;
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23334155' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 16px 16px !important;
+  cursor: pointer !important;
+}
+
+.sa-page .sa-form select:hover {
+  border-color: #93c5fd !important;
+  background-color: #f8fbff !important;
 }
 
 .sa-form select option {
-  background-color: #1e5f8c;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.sa-custom-select {
+  position: relative !important;
+}
+
+.sa-select-trigger {
+  width: 100% !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #cfd8e3 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+.sa-select-trigger:hover {
+  border-color: #93c5fd !important;
+  background: #f8fbff !important;
+}
+
+.sa-select-trigger--open {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+}
+
+.sa-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-select-chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #334155;
+  transition: transform 0.15s ease;
+}
+
+.sa-select-trigger--open .sa-select-chevron {
+  transform: rotate(180deg);
+}
+
+.sa-select-panel {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 2500 !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1) !important;
+  padding: 6px !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+}
+
+.sa-select-option {
+  width: 100% !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  padding: 9px 10px !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+}
+
+.sa-select-option:hover {
+  background: #eff6ff !important;
+}
+
+.sa-select-option--active {
+  background: #dbeafe !important;
+  color: #1e3a5f !important;
+  font-weight: 600 !important;
 }
 
 .sa-form input::placeholder {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
   opacity: 1;
 }
 
 .sa-form input:focus,
 .sa-form select:focus {
   outline: none;
-  border-color: var(--color-nav-icon-active) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-nav-icon-active) 35%, transparent);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 /* Shared button chrome (Super Admin) */
 .sa-btn {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.9rem;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.22s ease,
-    transform 0.12s ease,
-    filter 0.12s ease;
+  font-size: 13px;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, filter 0.12s ease;
 }
 
 .sa-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  box-shadow: none !important;
 }
 
 /* Primary form actions: light until their fields have pending edits */
 .sa-btn.sa-btn-action {
   align-self: flex-start;
-  border: 1px solid var(--color-nav-glass-border);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-primary-btn-text);
-  box-shadow: none;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a5f;
 }
 
 .sa-btn.sa-btn-action:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 80%, #fff);
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .sa-btn.sa-btn-action.sa-btn-action--pending:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-nav-icon-active) 65%, transparent);
-  background: color-mix(in srgb, var(--color-nav-icon-active) 18%, rgba(255, 255, 255, 0.1));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-nav-icon-active) 45%, transparent),
-    0 0 16px color-mix(in srgb, var(--color-nav-icon-active) 38%, transparent),
-    0 0 32px color-mix(in srgb, var(--color-nav-icon-active) 18%, transparent);
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .sa-btn.sa-btn-action.sa-btn-action--pending:hover:not(:disabled) {
@@ -171,74 +275,61 @@
 }
 
 .sa-btn-ghost {
-  background: var(--color-nav-item-active-bg);
-  border: 1px solid var(--color-nav-glass-border);
-  color: var(--color-primary-btn-text);
-  box-shadow: none;
+  background: #ffffff;
+  border: 1px solid #cfd8e3;
+  color: #0f172a;
 }
 
 .sa-btn-ghost:hover:not(:disabled) {
-  background: var(--color-nav-item-hover-bg);
+  background: #eff6ff;
+  border-color: #93c5fd;
 }
 
 .sa-btn-danger {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-error) 85%, #fff),
-    var(--color-error)
-  );
-  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
-  color: var(--color-primary-btn-text);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-error) 30%, transparent);
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
 }
 
 .sa-btn-danger:hover:not(:disabled) {
   filter: brightness(1.05);
 }
 
-/* Glass-blue tables — global styles.css uses table { background: white !important } and
-   thead th { background: body-bg !important }. Override with same specificity + !important. */
+/* Glass-blue tables — global styles.css uses table { background: white } and
+   thead th { background: body-bg }. Override with same specificity +. */
 .sa-table-wrap {
   overflow-x: auto;
-  border-radius: var(--color-radius-md, 10px);
-  border: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 70%, transparent);
-  background: linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--color-nav-bg-start) 42%, transparent),
-      color-mix(in srgb, #0a2840 88%, transparent)
-    )
-    !important;
-  box-shadow: 0 8px 28px var(--color-nav-shell-shadow);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
 }
 
 .sa-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
-  background: transparent !important;
+  font-size: 13px;
+  background: transparent;
 }
 
 .sa-table th,
 .sa-table td {
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
-  color: #f0f7ff !important;
-  background: transparent !important;
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
+  background: transparent;
 }
 
 /* One header + body treatment for every .sa-table (tenant, facility, user, access). */
 .sa-table thead th {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 55%, rgba(6, 28, 48, 0.92)) !important;
-  color: #cfe9ff !important;
+  background: #f3f8ff;
+  color: #334155;
   font-weight: 600;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .sa-table tbody td {
-  background: rgba(20, 55, 88, 0.42) !important;
+  background: #ffffff;
 }
 
 .sa-table tbody tr:last-child td {
@@ -246,16 +337,16 @@
 }
 
 .sa-table tbody tr:hover td {
-  background: rgba(34, 95, 140, 0.5) !important;
+  background: #eef5ff;
 }
 
 /* Current tenant in context: same hover tint as other tables (no cyan bar — keeps theme unified). */
 .sa-table tbody tr.sa-row-selected td {
-  background: rgba(34, 95, 140, 0.5) !important;
+  background: #eaf2ff;
 }
 
 .sa-table tbody tr.sa-row-selected:hover td {
-  background: rgba(40, 108, 155, 0.55) !important;
+  background: #dfeeff;
 }
 
 .sa-table .sa-actions {
@@ -270,11 +361,23 @@
 .sa-table input[type='checkbox'] {
   width: 1rem;
   height: 1rem;
-  accent-color: var(--color-nav-icon-active);
+  accent-color: var(--ps-text);
   cursor: pointer;
 }
 
 .sa-muted {
-  color: var(--color-nav-icon-hover);
-  font-size: 0.85rem;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.btn-save {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-delete {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
 }

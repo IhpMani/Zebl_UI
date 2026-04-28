@@ -32,15 +32,16 @@
         <span *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="error-text">Required</span>
       </div>
       <div class="header-field">
-        <label>Type:</label>
+        <label>Transport:</label>
         <select formControlName="connectionType" class="form-input header-input">
-          <option value="Secure File Transfer">Secure File Transfer</option>
+          <option [ngValue]="0">SFTP</option>
+          <option [ngValue]="1">HTTP (inbound JSON)</option>
+          <option [ngValue]="2">API (inbound JSON)</option>
         </select>
       </div>
     </div>
 
-    <!-- Secure File Transfer Configuration -->
-    <div class="section-title">Secure File Transfer Configuration</div>
+    <div class="section-title">{{ isSftpTransport() ? 'SFTP configuration' : 'HTTP / API configuration' }}</div>
     <div class="connection-form-grid">
       <div class="form-field">
         <label>SFTP User Name:</label>
@@ -54,8 +55,12 @@
           <span *ngIf="isNew">Required</span>
         </span>
       </div>
+      <div class="form-field" *ngIf="isHttpLikeTransport()">
+        <label>Inbound fetch path:</label>
+        <input type="text" formControlName="inboundFetchPath" class="form-input" placeholder="/api/get-reports" />
+      </div>
       <div class="form-field">
-        <label>Host Name:</label>
+        <label>{{ isSftpTransport() ? 'Host name:' : 'Base URL:' }}</label>
         <input type="text" formControlName="host" class="form-input" />
         <span *ngIf="form.get('host')?.invalid && form.get('host')?.touched" class="error-text">Required</span>
       </div>

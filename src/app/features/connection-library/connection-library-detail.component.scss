@@ -1,8 +1,9 @@
+/* strict-theme-normalized */
 .connection-library-detail-container {
   padding: 24px;
-  background: var(--color-body-bg);
-  font-size: 0.9rem;
-  color: var(--color-text);
+  background: var(--ps-card);
+  font-size: 13px;
+  color: var(--ps-text);
   min-height: calc(100vh - 60px);
   height: 100%;
   position: relative;
@@ -15,26 +16,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--ps-bg);
   z-index: 10;
 }
 
 .loading {
   padding: 12px 24px;
-  background: var(--color-card-bg);
-  border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(30, 64, 175, 0.15);
+  background: var(--ps-card);
+  border-radius: 2px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--ps-text);
 }
 
 .error-panel {
   padding: 12px 16px;
   margin-bottom: 20px;
-  border-radius: 8px;
-  background: var(--color-error-bg);
-  border: 1px solid var(--color-error-border);
-  color: var(--color-error);
+  border-radius: 2px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
   
   p {
     margin: 0 0 12px 0;
@@ -43,24 +43,24 @@
 
 .btn-secondary {
   padding: 6px 16px;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
-  background: var(--color-body-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   cursor: pointer;
   
   &:hover {
-    background: var(--color-body-bg);
-    border-color: var(--color-border);
+    background: var(--ps-card);
+    border-color: var(--ps-border);
   }
 }
 
 .connection-library-form {
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   padding: 20px 180px 20px 20px;
   position: relative;
   max-width: 100%;
@@ -93,9 +93,9 @@
   min-width: 200px;
 
   label {
-    font-size: 0.8rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--color-text);
+    color: var(--ps-text);
   }
 }
 
@@ -104,21 +104,21 @@
 }
 
 .section-title {
-  font-size: 0.95rem;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--ps-text);
   margin-bottom: 12px;
   padding-bottom: 4px;
 }
 
 .btn-action {
   padding: 6px 16px;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
-  background: var(--color-body-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
   width: 100%;
@@ -128,8 +128,8 @@
   margin: 0;
   
   &:hover:not(:disabled) {
-    background: var(--color-body-bg);
-    border-color: var(--color-border);
+    background: var(--ps-card);
+    border-color: var(--ps-border);
   }
   
   &:disabled {
@@ -140,12 +140,12 @@
 
 .btn-delete {
   padding: 6px 16px;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
-  background: var(--color-error);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-card);
+  color: var(--ps-text);
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
   width: 100%;
@@ -155,7 +155,7 @@
   margin: 0;
   
   &:hover:not(:disabled) {
-    background: var(--color-error);
+    background: var(--ps-card);
   }
   
   &:disabled {
@@ -182,9 +182,9 @@
   min-width: 0;
   
   label {
-    font-size: 0.75rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-muted);
+    color: var(--ps-muted);
     white-space: nowrap;
   }
   
@@ -198,8 +198,8 @@
       margin: 0;
       font-weight: normal;
       cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--color-text);
+      font-size: 13px;
+      color: var(--ps-text);
     }
   }
 }
@@ -208,22 +208,22 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   padding: 6px 10px;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-family: inherit;
-  background: var(--color-card-bg);
+  background: var(--ps-card);
   box-sizing: border-box;
   
   &:focus {
-    outline: 2px solid var(--color-primary-btn);
+    outline: 2px solid var(--ps-border);
     outline-offset: -1px;
-    border-color: var(--color-primary-btn);
+    border-color: var(--ps-border);
   }
   
   &:disabled {
-    background: var(--color-body-bg);
+    background: var(--ps-card);
     cursor: not-allowed;
   }
 }
@@ -236,7 +236,60 @@
 }
 
 .error-text {
-  font-size: 0.75rem;
-  color: var(--color-error);
+  font-size: 13px;
+  color: var(--ps-text);
   margin-top: 2px;
+}
+
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
 }

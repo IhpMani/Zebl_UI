@@ -49,7 +49,7 @@
           <td *ngFor="let col of visibleColumns">
             <ng-container [ngSwitch]="col.key">
               <span *ngSwitchCase="'disbDateTimeCreated'">
-                {{ disbursement.disbDateTimeCreated | date:'short' }}
+                {{ (!disbursement.disbDateTimeCreated || disbursement.disbDateTimeCreated.startsWith('0001-01-01')) ? '' : (disbursement.disbDateTimeCreated | date:'dd/MM/yyyy HH:mm') }}
               </span>
               <span *ngSwitchCase="'disbAmount'">
                 {{ disbursement.disbAmount | currency:'USD':'symbol':'1.2-2' }}

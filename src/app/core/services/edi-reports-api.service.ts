@@ -3,6 +3,29 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+export interface EdiGenerateResponseDto {
+  status: string;
+  correlationId?: string;
+  reportId: string;
+  fileName: string;
+  fileType: string;
+  reportStatus: string;
+  fileSize: number;
+  isDuplicate: boolean;
+}
+
+export interface EdiApplyResponseDto {
+  processed: number;
+  applied: number;
+  skipped?: number;
+  duplicatesSkipped: number;
+  unmatched: number;
+  reversed?: number;
+  invalid?: number;
+  creditsCreated?: number;
+  correlationId?: string;
+}
+
 export interface EdiReportDto {
   id: string;
   receiverLibraryId?: string;
@@ -12,6 +35,7 @@ export interface EdiReportDto {
   direction: string;
   status: string;
   traceNumber?: string;
+  claimIdentifier?: string;
   payerName?: string;
   paymentAmount?: number;
   note?: string;
@@ -21,6 +45,8 @@ export interface EdiReportDto {
   isArchived: boolean;
   isRead: boolean;
   fileSize: number;
+  correlationId?: string;
+  isDuplicate?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -47,8 +73,8 @@ export class EdiReportsApiService {
     });
   }
 
-  generate(request: { receiverLibraryId: string; claimId: number; connectionLibraryId?: string; fileType?: string }): Observable<EdiReportDto> {
-    return this.http.post<EdiReportDto>(`${this.baseUrl}/generate`, {
+  generate(request: { receiverLibraryId: string; claimId: number; connectionLibraryId?: string; fileType?: string }): Observable<EdiGenerateResponseDto> {
+    return this.http.post<EdiGenerateResponseDto>(`${this.baseUrl}/generate`, {
       receiverLibraryId: request.receiverLibraryId,
       claimId: request.claimId,
       connectionLibraryId: request.connectionLibraryId || null,
@@ -56,8 +82,8 @@ export class EdiReportsApiService {
     });
   }
 
-  download(connectionLibraryId: string, receiverLibraryId: string): Observable<{ count: number; reports: EdiReportDto[] }> {
-    return this.http.post<{ count: number; reports: EdiReportDto[] }>(`${this.baseUrl}/download`, {
+  download(connectionLibraryId: string, receiverLibraryId: string): Observable<{ count: number; skippedCount?: number; message?: string; reports: EdiReportDto[] }> {
+    return this.http.post<{ count: number; skippedCount?: number; message?: string; reports: EdiReportDto[] }>(`${this.baseUrl}/download`, {
       connectionLibraryId,
       receiverLibraryId
     });
@@ -81,5 +107,9 @@ export class EdiReportsApiService {
 
   exportFile(id: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/export`, { responseType: 'blob' });
+  }
+
+  apply(reportId: string): Observable<EdiApplyResponseDto> {
+    return this.http.post<EdiApplyResponseDto>(`${this.baseUrl}/${reportId}/apply`, {});
   }
 }

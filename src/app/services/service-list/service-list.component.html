@@ -5,41 +5,44 @@
   <div *ngIf="error" class="error">{{ error }}</div>
 
   <div *ngIf="!loading && !error">
-    <table class="claims-table">
-      <thead>
-        <tr>
-          <th class="action-col add-column-header">
-            <div class="header-cell">
-              <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">
-                Add Column <span class="arrow">▼</span>
-              </button>
-            </div>
-            <div class="filter-row">
-              <div class="filter-placeholder"></div>
-            </div>
-          </th>
-          <th *ngFor="let col of visibleColumns">
-            <div class="header-cell">
-              <span>{{ col.label }}</span>
-              <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">
-                Filter <span class="arrow">▼</span>
-              </button>
-              <button
-                class="clear-filter-btn"
-                *ngIf="columnValueFilters[col.key]"
-                (click)="clearFilter(col.key, $event)"
-                title="Clear filter"
-              >
-                ✕
-              </button>
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
+    <div class="table-wrapper">
+      <table class="claims-table">
+        <thead>
+          <tr>
+            <th class="action-col add-column-header">
+              <div class="header-cell">
+                <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">
+                  Add Column <span class="arrow">▼</span>
+                </button>
+              </div>
+            </th>
+            <th *ngFor="let col of visibleColumns">
+              <div class="header-cell">
+                <span>{{ col.label }}</span>
+                <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+              </div>
+            </th>
+          </tr>
+          <tr>
+            <th class="action-col"><div class="filter-placeholder"></div></th>
+            <th *ngFor="let col of visibleColumns">
+              <div class="filter-row">
+                <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">
+                  Filter <span class="arrow">▼</span>
+                </button>
+                <button
+                  class="clear-filter-btn"
+                  *ngIf="columnValueFilters[col.key]"
+                  (click)="clearFilter(col.key, $event)"
+                  title="Clear filter"
+                >
+                  ✕
+                </button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
         <tr *ngFor="let service of filteredServices" (click)="onRowClick(service)" class="claim-row">
           <td class="action-col">
             <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(service)">
@@ -47,10 +50,11 @@
             </button>
           </td>
           <td *ngFor="let col of visibleColumns">
+            <ng-container *ngIf="isDateTimeColumnKey(col.key); else serviceCellSwitch">
+              <span>{{ formatDateTimeDisplay(getCellValue(service, col.key)) }}</span>
+            </ng-container>
+            <ng-template #serviceCellSwitch>
             <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'srvDateTimeCreated'">
-                {{ service.srvDateTimeCreated | date:'short' }}
-              </span>
               <span *ngSwitchCase="'srvFromDate'">
                 {{ service.srvFromDate | date:'shortDate' }}
               </span>
@@ -70,13 +74,15 @@
                 {{ getCellValue(service, col.key) }}
               </span>
             </ng-container>
+            </ng-template>
           </td>
         </tr>
         <tr *ngIf="filteredServices.length === 0 && !loading">
           <td [attr.colspan]="visibleColumns.length + 1" class="no-data">No services found</td>
         </tr>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
 
     <div *ngIf="meta" class="pagination-container">
       <div class="pagination-info">

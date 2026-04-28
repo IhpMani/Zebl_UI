@@ -57,7 +57,7 @@
     </form>
     <div class="action-buttons-vertical">
       <button type="button" class="btn-primary" (click)="saveAndClose()" [disabled]="saving">Save & Close</button>
-      <button type="button" class="btn-primary" (click)="save()" [disabled]="saving">Save</button>
+      <button type="button" class="btn-primary btn-save" (click)="save()" [disabled]="saving">Save</button>
       <button type="button" class="btn-secondary" (click)="close()">Close</button>
       <button type="button" class="btn-secondary btn-dropdown">Print Receipt <span class="arrow">▼</span></button>
       <button type="button" class="btn-secondary" (click)="newPmt()">New Pmt</button>
@@ -95,7 +95,7 @@
             <th>DOS</th>
             <th>Proc</th>
             <th>Charge</th>
-            <th>Responsible..</th>
+            <th>Responsible</th>
             <th>Applied</th>
             <th>Balance</th>
             <th>Adjustment 1 Amt</th>
@@ -168,7 +168,7 @@
       </div>
       <div class="sidebar-section filter-options">
         <div class="sidebar-title">Filter Settings:</div>
-        <label><input type="checkbox" [(ngModel)]="ignoreResponsibleParty" [ngModelOptions]="{standalone: true}"> Ignore Responsible Party</label>
+        <label><input type="checkbox" [(ngModel)]="ignoreResponsibleParty" (change)="onIgnoreResponsiblePartyChanged($any($event.target).checked)" [ngModelOptions]="{standalone: true}"> Ignore Responsible Party</label>
         <label><input type="checkbox" [(ngModel)]="matchByPayerId" [ngModelOptions]="{standalone: true}"> Match By Payer ID</label>
         <button type="button" class="btn-secondary small">Filter Settings</button>
       </div>

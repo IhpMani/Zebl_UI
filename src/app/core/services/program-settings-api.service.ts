@@ -18,5 +18,13 @@ export class ProgramSettingsApiService {
   saveSection(section: string, settings: any): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/${encodeURIComponent(section)}`, settings);
   }
+
+  getSendingClaimsSettings(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/api/settings/sending-claims`);
+  }
+
+  saveSendingClaimsSettings(settings: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/api/settings/sending-claims`, settings);
+  }
 }
 

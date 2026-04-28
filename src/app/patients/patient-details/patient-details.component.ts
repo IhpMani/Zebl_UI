@@ -13,10 +13,11 @@ import { PayerApiService } from '../../core/services/payer-api.service';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
-import { EligibilityApiService } from '../../core/services/eligibility-api.service';
+import { EligibilityApiService, EligibilityRequestResultDto, EligibilityStatusDto } from '../../core/services/eligibility-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { FacilityService } from '../../core/services/facility.service';
 import { FacilitiesApiService } from '../../core/services/facilities-api.service';
+import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 
 interface PhysicianOption {
   phyID: number;
@@ -42,6 +43,9 @@ export class PatientDetailsComponent implements OnInit {
   newNote = '';
   saving = false;
   eligibilityResponse: any = null;
+  eligibilityRequest: EligibilityRequestResultDto | null = null;
+  showEligibilityResponseViewer = true;
+  private eligibilityPollTimer: ReturnType<typeof setInterval> | null = null;
 
   physicians: PhysicianOption[] = [];
   billingProviders: PhysicianOption[] = [];
@@ -118,6 +122,7 @@ export class PatientDetailsComponent implements OnInit {
     private listApi: ListApiService,
     private customFieldsApi: CustomFieldsApiService,
     private eligibilityApi: EligibilityApiService,
+    private programSettingsApi: ProgramSettingsApiService,
     private facilityService: FacilityService,
     private facilitiesApi: FacilitiesApiService,
     private workspace: WorkspaceService,
@@ -126,6 +131,7 @@ export class PatientDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildPatientForm();
+    this.loadEligibilityViewerSetting();
     const idParam = this.route.snapshot.paramMap.get('patId');
     if (this.route.snapshot.routeConfig?.path === 'patients/new') {
       this.isNewMode = true;
@@ -641,39 +647,113 @@ export class PatientDetailsComponent implements OnInit {
 
   checkEligibility(): void {
     if (!this.patient?.patID) return;
-
     if (!this.hasPrimaryInsurance) {
       alert('Patient has no primary insurance.');
       return;
     }
 
-    const id = this.patient.patID;
-    this.eligibilityApi.check(id).subscribe({
-      next: (res: any) => {
-        // Show popup with eligibility response.
-        this.eligibilityResponse = res;
-        // Reload patient to update insurance eligibility status/date.
-        this.loadPatient(id);
+    this.eligibilityApi.preflight(this.patient.patID).subscribe({
+      next: (pf) => {
+        if (!pf.valid) {
+          alert((pf.errors ?? []).join('\n') || 'Eligibility preflight failed.');
+          return;
+        }
+        this.eligibilityApi.request(this.patient!.patID).subscribe({
+          next: (request) => {
+            this.eligibilityRequest = request;
+            this.eligibilityResponse = null;
+            this.pollEligibilityStatus();
+          },
+          error: (err) => {
+            alert(err?.error?.error || err?.error?.message || 'Failed to request eligibility.');
+          }
+        });
       },
-      error: (err) => {
-        console.error('Eligibility check failed', err);
-        alert(err.error?.message ?? 'Eligibility check failed.');
+      error: () => {
+        alert('Eligibility preflight could not be completed.');
       }
     });
   }
 
   viewEligibility(): void {
-    if (!this.patient?.patID) return;
+    if (!this.eligibilityRequest?.id) return;
 
-    const id = this.patient.patID;
-    this.eligibilityApi.getHistory(id).subscribe(history => {
-      if (!history?.length) return;
-
-      const latest = history[0];
-      this.eligibilityApi.getRaw(latest.requestId).subscribe(raw => {
-        alert(raw.raw271);
-      });
+    this.eligibilityApi.getById(this.eligibilityRequest.id, false).subscribe({
+      next: status => {
+        this.presentEligibilityResult(status, true);
+      },
+      error: (err) => {
+        alert(err?.error?.error || 'Failed to load eligibility response.');
+      }
     });
+  }
+
+  private pollEligibilityStatus(): void {
+    if (!this.eligibilityRequest?.id) return;
+    if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
+
+    const requestId = this.eligibilityRequest.id;
+    const poll = () => {
+      this.eligibilityApi.getById(requestId).subscribe({
+        next: status => {
+          if (this.currentInsurance) {
+            this.currentInsurance.patInsEligStatus = status.eligibilityStatus || this.currentInsurance.patInsEligStatus;
+          }
+
+          if (status.status === 'Completed') {
+            this.presentEligibilityResult(status, false);
+            if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
+          } else if (status.status === 'Failed') {
+            alert(`Eligibility failed: ${status.errorMessage || 'Unknown error'}`);
+            if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
+          }
+        },
+        error: () => {
+          if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
+        }
+      });
+    };
+
+    poll();
+    this.eligibilityPollTimer = setInterval(poll, 5000);
+  }
+
+  private loadEligibilityViewerSetting(): void {
+    this.programSettingsApi.getSection('patientEligibility').subscribe({
+      next: data => {
+        this.showEligibilityResponseViewer = data?.showEligibilityResponseViewer !== false;
+      },
+      error: () => {
+        this.showEligibilityResponseViewer = true;
+      }
+    });
+  }
+
+  private presentEligibilityResult(status: EligibilityStatusDto, forceViewer: boolean): void {
+    if (forceViewer || this.showEligibilityResponseViewer) {
+      this.eligibilityResponse = {
+        payerName: status.payerName,
+        status: status.eligibilityStatus || status.status,
+        planName: status.planName,
+        planDetails: status.planDetails,
+        eligibilityStartDate: status.eligibilityStartDate,
+        eligibilityEndDate: status.eligibilityEndDate,
+        benefits: status.benefits ?? [],
+        errorMessage: status.errorMessage,
+        providerNpi: status.providerNpi,
+        providerMode: status.providerMode,
+        usedPayerOverride: status.usedPayerOverride
+      };
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const mode = status.providerMode ?? '';
+    const npi = status.providerNpi ?? '';
+    const providerLine =
+      npi ? `\nEligibility checked using provider: ${npi}${mode ? ` (${mode})` : ''}` : '';
+    const overrideWarn = status.usedPayerOverride ? '\nUsing payer-specific provider override' : '';
+    alert(`Eligibility completed: ${status.eligibilityStatus || 'Unknown'}${providerLine}${overrideWarn}`);
   }
 
   openPhysicianPicker(controlName?: string): void {
@@ -872,10 +952,16 @@ export class PatientDetailsComponent implements OnInit {
       alert('No primary insurance to copy to claims.');
       return;
     }
+    const selectedPayerId = Number(primary.payID ?? 0) || null;
+    console.log('Update Claims clicked', {
+      patientId: this.patId,
+      selectedPayerId
+    });
     this.saving = true;
     this.cdr.markForCheck();
 
     const body = { ...this.buildUpdateBody(), updateClaims: true };
+    console.log('Calling API with:', body);
 
     this.patientApi.updatePatient(this.patId, body).pipe(
       finalize(() => {

@@ -92,7 +92,10 @@ export class ReceiverLibraryApiService {
 
   constructor(private http: HttpClient) { }
 
-  getAll(): Observable<ReceiverLibrariesApiResponse> {
+  getAll(type?: 'eligibility'): Observable<ReceiverLibrariesApiResponse> {
+    if (type) {
+      return this.http.get<ReceiverLibrariesApiResponse>(`${this.baseUrl}?type=${encodeURIComponent(type)}`);
+    }
     return this.http.get<ReceiverLibrariesApiResponse>(this.baseUrl);
   }
 

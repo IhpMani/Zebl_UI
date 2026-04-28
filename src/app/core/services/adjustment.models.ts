@@ -1,6 +1,9 @@
 export interface AdjustmentListItem {
   adjID: number;
   adjDateTimeCreated: string;
+  adjDateTimeModified?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   adjDate: string | null;
   adjAmount: number;
   adjGroupCode: string;

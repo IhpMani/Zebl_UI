@@ -4,6 +4,8 @@ import { AdjustmentApiService } from '../../core/services/adjustment-api.service
 import { AdjustmentListItem, AdjustmentsApiResponse, PaginationMeta } from '../../core/services/adjustment.models';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
+import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-adjustment-list',
@@ -42,7 +44,7 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
     table?: string;
   }> = [
     { key: 'adjID', label: 'Adjustment ID', visible: true, filterValue: '' },
-    { key: 'adjDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'adjDate', label: 'Adjustment Date', visible: true, filterValue: '' },
     { key: 'adjAmount', label: 'Amount', visible: true, filterValue: '' },
     { key: 'adjGroupCode', label: 'Group Code', visible: true, filterValue: '' },
@@ -52,7 +54,7 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
     { key: 'adjPayFID', label: 'Payer ID', visible: false, filterValue: '' },
     { key: 'adj835Ref', label: '835 Ref', visible: false, filterValue: '' },
     { key: 'adjNote', label: 'Note', visible: false, filterValue: '' },
-    { key: 'adjDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'modifiedDate', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'adjCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
     { key: 'adjLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
     { key: 'adjCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
@@ -91,7 +93,7 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
       .subscribe({
       next: (response: any) => {
         if (response) {
-          const columns = response.data || response;
+          const columns = response.data ?? response.Data ?? response;
           if (Array.isArray(columns) && columns.length > 0) {
             this.availableRelatedColumns = columns;
             this.availableRelatedColumns.forEach(col => {
@@ -271,11 +273,15 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(adjustment: AdjustmentListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && adjustment.additionalColumns) {
-      return adjustment.additionalColumns[key];
-    }
-    return (adjustment as any)[key];
+    return getListCellValue(adjustment, key);
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  isDateTimeColumnKey(key: string): boolean {
+    return isApiDateTimeColumnKey(key);
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {

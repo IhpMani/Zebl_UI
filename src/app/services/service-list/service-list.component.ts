@@ -4,6 +4,8 @@ import { ServiceApiService } from '../../core/services/service-api.service';
 import { ServiceListItem, ServicesApiResponse, PaginationMeta } from '../../core/services/service.models';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
+import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-service-list',
@@ -45,7 +47,7 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }> = [
     { key: 'srvID', label: 'Service ID', visible: true, filterValue: '' },
     { key: 'srvClaFID', label: 'Claim ID', visible: true, filterValue: '' },
-    { key: 'srvDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'srvFromDate', label: 'From Date', visible: true, filterValue: '' },
     { key: 'srvToDate', label: 'To Date', visible: true, filterValue: '' },
     { key: 'srvProcedureCode', label: 'Procedure Code', visible: true, filterValue: '' },
@@ -54,7 +56,7 @@ export class ServiceListComponent implements OnInit, OnDestroy {
     { key: 'srvUnits', label: 'Units', visible: false, filterValue: '' },
     { key: 'srvTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
     { key: 'srvTotalAmtPaidCC', label: 'Amount Paid', visible: false, filterValue: '' },
-    { key: 'srvDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'modifiedDate', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'srvCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
     { key: 'srvLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
     { key: 'srvCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
@@ -140,7 +142,7 @@ export class ServiceListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           if (response) {
-            const columns = response.data || response;
+            const columns = response.data ?? response.Data ?? response;
             if (Array.isArray(columns) && columns.length > 0) {
               this.availableRelatedColumns = columns;
               this.availableRelatedColumns.forEach(col => {
@@ -319,11 +321,15 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(service: ServiceListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && service.additionalColumns) {
-      return service.additionalColumns[key];
-    }
-    return (service as any)[key];
+    return getListCellValue(service, key);
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  isDateTimeColumnKey(key: string): boolean {
+    return isApiDateTimeColumnKey(key);
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {

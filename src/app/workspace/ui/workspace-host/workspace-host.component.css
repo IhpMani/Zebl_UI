@@ -1,4 +1,57 @@
+/* strict-theme-normalized */
 .host {
   min-width: 0;
 }
 
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}

@@ -13,19 +13,29 @@
       <div>
         <p class="patient-context" *ngIf="!isNewMode">Patient {{ patient.patID }} · {{ patient.patActive ? 'Active' : 'Inactive' }} · Account {{ patient.patAccountNo || 'N/A' }}</p>
         <p class="patient-context" *ngIf="isNewMode">New patient</p>
-        <h1>{{ getPatientName() }}</h1>
+        <h1 class="patient-title-with-icon">
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.502 19.126a11.924 11.924 0 0114.996 0A12.01 12.01 0 0012 21.75c-2.676 0-5.186-.584-7.498-1.624z" />
+          </svg>
+          {{ getPatientName() }}
+        </h1>
       </div>
       <div class="header-actions">
         <button class="btn-primary" (click)="saveAndClose()" [disabled]="saving">Save & Close</button>
-        <button class="btn-primary ghost" (click)="save()" [disabled]="saving">Save</button>
+        <button class="btn-primary ghost btn-save" (click)="save()" [disabled]="saving">Save</button>
         <button class="btn-secondary" (click)="close()">Close</button>
-        <button class="btn-secondary" disabled>Delete</button>
+        <button class="btn-secondary btn-delete" disabled>Delete</button>
       </div>
     </header>
 
     <!-- SECTION 1: Patient Information (top full width) -->
     <div class="section-panel patient-info-section" [hidden]="!sectionsState.patientInfo">
-      <div class="section-title" (click)="toggleSection('patientInfo')">Patient Information</div>
+      <div class="section-title" (click)="toggleSection('patientInfo')">
+        <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.502 19.126a11.924 11.924 0 0114.996 0A12.01 12.01 0 0012 21.75c-2.676 0-5.186-.584-7.498-1.624z" />
+        </svg>
+        Patient Information
+      </div>
       <form [formGroup]="patientForm">
         <div class="patient-grid">
           <div class="patient-info-left">
@@ -120,7 +130,13 @@
       <!-- LEFT COLUMN -->
       <div class="col-md-6">
         <div class="section-panel contact-section">
-          <div class="section-title" (click)="toggleSection('contactInfo')">Patient Contact Information</div>
+          <div class="section-title" (click)="toggleSection('contactInfo')">
+            <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15a2.25 2.25 0 012.25 2.25v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5l9 6 9-6" />
+            </svg>
+            Patient Contact Information
+          </div>
           <form [formGroup]="patientForm">
             <div class="contact-grid" [hidden]="!sectionsState.contactInfo">
               <label>Primary Phone #</label><input type="text" formControlName="patPhoneNo" />
@@ -257,8 +273,9 @@
                     <label class="ins-lbl">Date of Birth</label>
                     <input type="date" class="ins-inp" [(ngModel)]="currentInsurance.insBirthDate" [ngModelOptions]="ngModelStandalone" />
                     <label class="ins-lbl">Eligibility</label>
-                    <div class="ins-cell-with-btns">
+                    <div class="ins-cell-with-btns eligibility-cell">
                       <span
+                        class="eligibility-status"
                         [ngClass]="{
                           'text-success': currentInsurance.patInsEligStatus === 'Active' || currentInsurance.patInsEligStatus === 'A',
                           'text-danger': currentInsurance.patInsEligStatus === 'Inactive' || currentInsurance.patInsEligStatus === 'I',
@@ -272,8 +289,8 @@
                       >
                         {{ currentInsurance.patInsEligStatus || 'Unknown' }}
                       </span>
-                      <button type="button" class="btn-sm-icon" (click)="checkEligibility()">CHECK</button>
-                      <button type="button" class="btn-sm-icon" (click)="viewEligibility()">VIEW</button>
+                      <button type="button" class="btn-sm-icon eligibility-action" (click)="checkEligibility()">CHECK</button>
+                      <button type="button" class="btn-sm-icon eligibility-action" (click)="viewEligibility()">VIEW</button>
                     </div>
                     <label class="ins-lbl">Address</label>
                     <input type="text" class="ins-inp ins-inp-full" [(ngModel)]="currentInsurance.insAddress" [ngModelOptions]="ngModelStandalone" />
@@ -321,7 +338,12 @@
 
         <section class="panel-card additional-claim-panel">
           <header (click)="toggleSection('additionalClaim')" class="additional-claim-header">
-            <h3>Additional Claim Information</h3>
+            <h3>
+              <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              Additional Claim Information
+            </h3>
             <span class="collapse-icon">{{ sectionsState.additionalClaim ? '▲' : '▼' }}</span>
           </header>
           <form [formGroup]="patientForm">
@@ -345,7 +367,12 @@
 
         <section class="panel-card other-patient-panel">
           <header (click)="toggleSection('otherPatient')" class="other-patient-header">
-            <h3>Other Patient Information</h3>
+            <h3>
+              <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.72 9.72 0 01-12 0M6 18.72V21m12-2.28V21M12 3a4.5 4.5 0 014.5 4.5v1.5a4.5 4.5 0 11-9 0V7.5A4.5 4.5 0 0112 3z" />
+              </svg>
+              Other Patient Information
+            </h3>
             <span class="collapse-icon">{{ sectionsState.otherPatient ? '▲' : '▼' }}</span>
           </header>
           <form [formGroup]="patientForm">
@@ -367,7 +394,12 @@
     <!-- Additional Data, Statement, Reminder, Notes - full width (EZClaim-style tan panels) -->
     <section class="panel-card tan-panel">
       <header (click)="toggleSection('additionalData')" class="tan-panel-header">
-        <h3>Additional Data</h3>
+        <h3>
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5h18M3 12h18M3 16.5h18" />
+          </svg>
+          Additional Data
+        </h3>
         <span class="collapse-icon">{{ sectionsState.additionalData ? '▲' : '▼' }}</span>
       </header>
       <form [formGroup]="patientForm">
@@ -389,7 +421,12 @@
 
     <section class="panel-card tan-panel" *ngIf="patientCustomFieldDefinitions.length">
       <header (click)="toggleSection('customFields')" class="tan-panel-header">
-        <h3>Custom Fields</h3>
+        <h3>
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15m-15 5.25h15m-15 5.25h9" />
+          </svg>
+          Custom Fields
+        </h3>
         <span class="collapse-icon">{{ sectionsState.customFields ? '▲' : '▼' }}</span>
       </header>
       <div class="section-body tan-panel-body additional-data-two-col" [hidden]="!sectionsState.customFields">
@@ -426,7 +463,12 @@
 
     <section class="panel-card tan-panel">
       <header (click)="toggleSection('statement')" class="tan-panel-header">
-        <h3>Statement Information</h3>
+        <h3>
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          Statement Information
+        </h3>
         <span class="collapse-icon">{{ sectionsState.statement ? '▲' : '▼' }}</span>
       </header>
       <form [formGroup]="patientForm">
@@ -454,7 +496,12 @@
 
     <section class="panel-card tan-panel">
       <header (click)="toggleSection('reminderNote')" class="tan-panel-header">
-        <h3>Reminder Note</h3>
+        <h3>
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9a6 6 0 10-12 0v.05c0 .234 0 .467-.001.7a8.967 8.967 0 01-2.312 6.022 23.848 23.848 0 005.454 1.31m5.716 0a24.255 24.255 0 01-5.716 0m5.716 0a3 3 0 11-5.716 0" />
+          </svg>
+          Reminder Note
+        </h3>
         <span class="collapse-icon">{{ sectionsState.reminderNote ? '▲' : '▼' }}</span>
       </header>
       <form [formGroup]="patientForm">
@@ -472,7 +519,13 @@
 
     <section class="panel-card tan-panel notes-section">
       <header (click)="toggleSection('patientNotes')" class="tan-panel-header">
-        <h3>Patient Notes</h3>
+        <h3>
+          <svg class="section-header-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9A2.25 2.25 0 0118.75 6v12A2.25 2.25 0 0116.5 20.25h-9A2.25 2.25 0 015.25 18V6A2.25 2.25 0 017.5 3.75z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5" />
+          </svg>
+          Patient Notes
+        </h3>
         <span class="collapse-icon">{{ sectionsState.patientNotes ? '▲' : '▼' }}</span>
       </header>
       <div class="tan-panel-body" [hidden]="!sectionsState.patientNotes">

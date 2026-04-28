@@ -52,7 +52,7 @@
                 </button>
                 <button
                   type="button"
-                  class="sa-btn sa-btn-danger"
+                  class="sa-btn sa-btn-danger btn-delete"
                   (click)="deleteTenant(t)"
                 >
                   Delete
@@ -139,16 +139,31 @@
         </label>
         <label>
           Assign facility
-          <select
-            name="saNewUserFacility"
-            [(ngModel)]="newUserFacilityId"
-            autocomplete="off"
-          >
-            <option [ngValue]="null">— select facility —</option>
-            <option *ngFor="let f of facilities" [ngValue]="f.facilityId">
-              {{ f.name }} ({{ f.facilityId }})
-            </option>
-          </select>
+          <div class="sa-custom-select">
+            <button
+              type="button"
+              class="sa-select-trigger"
+              [class.sa-select-trigger--open]="newUserFacilityMenuOpen"
+              (click)="toggleNewUserFacilityMenu($event)"
+            >
+              <span class="sa-select-label">{{ getSelectedNewUserFacilityLabel() }}</span>
+              <span class="sa-select-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="sa-select-panel" *ngIf="newUserFacilityMenuOpen">
+              <button type="button" class="sa-select-option" [class.sa-select-option--active]="newUserFacilityId == null" (click)="pickNewUserFacility(null)">
+                — select facility —
+              </button>
+              <button
+                type="button"
+                class="sa-select-option"
+                *ngFor="let f of facilities"
+                [class.sa-select-option--active]="newUserFacilityId === f.facilityId"
+                (click)="pickNewUserFacility(f.facilityId)"
+              >
+                {{ f.name }} ({{ f.facilityId }})
+              </button>
+            </div>
+          </div>
         </label>
         <button
           type="button"
@@ -183,16 +198,31 @@
       <div class="sa-form" *ngIf="contextTenantId && users.length > 0">
         <label>
           Select user
-          <select
-            name="selectedUser"
-            [(ngModel)]="selectedUserId"
-            (ngModelChange)="onSelectedUserChange($event)"
-          >
-            <option [ngValue]="null">— select user —</option>
-            <option *ngFor="let u of users" [ngValue]="u.userGuid">
-              {{ u.userName }}
-            </option>
-          </select>
+          <div class="sa-custom-select">
+            <button
+              type="button"
+              class="sa-select-trigger"
+              [class.sa-select-trigger--open]="selectedUserMenuOpen"
+              (click)="toggleSelectedUserMenu($event)"
+            >
+              <span class="sa-select-label">{{ getSelectedUserLabel() }}</span>
+              <span class="sa-select-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="sa-select-panel" *ngIf="selectedUserMenuOpen">
+              <button type="button" class="sa-select-option" [class.sa-select-option--active]="selectedUserId == null" (click)="pickSelectedUser(null)">
+                — select user —
+              </button>
+              <button
+                type="button"
+                class="sa-select-option"
+                *ngFor="let u of users"
+                [class.sa-select-option--active]="selectedUserId === u.userGuid"
+                (click)="pickSelectedUser(u.userGuid)"
+              >
+                {{ u.userName }}
+              </button>
+            </div>
+          </div>
         </label>
       </div>
 

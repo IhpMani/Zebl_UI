@@ -62,13 +62,22 @@ export class AuthService {
    */
   syncOperationalContextFromJwt(): void {
     const p = this.getJwtPayload() as
-      | { tenantKey?: string; TenantKey?: string }
+      | { tenantKey?: string; TenantKey?: string; facilityId?: number | string | null; FacilityId?: number | string | null }
       | null;
     const tk = p?.tenantKey ?? p?.TenantKey;
     if (typeof tk === 'string' && tk.trim().length > 0) {
       this.facility.setTenantKey(tk);
     } else {
       this.facility.clearTenantStorage();
+    }
+
+    // Keep facility context initialized after refresh/session restore.
+    const rawFacility = p?.facilityId ?? p?.FacilityId;
+    const parsedFacility = rawFacility == null ? NaN : Math.floor(Number(rawFacility));
+    if (!this.isSuperAdmin() && Number.isFinite(parsedFacility) && parsedFacility > 0) {
+      this.facility.setFacilityId(parsedFacility);
+    } else if (this.isSuperAdmin()) {
+      this.facility.clearFacilityStorage();
     }
   }
 

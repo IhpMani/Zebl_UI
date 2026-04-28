@@ -218,11 +218,11 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
   }
 
   onSaveAndNew(): void {
-    this.save(true);
+    this.save(true, false);
   }
 
   onSaveAndClose(): void {
-    this.save(false);
+    this.save(false, true);
   }
 
   onClose(): void {
@@ -286,7 +286,7 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
       });
   }
 
-  private save(andNew: boolean): void {
+  private save(andNew: boolean, closeAfter: boolean): void {
     if (!this.formData.phyName?.trim()) {
       this.error = 'Display Name is required.';
       return;
@@ -304,6 +304,8 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
             this.loadPhysicians();
             if (andNew) {
               this.onAddNew();
+            } else if (closeAfter) {
+              this.onClose();
             } else {
               this.selectedPhysician = response.data;
               this.formData = { ...response.data };
@@ -333,6 +335,8 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
             this.loadPhysicians();
             if (andNew) {
               this.onAddNew();
+            } else if (closeAfter) {
+              this.onClose();
             }
           },
           error: (err) => {

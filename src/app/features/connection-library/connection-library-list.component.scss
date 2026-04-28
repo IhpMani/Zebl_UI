@@ -1,17 +1,18 @@
+/* strict-theme-normalized */
 .connection-library-list-container {
   display: flex;
   height: calc(100vh - 60px);
-  background: var(--color-body-bg);
-  font-size: 0.9rem;
-  color: var(--color-text);
+  background: var(--ps-card);
+  font-size: 13px;
+  color: var(--ps-text);
   overflow: hidden;
 }
 
 .left-panel {
   width: 280px;
   min-width: 280px;
-  background: var(--color-card-bg);
-  border-right: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border-right: 1px solid var(--ps-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -19,34 +20,34 @@
 
 .panel-header {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-panel-header-border);
+  border-bottom: 1px solid var(--ps-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  background: var(--color-panel-header-bg);
+  background: var(--ps-card);
   
   h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--color-text);
+    color: var(--ps-text);
   }
 }
 
 .btn-add {
   padding: 6px 16px;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
-  background: var(--color-primary-btn);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-card);
+  color: var(--ps-text);
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
   
   &:hover {
-    background: var(--color-primary-btn-hover);
+    background: var(--ps-card);
   }
   
   &:active {
@@ -56,15 +57,15 @@
 
 .loading, .error {
   padding: 12px;
-  font-size: 12px;
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: var(--ps-muted);
   flex-shrink: 0;
 }
 
 .error {
-  color: var(--color-error);
-  background: var(--color-error-bg);
-  border: 1px solid var(--color-error-border);
+  color: var(--ps-text);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
   margin: 8px;
   border-radius: 2px;
 }
@@ -78,30 +79,30 @@
 
 .connection-item {
   padding: 10px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--ps-border);
   cursor: pointer;
   transition: background 0.15s ease;
-  font-size: 0.9rem;
-  color: var(--color-text);
+  font-size: 13px;
+  color: var(--ps-text);
   word-break: break-word;
 
   &:hover {
-    background: var(--row-hover);
+    background: var(--ps-card);
   }
 
   &.selected {
-    background: var(--color-primary-btn-hover);
-    color: var(--color-primary-btn-text);
+    background: var(--ps-card);
+    color: var(--ps-text);
     font-weight: 500;
   }
 
   &.add-entry {
     font-style: italic;
-    color: var(--color-text-muted);
+    color: var(--ps-muted);
 
     &:hover {
-      background: var(--row-hover);
-      color: var(--color-primary-btn);
+      background: var(--ps-card);
+      color: var(--ps-text);
     }
   }
 }
@@ -109,15 +110,15 @@
 .empty-state {
   padding: 24px 16px;
   text-align: center;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
+  color: var(--ps-muted);
+  font-size: 13px;
   font-style: italic;
 }
 
 .right-panel {
   flex: 1;
   overflow: auto;
-  background: var(--color-body-bg);
+  background: var(--ps-card);
   position: relative;
   min-width: 0;
 }
@@ -127,8 +128,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+  color: var(--ps-muted);
+  font-size: 13px;
   text-align: center;
   padding: 20px;
   
@@ -142,16 +143,15 @@
    GLASS THEME OVERRIDES
 ========================= */
 .connection-library-list-container {
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .left-panel {
-  background: var(--color-nav-glass-tint);
-  border-right: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  border-right: 1px solid var(--ps-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .right-panel {
@@ -159,46 +159,98 @@
 }
 
 .panel-header {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent);
+  background: var(--ps-card);
+  border-bottom: 1px solid var(--ps-border);
 
   h3 {
-    color: var(--color-primary-btn-text);
+    color: var(--ps-text);
   }
 }
 
 .connection-item {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 
   &:hover {
-    background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+    background: var(--ps-card);
   }
 
   &.selected {
-    background: color-mix(in srgb, var(--color-nav-bg-start) 80%, transparent);
-    box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
-    color: var(--color-nav-icon-hover);
+    background: var(--ps-card);
+    color: var(--ps-text);
   }
 
   &.add-entry {
-    color: var(--color-nav-icon-hover);
+    color: var(--ps-text);
   }
 }
 
 .loading,
 .empty-state,
 .empty-detail {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .error {
-  color: #ffd4de;
+  color: var(--ps-text);
 }
 
 .btn-add {
-  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  background: var(--ps-bg);
   border: 1px solid transparent;
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
+}
+
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
 }

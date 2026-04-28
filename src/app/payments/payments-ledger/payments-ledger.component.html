@@ -1,0 +1,99 @@
+<div class="ledger-container">
+  <h2>Payments Ledger</h2>
+
+  <div class="filters">
+    <label>
+      Status
+      <select [(ngModel)]="applyFilter">
+        <option value="all">All</option>
+        <option value="applied">Applied</option>
+        <option value="unapplied">Unapplied</option>
+      </select>
+    </label>
+
+    <label>
+      From
+      <input type="date" [(ngModel)]="fromDate" />
+    </label>
+
+    <label>
+      To
+      <input type="date" [(ngModel)]="toDate" />
+    </label>
+
+    <label>
+      Payer
+      <input type="text" [(ngModel)]="payer" placeholder="Payer ID" />
+    </label>
+
+    <label>
+      Claim ID
+      <input type="text" [(ngModel)]="claimId" placeholder="ClaimExternalId" />
+    </label>
+
+    <button (click)="load(1)">Apply</button>
+    <button class="secondary" (click)="clearFilters()">Clear</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading payments...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="table-wrapper">
+    <ng-container *ngFor="let group of groups">
+      <div class="trace-header">
+        <span>Trace: <strong>{{ group.traceNumber }}</strong></span>
+        <span>Rows: {{ group.items.length }}</span>
+        <span>Total Paid: {{ group.totalPaid | currency:'USD':'symbol':'1.2-2' }}</span>
+      </div>
+
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>ClaimExternalId</th>
+            <th>TraceNumber</th>
+            <th>PaidAmount</th>
+            <th>AdjustmentAmount</th>
+            <th>PatientResponsibility</th>
+            <th>Status</th>
+            <th>IsApplied</th>
+            <th>PaymentDateUtc</th>
+            <th>PayerLevel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of group.items">
+            <td>
+              <a *ngIf="item.claimId; else plainClaim" href="" (click)="$event.preventDefault(); openClaim(item)">
+                {{ item.claimExternalId }}
+              </a>
+              <ng-template #plainClaim>{{ item.claimExternalId }}</ng-template>
+            </td>
+            <td>{{ item.traceNumber }}</td>
+            <td>{{ item.paidAmount | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ (item.adjustmentAmount ?? 0) | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ (item.patientResponsibility ?? 0) | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ statusOf(item) }}</td>
+            <td>{{ item.isApplied ? 'Yes' : 'No' }}</td>
+            <td>{{ item.paymentDateUtc | date:'short' }}</td>
+            <td>{{ item.payerLevel || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <div *ngIf="groups.length === 0" class="no-data">No payment ledger data found.</div>
+  </div>
+
+  <div *ngIf="meta" class="pagination">
+    <button (click)="load(1)" [disabled]="page <= 1 || loading">« First</button>
+    <button (click)="load(page - 1)" [disabled]="page <= 1 || loading">‹ Prev</button>
+    <span>Page {{ page }} / {{ getTotalPages() }}</span>
+    <button (click)="load(page + 1)" [disabled]="page >= getTotalPages() || loading">Next ›</button>
+    <button (click)="load(getTotalPages())" [disabled]="page >= getTotalPages() || loading">Last »</button>
+    <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+      <option [ngValue]="25">25</option>
+      <option [ngValue]="50">50</option>
+      <option [ngValue]="100">100</option>
+    </select>
+  </div>
+</div>

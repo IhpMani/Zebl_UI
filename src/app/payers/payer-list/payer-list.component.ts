@@ -5,6 +5,8 @@ import { PayerListItem, PayersApiResponse, PaginationMeta } from '../../core/ser
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
+import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-payer-list',
@@ -42,7 +44,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
     table?: string;
   }> = [
     { key: 'payID', label: 'Payer ID', visible: true, filterValue: '' },
-    { key: 'payDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'payName', label: 'Payer Name', visible: true, filterValue: '' },
     { key: 'payExternalID', label: 'External ID', visible: false, filterValue: '' },
     { key: 'payCity', label: 'City', visible: false, filterValue: '' },
@@ -55,7 +57,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
     { key: 'payAddr1', label: 'Address', visible: false, filterValue: '' },
     { key: 'payZip', label: 'ZIP', visible: false, filterValue: '' },
     { key: 'payEmail', label: 'Email', visible: false, filterValue: '' },
-    { key: 'payDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'modifiedDate', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'payCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
     { key: 'payLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
     { key: 'payCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
@@ -120,7 +122,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
       .subscribe({
       next: (response: any) => {
         if (response) {
-          const columns = response.data || response;
+          const columns = response.data ?? response.Data ?? response;
           if (Array.isArray(columns) && columns.length > 0) {
             this.availableRelatedColumns = columns;
             this.availableRelatedColumns.forEach(col => {
@@ -263,11 +265,15 @@ export class PayerListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(payer: PayerListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && payer.additionalColumns) {
-      return payer.additionalColumns[key];
-    }
-    return (payer as any)[key];
+    return getListCellValue(payer, key);
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  isDateTimeColumnKey(key: string): boolean {
+    return isApiDateTimeColumnKey(key);
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {

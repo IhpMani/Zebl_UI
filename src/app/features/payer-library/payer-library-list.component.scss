@@ -1,14 +1,15 @@
+/* strict-theme-normalized */
 .payer-library-list-container {
   display: flex;
   height: calc(100vh - 60px);
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .left-panel {
   width: 280px;
   min-width: 280px;
-  background: var(--color-card-bg);
-  border-right: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border-right: 1px solid var(--ps-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -16,31 +17,31 @@
 
 .panel-header {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border-bottom: 1px solid var(--ps-border);
+  background: var(--ps-card);
 
   h3 {
     margin: 0 0 8px 0;
-    font-size: 0.95rem;
-    color: var(--color-text);
+    font-size: 13px;
+    color: var(--ps-text);
   }
 
   .show-inactive {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.85rem;
+    font-size: 13px;
     cursor: pointer;
   }
 }
 
 .loading, .error {
   padding: 12px 16px;
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
 .error {
-  color: var(--color-error);
+  color: var(--ps-text);
 }
 
 .payer-list {
@@ -52,32 +53,32 @@
 .payer-item {
   padding: 10px 16px;
   cursor: pointer;
-  font-size: 0.9rem;
-  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  border-bottom: 1px solid var(--ps-border);
 
   &:hover {
-    background: var(--color-body-bg);
+    background: var(--ps-card);
   }
 
   &.selected {
-    background: var(--color-body-bg);
+    background: var(--ps-card);
     font-weight: 600;
   }
 
   &.inactive {
-    color: var(--color-text-muted);
+    color: var(--ps-muted);
   }
 
   &.add-entry {
-    color: var(--color-link);
+    color: var(--ps-text);
     font-weight: 500;
   }
 }
 
 .empty-state {
   padding: 16px;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+  color: var(--ps-muted);
+  font-size: 13px;
 }
 
 .right-panel {
@@ -88,60 +89,58 @@
 
 .empty-detail {
   padding: 24px;
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
+  color: var(--ps-muted);
+  font-size: 13px;
 }
 
 /* =========================
    GLASS THEME OVERRIDES
 ========================= */
 .payer-library-list-container {
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .left-panel {
-  background: var(--color-nav-glass-tint);
-  border-right: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  border-right: 1px solid var(--ps-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .panel-header {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent);
-  border-bottom: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  border-bottom: 1px solid var(--ps-border);
 
   h3 {
-    color: var(--color-primary-btn-text);
+    color: var(--ps-text);
   }
 
   .show-inactive {
-    color: var(--color-nav-icon-hover);
+    color: var(--ps-text);
   }
 }
 
 .payer-item {
-  color: var(--color-primary-btn-text);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+  color: var(--ps-text);
+  border-bottom: 1px solid var(--ps-border);
+  background: var(--ps-card);
 
   &:hover {
-    background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+    background: var(--ps-card);
   }
 
   &.selected {
-    background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
-    color: var(--color-nav-icon-hover);
-    box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+    background: var(--ps-card);
+    color: var(--ps-text);
   }
 
   &.inactive {
-    color: var(--color-nav-icon);
+    color: var(--ps-text);
   }
 
   &.add-entry {
-    color: var(--color-nav-icon-hover);
+    color: var(--ps-text);
     font-weight: 600;
   }
 }
@@ -149,13 +148,66 @@
 .loading,
 .empty-state,
 .empty-detail {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .error {
-  color: #ffd4de;
+  color: var(--ps-text);
 }
 
 .right-panel {
   background: transparent;
+}
+
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
 }

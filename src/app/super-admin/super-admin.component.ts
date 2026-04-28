@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -35,6 +35,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   newUserFacilityId: number | null = null;
   selectedUserId: string | null = null;
   selectedUserAccess: UserFacilityAccessRow[] = [];
+  selectedUserMenuOpen = false;
+  newUserFacilityMenuOpen = false;
 
   /** Context tenant from table <strong>Select</strong> */
   contextTenantId: number | null = null;
@@ -280,10 +282,52 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSelectedUserChange(userId: string | null): void {
-    this.selectedUserId = userId;
+  onSelectedUserChange(userId: unknown): void {
+    const nextUserId =
+      typeof userId === 'string' && userId.trim().length > 0 && userId !== 'null'
+        ? userId
+        : null;
+    this.selectedUserId = nextUserId;
     this.facilityAccessBaseline = null;
     this.loadSelectedUserAccess();
+  }
+
+  toggleSelectedUserMenu(event: Event): void {
+    event.stopPropagation();
+    this.selectedUserMenuOpen = !this.selectedUserMenuOpen;
+    if (this.selectedUserMenuOpen) {
+      this.newUserFacilityMenuOpen = false;
+    }
+  }
+
+  toggleNewUserFacilityMenu(event: Event): void {
+    event.stopPropagation();
+    this.newUserFacilityMenuOpen = !this.newUserFacilityMenuOpen;
+    if (this.newUserFacilityMenuOpen) {
+      this.selectedUserMenuOpen = false;
+    }
+  }
+
+  pickSelectedUser(userGuid: string | null): void {
+    this.selectedUserMenuOpen = false;
+    this.onSelectedUserChange(userGuid);
+  }
+
+  pickNewUserFacility(facilityId: number | null): void {
+    this.newUserFacilityMenuOpen = false;
+    this.newUserFacilityId = facilityId;
+  }
+
+  getSelectedUserLabel(): string {
+    if (!this.selectedUserId) return '— select user —';
+    const u = this.users.find((x) => x.userGuid === this.selectedUserId);
+    return u?.userName ?? '— select user —';
+  }
+
+  getSelectedNewUserFacilityLabel(): string {
+    if (this.newUserFacilityId == null || this.newUserFacilityId <= 0) return '— select facility —';
+    const f = this.facilities.find((x) => x.facilityId === this.newUserFacilityId);
+    return f ? `${f.name} (${f.facilityId})` : '— select facility —';
   }
 
   toggleFacilityAccess(facilityId: number, checked: boolean): void {
@@ -380,5 +424,14 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
         ? (body as { errorCode: string }).errorCode
         : undefined;
     this.errorMessage = code ? `${code}: ${msg}` : msg;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.sa-custom-select')) {
+      this.selectedUserMenuOpen = false;
+      this.newUserFacilityMenuOpen = false;
+    }
   }
 }

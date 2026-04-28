@@ -1,0 +1,218 @@
+/* Final hard override layer - loaded last */
+
+html,
+body,
+app-root,
+.app-container,
+.main-content,
+.content-area {
+  background: var(--ps-bg) !important;
+  color: var(--ps-text) !important;
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+  font-size: 13px !important;
+}
+
+/* Remove gradients/modern effects globally */
+*,
+*::before,
+*::after {
+  background-image: none !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+
+.topbar {
+  background: #ffffff !important;
+  color: var(--ps-text) !important;
+  border-bottom: 1px solid var(--ps-border) !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04) !important;
+}
+
+.sidebar,
+.sidebar-nav {
+  background: var(--ps-sidebar) !important;
+  color: var(--ps-text) !important;
+  border-right: 1px solid var(--ps-border) !important;
+  border-radius: 0 !important;
+}
+
+.menu-item,
+.nav-item {
+  background: transparent !important;
+  color: var(--ps-text) !important;
+  padding: 10px !important;
+  font-size: 13px !important;
+  border: 1px solid transparent !important;
+}
+
+.menu-item.active,
+.nav-item.active {
+  background: var(--ps-blue) !important;
+  color: #fff !important;
+}
+
+.menu-item:hover,
+.nav-item:hover {
+  background: var(--ps-blue-light) !important;
+  color: var(--ps-text) !important;
+}
+
+.card,
+.panel,
+.workspace-content,
+.panel-card,
+.dropdown,
+.floating-panel,
+.facility-select-panel {
+  background: var(--ps-card) !important;
+  border: 1px solid var(--ps-border) !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+
+.tabs {
+  background: #e4edf6 !important;
+  border-bottom: 1px solid var(--ps-border) !important;
+}
+
+.tabs-bar {
+  background: #eef2f7 !important;
+  border-bottom: 1px solid #d9e2ec !important;
+}
+
+.tab {
+  background: #f8fbff !important;
+  border: 1px solid #d9e2ec !important;
+  border-bottom: none !important;
+  border-radius: 10px 10px 0 0 !important;
+  padding: 8px 14px !important;
+  color: #334155 !important;
+}
+
+.tab.active {
+  background: #fff !important;
+  border-color: #c8d4e3 !important;
+  border-bottom: none !important;
+  color: var(--ps-text) !important;
+}
+
+label {
+  color: var(--ps-muted) !important;
+  font-size: 12px !important;
+}
+
+input,
+select,
+textarea {
+  background: #fff !important;
+  border: 1px solid var(--ps-border) !important;
+  color: var(--ps-text) !important;
+  font-size: 13px !important;
+  padding: 4px 6px !important;
+}
+
+input,
+select {
+  height: 28px !important;
+}
+
+table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  background: #fff !important;
+}
+
+th {
+  background: #f1f5fb !important;
+  color: var(--ps-muted) !important;
+  border: 1px solid var(--ps-border) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+td {
+  border: 1px solid var(--ps-border) !important;
+  font-size: 12px !important;
+  color: var(--ps-text) !important;
+}
+
+.btn-primary {
+  background: var(--ps-blue) !important;
+  color: #fff !important;
+  border: 1px solid var(--ps-blue-dark) !important;
+  padding: 6px 12px !important;
+}
+
+.btn-secondary {
+  background: #dfe6ee !important;
+  color: #333 !important;
+  border: 1px solid var(--ps-border) !important;
+  padding: 6px 12px !important;
+}
+
+/*
+ * Sidebar chrome: rounded, soft depth.
+ * (Global * { border-radius: 2px; box-shadow: none } is intentionally overridden here.)
+ */
+.sidebar {
+  box-shadow: 4px 0 28px rgba(15, 23, 42, 0.06) !important;
+}
+
+.sidebar-nav .nav-item,
+.sidebar-nav .sidebar-toggle,
+.sidebar-mobile-toggle {
+  border-radius: 10px !important;
+}
+
+.sidebar-nav .nav-item {
+  padding: 8px 12px !important;
+}
+
+.sidebar-nav .nav-item.active {
+  border-left-color: transparent !important;
+  border-left-width: 0 !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22) !important;
+}
+
+.sidebar-nav .dropdown-content,
+.floating-panel {
+  border-radius: 16px !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.12) !important;
+}
+
+.floating-panel {
+  min-width: 248px !important;
+  padding: 8px !important;
+  background: #fbfdff !important;
+  border: 1px solid #dbe5f2 !important;
+}
+
+.sidebar-nav .dropdown-content {
+  min-width: 248px !important;
+  padding: 8px !important;
+  background: #fbfdff !important;
+  border: 1px solid #dbe5f2 !important;
+}
+
+.sidebar-nav .dropdown-content a {
+  margin: 0 !important;
+  border-radius: 12px !important;
+  border-bottom: 0 !important;
+}
+
+.floating-panel__item {
+  border-radius: 10px !important;
+  margin: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.sidebar-profile .dropdown {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.1) !important;
+}
+
+.sidebar-profile .dropdown .menu-item {
+  padding: 10px 14px !important;
+}

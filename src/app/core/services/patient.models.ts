@@ -229,6 +229,9 @@ export interface PatientListItem {
   patLastName: string | null;
   patFullNameCC: string | null;
   patDateTimeCreated: string;
+  patDateTimeModified?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   patActive: boolean;
   patAccountNo: string | null;
   patBirthDate: string | null;

@@ -2,6 +2,8 @@ export interface PaymentListItem {
   pmtID: number;
   pmtDateTimeCreated: string;
   pmtDateTimeModified: string;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   pmtCreatedUserName: string | null;
   pmtLastUserName: string | null;
   pmtDate: string;
@@ -29,6 +31,25 @@ export interface PaymentListItem {
 
 export interface PaymentsApiResponse {
   data: PaymentListItem[];
+  meta: PaginationMeta;
+}
+
+export interface ClaimPaymentLedgerItem {
+  id: number;
+  claimId: number | null;
+  claimExternalId: string;
+  traceNumber: string;
+  payerId: string | null;
+  payerLevel: string | null;
+  paidAmount: number;
+  adjustmentAmount: number | null;
+  patientResponsibility: number | null;
+  isApplied: boolean;
+  paymentDateUtc: string;
+}
+
+export interface ClaimPaymentLedgerResponse {
+  data: ClaimPaymentLedgerItem[];
   meta: PaginationMeta;
 }
 

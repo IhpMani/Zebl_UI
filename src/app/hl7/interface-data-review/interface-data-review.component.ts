@@ -109,9 +109,12 @@ export class InterfaceDataReviewComponent implements OnInit {
               : `${res.failedMessages} of ${res.totalMessages} HL7 message(s) failed. Check API logs for exceptions.`;
         } else {
           this.lastImportHadFailures = false;
+          const dup = res.duplicateClaims != null && res.duplicateClaims > 0
+            ? ` ${res.duplicateClaims} duplicate claim(s) merged into existing claims.`
+            : '';
           this.lastImportDetail =
             res.totalMessages > 0
-              ? `Imported ${res.successfulMessages} of ${res.totalMessages} message(s) successfully.`
+              ? `Imported ${res.successfulMessages} of ${res.totalMessages} message(s) successfully.${dup}`
               : null;
         }
         this.pendingFileName = null;

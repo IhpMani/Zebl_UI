@@ -11,6 +11,8 @@ export interface Hl7ImportResponse {
   totalMessages: number;
   successfulMessages: number;
   failedMessages: number;
+  /** Claims merged into an existing row (same patient + DOS + visit) instead of inserting a duplicate. */
+  duplicateClaims?: number;
   errors?: number;
   /** First N per-message failure reasons from the API (when failedMessages > 0). */
   errorMessages?: string[];
@@ -22,6 +24,8 @@ export interface Hl7ReviewResponse {
   newPatientsCount: number;
   updatedPatientsCount: number;
   duplicatePatientsCount: number;
+  /** Messages that would attach to an existing claim (same patient + first FT1 DOS + PV1 visit). */
+  duplicateClaimsCount?: number;
   newClaimsCount: number;
   totalAmount: number;
 }

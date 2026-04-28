@@ -17,7 +17,9 @@ export class EdiReportsComponent implements OnInit {
   selectedConnectionId = '';
   selectedReceiverId = '';
   loading = false;
+  applying = false;
   error: string | null = null;
+  info: string | null = null;
   sortColumn: string | null = null;
   sortAsc = true;
   filterText = '';
@@ -36,7 +38,7 @@ export class EdiReportsComponent implements OnInit {
   checkedIds = new Set<string>();
   showCheckAllMenu = false;
   colFilters: Record<string, string> = {
-    fileName: '', createdAt: '', fileType: '', fileSize: '', note: '', payerName: '', paymentAmount: '', date: '', traceNumber: '', direction: ''
+    fileName: '', createdAt: '', fileType: '', fileSize: '', note: '', payerName: '', paymentAmount: '', claimIdentifier: '', date: '', traceNumber: '', direction: ''
   };
 
   constructor(
@@ -105,6 +107,7 @@ export class EdiReportsComponent implements OnInit {
         (r.fileName || '').toLowerCase().includes(q) ||
         (r.fileType || '').toLowerCase().includes(q) ||
         (r.status || '').toLowerCase().includes(q) ||
+        (r.claimIdentifier || '').toLowerCase().includes(q) ||
         (r.payerName || '').toLowerCase().includes(q) ||
         (r.traceNumber || '').toLowerCase().includes(q) ||
         (r.note || '').toLowerCase().includes(q)
@@ -190,6 +193,12 @@ export class EdiReportsComponent implements OnInit {
     if (one) this.exportFile(one);
   }
 
+  applySelected(): void {
+    const one = this.singleSelected;
+    if (!one) return;
+    this.applyReport(one);
+  }
+
   archiveChecked(): void {
     if (this.checkedIds.size === 0) return;
     if (!confirm(`Archive ${this.checkedIds.size} selected report(s)?`)) return;
@@ -228,8 +237,14 @@ export class EdiReportsComponent implements OnInit {
     }
     this.loading = true;
     this.error = null;
+    this.info = null;
     this.ediApi.download(this.selectedConnectionId, this.selectedReceiverId).subscribe({
-      next: () => {
+      next: (res) => {
+        if (res?.message) {
+          this.info = res.message;
+        } else if ((res?.count ?? 0) === 0) {
+          this.info = 'No new files to process';
+        }
         this.loading = false;
         this.loadReports();
       },
@@ -394,6 +409,32 @@ export class EdiReportsComponent implements OnInit {
     if (!confirm(`Send "${r.fileName}"?`)) return;
     // TODO: Implement send endpoint call
     this.error = 'Send functionality not yet implemented in frontend.';
+  }
+
+  applyReport(r: EdiReportDto): void {
+    this.applying = true;
+    this.error = null;
+    this.info = null;
+    let req$;
+    try {
+      req$ = this.ediApi.apply(r.id);
+    } catch (e: any) {
+      this.error = e?.message || 'FacilityId not set in context';
+      this.applying = false;
+      return;
+    }
+
+    req$.subscribe({
+      next: (res) => {
+        this.info = `Apply complete: processed ${res.processed}, applied ${res.applied}, skipped ${res.skipped ?? 0}, duplicates ${res.duplicatesSkipped}, unmatched ${res.unmatched}${res.reversed != null ? `, reversed ${res.reversed}` : ''}${res.invalid != null ? `, invalid ${res.invalid}` : ''}${res.creditsCreated != null ? `, credits ${res.creditsCreated}` : ''}.`;
+        this.applying = false;
+        this.loadReports();
+      },
+      error: (err) => {
+        this.error = err?.error?.error || err?.message || 'Apply failed';
+        this.applying = false;
+      }
+    });
   }
 
   statusClass(status: string): string {

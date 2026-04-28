@@ -1,45 +1,38 @@
 <div class="edi-reports-container">
-  <!-- Top header bar -->
-  <header class="edi-header">
-    <div class="header-left">
+  <div class="toolbar">
+    <div class="toolbar-left">
       <label class="header-label">Connection:</label>
       <select [(ngModel)]="selectedConnectionId" class="header-dropdown" (ngModelChange)="loadReports()">
         <option value="">-- Select --</option>
         <option *ngFor="let c of connections" [value]="c.id">{{ c.name }}</option>
       </select>
-      <span class="header-hint">Double click to View</span>
     </div>
-    <div class="header-right">
-      <div class="search-row">
-        <input type="text" class="search-input" [(ngModel)]="filterText" placeholder="Search for Keyword" />
-        <button type="button" class="btn btn-clear" (click)="filterText = ''">Clear</button>
-        <button type="button" class="btn btn-icon" title="Search" aria-label="Search">
-          <span class="icon-search">⌕</span>
-        </button>
-      </div>
-      <div class="header-actions">
-        <button type="button" class="btn btn-action" (click)="openSelected()" [disabled]="!singleSelected">Open</button>
-        <button type="button" class="btn btn-action" (click)="saveNotesSelected()" [disabled]="!singleSelected">Save Notes</button>
-        <button type="button" class="btn btn-action" (click)="exportSelected()" [disabled]="!singleSelected">Export File</button>
-      </div>
+    <div class="toolbar-center">
+      <input type="text" class="search-input" [(ngModel)]="filterText" placeholder="Search for Keyword" />
+      <button type="button" class="btn btn-clear" (click)="filterText = ''">Clear</button>
     </div>
-  </header>
+    <div class="toolbar-right">
+      <button type="button" class="btn btn-primary" (click)="openSelected()" [disabled]="!singleSelected">Open</button>
+      <button type="button" class="btn btn-primary" (click)="applySelected()" [disabled]="applying || !singleSelected || singleSelected.fileType !== '835'">Apply</button>
+      <button type="button" class="btn btn-save" (click)="saveNotesSelected()" [disabled]="!singleSelected">Save</button>
+      <button type="button" class="btn btn-secondary" (click)="exportSelected()" [disabled]="!singleSelected">Export</button>
+    </div>
+  </div>
 
   <div *ngIf="error" class="error-bar">{{ error }}</div>
+  <div *ngIf="info" class="success-bar">{{ info }}</div>
 
   <!-- Main content: grid + quick view -->
   <div class="main-body">
     <div class="content-area">
-      <!-- Grouping bar -->
-      <div class="grouping-bar">
-        <span class="grouping-hint">Drag a column header here to group by that column</span>
-      </div>
-
-      <!-- Reports grid -->
-      <div class="grid-wrapper">
+      <div class="table-container">
+        <div class="grouping-bar">
+          <span class="grouping-hint">Drag a column header here to group by that column</span>
+        </div>
+        <div class="grid-wrapper">
         <table class="reports-grid">
           <thead>
-            <tr class="header-row">
+            <tr class="header-row table-header">
               <th class="col-check"><input type="checkbox" [checked]="isAllChecked" (change)="toggleCheckAll()" [indeterminate]="isSomeChecked" title="Check All" /></th>
               <th (click)="sortBy('fileName')" class="sortable">Name</th>
               <th (click)="sortBy('createdAt')" class="sortable">Date Created</th>
@@ -48,6 +41,7 @@
               <th (click)="sortBy('note')" class="sortable">Note</th>
               <th (click)="sortBy('payerName')" class="sortable">Payer</th>
               <th (click)="sortBy('paymentAmount')" class="sortable">Pmt Amt</th>
+              <th (click)="sortBy('claimIdentifier')" class="sortable">Claim ID</th>
               <th>Date</th>
               <th (click)="sortBy('traceNumber')" class="sortable">Trace Number</th>
               <th (click)="sortBy('direction')" class="sortable">Method</th>
@@ -61,13 +55,14 @@
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['note']" (ngModelChange)="0" placeholder="Filter" /></th>
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['payerName']" (ngModelChange)="0" placeholder="Filter" /></th>
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['paymentAmount']" (ngModelChange)="0" placeholder="Filter" /></th>
+              <th><input type="text" class="col-filter" [(ngModel)]="colFilters['claimIdentifier']" (ngModelChange)="0" placeholder="Filter" /></th>
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['date']" (ngModelChange)="0" placeholder="Filter" /></th>
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['traceNumber']" (ngModelChange)="0" placeholder="Filter" /></th>
               <th><input type="text" class="col-filter" [(ngModel)]="colFilters['direction']" (ngModelChange)="0" placeholder="Filter" /></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngIf="loading"><td colspan="11" class="loading-cell">Loading...</td></tr>
+            <tr *ngIf="loading"><td colspan="12" class="loading-cell">Loading...</td></tr>
             <tr *ngFor="let r of filteredReports" (dblclick)="onRowDoubleClick(r)" [class.archived]="r.isArchived" [class.unread]="!r.isRead" [class.selected]="isChecked(r)">
               <td class="col-check"><input type="checkbox" [checked]="isChecked(r)" (change)="toggleCheck(r)" (click)="$event.stopPropagation()" /></td>
               <td>{{ r.fileName }}</td>
@@ -77,13 +72,15 @@
               <td>{{ r.note || '—' }}</td>
               <td>{{ r.payerName || '—' }}</td>
               <td>{{ r.paymentAmount != null ? (r.paymentAmount | number:'1.2-2') : '—' }}</td>
+              <td>{{ r.claimIdentifier || '—' }}</td>
               <td>{{ dateDisplay(r) }}</td>
               <td>{{ r.traceNumber || '—' }}</td>
               <td>{{ r.direction }}</td>
             </tr>
-            <tr *ngIf="!loading && filteredReports.length === 0"><td colspan="11" class="empty-cell">No reports.</td></tr>
+            <tr *ngIf="!loading && filteredReports.length === 0"><td colspan="12" class="empty-cell empty-state">No reports found for this connection.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <!-- Quick View panel (always visible) -->
@@ -102,7 +99,7 @@
     </div>
 
     <!-- Right sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar panel-actions">
       <div class="sidebar-receiver" *ngIf="receivers.length">
         <label class="sidebar-label">Receiver:</label>
         <select [(ngModel)]="selectedReceiverId" class="sidebar-dropdown">
@@ -110,32 +107,32 @@
           <option *ngFor="let r of receivers" [value]="r.id">{{ r.libraryEntryName }}</option>
         </select>
       </div>
-      <button type="button" class="btn btn-sidebar" (click)="getReports()" [disabled]="loading || !selectedConnectionId || !selectedReceiverId">Get Reports</button>
-      <button type="button" class="btn btn-sidebar" (click)="openAddForm()">Add Reports</button>
-      <button type="button" class="btn btn-sidebar" (click)="refreshReports()" [disabled]="loading">Refresh Reports</button>
-      <button type="button" class="btn btn-sidebar" (click)="close()">Close</button>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-check-all" (click)="$event.stopPropagation()">
-        <button type="button" class="btn btn-sidebar btn-dropdown" (click)="showCheckAllMenu = !showCheckAllMenu; $event.stopPropagation()">
-          Check All <span class="dropdown-arrow">▼</span>
-        </button>
-        <ul class="dropdown-menu" *ngIf="showCheckAllMenu">
-          <li><a href="#" (click)="checkAll(); $event.preventDefault()">Check All</a></li>
-          <li><a href="#" (click)="checkNone(); $event.preventDefault()">Check None</a></li>
-        </ul>
+      <div class="group">
+        <button type="button" class="btn btn-primary btn-sidebar" (click)="openAddForm()">Add Reports</button>
+        <button type="button" class="btn btn-secondary btn-sidebar" (click)="refreshReports()" [disabled]="loading">Refresh</button>
+        <button type="button" class="btn btn-secondary btn-sidebar" (click)="getReports()" [disabled]="loading || !selectedConnectionId || !selectedReceiverId">Get Reports</button>
       </div>
-      <label class="sidebar-checkbox">
-        <input type="checkbox" [(ngModel)]="showArchived" (ngModelChange)="loadReports()" />
-        Show Archived
-      </label>
-
-      <div class="sidebar-label">Apply to Checked</div>
-      <button type="button" class="btn btn-sidebar btn-dropdown" (click)="archiveChecked()" [disabled]="checkedIds.size === 0">
-        Archive <span class="dropdown-arrow">▼</span>
-      </button>
-      <button type="button" class="btn btn-sidebar btn-danger" (click)="deleteChecked()" [disabled]="checkedIds.size === 0">Delete</button>
+      <div class="group">
+        <div class="sidebar-check-all" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-secondary btn-sidebar btn-dropdown" (click)="showCheckAllMenu = !showCheckAllMenu; $event.stopPropagation()">
+            Check All <span class="dropdown-arrow">▼</span>
+          </button>
+          <ul class="dropdown-menu" *ngIf="showCheckAllMenu">
+            <li><a href="#" (click)="checkAll(); $event.preventDefault()">Check All</a></li>
+            <li><a href="#" (click)="checkNone(); $event.preventDefault()">Check None</a></li>
+          </ul>
+        </div>
+        <label class="sidebar-checkbox">
+          <input type="checkbox" [(ngModel)]="showArchived" (ngModelChange)="loadReports()" />
+          Show Archived
+        </label>
+      </div>
+      <div class="group">
+        <div class="sidebar-label">Apply to Checked</div>
+        <button type="button" class="btn btn-warning btn-sidebar btn-dropdown" (click)="archiveChecked()" [disabled]="checkedIds.size === 0">Archive</button>
+        <button type="button" class="btn btn-delete btn-sidebar btn-danger" (click)="deleteChecked()" [disabled]="checkedIds.size === 0">Delete</button>
+        <button type="button" class="btn btn-secondary btn-sidebar" (click)="close()">Close</button>
+      </div>
     </aside>
   </div>
 

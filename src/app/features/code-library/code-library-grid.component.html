@@ -13,7 +13,7 @@
     <div class="toolbar-right">
       <button type="button" class="btn btn-primary" (click)="openNew()" *ngIf="activeTab !== 'procedures'">New</button>
       <button type="button" class="btn btn-secondary" (click)="openEdit()" *ngIf="activeTab !== 'procedures'">Edit</button>
-      <button type="button" class="btn btn-secondary" (click)="deleteSelected()" *ngIf="activeTab !== 'procedures'">Delete</button>
+      <button type="button" class="btn btn-secondary btn-delete" (click)="deleteSelected()" *ngIf="activeTab !== 'procedures'">Delete</button>
       <button type="button" class="btn btn-secondary" (click)="openImport()" *ngIf="activeTab !== 'procedures'">Import</button>
       <button type="button" class="btn btn-secondary" (click)="loadPage()">Refresh</button>
     </div>

@@ -1,0 +1,14 @@
+<div
+  class="floating-panel"
+  *ngIf="visible"
+  [style.left.px]="left"
+  [style.top.px]="top">
+  <div class="floating-panel__title">{{ title }}</div>
+  <button
+    type="button"
+    class="floating-panel__item"
+    *ngFor="let item of items"
+    (click)="onSelect(item.value)">
+    {{ item.label }}
+  </button>
+</div>

@@ -1,6 +1,9 @@
 export interface PayerListItem {
   payID: number;
   payDateTimeCreated: string;
+  payDateTimeModified?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   payName: string | null;
   payClassification: string | null;
   payClaimType: string;

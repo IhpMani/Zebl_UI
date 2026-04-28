@@ -4,8 +4,8 @@
       Program Setup
     </div>
     <div class="actions">
-      <button type="button" class="btn primary" (click)="onSave()">Save</button>
-      <button type="button" class="btn primary" (click)="onSaveAndClose()">Save &amp; Close</button>
+      <button type="button" class="btn primary btn-save" (click)="onSave()">Save</button>
+      <button type="button" class="btn primary btn-save" (click)="onSaveAndClose()">Save &amp; Close</button>
       <button type="button" class="btn secondary" (click)="onClose()">Close</button>
     </div>
   </div>
@@ -186,7 +186,7 @@
                   <span class="config-type">{{ def.fieldType }}</span>
                   <span class="config-actions">
                     <button type="button" class="btn-link" (click)="openEditCustomField(def, 'Patient')">Edit</button>
-                    <button type="button" class="btn-link" (click)="deleteCustomField(def, 'Patient')">Delete</button>
+                    <button type="button" class="btn-link btn-delete" (click)="deleteCustomField(def, 'Patient')">Delete</button>
                   </span>
                 </div>
                 <div class="config-actions-row">
@@ -215,7 +215,7 @@
                     <span class="config-type">{{ def.fieldType }}</span>
                     <span class="config-actions">
                       <button type="button" class="btn-link" (click)="openEditCustomField(def, 'Claim')">Edit</button>
-                      <button type="button" class="btn-link" (click)="deleteCustomField(def, 'Claim')">Delete</button>
+                      <button type="button" class="btn-link btn-delete" (click)="deleteCustomField(def, 'Claim')">Delete</button>
                     </span>
                   </div>
                   <div class="config-actions-row">
@@ -234,7 +234,7 @@
                     <span class="config-type">{{ def.fieldType }}</span>
                     <span class="config-actions">
                       <button type="button" class="btn-link" (click)="openEditCustomField(def, 'ServiceLine')">Edit</button>
-                      <button type="button" class="btn-link" (click)="deleteCustomField(def, 'ServiceLine')">Delete</button>
+                      <button type="button" class="btn-link btn-delete" (click)="deleteCustomField(def, 'ServiceLine')">Delete</button>
                     </span>
                   </div>
                   <div class="config-actions-row">
@@ -280,6 +280,34 @@
                   <label>
                     <input type="checkbox" [(ngModel)]="settingsData.lockClaimsAfterExport" />
                     Lock Claims After Export
+                  </label>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="settingsData.showBillToPatientClaims" />
+                    Show "Bill To: Patient" Claims
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Patient Control Number Mode</span>
+                    <select [(ngModel)]="settingsData.patientControlNumberMode">
+                      <option [ngValue]="'ClaimId'">Claim ID</option>
+                      <option [ngValue]="'PatientAccount'">Patient Account</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="form-row">
+                  <label>
+                    <span>Next Submission Number</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="settingsData.nextSubmissionNumber"
+                      min="1"
+                    />
                   </label>
                 </div>
 
@@ -394,18 +422,6 @@
               <div *ngIf="settingsData" class="patient-settings-form">
                 <div class="form-row">
                   <label>
-                    <span>Source</span>
-                    <select [(ngModel)]="settingsData.source">
-                      <option value="">-- Select Source --</option>
-                      <option *ngFor="let opt of eligibilitySourceOptions" [ngValue]="opt.value">
-                        {{ opt.label }}
-                      </option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="form-row">
-                  <label>
                     <span>Receiver</span>
                     <select [(ngModel)]="settingsData.receiverId">
                       <option [ngValue]="null">-- Select Receiver --</option>
@@ -432,7 +448,7 @@
                     <span>Specific Provider</span>
                     <select
                       [(ngModel)]="settingsData.specificProviderId"
-                      [disabled]="settingsData.providerMode !== 'SpecificProvider'">
+                      [disabled]="settingsData.providerMode !== 'Specific'">
                       <option [ngValue]="null">-- Select Provider --</option>
                       <option *ngFor="let p of physiciansList" [ngValue]="p.phyID">
                         {{ p.phyFullNameCC || p.phyName || (p.phyLastName + ', ' + p.phyFirstName) }}
@@ -575,7 +591,7 @@
     </div>
     <div *ngIf="customFieldModalError" class="field-error">{{ customFieldModalError }}</div>
     <div class="modal-actions">
-      <button type="button" class="btn primary" (click)="saveCustomFieldModal()" [disabled]="customFieldModalSaving">Save</button>
+      <button type="button" class="btn primary btn-save" (click)="saveCustomFieldModal()" [disabled]="customFieldModalSaving">Save</button>
       <button type="button" class="btn secondary" (click)="closeCustomFieldModal()">Cancel</button>
     </div>
   </div>

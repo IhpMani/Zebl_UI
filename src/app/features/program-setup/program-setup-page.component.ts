@@ -55,32 +55,17 @@ export class ProgramSetupPageComponent implements OnInit {
   readonly claimStatusOptions: readonly ClaimStatusOption[] = CLAIM_STATUS_OPTIONS;
   posOptions: CodeLibraryRow[] = [];
 
-  /** Patient Eligibility: source options (clearinghouse; value stored in settingsData.source). */
-  eligibilitySourceOptions: { value: string; label: string }[] = [
-    { value: 'Capario', label: 'Capario (Change Healthcare)' },
-    { value: 'TriZetto', label: 'TriZetto' },
-    { value: 'Navicure', label: 'Navicure' },
-    { value: 'PracticeInsight', label: 'Practice Insight' },
-    { value: 'ZirMed', label: 'ZirMed' },
-    { value: 'OfficeAlly', label: 'Office Ally' },
-    { value: 'Waystar', label: 'Waystar' },
-    { value: 'EDIConnection', label: 'EDI Connection (Mock EDI)' }
-  ];
-  /** Sources that require clearinghouse credentials (username/password/server). */
-  readonly eligibilitySourcesRequiringCredentials = ['Capario', 'TriZetto', 'Navicure', 'PracticeInsight', 'ZirMed', 'OfficeAlly', 'Waystar'];
-
   get eligibilityCredentialsEnabled(): boolean {
-    const source = (this.settingsData?.source ?? '').trim();
-    return source.length > 0 && this.eligibilitySourcesRequiringCredentials.includes(source);
+    return true;
   }
 
   /** Receivers filtered for Format = "Eligibility Inquiry 270" (from receiver library). */
   eligibilityReceivers: ReceiverLibraryDto[] = [];
   /** Provider mode options. */
   providerModeOptions: { value: string; label: string }[] = [
-    { value: 'PatientBillingProvider', label: 'Patient Billing Provider' },
-    { value: 'PatientRenderingProvider', label: 'Patient Rendering Provider' },
-    { value: 'SpecificProvider', label: 'Specific Provider' }
+    { value: 'Billing', label: 'Billing Provider' },
+    { value: 'Rendering', label: 'Rendering Provider' },
+    { value: 'Specific', label: 'Specific Provider' }
   ];
   physiciansList: PhysicianListItem[] = [];
 
@@ -242,6 +227,23 @@ export class ProgramSetupPageComponent implements OnInit {
       return;
     }
 
+    if (sectionId === 'sending-claims') {
+      this.programSettingsApi.getSendingClaimsSettings().subscribe({
+        next: data => {
+          this.settingsData = this.applySendingClaimsDefaults(data);
+          this.loadSendingClaimsLookups();
+          this.isLoading = false;
+        },
+        error: err => {
+          this.loadError = 'Failed to load settings.';
+          this.isLoading = false;
+          // eslint-disable-next-line no-console
+          console.error('Error loading sending claims settings', err);
+        }
+      });
+      return;
+    }
+
     this.programSettingsApi.getSection(sectionId).subscribe({
       next: data => {
         if (sectionId === 'patient') {
@@ -252,9 +254,6 @@ export class ProgramSetupPageComponent implements OnInit {
           this.loadClaimLookups();
         } else if (sectionId === 'company') {
           this.settingsData = this.applyCompanyDefaults(data);
-        } else if (sectionId === 'sending-claims') {
-          this.settingsData = this.applySendingClaimsDefaults(data);
-          this.loadSendingClaimsLookups();
         } else if (sectionId === 'interface') {
           this.settingsData = this.applyInterfaceDefaults(data);
         } else {
@@ -298,7 +297,12 @@ export class ProgramSetupPageComponent implements OnInit {
       return { ...defaults };
     }
 
-    return { ...defaults, ...data };
+    const merged = { ...defaults, ...data };
+    if (merged.source === 'EDIConnection') {
+      // Legacy fake source is no longer supported.
+      merged.source = '';
+    }
+    return merged;
   }
 
   private loadPatientTemplates(): void {
@@ -356,9 +360,21 @@ export class ProgramSetupPageComponent implements OnInit {
         }
       });
     } else if (this.selectedSection === 'claim') {
-      this.programSettingsApi.saveSection('claim', this.settingsData).subscribe({
+      const claimPayload = {
+        initialClaimStatus: (this.settingsData.initialClaimStatus ?? 'OnHold'),
+        initialPlaceOfService: this.settingsData.initialPlaceOfService ?? '11',
+        initialICDIndicator: this.settingsData.initialICDIndicator ?? '0',
+        lockClaimsAfterPrint: !!this.settingsData.lockClaimsAfterPrint,
+        checkDuplicateServiceLines: this.settingsData.checkDuplicateServiceLines !== false,
+        validateICDLogic: this.settingsData.validateICDLogic !== false
+      };
+      // Debug visibility for persisted program settings payload.
+      // eslint-disable-next-line no-console
+      console.log('PROGRAM SETTINGS PAYLOAD', claimPayload);
+      this.programSettingsApi.saveSection('claim', claimPayload).subscribe({
         next: () => {
           this.isSaving = false;
+          this.settingsData = { ...this.settingsData, ...claimPayload };
           if (closeAfter) {
             window.history.back();
           }
@@ -371,8 +387,18 @@ export class ProgramSetupPageComponent implements OnInit {
         }
       });
     } else if (this.selectedSection === 'patient-eligibility') {
-      if (this.eligibilityCredentialsEnabled && !(this.settingsData.username ?? '').trim()) {
-        this.saveError = 'Username is required when a clearinghouse source is selected.';
+      if (!(this.settingsData.receiverId ?? '').toString().trim()) {
+        this.saveError = 'Receiver is required for eligibility.';
+        this.isSaving = false;
+        return;
+      }
+      if (!(this.settingsData.username ?? '').trim()) {
+        this.saveError = 'Username is required for eligibility.';
+        this.isSaving = false;
+        return;
+      }
+      if (!(this.settingsData.server ?? '').trim()) {
+        this.saveError = 'Server is required for eligibility.';
         this.isSaving = false;
         return;
       }
@@ -416,7 +442,20 @@ export class ProgramSetupPageComponent implements OnInit {
         }
       });
     } else if (this.selectedSection === 'sending-claims') {
-      this.programSettingsApi.saveSection('sending-claims', this.settingsData).subscribe({
+      const nextNum = Number(this.settingsData.nextSubmissionNumber);
+      if (!Number.isFinite(nextNum) || nextNum < 1) {
+        this.saveError = 'Next Submission Number must be 1 or greater.';
+        this.isSaving = false;
+        return;
+      }
+
+      const payload = {
+        showBillToPatientClaims: !!this.settingsData.showBillToPatientClaims,
+        patientControlNumberMode: this.settingsData.patientControlNumberMode === 'PatientAccount' ? 'PatientAccount' : 'ClaimId',
+        nextSubmissionNumber: Math.floor(nextNum)
+      };
+
+      this.programSettingsApi.saveSendingClaimsSettings(payload).subscribe({
         next: () => {
           this.isSaving = false;
           if (closeAfter) {
@@ -487,9 +526,8 @@ export class ProgramSetupPageComponent implements OnInit {
 
   private applyPatientEligibilityDefaults(data: any): any {
     const defaults = {
-      source: '',
       receiverId: null as string | null,
-      providerMode: 'PatientBillingProvider',
+      providerMode: 'Billing',
       specificProviderId: null as number | null,
       username: '',
       password: '',
@@ -501,7 +539,17 @@ export class ProgramSetupPageComponent implements OnInit {
       return { ...defaults };
     }
 
-    return { ...defaults, ...data };
+    const merged = { ...defaults, ...data };
+    delete merged.source;
+    if (merged.providerMode === 'PatientBillingProvider') {
+      merged.providerMode = 'Billing';
+    } else if (merged.providerMode === 'PatientRenderingProvider') {
+      merged.providerMode = 'Rendering';
+    } else if (merged.providerMode === 'SpecificProvider') {
+      merged.providerMode = 'Specific';
+    }
+
+    return merged;
   }
 
   private applyCompanyDefaults(data: any): any {
@@ -533,7 +581,10 @@ export class ProgramSetupPageComponent implements OnInit {
       exportFormat: 'ANSI837',
       autoMarkClaimsSent: true,
       lockClaimsAfterExport: false,
-      exportBatchSize: 100
+      exportBatchSize: 100,
+      showBillToPatientClaims: false,
+      patientControlNumberMode: 'ClaimId',
+      nextSubmissionNumber: 1
     };
 
     if (!data || typeof data !== 'object') {
@@ -629,16 +680,9 @@ export class ProgramSetupPageComponent implements OnInit {
 
   private loadEligibilityLookups(): void {
     if (this.eligibilityReceivers.length === 0) {
-      this.receiverLibraryApi.getAll().subscribe({
+      this.receiverLibraryApi.getAll('eligibility').subscribe({
         next: res => {
-          const list = res?.data ?? [];
-          this.eligibilityReceivers = list.filter(
-            r => (r.exportFormat && r.exportFormat.includes('270')) ||
-                 (r.claimType && r.claimType.toLowerCase().includes('eligibility'))
-          );
-          if (this.eligibilityReceivers.length === 0) {
-            this.eligibilityReceivers = list;
-          }
+          this.eligibilityReceivers = res?.data ?? [];
         },
         error: err => {
           // eslint-disable-next-line no-console

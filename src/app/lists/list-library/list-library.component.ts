@@ -154,10 +154,9 @@ export class ListLibraryComponent implements OnInit {
   }
 
   save(): void {
-    // In this implementation, changes are saved immediately
-    // This button is here for UI consistency with EZClaim
+    // List changes are persisted at add/delete time; this keeps button behavior explicit.
     this.hasChanges = false;
-    alert('Changes saved');
+    alert('Changes are already saved.');
   }
 
   saveAndClose(): void {

@@ -1,7 +1,8 @@
+/* strict-theme-normalized */
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
+  background: var(--ps-card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -11,15 +12,14 @@
 }
 
 .dialog {
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: var(--color-radius-md);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   min-width: 380px;
   max-width: 90vw;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 16px 48px var(--color-nav-shell-shadow), inset 0 1px 0 var(--color-nav-glass-border);
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .dialog-header {
@@ -27,22 +27,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-nav-glass-border);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-nav-bg-end) 75%, transparent), transparent);
+  border-bottom: 1px solid var(--ps-border);
+  background: var(--ps-bg);
 
   h2 {
     margin: 0;
-    font-size: 1.15rem;
-    color: var(--color-primary-btn-text);
-    text-shadow: 0 1px 2px var(--color-nav-shell-shadow);
+    font-size: 13px;
+    color: var(--ps-text);
   }
 
   .btn-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 13px;
     cursor: pointer;
-    color: var(--color-nav-icon-hover);
+    color: var(--ps-text);
     line-height: 1;
   }
 }
@@ -56,30 +55,28 @@
     label {
       display: block;
       margin-bottom: 0.25rem;
-      font-size: 0.9rem;
-      color: var(--color-nav-icon-hover);
+      font-size: 13px;
+      color: var(--ps-text);
     }
 
     input[type="text"],
     select {
       width: 100%;
       padding: 0.45rem 0.5rem;
-      border: 1px solid var(--color-nav-glass-border);
-      border-radius: var(--color-radius-sm);
-      background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
-      color: var(--color-primary-btn-text);
-      box-shadow: inset 0 1px 0 var(--color-tab-highlight-inset);
+      border: 1px solid var(--ps-border);
+      border-radius: 2px;
+      background: var(--ps-card);
+      color: var(--ps-text);
 
       &:focus {
         outline: none;
-        border-color: var(--color-nav-icon-active);
-        box-shadow: 0 0 0 3px var(--color-nav-active-glow);
+        border-color: var(--ps-border);
       }
     }
 
     select option {
-      background: var(--color-card-bg);
-      color: var(--color-text);
+      background: var(--ps-card);
+      color: var(--ps-text);
     }
 
     input[type="checkbox"] {
@@ -88,7 +85,7 @@
   }
 
   .error {
-    color: var(--color-error);
+    color: var(--ps-text);
     margin-top: 0.5rem;
   }
 }
@@ -98,21 +95,73 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--color-nav-glass-border);
+  border-top: 1px solid var(--ps-border);
 
   .btn {
     padding: 0.4rem 1rem;
-    border-radius: var(--color-radius-sm);
+    border-radius: 2px;
     cursor: pointer;
-    border: 1px solid var(--color-nav-glass-border);
-    background: var(--color-nav-item-active-bg);
-    color: var(--color-primary-btn-text);
+    border: 1px solid var(--ps-border);
+    background: var(--ps-card);
+    color: var(--ps-text);
 
     &.btn-primary {
-      background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
-      color: var(--color-primary-btn-text);
-      border: 1px solid color-mix(in srgb, var(--color-nav-icon-active) 50%, transparent);
-      box-shadow: 0 2px 10px color-mix(in srgb, var(--color-nav-icon-active) 28%, transparent);
+      background: var(--ps-bg);
+      color: var(--ps-text);
+      border: 1px solid var(--ps-border);
     }
   }
+}
+
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
 }

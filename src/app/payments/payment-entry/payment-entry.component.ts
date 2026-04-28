@@ -1,6 +1,6 @@
-import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, NavigationEnd, RouteReuseStrategy, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { PaymentApiService } from '../../core/services/payment-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { PaymentEntryRow, PaymentEntryServiceLine } from '../../core/services/payment.models';
@@ -9,8 +9,7 @@ import { filter, finalize, map, takeUntil } from 'rxjs/operators';
 import { PayerListItem } from '../../core/services/payer.models';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
-import { WorkspaceRouteReuseStrategy } from '../../workspace/infrastructure/workspace-route-reuse-strategy';
-import { Subject, firstValueFrom } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-payment-entry',
@@ -18,6 +17,7 @@ import { Subject, firstValueFrom } from 'rxjs';
   styleUrls: ['./payment-entry.component.css']
 })
 export class PaymentEntryComponent implements OnInit, OnDestroy {
+  private static readonly IGNORE_RESPONSIBLE_PARTY_STORAGE_KEY = 'payment.ignoreResponsibleParty';
   paymentForm: FormGroup;
   paymentSource: 'Patient' | 'Payer' = 'Payer';
   /** Display-only: sum of paid amounts in grid (no financial math; backend is source of truth). */
@@ -32,7 +32,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
   showAdjReasonAmount = false;
   showPaymentReasonCodes = false;
   showNotes = false;
-  ignoreResponsibleParty = true;
+  ignoreResponsibleParty: boolean | undefined;
   matchByPayerId = true;
   serviceLineRows: PaymentEntryRow[] = [];
   loadingServiceLines = false;
@@ -75,8 +75,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
     private payerApi: PayerApiService,
     private ribbonContext: RibbonContextService,
     private workspace: WorkspaceService,
-    private cdr: ChangeDetectorRef,
-    @Optional() @Inject(RouteReuseStrategy) private routeReuseStrategy: RouteReuseStrategy | null
+    private cdr: ChangeDetectorRef
   ) {
     this.paymentForm = this.fb.group({
       payerId: [null],
@@ -94,7 +93,9 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.initializeFilterSettings();
     this.successMessage = null;
+    this.tryConsumePostSaveReset();
     this.prevNavUrl = this.pathBeforeQuery;
     this.router.events
       .pipe(
@@ -132,6 +133,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
       }
       this.isEditMode = false;
       this.currentPaymentId = null;
+      this.tryConsumePostSaveReset();
     });
 
     const paymentIdSnap = this.route.snapshot.paramMap.get('id');
@@ -149,6 +151,26 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private initializeFilterSettings(): void {
+    const stored = localStorage.getItem(PaymentEntryComponent.IGNORE_RESPONSIBLE_PARTY_STORAGE_KEY);
+    if (stored === 'true' || stored === 'false') {
+      this.ignoreResponsibleParty = stored === 'true';
+      return;
+    }
+
+    if (this.ignoreResponsibleParty === undefined) {
+      this.ignoreResponsibleParty = false;
+    }
+  }
+
+  onIgnoreResponsiblePartyChanged(value: boolean): void {
+    this.ignoreResponsibleParty = !!value;
+    localStorage.setItem(
+      PaymentEntryComponent.IGNORE_RESPONSIBLE_PARTY_STORAGE_KEY,
+      String(this.ignoreResponsibleParty)
+    );
   }
 
   /** Load payment by id and fill form (edit mode). */
@@ -191,15 +213,27 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
   loadServiceLines(): void {
     const claimIdRaw = this.paymentForm.get('claimId')?.value;
     const patientIdRaw = this.paymentForm.get('patientId')?.value;
-    const cid = claimIdRaw != null && claimIdRaw !== '' ? Number(claimIdRaw) : NaN;
+    const formClaimId = claimIdRaw != null && claimIdRaw !== '' ? Number(claimIdRaw) : NaN;
     const pid = patientIdRaw != null && patientIdRaw !== '' ? Number(patientIdRaw) : NaN;
+    const source = this.paymentSource;
+    const payerId = source === 'Payer' ? this.paymentForm.get('payerId')?.value : null;
+    const cid = source === 'Payer' ? NaN : formClaimId;
 
-    if (!(cid > 0) && !(pid > 0)) {
+    if (source === 'Payer' && claimIdRaw != null && claimIdRaw !== '') {
+      this.paymentForm.patchValue({ claimId: null }, { emitEvent: false });
+    }
+
+    console.log({
+      source,
+      claimId: Number.isFinite(cid) && cid > 0 ? cid : null,
+      payerId: payerId != null && Number(payerId) > 0 ? Number(payerId) : null
+    });
+
+    const hasPayerOnlyContext = source === 'Payer' && payerId != null && Number(payerId) > 0;
+    if (!(cid > 0) && !(pid > 0) && !hasPayerOnlyContext) {
       this.serviceLineRows = [];
       return;
     }
-
-    const payerId = this.paymentSource === 'Payer' ? this.paymentForm.get('payerId')?.value : null;
 
     const applyRows = (lines: PaymentEntryServiceLine[]) => {
       this.serviceLineRows = lines.map(line => ({
@@ -221,7 +255,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
         if (row0.patientId > 0) {
           this.paymentForm.patchValue({ patientId: row0.patientId }, { emitEvent: false });
         }
-        if (row0.claimId > 0) {
+        if (source !== 'Payer' && row0.claimId > 0) {
           this.paymentForm.patchValue({ claimId: row0.claimId }, { emitEvent: false });
         }
       } else if (cid > 0) {
@@ -233,11 +267,15 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
     const runRequest = (patientIdFromClaim?: number) => {
       const effectivePatient = pid > 0 ? pid : (patientIdFromClaim != null && patientIdFromClaim > 0 ? patientIdFromClaim : 0);
       const opts: { claimId?: number; patientId?: number; payerId?: number | null } = { payerId };
-      if (cid > 0) {
+
+      if (source === 'Payer') {
+        delete opts.claimId;
+        delete opts.patientId;
+      } else if (cid > 0) {
         opts.claimId = cid;
-      }
-      if (effectivePatient > 0) {
-        opts.patientId = effectivePatient;
+        if (effectivePatient > 0) {
+          opts.patientId = effectivePatient;
+        }
       }
 
       this.loadingServiceLines = true;
@@ -246,7 +284,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
       this.paymentApi
         .getServiceLinesForEntry(opts)
         .pipe(
-          map((lines) => this.filterPaymentEntryLinesByClaim(lines, cid)),
+          map((lines) => this.filterPaymentEntryLinesByClaim(lines, source === 'Payer' ? NaN : cid)),
           finalize(() => {
             this.loadingServiceLines = false;
             this.cdr.markForCheck();
@@ -298,6 +336,9 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
 
   /** Called when Payment Source or Payer changes – refresh the grid with correct filter. */
   onSourceOrPayerChange(): void {
+    if (this.paymentSource === 'Payer') {
+      this.paymentForm.patchValue({ claimId: null }, { emitEvent: false });
+    }
     this.loadServiceLines();
   }
 
@@ -339,23 +380,18 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Header totals in claim-balance context (EZClaim style):
-   * - Base balance comes from grid Balance column (already historical-aware from backend).
-   * - If user keyed per-line Pay values, use their sum as prospective apply.
-   * - Otherwise, use entered payment amount as prospective apply.
-   * - Remaining = total grid balance - prospective apply (floor at 0).
+   * Header totals for payment entry:
+   * - Applied = sum of line pay amounts entered in grid.
+   * - Remaining = payment amount - applied amount.
    */
   recalculatePaymentTotals(): void {
     const paymentAmount = Number(this.paymentForm.get('amount')?.value ?? 0) || 0;
-    let totalBalance = 0;
     let sumPay = 0;
     for (const r of this.serviceLineRows) {
-      totalBalance += Number(r.balance) || 0;
       sumPay += Number(r.payAmount) || 0;
     }
-    const prospectiveApply = sumPay > 0 ? sumPay : paymentAmount;
-    this.appliedAmount = Number(prospectiveApply.toFixed(2));
-    this.remaining = Number(Math.max(0, totalBalance - prospectiveApply).toFixed(2));
+    this.appliedAmount = Number(sumPay.toFixed(2));
+    this.remaining = Number((paymentAmount - this.appliedAmount).toFixed(2));
     this.cdr.markForCheck();
   }
 
@@ -450,10 +486,7 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
       this.paymentApi.modifyPayment(this.currentPaymentId, command).subscribe({
         next: (res) => {
           this.saving = false;
-          this.currentPaymentId = res.data;
-          this.appliedAmount = 0;
-          this.recalculatePaymentTotals();
-          this.successMessage = `Payment updated (new ID #${res.data}).`;
+          this.afterSuccessfulSave(res.data, true);
         },
         error: (err) => {
           this.saving = false;
@@ -464,16 +497,75 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
       this.paymentApi.createPayment(command).subscribe({
         next: (res) => {
           this.saving = false;
-          this.currentPaymentId = res.data;
-          this.appliedAmount = 0;
-          this.recalculatePaymentTotals();
-          this.successMessage = `Payment #${res.data} saved.`;
+          this.afterSuccessfulSave(res.data, false);
         },
         error: (err) => {
           this.saving = false;
           this.error = err.error?.message || err.message || 'Failed to save payment.';
         }
       });
+    }
+  }
+
+  /** After Save: show confirmation and clear form/grid so user can enter the next payment. */
+  private afterSuccessfulSave(savedPaymentId: number, wasModify: boolean): void {
+    const msg = wasModify
+      ? `Payments applied successfully. Payment updated (new ID #${savedPaymentId}).`
+      : `Payments applied successfully. Payment #${savedPaymentId}.`;
+
+    if (wasModify && this.route.snapshot.paramMap.get('id')) {
+      try {
+        sessionStorage.setItem(
+          'zebl.paymentEntry.afterSave',
+          JSON.stringify({ message: msg, ts: Date.now() })
+        );
+      } catch {
+        /* ignore */
+      }
+      void this.router.navigate(['payments/entry'], { replaceUrl: true });
+      return;
+    }
+
+    this.successMessage = msg;
+    this.applyBlankPaymentFormAfterSave();
+    this.cdr.markForCheck();
+  }
+
+  private applyBlankPaymentFormAfterSave(): void {
+    this.isEditMode = false;
+    this.currentPaymentId = null;
+    this.serviceLineRows = [];
+    this.paymentForm.patchValue(
+      {
+        payerId: null,
+        claimId: null,
+        patientId: null,
+        amount: 0,
+        pmtDate: new Date().toISOString().slice(0, 10),
+        method: 'Check',
+        reference1: '',
+        reference2: '',
+        note: ''
+      },
+      { emitEvent: false }
+    );
+    this.appliedAmount = 0;
+    this.recalculatePaymentTotals();
+    this.error = null;
+  }
+
+  /** Picks up success message + full reset after Save from edit route (same component instance may persist). */
+  private tryConsumePostSaveReset(): void {
+    try {
+      const raw = sessionStorage.getItem('zebl.paymentEntry.afterSave');
+      if (!raw) return;
+      const o = JSON.parse(raw) as { message?: string; ts?: number };
+      sessionStorage.removeItem('zebl.paymentEntry.afterSave');
+      if (!(o?.message && Date.now() - (o.ts ?? 0) < 120_000)) return;
+      this.successMessage = o.message;
+      this.applyBlankPaymentFormAfterSave();
+    } catch {
+      /* ignore */
     }
   }
 
@@ -567,76 +659,61 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  /**
-   * Sync URL to the current payment id and fully reload the app so the grid, amounts, and banners
-   * match the server. Workspace tab reuse otherwise keeps stale success text when switching tabs.
-   */
-  private async hardRefreshPaymentEntry(): Promise<void> {
-    const reuse = this.routeReuseStrategy;
-    if (reuse instanceof WorkspaceRouteReuseStrategy) {
-      reuse.removeDetachedRoutesForPathPrefix('/payments/entry');
-    }
-
-    const id = this.currentPaymentId;
-    const qp = { ...this.route.snapshot.queryParams };
-    const hasQp = Object.keys(qp).length > 0;
-
-    if (id != null && id > 0) {
-      await this.router.navigate(['/payments/entry', id], {
-        queryParams: hasQp ? qp : undefined,
-        replaceUrl: true
-      });
-    } else {
-      await this.router.navigate(['/payments/entry'], {
-        queryParams: hasQp ? qp : undefined,
-        replaceUrl: true
-      });
-    }
-
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }
-
-  async autoApply(): Promise<void> {
+  autoApply(): void {
     this.error = null;
     this.successMessage = null;
-    try {
-      if (!this.validateClaimAndPatientForSave()) {
-        return;
-      }
-      const amount = this.paymentForm.get('amount')?.value;
-      if (amount == null || amount === '') {
-        this.error = 'Amount is required.';
-        return;
-      }
-      if (this.paymentSource === 'Payer') {
-        const payerId = this.paymentForm.get('payerId')?.value;
-        if (payerId == null || payerId === '') {
-          this.error = 'Payer is required when payment source is Payer.';
-          return;
-        }
-      }
 
-      const command = this.buildCommand();
-
-      // Auto-apply uses Amount − Disbursed on the server. If we only POST auto-apply in edit mode,
-      // the DB still has the old header (e.g. fully disbursed $24 patient payment) and applies $0
-      // while the UI lied using the form amount. Always persist the current form first.
-      if (this.currentPaymentId == null) {
-        const res = await firstValueFrom(this.paymentApi.createPayment(command));
-        this.currentPaymentId = res.data;
-      } else {
-        const res = await firstValueFrom(this.paymentApi.modifyPayment(this.currentPaymentId, command));
-        this.currentPaymentId = res.data;
-      }
-      this.isEditMode = true;
-
-      await firstValueFrom(this.paymentApi.autoApply(this.currentPaymentId));
-
-      await this.hardRefreshPaymentEntry();
-    } catch (err: any) {
-      this.error = err?.error?.message || err?.message || 'Auto apply failed.';
+    if (!this.validateClaimAndPatientForSave()) {
+      return;
     }
+    const amountRaw = this.paymentForm.get('amount')?.value;
+    if (amountRaw == null || amountRaw === '') {
+      this.error = 'Amount is required.';
+      return;
+    }
+    if (this.paymentSource === 'Payer') {
+      const payerId = this.paymentForm.get('payerId')?.value;
+      if (payerId == null || payerId === '') {
+        this.error = 'Payer is required when payment source is Payer.';
+        return;
+      }
+    }
+
+    const paymentAmount = Number(amountRaw) || 0;
+    if (paymentAmount <= 0) {
+      this.error = 'Auto Apply preview only supports positive payment amounts.';
+      return;
+    }
+
+    let remainingToDistribute = paymentAmount;
+    for (const row of this.serviceLineRows) {
+      const balance = Math.max(0, Number(row.balance) || 0);
+      let currentPayAmount = Number(row.payAmount) || 0;
+
+      // Keep manual non-zero entries, but enforce valid bounds for preview math.
+      if (currentPayAmount < 0) {
+        currentPayAmount = 0;
+      }
+      if (currentPayAmount > balance) {
+        currentPayAmount = balance;
+      }
+
+      if (currentPayAmount > 0) {
+        row.payAmount = Number(currentPayAmount.toFixed(2));
+        remainingToDistribute = Math.max(0, remainingToDistribute - currentPayAmount);
+        continue;
+      }
+
+      if (remainingToDistribute <= 0 || balance <= 0) {
+        row.payAmount = 0;
+        continue;
+      }
+
+      const allocation = Math.min(balance, remainingToDistribute);
+      row.payAmount = Number(allocation.toFixed(2));
+      remainingToDistribute = Math.max(0, remainingToDistribute - allocation);
+    }
+
+    this.recalculatePaymentTotals();
   }
 }

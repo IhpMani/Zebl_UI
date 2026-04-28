@@ -163,8 +163,8 @@
       <div class="command-panel">
         <div class="command-title">Commands</div>
 
-        <button type="button" class="cmd-btn primary" (click)="saveAndClose()" [disabled]="saving">Save &amp; Close</button>
-        <button type="button" class="cmd-btn" (click)="saveChanges()" [disabled]="dirtyRowIds.size === 0 || saving">Save</button>
+        <button type="button" class="cmd-btn primary btn-save" (click)="saveAndClose()" [disabled]="saving">Save &amp; Close</button>
+        <button type="button" class="cmd-btn btn-save" (click)="saveChanges()" [disabled]="dirtyRowIds.size === 0 || saving">Save</button>
         <button type="button" class="cmd-btn" (click)="close()">Close</button>
 
         <div class="cmd-sep"></div>

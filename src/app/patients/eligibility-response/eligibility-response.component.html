@@ -5,6 +5,13 @@
     <button class="close" (click)="close()">X</button>
   </div>
 
+  <div class="row provider-line" *ngIf="response?.providerNpi">
+    <span>Eligibility checked using provider: {{ response.providerNpi }}<ng-container *ngIf="response?.providerMode"> ({{ response.providerMode }})</ng-container></span>
+  </div>
+  <div class="row warning-line" *ngIf="response?.usedPayerOverride">
+    <span>Using payer-specific provider override</span>
+  </div>
+
   <!-- Payer Information -->
   <fieldset>
     <legend>Payer Information</legend>
@@ -22,32 +29,27 @@
       <span>{{response?.planName || '-'}}</span>
     </div>
 
+    <div class="row">
+      <label>Plan Details</label>
+      <span>{{response?.planDetails || '-'}}</span>
+    </div>
+
   </fieldset>
 
 
-  <!-- Insured Information -->
+  <!-- Eligibility Window -->
   <fieldset>
-    <legend>Insured's Information</legend>
-
-    <div class="row">
-      <strong>{{response?.patientName}}</strong>
-    </div>
+    <legend>Eligibility</legend>
 
     <div class="grid">
-      <div>Identification</div>
-      <div>{{response?.identification}}</div>
+      <div>Start Date</div>
+      <div>{{formatDate(response?.eligibilityStartDate) || '-'}}</div>
 
-      <div>DOB</div>
-      <div>{{formatDate(response?.dateOfBirth)}}</div>
+      <div>End Date</div>
+      <div>{{formatDate(response?.eligibilityEndDate) || '-'}}</div>
 
-      <div>Gender</div>
-      <div>{{response?.gender}}</div>
-
-      <div>Eligibility Date</div>
-      <div>{{formatDate(response?.eligibilityDate)}}</div>
-
-      <div>Inquiry Date</div>
-      <div>{{formatDate(response?.inquiryDate)}}</div>
+      <div>Status Message</div>
+      <div>{{response?.errorMessage || '-'}}</div>
     </div>
 
   </fieldset>

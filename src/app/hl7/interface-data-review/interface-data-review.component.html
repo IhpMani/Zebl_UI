@@ -41,6 +41,7 @@
         <div><strong>New Patients:</strong> {{ review.newPatientsCount }}</div>
         <div><strong>Updated Patients:</strong> {{ review.updatedPatientsCount }}</div>
         <div><strong>Duplicate Patients:</strong> {{ review.duplicatePatientsCount }}</div>
+        <div><strong>Duplicate Claims:</strong> {{ review.duplicateClaimsCount ?? 0 }}</div>
         <div><strong>New Claims:</strong> {{ review.newClaimsCount }}</div>
         <div><strong>Total Amount:</strong> {{ review.totalAmount | currency }}</div>
       </div>

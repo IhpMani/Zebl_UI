@@ -1,12 +1,47 @@
 /* Global design tokens — single source of truth (colors, spacing, radii, shadows). */
 
 :root {
-  /* Layout surfaces */
-  --color-header: #0f5c9e;
-  --color-toolbar: #1e7dba;
-  --color-body-bg: #f5f7fa;
-  --color-card-bg: #ffffff;
-  --color-border: #e3e8ee;
+  /* Primary palette */
+  --color-primary: #1f4e79;
+  --color-primary-light: #2b6ea6;
+  --color-primary-dark: #163a5a;
+
+  /* Backgrounds */
+  --color-bg-main: #f4f7fb;
+  --color-bg-card: #ffffff;
+  --color-bg-sidebar: #1c2e4a;
+
+  /* Text */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b7a90;
+  --color-text-light: #ffffff;
+
+  /* Borders */
+  --color-border: #e1e6ef;
+
+  /* States */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  /* Shadows */
+  --shadow-card-elevated: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* Legacy aliases kept for compatibility */
+  --color-header: var(--color-primary);
+  --color-toolbar: var(--color-primary-light);
+  --color-body-bg: var(--color-bg-main);
+  --color-card-bg: var(--color-bg-card);
 
   /* Data grid row hover */
   --row-hover: #f0f6fc;
@@ -16,22 +51,22 @@
   --color-panel-header-border: #cfe0f3;
 
   /* Text */
-  --color-text: #1f2933;
-  --color-text-muted: #64748b;
+  --color-text: var(--color-text-primary);
+  --color-text-muted: var(--color-text-secondary);
 
   /* Links & primary actions */
-  --color-link: #0f5c9e;
-  --color-primary-btn: #1e7dba;
-  --color-primary-btn-hover: #0f5c9e;
-  --color-primary-btn-text: #ffffff;
+  --color-link: var(--color-primary);
+  --color-primary-btn: var(--color-primary);
+  --color-primary-btn-hover: var(--color-primary-light);
+  --color-primary-btn-text: var(--color-text-light);
 
   /* Semantic: error */
-  --color-error: #b91c1c;
+  --color-error: var(--color-danger);
   --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
 
   /* Semantic: warning */
-  --color-warning: #854d0e;
+  --color-warning-text: #854d0e;
   --color-warning-bg: #fef9c3;
   --color-warning-border: #fde047;
 
@@ -74,14 +109,14 @@
   --color-workspace-border: #1e6fb8;
 
   /* Radius & spacing */
-  --color-radius-sm: 8px;
-  --color-radius-md: 10px;
+  --color-radius-sm: var(--radius-sm);
+  --color-radius-md: var(--radius-md);
   --color-radius-lg: 12px;
   --color-radius-pill: 999px;
-  --color-space-page: 20px;
-  --color-space-section: 16px;
-  --color-space-card-padding: 16px;
-  --color-space-grid-gap: 16px;
+  --color-space-page: var(--space-lg);
+  --color-space-section: var(--space-md);
+  --color-space-card-padding: var(--space-md);
+  --color-space-grid-gap: var(--space-md);
 
   /* Extended surfaces (dashboards, tracks) */
   --color-surface-muted: #f7f9fc;
@@ -97,7 +132,6 @@
   /* Overlay & shadow */
   --shadow-overlay: rgba(0, 0, 0, 0.4);
   --shadow-overlay-light: rgba(255, 255, 255, 0.85);
-  --shadow-card: rgba(15, 92, 158, 0.08);
   --shadow-card-soft: rgba(0, 0, 0, 0.04);
   --shadow-focus: rgba(15, 92, 158, 0.18);
   --shadow-popup: rgba(0, 0, 0, 0.25);
@@ -105,4 +139,20 @@
   --shadow-scrim: rgba(0, 0, 0, 0.35);
   --shadow-elevated: rgba(30, 64, 175, 0.08);
   --shadow-overlay-lg: rgba(30, 64, 175, 0.15);
+}
+
+[data-theme='dark'] {
+  --color-bg-main: #0f172a;
+  --color-bg-card: #111827;
+  --color-bg-sidebar: #0b1220;
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+  --color-border: #1f2937;
+  --color-primary: #2b6ea6;
+  --color-primary-light: #3b82c4;
+  --color-primary-dark: #163a5a;
+  --color-card-bg: var(--color-bg-card);
+  --color-body-bg: var(--color-bg-main);
+  --color-text: var(--color-text-primary);
+  --color-text-muted: var(--color-text-secondary);
 }

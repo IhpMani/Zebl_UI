@@ -3,7 +3,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { catchError, filter, finalize, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ClaimApiService, ScrubResult } from '../../core/services/claim-api.service';
+import { ClaimApiService } from '../../core/services/claim-api.service';
 import { Claim, ClaimAdditionalData } from '../../core/services/claim.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
 import { CLAIM_STATUS_OPTIONS, ClaimStatusOption } from '../../shared/constants/claim-status';
@@ -17,8 +17,7 @@ import { RibbonContextService } from '../../core/services/ribbon-context.service
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
-import { PatientApiService } from '../../core/services/patient-api.service';
-import { PatientDetail } from '../../core/services/patient.models';
+import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 
 @Component({
   selector: 'app-claim-details',
@@ -28,6 +27,7 @@ import { PatientDetail } from '../../core/services/patient.models';
 })
 export class ClaimDetailsComponent implements OnInit, OnDestroy {
   claim: Claim | null = null;
+  isNewMode = false;
   loading: boolean = false;
   error: string | null = null;
   claId: number | null = null;
@@ -107,15 +107,20 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     ClaFacilityPhyFID: new FormControl<number | null>(null)
   });
 
+  get form(): FormGroup {
+    return this.claimForm;
+  }
+
   sectionsState = {
     claimInfo: true,
     physician: true,
     dates: true,
-    misc: true,
-    resubmission: true,
-    paperwork: true,
-    additionalData: true,
-    customFields: true
+    diagnosisExpanded: false,
+    misc: false,
+    resubmission: false,
+    paperwork: false,
+    additionalData: false,
+    customFields: false
   };
 
   /** Claim-level custom field definitions and values. */
@@ -151,8 +156,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   procedureLookupLoading = false;
   procedureLookupResults: Array<{ code: string; description: string }> = [];
 
-  scrubResults: ScrubResult[] = [];
-  scrubError: string | null = null;
+  savingClaim = false;
+  scrubbingClaim = false;
 
   /** Responsible party payer options (from claim insureds). */
   primaryPayerId: number | null = null;
@@ -166,7 +171,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   private paymentRequestInFlight = false;
   private adjustmentRequestInFlight = false;
   private disbursementRequestInFlight = false;
-  private responsibleRequestInFlight = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -183,12 +187,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     private customFieldsApi: CustomFieldsApiService,
     private workspace: WorkspaceService,
     private cdr: ChangeDetectorRef,
-    private patientApi: PatientApiService
+    private programSettingsApi: ProgramSettingsApiService
   ) { }
 
   ngOnInit(): void {
     this.loadClassificationOptions();
     this.loadPhysicians();
+    if (this.route.snapshot.routeConfig?.path === 'claims/new') {
+      this.initNewClaim();
+      return;
+    }
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.claId = +idParam;
@@ -209,8 +217,99 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         const url = e.urlAfterRedirects || '';
         if (!this.isUrlForThisClaim(url)) return;
         this.refreshServiceLinesFromApi();
-        this.refreshResponsiblePayerOptionsFromPatient();
       });
+  }
+
+  private initNewClaim(): void {
+    this.isNewMode = true;
+    this.claim = this.createEmptyClaim();
+    this.claId = null;
+    this.error = null;
+    this.loading = false;
+    this.ribbonContext.clearContext();
+    this.patchClaimForm();
+    this.workspace.updateActiveTabTitle('New Claim');
+    this.loadClaimInitialSettings();
+    this.cdr.markForCheck();
+  }
+
+  private loadClaimInitialSettings(): void {
+    this.programSettingsApi.getSection('claim').subscribe({
+      next: (settings) => {
+        if (!this.claim) return;
+        const initialStatus = (settings?.initialClaimStatus ?? 'OnHold') as string;
+        this.claim.claStatus = initialStatus || 'OnHold';
+        this.claimForm.patchValue({
+          ClaStatus: this.claim.claStatus
+        });
+        this.ensureCurrentStatusInOptions();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        if (!this.claim) return;
+        this.claim.claStatus = this.claim.claStatus || 'OnHold';
+        this.claimForm.patchValue({
+          ClaStatus: this.claim.claStatus
+        });
+        this.ensureCurrentStatusInOptions();
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private createEmptyClaim(): Claim {
+    const nowIso = new Date().toISOString();
+    return {
+      claID: 0,
+      claStatus: 'OnHold',
+      claDateTimeCreated: nowIso,
+      claDateTimeModified: nowIso,
+      claTotalChargeTRIG: 0,
+      claTotalAmtPaidCC: 0,
+      claTotalBalanceCC: 0,
+      claTotalAmtAppliedCC: 0,
+      claBillDate: null,
+      claBillTo: 0,
+      claSubmissionMethod: null,
+      claInvoiceNumber: null,
+      claLocked: false,
+      claOriginalRefNo: null,
+      claDelayCode: null,
+      claMedicaidResubmissionCode: null,
+      claPaperWorkTransmissionCode: null,
+      claPaperWorkControlNumber: null,
+      claPaperWorkInd: null,
+      claEDINotes: null,
+      claRemarks: null,
+      claAdmittedDate: null,
+      claDischargedDate: null,
+      claDateLastSeen: null,
+      claRelatedTo: 0,
+      claRelatedToState: null,
+      claFirstDateTRIG: null,
+      claLastDateTRIG: null,
+      claClassification: null,
+      claDiagnosis1: null,
+      claDiagnosis2: null,
+      claDiagnosis3: null,
+      claDiagnosis4: null,
+      claDiagnosis5: null,
+      claDiagnosis6: null,
+      claDiagnosis7: null,
+      claDiagnosis8: null,
+      claDiagnosis9: null,
+      claDiagnosis10: null,
+      claDiagnosis11: null,
+      claDiagnosis12: null,
+      patient: null,
+      renderingPhysician: null,
+      referringPhysician: null,
+      billingPhysician: null,
+      facilityPhysician: null,
+      additionalData: this.getEmptyAdditionalData(),
+      claimActivity: [],
+      serviceLines: []
+    };
   }
 
   loadClassificationOptions(): void {
@@ -370,25 +469,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  private refreshResponsiblePayerOptionsFromPatient(): void {
-    if (this.responsibleRequestInFlight) return;
-    const patId = this.claim?.patient?.patID;
-    if (!patId || patId <= 0) return;
-    this.responsibleRequestInFlight = true;
-
-    this.patientApi.getPatientById(patId).subscribe({
-      next: (patient) => {
-        this.loadResponsiblePayerOptionsFromPatient(patient);
-        this.responsibleRequestInFlight = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.responsibleRequestInFlight = false;
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
   private loadResponsiblePayerOptionsFromClaim(claim: Claim): void {
     // ClaimsController returns ClaimInsured; it's not strongly typed in our Claim model,
     // so we access it as `any`.
@@ -430,22 +510,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.secondaryPayerName = secondary?.name ?? null;
   }
 
-  private loadResponsiblePayerOptionsFromPatient(patient: PatientDetail): void {
-    const primary =
-      patient.primaryInsurance ??
-      patient.insuranceList?.find((i) => i.patInsSequence === 1) ??
-      null;
-
-    const secondary =
-      patient.secondaryInsurance ??
-      patient.insuranceList?.find((i) => i.patInsSequence === 2) ??
-      null;
-
-    this.primaryPayerId = primary?.payID ?? null;
-    this.primaryPayerName = primary?.payerName ?? null;
-
-    this.secondaryPayerId = secondary?.payID ?? null;
-    this.secondaryPayerName = secondary?.payerName ?? null;
+  /**
+   * Backend should persist ClaBillTo as 0/1/2, but some flows may send payer IDs.
+   * Normalize to UI enum so the Bill To dropdown renders correctly.
+   */
+  private normalizeBillToForUi(raw: number | null | undefined): number {
+    const v = Number(raw ?? 0);
+    if (v === 0 || v === 1 || v === 2) return v;
+    if (this.primaryPayerId && v === this.primaryPayerId) return 1;
+    if (this.secondaryPayerId && v === this.secondaryPayerId) return 2;
+    return 0;
   }
 
   getResponsiblePartyLabel(payerId: number | null | undefined): string {
@@ -532,26 +606,13 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.ensureCurrentClassificationInOptions();
           this.ensureCurrentPhysiciansInOptions();
           this.loadResponsiblePayerOptionsFromClaim(claim);
+          this.claim.claBillTo = this.normalizeBillToForUi(this.claim.claBillTo);
+          this.normalizeClaimHeaderDatesForDateInputs(this.claim);
           this.patchClaimForm();
           const embedded = claim.serviceLines ?? [];
           const fresh = services !== undefined ? (services ?? []) : embedded;
           this.applyFreshServiceLines(fresh, embedded);
           this.loadClaimCustomFieldsAndValues(claId);
-
-          // Override payer names/options with current patient insurance snapshot.
-          // This fixes stale "Primary payer - <old payer>" labels when patient insurance changes.
-          if (patId && patId > 0) {
-            this.patientApi.getPatientById(patId).subscribe({
-              next: (patient) => {
-                this.loadResponsiblePayerOptionsFromPatient(patient);
-                this.cdr.markForCheck();
-              },
-              error: () => {
-                // Keep claim snapshot fallback if patient insurance fails.
-                this.cdr.markForCheck();
-              }
-            });
-          }
         },
         error: (err) => {
           if (err.status === 404) {
@@ -1144,17 +1205,54 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   private toDateInputValue(value: string | Date | null | undefined): string {
     if (!value) return '';
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '';
+    if (Number.isNaN(d.getTime()) || d.getFullYear() <= 1900) return '';
     const month = `${d.getMonth() + 1}`.padStart(2, '0');
     const day = `${d.getDate()}`.padStart(2, '0');
     return `${d.getFullYear()}-${month}-${day}`;
   }
 
+  /**
+   * API often returns DateOnly as "yyyy-MM-ddTHH:mm:ss". <input type="date"> requires "yyyy-MM-dd"
+   * or the value may not display. Prefer the calendar prefix when present to avoid TZ shifts.
+   */
+  private coerceApiDateToYyyyMmDd(value: string | Date): string {
+    if (value instanceof Date) {
+      return this.toDateInputValue(value);
+    }
+    const s = value.trim();
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) {
+      return m[1];
+    }
+    return this.toDateInputValue(s);
+  }
+
+  private normalizeClaimHeaderDatesForDateInputs(claim: Claim): void {
+    const keys = ['claBillDate', 'claAdmittedDate', 'claDischargedDate', 'claDateLastSeen'] as const;
+    type ClaimDateField = (typeof keys)[number];
+    for (const key of keys) {
+      const raw = claim[key];
+      if (raw == null || (typeof raw === 'string' && raw.trim() === '')) {
+        claim[key] = null;
+        continue;
+      }
+      const normalized = this.coerceApiDateToYyyyMmDd(
+        typeof raw === 'string' ? raw : String(raw)
+      );
+      claim[key] = (normalized || null) as Claim[ClaimDateField];
+    }
+  }
+
   saveAndClose(): void {
-    if (!this.claim || !this.claId) {
+    if (this.isNewMode) {
+      alert('This claim is new and not saved yet. Select a patient and save when creation is enabled.');
+      return;
+    }
+    if (!this.claim || !this.claId || this.savingClaim) {
       this.goBackToList();
       return;
     }
+    if (!this.validateBillToSelection()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1169,8 +1267,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
+    const selectedPayerId = this.getSelectedPrimaryPayerId();
+    console.log('Selected payerId:', selectedPayerId);
+    console.log('Form value:', this.form.value);
+    console.log('CLAIM UPDATE PAYLOAD:', { selectedPayerId, formValue: this.form.value, payload });
     console.log('[ClaimDetails] PUT payload', payload);
-    this.claimApiService.updateClaim(this.claId, payload).subscribe({
+    this.savingClaim = true;
+    this.claimApiService.updateClaim(this.claId, payload).pipe(
+      finalize(() => {
+        this.savingClaim = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
@@ -1190,7 +1298,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   save(): void {
-    if (!this.claim || !this.claId) return;
+    if (this.isNewMode) {
+      alert('This claim is new and not saved yet. Select a patient and save when creation is enabled.');
+      return;
+    }
+    if (!this.claim || !this.claId || this.savingClaim) return;
+    if (!this.validateBillToSelection()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1205,8 +1318,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
+    const selectedPayerId = this.getSelectedPrimaryPayerId();
+    console.log('Selected payerId:', selectedPayerId);
+    console.log('Form value:', this.form.value);
+    console.log('CLAIM UPDATE PAYLOAD:', { selectedPayerId, formValue: this.form.value, payload });
     console.log('[ClaimDetails] PUT payload', payload);
-    this.claimApiService.updateClaim(this.claId, payload).subscribe({
+    this.savingClaim = true;
+    this.claimApiService.updateClaim(this.claId, payload).pipe(
+      finalize(() => {
+        this.savingClaim = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
       next: () => {
         if (this.claim) {
           this.claim.claStatus = claStatus;
@@ -1236,18 +1359,21 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   scrub(): void {
-    if (!this.claId) {
+    if (!this.claId || this.scrubbingClaim) {
       return;
     }
-    this.scrubError = null;
-    this.scrubResults = [];
-    this.claimApiService.scrubClaim(this.claId).subscribe({
-      next: (results) => {
-        this.scrubResults = results || [];
+    this.scrubbingClaim = true;
+    this.claimApiService.scrubClaim(this.claId).pipe(
+      finalize(() => {
+        this.scrubbingClaim = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
+      next: () => {
         this.cdr.markForCheck();
       },
       error: (err) => {
-        this.scrubError = err?.error?.message || err?.error?.error || 'Failed to scrub claim.';
+        console.error('Scrub failed:', err?.error?.message || err?.error?.error || err);
         this.cdr.markForCheck();
       }
     });
@@ -1259,7 +1385,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   formatDate(value: string | null | undefined): string {
-    if (!value) return '';
+    if (!value || this.isPlaceholderDate(value)) return '';
     try {
       return new Date(value).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -1272,7 +1398,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   formatDateTime(value: string | null | undefined): string {
-    if (!value) return '';
+    if (!value || this.isPlaceholderDate(value)) return '';
     try {
       return new Date(value).toLocaleString('en-US', {
         year: 'numeric',
@@ -1287,6 +1413,14 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  private isPlaceholderDate(value: string): boolean {
+    const v = value.trim();
+    if (!v) return true;
+    if (v.startsWith('0001-01-01')) return true;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) || d.getFullYear() <= 1900;
+  }
+
   getPatientName(): string {
     if (!this.claim?.patient) return 'Unknown Patient';
     const firstName = this.claim.patient.patFirstName || '';
@@ -1297,13 +1431,69 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return this.claim.patient.patFullNameCC || 'Unknown Patient';
   }
 
+  getCreatedUserDisplay(): string {
+    if (!this.claim) return '';
+    const raw = this.claim as unknown as Record<string, unknown>;
+    const direct =
+      this.claim.claCreatedUserName ||
+      this.getRecordString(raw, 'claCreatedUserName') ||
+      this.getRecordString(raw, 'ClaCreatedUserName');
+    if (direct) return direct;
+
+    const createdActivity = (this.claim.claimActivity ?? []).find(a =>
+      (a.activityType || '').toLowerCase().includes('created')
+    );
+    return createdActivity?.user || '';
+  }
+
+  getModifiedUserDisplay(): string {
+    if (!this.claim) return '';
+    const raw = this.claim as unknown as Record<string, unknown>;
+    const direct =
+      this.claim.claLastUserName ||
+      this.getRecordString(raw, 'claLastUserName') ||
+      this.getRecordString(raw, 'ClaLastUserName');
+    if (direct) return direct;
+
+    const latest = [...(this.claim.claimActivity ?? [])]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    return latest?.user || '';
+  }
+
   getBillToText(): string {
     if (!this.claim) return '';
     const billTo = this.claim.claBillTo;
-    if (billTo === 0) return 'Patient';
-    if (billTo === 1) return 'Primary';
-    if (billTo === 2) return 'Final (F/2)';
-    return `Bill To ${billTo}`;
+    if (billTo === 1) return `P - ${this.primaryPayerName ?? 'PRIMARY'}`;
+    if (billTo === 2) return `S - ${this.secondaryPayerName ?? 'SECONDARY'}`;
+    return 'Patient';
+  }
+
+  getBillToOptions(): Array<{ value: number; label: string; disabled?: boolean }> {
+    const hasPrimary = !!(this.primaryPayerName && this.primaryPayerName.trim().length > 0);
+    const hasSecondary = !!(this.secondaryPayerName && this.secondaryPayerName.trim().length > 0);
+    return [
+      { value: 0, label: 'Patient' },
+      { value: 1, label: `P - ${this.primaryPayerName ?? 'PRIMARY'}`, disabled: !hasPrimary },
+      { value: 2, label: `S - ${this.secondaryPayerName ?? 'SECONDARY'}`, disabled: !hasSecondary }
+    ];
+  }
+
+  private validateBillToSelection(): boolean {
+    if (!this.claim) return false;
+    const selected = Number(this.claim.claBillTo ?? 0);
+    if (selected === 1 && !(this.primaryPayerName && this.primaryPayerName.trim().length > 0)) {
+      alert('Primary payer is required before selecting Bill To = Primary.');
+      this.claim.claBillTo = 0;
+      this.cdr.markForCheck();
+      return false;
+    }
+    if (selected === 2 && !(this.secondaryPayerName && this.secondaryPayerName.trim().length > 0)) {
+      alert('Secondary payer is required before selecting Bill To = Secondary.');
+      this.claim.claBillTo = 0;
+      this.cdr.markForCheck();
+      return false;
+    }
+    return true;
   }
 
   getServiceTotalCharges(): number {
@@ -1362,18 +1552,22 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     noteText: string | null;
   }): any {
     if (!this.claim) return partial;
+    const primaryPayerId = this.getSelectedPrimaryPayerId();
 
     // Always send the full claim update DTO so backend gets consistent shape.
     return {
       claStatus: this.claim.claStatus ?? null,
       claClassification: this.claim.claClassification ?? null,
       claSubmissionMethod: partial.claSubmissionMethod ?? this.claim.claSubmissionMethod ?? null,
+      claBillTo: this.claim.claBillTo ?? null,
+      primaryPayerId,
       claRenderingPhyFID: partial.claRenderingPhyFID ?? this.claim.renderingPhysician?.phyID ?? 0,
       claFacilityPhyFID: partial.claFacilityPhyFID ?? this.claim.facilityPhysician?.phyID ?? 0,
       claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
       claAdmittedDate: this.claim.claAdmittedDate ?? null,
       claDischargedDate: this.claim.claDischargedDate ?? null,
       claDateLastSeen: this.claim.claDateLastSeen ?? null,
+      claBillDate: this.claim.claBillDate && String(this.claim.claBillDate).trim() !== '' ? this.claim.claBillDate : null,
       claEDINotes: this.claim.claEDINotes ?? null,
       claRemarks: this.claim.claRemarks ?? null,
       claRelatedTo: this.claim.claRelatedTo ?? null,
@@ -1389,4 +1583,52 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       noteText: partial.noteText
     };
   }
+
+  private getSelectedPrimaryPayerId(): number | null {
+    const selected = Number(this.primaryPayerId ?? 0);
+    return selected > 0 ? selected : null;
+  }
+
+  private getRecordString(record: Record<string, unknown>, key: string): string {
+    const value = record[key];
+    return typeof value === 'string' ? value : '';
+  }
+
+  get primaryDiagnosisFields(): Array<{ label: string; field: keyof Claim }> {
+    return this.diagnosisFields.slice(0, 4);
+  }
+
+  get additionalDiagnosisFields(): Array<{ label: string; field: keyof Claim }> {
+    return this.diagnosisFields.slice(4);
+  }
+
+  getStatusClass(status: string | null | undefined): string {
+    const normalized = (status ?? '').toLowerCase();
+    if (normalized.includes('denied') || normalized.includes('rejected')) return 'status-error';
+    if (normalized.includes('pending') || normalized.includes('hold')) return 'status-warning';
+    if (normalized.includes('paid') || normalized.includes('processed') || normalized.includes('complete')) return 'status-success';
+    return 'status-neutral';
+  }
+
+  getClaimTotalCharge(): number {
+    const claimAny = this.claim as any;
+    const direct = Number(claimAny?.claTotalChargeTRIG ?? claimAny?.ClaTotalChargeTRIG);
+    if (Number.isFinite(direct)) return direct;
+    return this.getServiceTotalCharges();
+  }
+
+  getClaimTotalInsurancePaid(): number {
+    const claimAny = this.claim as any;
+    const direct = Number(claimAny?.claTotalInsAmtPaidTRIG ?? claimAny?.ClaTotalInsAmtPaidTRIG);
+    if (Number.isFinite(direct)) return direct;
+    return this.serviceLinesArray.reduce((sum, line) => sum + Number(line?.srvTotalInsAmtPaidTRIG ?? 0), 0);
+  }
+
+  getClaimTotalPatientBalance(): number {
+    const claimAny = this.claim as any;
+    const direct = Number(claimAny?.claTotalPatBalanceTRIG ?? claimAny?.ClaTotalPatBalanceTRIG);
+    if (Number.isFinite(direct)) return direct;
+    return this.serviceLinesArray.reduce((sum, line) => sum + Number(line?.srvTotalBalanceCC ?? 0), 0);
+  }
+
 }

@@ -1,151 +1,106 @@
-<div class="ribbon-shell" aria-label="Application navigation">
-  <div class="ribbon-glass">
-    <nav class="ribbon-toolbar" role="navigation">
-      <div class="ribbon-cluster">
-        <button type="button" class="nav-item nav-item--icon-only" (click)="goToHome()" aria-label="Home">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </span>
-        </button>
-      </div>
+<button type="button" class="sidebar-mobile-toggle" (click)="toggleMobileSidebar($event)" aria-label="Toggle navigation">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"></line>
+    <line x1="3" y1="12" x2="21" y2="12"></line>
+    <line x1="3" y1="18" x2="21" y2="18"></line>
+  </svg>
+</button>
 
-      <div class="ribbon-cluster">
-        <div class="dropdown-wrapper">
-          <button type="button" class="nav-item nav-item--icon-only dropdown" [class.active]="showFindDropdown" (click)="toggleFindDropdown($event)" aria-label="Find" [attr.aria-expanded]="showFindDropdown">
-            <span class="nav-item__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            </span>
-          </button>
-          <div class="dropdown-content" [class.show]="showFindDropdown" role="menu">
-            <a role="menuitem" (click)="findOptionSelected('Find Patient')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Find Patient</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Claim')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>Find Claim</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Service')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg></span>Find Service</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Payment')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></span>Find Payment</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Task')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></span>Find Task</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Adjustment')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Find Adjustment</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Payer')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>Find Payer</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Physician')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Find Physician</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Disbursement')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Find Disbursement</a>
-            <a role="menuitem" (click)="findOptionSelected('Find Claim Note')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/></svg></span>Find Claim Note</a>
-          </div>
-        </div>
-      </div>
+<div class="sidebar-backdrop" *ngIf="mobileSidebarOpen" (click)="closeMobileSidebar()"></div>
 
-      <div class="ribbon-cluster">
-        <button type="button" class="nav-item" (click)="onPatientClick()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </span>
-          <span class="nav-item__label">Patient</span>
-        </button>
-        <button type="button" class="nav-item" (click)="onClaimClick()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-          </span>
-          <span class="nav-item__label">Claim</span>
-        </button>
-        <button type="button" class="nav-item" (click)="onPaymentClick()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-          </span>
-          <span class="nav-item__label">Payment</span>
-        </button>
-        <button type="button" class="nav-item">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
-          </span>
-          <span class="nav-item__label">Task</span>
-        </button>
-        <button type="button" class="nav-item">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>
-          </span>
-          <span class="nav-item__label">Statement</span>
-        </button>
-        <button type="button" class="nav-item" (click)="libraryOptionSelected('Payer')">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
-          </span>
-          <span class="nav-item__label">Payer</span>
-        </button>
-        <button type="button" class="nav-item" (click)="goToPhysicianLibrary()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </span>
-          <span class="nav-item__label">Physician</span>
-        </button>
-        <button type="button" class="nav-item" (click)="goToProgramSetup()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
-          </span>
-          <span class="nav-item__label">Program Setup</span>
-        </button>
-        <div class="dropdown-wrapper">
-          <button type="button" class="nav-item dropdown" [class.active]="showLibrariesDropdown" (click)="toggleLibrariesDropdown($event)" aria-haspopup="true" [attr.aria-expanded]="showLibrariesDropdown">
-            <span class="nav-item__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-            </span>
-            <span class="nav-item__label">Libraries</span>
-          </button>
-          <div class="dropdown-content" [class.show]="showLibrariesDropdown" role="menu">
-            <a role="menuitem" (click)="libraryOptionSelected('Add-On Services')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span>Add-On Services</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Authorization')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg></span>Authorization</a>
-            <a role="menuitem" (click)="libraryOptionSelected('City State Zip')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg></span>City State Zip</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Claim Template')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/></svg></span>Claim Template</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Code Library')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7 4-4 4 4"/><path d="M12 3v18"/><path d="m4 17 4 4 4-4"/><path d="m12 21 4-4 4 4"/></svg></span>Code Library</a>
-            <a role="menuitem" (click)="libraryOptionSelected('EDI Connection')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 4.9 5.525 5.525"/><path d="M3.5 12h2.5"/><path d="M12 3.5V6"/><path d="m19.1 4.9-.625.625"/><path d="M12 5c-6.5 7-7 10 0 14 7-4 6.5-7 0-14Z"/></svg></span>EDI Connection</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Interface')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"/><rect x="14" y="5" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/><path d="M10 8.5h4"/><path d="M12 12v2"/></svg></span>Interface</a>
-            <a role="menuitem" (click)="libraryOptionSelected('List')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span>List</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Note Template')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></span>Note Template</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Payer')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><polygon points="12 2 20 7 4 7"/></svg></span>Payer</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Physician Facility')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg></span>Physician Facility</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Procedure Code')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H8l-5 9 5 9h8l5-9z"/><path d="M10 9h4"/><path d="M10 12h4"/><path d="M10 15h4"/></svg></span>Procedure Code</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Submitter / Receiver')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="8" height="12" rx="1"/><rect x="13" y="6" width="8" height="12" rx="1"/><path d="M11 12h2"/></svg></span>Submitter / Receiver</a>
-            <a role="menuitem" (click)="libraryOptionSelected('Widget')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>Widget</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="ribbon-cluster">
-        <button type="button" class="nav-item" (click)="goToEdiReports()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 4.9 5.525 5.525"/><path d="M3.5 12h2.5"/><path d="M12 3.5V6"/><path d="m19.1 4.9-.625.625"/><path d="M12 5c-6.5 7-7 10 0 14 7-4 6.5-7 0-14Z"/></svg>
-          </span>
-          <span class="nav-item__label">EDI Reports <span class="nav-item__badge">({{ ediReportCount }})</span></span>
-        </button>
-        <button type="button" class="nav-item" (click)="goToReceiverLibrary()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
-          </span>
-          <span class="nav-item__label">EDI Library</span>
-        </button>
-      </div>
-
-      <div class="ribbon-cluster">
-        <button type="button" class="nav-item" (click)="onReviewIncomingClick()">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-          </span>
-          <span class="nav-item__label">Review Incoming</span>
-        </button>
-      </div>
-
-      <div class="ribbon-cluster">
-        <button type="button" class="nav-item">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-          </span>
-          <span class="nav-item__label">Help Topics</span>
-        </button>
-        <button type="button" class="nav-item">
-          <span class="nav-item__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-          </span>
-          <span class="nav-item__label">Ticket</span>
-        </button>
-      </div>
-
-      <div class="ribbon-spacer" aria-hidden="true"></div>
-    </nav>
+<aside class="sidebar-nav" [class.sidebar-nav--collapsed]="sidebarCollapsed" [class.sidebar-nav--mobile-open]="mobileSidebarOpen">
+  <div class="sidebar-header">
+    <button type="button" class="sidebar-toggle" (click)="toggleSidebarCollapse($event)" aria-label="Collapse or expand sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
   </div>
-</div>
+
+  <nav class="sidebar-toolbar" role="navigation">
+    <div class="sidebar-section">
+      <button type="button" class="nav-item nav-item--icon-only" [class.active]="isRouteActive('/')" (click)="goToHome()" aria-label="Home" [attr.title]="sidebarCollapsed ? 'Home' : null">
+        <span class="nav-item__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </span>
+        <span class="nav-item__label" *ngIf="!sidebarCollapsed">Home</span>
+      </button>
+      <div class="dropdown-wrapper">
+        <button type="button" class="nav-item nav-item--icon-only nav-item--dropdown-trigger" [class.active]="showFindDropdown" (click)="toggleFindDropdown($event)" [attr.aria-expanded]="showFindDropdown" aria-label="Find" [attr.title]="sidebarCollapsed ? 'Find' : null">
+          <span class="nav-item__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          </span>
+          <span class="nav-item__label" *ngIf="!sidebarCollapsed">Find</span>
+        </button>
+        <div class="dropdown-content dropdown-content--find" [class.show]="showFindDropdown" role="menu" aria-label="Find menu">
+          <a role="menuitem" (click)="findOptionSelected('Find Patient')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>Find Patient</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Claim')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg></span>Find Claim</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Service')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg></span>Find Service</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Payment')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg></span>Find Payment</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Task')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"></rect><path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></svg></span>Find Task</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Adjustment')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>Find Adjustment</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Payer')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"></line><line x1="6" x2="6" y1="18" y2="11"></line><line x1="10" x2="10" y1="18" y2="11"></line><line x1="14" x2="14" y1="18" y2="11"></line><line x1="18" x2="18" y1="18" y2="11"></line><polygon points="12 2 20 7 4 7"></polygon></svg></span>Find Payer</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Physician')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Find Physician</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Disbursement')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>Find Disbursement</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Claim Note')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg></span>Find Claim Note</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/patients')" (click)="onPatientClick()" [attr.title]="sidebarCollapsed ? 'Patient' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Patient</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/claims')" (click)="onClaimClick()" [attr.title]="sidebarCollapsed ? 'Claim' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Claim</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/payments')" (click)="onPaymentClick()" [attr.title]="sidebarCollapsed ? 'Payment' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Payment</span></button>
+      <button type="button" class="nav-item" [attr.title]="sidebarCollapsed ? 'Task' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"></rect><path d="m3 17 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Task</span></button>
+      <button type="button" class="nav-item" [attr.title]="sidebarCollapsed ? 'Statement' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Statement</span></button>
+    </div>
+
+    <div class="sidebar-section">
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/payer-library')" (click)="libraryOptionSelected('Payer')" [attr.title]="sidebarCollapsed ? 'Payer' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"></line><line x1="6" x2="6" y1="18" y2="11"></line><line x1="10" x2="10" y1="18" y2="11"></line><line x1="14" x2="14" y1="18" y2="11"></line><line x1="18" x2="18" y1="18" y2="11"></line><polygon points="12 2 20 7 4 7"></polygon></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Payer</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/physicians')" (click)="goToPhysicianLibrary()" [attr.title]="sidebarCollapsed ? 'Physician' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Physician</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/tools/program-setup')" (click)="goToProgramSetup()" [attr.title]="sidebarCollapsed ? 'Program Setup' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"></line><line x1="10" x2="3" y1="4" y2="4"></line><line x1="21" x2="12" y1="12" y2="12"></line><line x1="8" x2="3" y1="12" y2="12"></line><line x1="21" x2="16" y1="20" y2="20"></line><line x1="12" x2="3" y1="20" y2="20"></line><line x1="14" x2="14" y1="2" y2="6"></line><line x1="8" x2="8" y1="10" y2="14"></line><line x1="16" x2="16" y1="18" y2="22"></line></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Program Setup</span></button>
+      <div class="dropdown-wrapper">
+        <button type="button" class="nav-item nav-item--dropdown-trigger" [class.active]="showLibrariesDropdown" (click)="toggleLibrariesDropdown($event)" [attr.aria-expanded]="showLibrariesDropdown" aria-haspopup="true" [attr.title]="sidebarCollapsed ? 'Libraries' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"></path><path d="M12 6v14"></path><path d="M8 8v12"></path><path d="M4 4v16"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Libraries</span></button>
+        <div class="dropdown-content dropdown-content--libraries" [class.show]="showLibrariesDropdown" role="menu" aria-label="Libraries menu">
+          <a role="menuitem" (click)="libraryOptionSelected('Add-On Services')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg></span>Add-On Services</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Authorization')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg></span>Authorization</a>
+          <a role="menuitem" (click)="libraryOptionSelected('City State Zip')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"></path><circle cx="12" cy="11" r="2"></circle></svg></span>City State Zip</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Claim Template')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg></span>Claim Template</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Code Library')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7 4-4 4 4"></path><path d="M12 3v18"></path><path d="m4 17 4 4 4-4"></path><path d="m12 21 4-4 4 4"></path></svg></span>Code Library</a>
+          <a role="menuitem" (click)="libraryOptionSelected('EDI Connection')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 4.9 5.525 5.525"></path><path d="M3.5 12h2.5"></path><path d="M12 3.5V6"></path><path d="m19.1 4.9-.625.625"></path><path d="M12 5c-6.5 7-7 10 0 14 7-4 6.5-7 0-14Z"></path></svg></span>EDI Connection</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Interface')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"></rect><rect x="14" y="5" width="7" height="7" rx="1"></rect><rect x="8.5" y="14" width="7" height="7" rx="1"></rect><path d="M10 8.5h4"></path><path d="M12 12v2"></path></svg></span>Interface</a>
+          <a role="menuitem" (click)="libraryOptionSelected('List')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg></span>List</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Note Template')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg></span>Note Template</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Payer')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"></line><polygon points="12 2 20 7 4 7"></polygon></svg></span>Payer</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Physician Facility')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path></svg></span>Physician Facility</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Procedure Code')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H8l-5 9 5 9h8l5-9z"></path><path d="M10 9h4"></path><path d="M10 12h4"></path><path d="M10 15h4"></path></svg></span>Procedure Code</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Submitter / Receiver')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="8" height="12" rx="1"></rect><rect x="13" y="6" width="8" height="12" rx="1"></rect><path d="M11 12h2"></path></svg></span>Submitter / Receiver</a>
+          <a role="menuitem" (click)="libraryOptionSelected('Widget')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg></span>Widget</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/edi-reports')" (click)="goToEdiReports()" [attr.title]="sidebarCollapsed ? 'EDI Reports' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 4.9 5.525 5.525"></path><path d="M3.5 12h2.5"></path><path d="M12 3.5V6"></path><path d="m19.1 4.9-.625.625"></path><path d="M12 5c-6.5 7-7 10 0 14 7-4 6.5-7 0-14Z"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">EDI Reports <span class="nav-item__badge">({{ ediReportCount }})</span></span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/claims/send')" (click)="goToSendClaims()" [attr.title]="sidebarCollapsed ? 'Send Claims' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2 15 22 11 13 2 9 22 2z"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Send Claims</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/receiver-library')" (click)="goToReceiverLibrary()" [attr.title]="sidebarCollapsed ? 'EDI Library' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19a9 3 0 0 0 18 0V5"></path><path d="M3 12a9 3 0 0 0 18 0"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">EDI Library</span></button>
+      <button type="button" class="nav-item" [class.active]="isRouteActive('/interface-data-review')" (click)="onReviewIncomingClick()" [attr.title]="sidebarCollapsed ? 'Review Incoming' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Review Incoming</span></button>
+    </div>
+
+    <div class="sidebar-section sidebar-section--support">
+      <button type="button" class="nav-item" [attr.title]="sidebarCollapsed ? 'Help Topics' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Help Topics</span></button>
+      <button type="button" class="nav-item" [attr.title]="sidebarCollapsed ? 'Ticket' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Ticket</span></button>
+    </div>
+  </nav>
+</aside>
+
+<app-sidebar-floating-panel
+  [visible]="!!activeMenu"
+  [left]="panelLeft"
+  [top]="panelTop"
+  [title]="panelTitle"
+  [items]="panelItems"
+  (itemSelect)="onFloatingItemSelect($event)">
+</app-sidebar-floating-panel>

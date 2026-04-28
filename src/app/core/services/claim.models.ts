@@ -11,7 +11,12 @@ export interface ClaimAdditionalData {
 export interface ClaimListItem {
   claID: number;
   claStatus: string | null;
+  claSubmissionMethod?: string | null;
   claDateTimeCreated: string | null;
+  /** Present when API includes modified time on list rows (matches claim detail). */
+  claDateTimeModified?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   claTotalChargeTRIG: number | null;
   claTotalInsBalanceTRIG?: number | null;
   claTotalPatBalanceTRIG?: number | null;
@@ -19,7 +24,7 @@ export interface ClaimListItem {
   claTotalBalanceCC: number | null;
   claClassification: string | null;
   claDateTotalFrom?: string | null;
-  claBillTo?: number | null;
+  billToDisplay?: string | null;
   patFullNameCC?: string | null;
   primaryPayerName?: string | null;
   claPatFID: number;
@@ -52,6 +57,41 @@ export interface ClaimsApiResponse {
   meta: PaginationMeta;
 }
 
+export interface ClaimBatchListItem {
+  id: string;
+  status: string;
+  submitterReceiverId?: string | null;
+  connectionType?: string | null;
+  totalClaims: number;
+  successCount: number;
+  failureCount: number;
+  createdAt: string;
+  submittedAt?: string | null;
+  filePath?: string | null;
+}
+
+export interface ClaimBatchItemDto {
+  id: number;
+  claimId: number;
+  status: string;
+  errorMessage?: string | null;
+  createdAt: string;
+}
+
+export interface ClaimBatchDetail {
+  id: string;
+  status: string;
+  submitterReceiverId?: string | null;
+  connectionType?: string | null;
+  totalClaims: number;
+  successCount: number;
+  failureCount: number;
+  createdAt: string;
+  submittedAt?: string | null;
+  filePath?: string | null;
+  items: ClaimBatchItemDto[];
+}
+
 export interface UserKpiDashboard {
   userName: string;
   totalClaims: number;
@@ -79,11 +119,14 @@ export interface Claim {
   claStatus: string | null;
   claDateTimeCreated: string | null;
   claDateTimeModified: string | null;
+  claCreatedUserName?: string | null;
+  claLastUserName?: string | null;
   claTotalChargeTRIG: number | null;
   claTotalAmtPaidCC: number | null;
   claTotalBalanceCC: number | null;
   claTotalAmtAppliedCC: number | null;
   claBillDate: string | null;
+  billToDisplay?: string | null;
   claBillTo: number | null;
   claSubmissionMethod: string | null;
   claInvoiceNumber: string | null;
@@ -155,6 +198,10 @@ export interface Claim {
     phyName: string | null;
     phyNPI: string | null;
   } | null;
+
+  /** Optional payer names from claim insureds (sequence 1/2) */
+  primaryPayerName?: string | null;
+  secondaryPayerName?: string | null;
   
   /** Additional data from ClaAdditionalData XML */
   additionalData?: ClaimAdditionalData | null;

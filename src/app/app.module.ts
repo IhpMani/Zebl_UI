@@ -7,6 +7,7 @@ import { RouteReuseStrategy } from '@angular/router';
 import { AppRoutingModule } from './app-routing.module';
 import { AppShellComponent } from './app-shell/app-shell.component';
 import { RibbonComponent } from './ribbon/ribbon.component';
+import { SidebarFloatingPanelComponent } from './ribbon/sidebar-floating-panel.component';
 import { ClaimListComponent } from './claims/claim-list/claim-list.component';
 import { ClaimDetailsComponent } from './claims/claim-details/claim-details.component';
 import { HomeComponent } from './home/home.component';
@@ -15,6 +16,7 @@ import { PatientDetailsComponent } from './patients/patient-details/patient-deta
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
 import { PaymentEntryComponent } from './payments/payment-entry/payment-entry.component';
+import { PaymentsLedgerComponent } from './payments/payments-ledger/payments-ledger.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
 import { PayerListComponent } from './payers/payer-list/payer-list.component';
 import { PhysicianListComponent } from './physicians/physician-list/physician-list.component';
@@ -39,12 +41,18 @@ import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 import { EligibilityResponseComponent } from './patients/eligibility-response/eligibility-response.component';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
+import { SendClaimsComponent } from './claims/send-claims/send-claims.component';
+import { CardComponent } from './shared/ui/card/card.component';
+import { SectionHeaderComponent } from './shared/ui/section-header/section-header.component';
+import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.component';
 
 @NgModule({
   declarations: [
     AppShellComponent,
     RibbonComponent,
+    SidebarFloatingPanelComponent,
     ClaimListComponent,
+    SendClaimsComponent,
     ClaimDetailsComponent,
     HomeComponent,
     PatientListComponent,
@@ -52,6 +60,7 @@ import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspac
     ServiceListComponent,
     PaymentListComponent,
     PaymentEntryComponent,
+    PaymentsLedgerComponent,
     AdjustmentListComponent,
     PayerListComponent,
     PhysicianListComponent,
@@ -70,7 +79,10 @@ import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspac
     EligibilityResponseComponent,
     ClaimRejectionsComponent,
     SuperAdminComponent,
-    UnauthorizedComponent
+    UnauthorizedComponent,
+    CardComponent,
+    SectionHeaderComponent,
+    SummaryCardComponent
   ],
   imports: [
     BrowserModule,

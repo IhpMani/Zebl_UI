@@ -1,3 +1,4 @@
+/* strict-theme-normalized */
 .city-state-zip-page {
   padding: 16px;
   min-height: calc(100vh - 60px);
@@ -9,7 +10,7 @@
 }
 
 .breadcrumb {
-  color: var(--color-text);
+  color: var(--ps-text);
   font-weight: 600;
 }
 
@@ -23,9 +24,8 @@
 .grid-area {
   flex: 1;
   min-width: 0;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 2px 8px var(--shadow-card);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
   overflow: hidden;
 }
 
@@ -40,10 +40,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 10px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-body-bg);
-  font-size: 12px;
-  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--ps-border);
+  background: var(--ps-card);
+  font-size: 13px;
+  color: var(--ps-muted);
 }
 
 .grid-top-right {
@@ -56,9 +56,9 @@
   width: 220px;
   height: 24px;
   padding: 2px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  font-size: 12px;
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
+  font-size: 13px;
 }
 
 .table-wrap {
@@ -71,28 +71,28 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .csz-table th,
 .csz-table td {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--ps-border);
   padding: 0;
   vertical-align: middle;
 }
 
 .csz-table thead .header-row th {
-  background-color: var(--color-body-bg);
-  border-bottom: 2px solid var(--color-border);
-  color: var(--color-text);
+  background-color: var(--ps-card);
+  border-bottom: 2px solid var(--ps-border);
+  color: var(--ps-text);
   font-weight: 600;
   padding: 4px 6px;
   text-transform: none;
 }
 
 .csz-table thead .filter-row th {
-  background: var(--color-body-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border-bottom: 1px solid var(--ps-border);
   padding: 2px 6px;
 }
 
@@ -100,9 +100,9 @@
   width: 100%;
   height: 22px;
   padding: 2px 6px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--ps-border);
   border-radius: 2px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .col-check {
@@ -117,7 +117,7 @@
 
 .add-row td,
 .add-row-edit td {
-  background: var(--color-card-bg);
+  background: var(--ps-card);
 }
 
 .add-row-edit input {
@@ -125,25 +125,24 @@
   height: 22px;
   border: none;
   padding: 2px 6px;
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
 }
 
 .add-row-edit input:focus {
   outline: none;
-  background: var(--color-card-bg);
-  box-shadow: inset 0 0 0 1px var(--color-toolbar);
+  background: var(--ps-card);
 }
 
 .add-placeholder {
-  padding: 6px 8px !important;
-  color: var(--color-text-muted);
+  padding: 6px 8px;
+  color: var(--ps-muted);
   font-style: italic;
   cursor: pointer;
 }
 
 .add-row:hover .add-placeholder {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .cell-input {
@@ -151,25 +150,23 @@
   height: 22px;
   border: none;
   padding: 2px 6px;
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
 }
 
 .cell-input:focus {
   outline: none;
-  background: var(--color-card-bg);
-  box-shadow: inset 0 0 0 1px var(--color-toolbar);
+  background: var(--ps-card);
 }
 
 .data-row:hover td {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .actions {
   width: 200px;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 2px 8px var(--shadow-card);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -182,14 +179,14 @@
 }
 
 .action-btn.danger {
-  background: var(--color-error-bg);
-  color: var(--color-error);
-  border-color: var(--color-error-border);
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border-color: var(--ps-border);
 }
 
 .action-btn.danger:hover:not(:disabled) {
-  background: var(--color-error-border);
-  border-color: var(--color-error);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .spacer {
@@ -199,9 +196,9 @@
 .auto-add {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-  font-size: 0.85rem;
-  color: var(--color-text);
+  border-top: 1px solid var(--ps-border);
+  font-size: 13px;
+  color: var(--ps-text);
 }
 
 .auto-add label {
@@ -214,21 +211,20 @@
    GLASS THEME OVERRIDES
 ========================= */
 .city-state-zip-page {
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .breadcrumb {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .grid-area,
 .actions {
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .grid-top-bar,
@@ -236,9 +232,9 @@
 .csz-table thead .filter-row th,
 .add-entry-container,
 .auto-add {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 65%, transparent) !important;
-  color: var(--color-primary-btn-text);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 }
 
 .table-wrap {
@@ -248,23 +244,23 @@
 .add-row td,
 .add-row-edit td,
 .data-row td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent);
+  background: var(--ps-card);
 }
 
 .data-row:hover td,
 .add-row:hover .add-placeholder {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent);
+  background: var(--ps-card);
 }
 
 .add-placeholder,
 .grid-top-hint {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .csz-table th,
 .csz-table td {
-  border-bottom: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 50%, transparent);
-  color: var(--color-primary-btn-text);
+  border-bottom: 1px solid var(--ps-border);
+  color: var(--ps-text);
 }
 
 .csz-table {
@@ -275,14 +271,14 @@
 .csz-table thead input,
 .add-row-edit input,
 .cell-input {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
-  border: 1px solid var(--color-nav-glass-border);
-  color: var(--color-primary-btn-text);
-  border-radius: 8px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
+  border-radius: 2px;
 }
 
 .grid-search {
-  color: var(--color-primary-btn-text) !important;
+  color: var(--ps-text);
 }
 
 .grid-search:focus,
@@ -290,45 +286,44 @@
 .add-row-edit input:focus,
 .cell-input:focus {
   outline: none;
-  border-color: var(--color-nav-icon-active);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-nav-icon-active) 30%, transparent);
+  border-color: var(--ps-border);
 }
 
 .grid-search::placeholder,
 .csz-table thead input::placeholder,
 .add-row-edit input::placeholder,
 .cell-input::placeholder {
-  color: var(--color-nav-icon);
+  color: var(--ps-text);
 }
 
 .action-btn {
-  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
+  background: var(--ps-bg);
   border: 1px solid transparent;
-  color: var(--color-primary-btn-text);
-  border-radius: 8px;
+  color: var(--ps-text);
+  border-radius: 2px;
   font-weight: 600;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-nav-icon-hover), var(--color-nav-icon-active));
+  background: var(--ps-bg);
 }
 
 .action-btn:disabled {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 60%, transparent);
-  border: 1px solid var(--color-nav-glass-border);
-  color: var(--color-nav-icon);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
 }
 
 .action-btn.danger {
-  background: color-mix(in srgb, var(--color-error) 68%, white);
-  border: 1px solid color-mix(in srgb, var(--color-error) 74%, white);
-  color: #ffffff;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
 }
 
 .action-btn.danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-error) 76%, white);
-  border-color: color-mix(in srgb, var(--color-error) 82%, white);
-  color: #ffffff;
+  background: var(--ps-card);
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 }
 
 /* Final pass: force all editable controls and checks into theme */
@@ -337,9 +332,9 @@
   -webkit-appearance: none;
   width: 14px;
   height: 14px;
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
+  background: var(--ps-card);
   cursor: pointer;
   position: relative;
   vertical-align: middle;
@@ -352,36 +347,35 @@
   top: 1px;
   width: 3px;
   height: 7px;
-  border: solid var(--color-primary-btn-text);
+  border: solid var(--ps-border);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .city-state-zip-page input[type='checkbox']:checked {
-  background: var(--color-nav-icon-active);
-  border-color: var(--color-nav-icon-active);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .city-state-zip-page .add-row-edit input,
 .city-state-zip-page .cell-input,
 .city-state-zip-page .csz-table thead input {
-  border: 1px solid var(--color-nav-glass-border) !important;
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) !important;
-  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .city-state-zip-page .grid-top-right,
 .city-state-zip-page .auto-add label,
 .city-state-zip-page .spacer {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 /* Remove browser autofill white/yellow flash */
 .city-state-zip-page input:-webkit-autofill,
 .city-state-zip-page input:-webkit-autofill:hover,
 .city-state-zip-page input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--color-primary-btn-text);
-  -webkit-box-shadow: 0 0 0 1000px color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) inset;
+  -webkit-text-fill-color: var(--ps-text);
   transition: background-color 9999s ease-out 0s;
 }
 
@@ -392,22 +386,74 @@
 .city-state-zip-page .csz-table tr,
 .city-state-zip-page .csz-table th,
 .city-state-zip-page .csz-table td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent) !important;
-  color: var(--color-primary-btn-text) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .city-state-zip-page .csz-table thead .header-row th,
 .city-state-zip-page .csz-table thead .filter-row th {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 72%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .city-state-zip-page .add-row td,
 .city-state-zip-page .add-row-edit td,
 .city-state-zip-page .data-row td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 28%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .city-state-zip-page .add-placeholder {
-  color: var(--color-nav-icon-hover) !important;
+  color: var(--ps-text);
 }
 
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}

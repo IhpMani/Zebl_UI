@@ -2,6 +2,9 @@ export interface ServiceListItem {
   srvID: number;
   srvClaFID: number | null;
   srvDateTimeCreated: string;
+  srvDateTimeModified?: string | null;
+  createdDate?: string | null;
+  modifiedDate?: string | null;
   srvFromDate: string;
   srvToDate: string;
   srvProcedureCode: string | null;

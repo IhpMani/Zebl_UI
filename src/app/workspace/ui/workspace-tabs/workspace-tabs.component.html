@@ -1,25 +1,31 @@
 <div class="tabs-bar" *ngIf="(state$ | async) as state">
-  <div
-    class="tab"
-    *ngFor="let tab of state.tabs; trackBy: trackById"
-    [class.active]="tab.isActive"
-    (click)="activate(tab.id)"
-    title="{{ tab.title }}"
-  >
-    <span class="tab-icon" aria-hidden="true">
-      <ng-container [ngSwitch]="tab.tabType">
-        <span *ngSwitchCase="'patient'">👤</span>
-        <span *ngSwitchCase="'claim'">📄</span>
-        <span *ngSwitchCase="'report'">📊</span>
-        <span *ngSwitchDefault>📁</span>
-      </ng-container>
-    </span>
-    <span class="tab-title">
-      {{ tab.title }}<span class="dirty" *ngIf="tab.isDirty" aria-label="Unsaved changes">*</span>
-    </span>
-    <button class="close" type="button" (click)="close(tab.id, $event)" aria-label="Close tab">
-      ×
-    </button>
+  <div #tabContainer class="tabs-wrapper" *ngIf="state.tabs.length > 0">
+    <button class="tab-scroll-btn left" type="button" (click)="scrollTabs('left')" [disabled]="state.tabs.length === 0" aria-label="Scroll tabs left">‹</button>
+    <div
+      class="tab"
+      *ngFor="let tab of state.tabs; trackBy: trackById"
+      [class.active]="tab.isActive"
+      [class.active-tab]="tab.isActive"
+      (click)="activate(tab.id)"
+      title="{{ tab.title }}"
+    >
+      <span class="tab-icon" aria-hidden="true">
+        <ng-container [ngSwitch]="tab.tabType">
+          <span *ngSwitchCase="'patient'">👤</span>
+          <span *ngSwitchCase="'claim'">📄</span>
+          <span *ngSwitchCase="'report'">📊</span>
+          <span *ngSwitchDefault>📁</span>
+        </ng-container>
+      </span>
+      <span class="tab-title">
+        {{ tab.title }}<span class="dirty" *ngIf="tab.isDirty" aria-label="Unsaved changes">*</span>
+      </span>
+      <button class="close" type="button" (click)="close(tab.id, $event)" aria-label="Close tab">
+        ×
+      </button>
+    </div>
+
+    <button class="tab-scroll-btn right" type="button" (click)="scrollTabs('right')" [disabled]="state.tabs.length === 0" aria-label="Scroll tabs right">›</button>
   </div>
 </div>
 

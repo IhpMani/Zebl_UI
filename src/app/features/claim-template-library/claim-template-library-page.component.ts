@@ -231,6 +231,8 @@ export class ClaimTemplateLibraryPageComponent implements OnInit {
           this.loadTemplates();
           if (addNewAfter) {
             this.onAddNewClick();
+          } else {
+            this.onClose();
           }
         },
         error: () => {
@@ -249,6 +251,8 @@ export class ClaimTemplateLibraryPageComponent implements OnInit {
           this.loadTemplates();
           if (addNewAfter) {
             this.onAddNewClick();
+          } else {
+            this.onClose();
           }
         },
         error: () => {

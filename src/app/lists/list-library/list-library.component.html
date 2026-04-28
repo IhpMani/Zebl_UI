@@ -1,4 +1,5 @@
 <div class="list-library-container">
+  <div class="list-library-error" *ngIf="error">{{ error }}</div>
   <div class="list-library-content">
     <!-- Left Panel: List Type -->
     <div class="list-type-panel">
@@ -65,8 +66,8 @@
 
     <!-- Right Panel: Actions -->
     <div class="actions-panel">
-      <button class="action-btn" (click)="saveAndClose()" [disabled]="!hasChanges">Save & Close</button>
-      <button class="action-btn" (click)="save()" [disabled]="!hasChanges">Save</button>
+      <button class="action-btn btn-primary-action" (click)="saveAndClose()" [disabled]="!hasChanges">Save & Close</button>
+      <button class="action-btn btn-save" (click)="save()" [disabled]="!hasChanges">Save</button>
       <button class="action-btn" (click)="close()">Close</button>
       <button class="action-btn">Find & Replace</button>
 

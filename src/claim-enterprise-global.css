@@ -1,0 +1,217 @@
+:root {
+  --ce-bg-page: #eef2f7;
+  --ce-bg-card: #ffffff;
+  --ce-bg-soft: #f8fbff;
+  --ce-text: #0f2742;
+  --ce-text-muted: #64748b;
+  --ce-border: #dbe5f2;
+  --ce-border-strong: #c8d4e3;
+  --ce-primary: #2563eb;
+  --ce-primary-dark: #1d4ed8;
+  --ce-success: #16a34a;
+  --ce-warning: #d97706;
+  --ce-danger: #dc2626;
+  --ce-radius-md: 12px;
+  --ce-radius-sm: 10px;
+  --ce-shadow-card: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --ce-shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+html,
+body,
+app-root,
+.app-container,
+.main-content,
+.content-area,
+.workspace-content {
+  background: var(--ce-bg-page) !important;
+  color: var(--ce-text) !important;
+}
+
+/* Keep SaaS depth across all screens even with legacy resets */
+.card,
+.panel,
+.panel-card,
+.secondary-section,
+.table-container,
+.grid-container,
+.list-container,
+.claim-list-container,
+.home-dashboard,
+.dashboard,
+.content-box,
+[class$='-container'],
+[class$='-panel'] {
+  background: var(--ce-bg-card) !important;
+  border: 1px solid var(--ce-border) !important;
+  border-radius: var(--ce-radius-md) !important;
+  box-shadow: var(--ce-shadow-soft) !important;
+}
+
+.page-title,
+.title,
+h1,
+h2,
+h3 {
+  color: var(--ce-text) !important;
+  letter-spacing: 0.01em;
+}
+
+label,
+.subtitle,
+.muted,
+.text-muted {
+  color: var(--ce-text-muted) !important;
+}
+
+/* Unified sections */
+.section-header,
+.card-header,
+.panel-header,
+.header-row {
+  background: transparent !important;
+  color: var(--ce-text) !important;
+  border-bottom: 1px solid var(--ce-border) !important;
+}
+
+/* Inputs and controls */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  background: #ffffff !important;
+  border: 1px solid var(--ce-border) !important;
+  color: var(--ce-text) !important;
+  border-radius: var(--ce-radius-sm) !important;
+  min-height: 36px;
+  padding: 8px 10px !important;
+}
+
+textarea {
+  min-height: 90px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--ce-primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  outline: none !important;
+}
+
+/* Buttons */
+button,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-warning {
+  border-radius: var(--ce-radius-sm) !important;
+  font-weight: 600 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--ce-primary) !important;
+  border: 1px solid var(--ce-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ce-primary-dark) !important;
+  border-color: var(--ce-primary-dark) !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--ce-bg-soft) !important;
+  border: 1px solid var(--ce-border-strong) !important;
+  color: var(--ce-text) !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #eef5ff !important;
+}
+
+.btn-danger {
+  background: var(--ce-danger) !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+
+.btn-warning {
+  background: var(--ce-warning) !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
+}
+
+/* Tables and data grids */
+table,
+.ag-theme-alpine,
+.ag-root-wrapper,
+.claims-table {
+  background: #ffffff !important;
+  border: 1px solid var(--ce-border) !important;
+  border-radius: var(--ce-radius-md) !important;
+}
+
+thead th,
+th,
+.ag-header,
+.ag-header-cell {
+  background: #f3f8ff !important;
+  color: #334155 !important;
+  border-color: var(--ce-border) !important;
+  font-weight: 700 !important;
+}
+
+td,
+.ag-cell {
+  border-color: #e6edf5 !important;
+  color: #334155 !important;
+}
+
+tbody tr:nth-child(even) td {
+  background: #fcfdff !important;
+}
+
+tbody tr:nth-child(odd) td {
+  background: #ffffff !important;
+}
+
+tbody tr:hover td,
+.ag-row-hover .ag-cell,
+.ag-row:hover .ag-cell {
+  background: #eef5ff !important;
+}
+
+/* Dropdowns and overlays */
+.dropdown,
+.dropdown-content,
+.floating-panel,
+.dialog,
+.modal,
+.popup,
+.popover {
+  background: #fbfdff !important;
+  border: 1px solid var(--ce-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--ce-shadow-card) !important;
+}
+
+/* Semantic helpers used across list/detail screens */
+.status-success,
+.chip-success,
+.money-positive {
+  color: var(--ce-success) !important;
+}
+
+.status-warning,
+.chip-warning {
+  color: var(--ce-warning) !important;
+}
+
+.status-error,
+.chip-danger,
+.money-negative {
+  color: var(--ce-danger) !important;
+}

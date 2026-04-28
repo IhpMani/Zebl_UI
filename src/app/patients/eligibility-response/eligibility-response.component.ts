@@ -13,8 +13,14 @@ export class EligibilityResponseComponent {
     if (!value)
       return '';
 
-    // `DateOnly` from .NET serializes as `yyyy-MM-dd`. We format without timezone conversion.
     const str = String(value);
+    if (/^\d{8}$/.test(str)) {
+      const yyyy = str.slice(0, 4);
+      const mm = str.slice(4, 6);
+      const dd = str.slice(6, 8);
+      return `${mm}/${dd}/${yyyy}`;
+    }
+
     const parts = str.split('-');
     if (parts.length !== 3)
       return str;

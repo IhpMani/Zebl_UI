@@ -8,6 +8,7 @@ import { PatientDetailsComponent } from './patients/patient-details/patient-deta
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
 import { PaymentEntryComponent } from './payments/payment-entry/payment-entry.component';
+import { PaymentsLedgerComponent } from './payments/payments-ledger/payments-ledger.component';
 import { AdjustmentListComponent } from './adjustments/adjustment-list/adjustment-list.component';
 import { PayerListComponent } from './payers/payer-list/payer-list.component';
 import { PhysicianListComponent } from './physicians/physician-list/physician-list.component';
@@ -27,6 +28,7 @@ import { SuperAdminComponent } from './super-admin/super-admin.component';
 import { SuperAdminGuard } from './core/guards/super-admin.guard';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
+import { SendClaimsComponent } from './claims/send-claims/send-claims.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -37,6 +39,8 @@ const routes: Routes = [
   { path: '', component: HomeComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: HomeComponent, canActivate: [AuthGuard] },
   { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
+  { path: 'claims/send', component: SendClaimsComponent, canActivate: [AuthGuard] },
+  { path: 'claims/new', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
   { path: 'patients/new', component: PatientDetailsComponent, canActivate: [AuthGuard] },
@@ -46,6 +50,7 @@ const routes: Routes = [
   { path: 'payments/entry/:id', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/entry', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/find-payment', component: PaymentListComponent, canActivate: [AuthGuard] },
+  { path: 'payments/ledger', component: PaymentsLedgerComponent, canActivate: [AuthGuard] },
   { path: 'payments/era-exceptions', component: EraExceptionsComponent, canActivate: [AuthGuard] },
   { path: 'claims/rejections', component: ClaimRejectionsComponent, canActivate: [AuthGuard] },
   { path: 'adjustments/find-adjustment', component: AdjustmentListComponent, canActivate: [AuthGuard] },

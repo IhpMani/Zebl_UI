@@ -169,7 +169,7 @@ export class CityStateZipLibraryPageComponent implements OnInit {
     });
   }
 
-  save(): void {
+  save(closeAfter = false): void {
     if (this.saving || this.dirtyIds.size === 0) return;
 
     const dirtyRows = this.rows.filter(r => this.dirtyIds.has(r.id));
@@ -189,6 +189,9 @@ export class CityStateZipLibraryPageComponent implements OnInit {
         this.saving = false;
         this.dirtyIds.clear();
         this.load();
+        if (closeAfter) {
+          this.close();
+        }
       },
       error: err => {
         this.error = err?.error?.error || err?.message || 'Failed to save City / State / ZIP entries.';
@@ -202,11 +205,7 @@ export class CityStateZipLibraryPageComponent implements OnInit {
       this.close();
       return;
     }
-    this.save();
-    // Close after successful save (lightweight approach)
-    setTimeout(() => {
-      if (!this.saving) this.close();
-    }, 300);
+    this.save(true);
   }
 
   close(): void {

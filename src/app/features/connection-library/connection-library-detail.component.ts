@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConnectionLibraryService } from './connection-library.service';
-import { ConnectionLibraryDto, CreateConnectionLibraryCommand, UpdateConnectionLibraryCommand } from '../../core/services/connection-library-api.service';
+import { ConnectionLibraryDto, ConnectionType, CreateConnectionLibraryCommand, UpdateConnectionLibraryCommand } from '../../core/services/connection-library-api.service';
 
 @Component({
   selector: 'app-connection-library-detail',
@@ -53,7 +53,8 @@ export class ConnectionLibraryDetailComponent implements OnInit {
     this.form = this.fb.group({
       id: [null],
       name: ['', Validators.required],
-      connectionType: ['Secure File Transfer'],
+      connectionType: [ConnectionType.Sftp, Validators.required],
+      inboundFetchPath: ['/api/get-reports'],
       host: ['', Validators.required],
       port: [22, [Validators.required, Validators.min(1), Validators.max(65535)]],
       username: ['', Validators.required],
@@ -90,6 +91,8 @@ export class ConnectionLibraryDetailComponent implements OnInit {
         this.form.patchValue({
           id: connection.id,
           name: connection.name,
+          connectionType: connection.connectionType ?? ConnectionType.Sftp,
+          inboundFetchPath: connection.inboundFetchPath || '/api/get-reports',
           host: connection.host,
           port: connection.port,
           username: connection.username || '',
@@ -248,7 +251,21 @@ export class ConnectionLibraryDetailComponent implements OnInit {
       if (!result.username) result.username = this.loadedUsername;
     }
     delete result.id;
-    delete result.connectionType;
+    result.connectionType = Number(result.connectionType);
+    if (result.connectionType !== ConnectionType.Http && result.connectionType !== ConnectionType.Api) {
+      result.inboundFetchPath = null;
+    } else if (!result.inboundFetchPath?.trim()) {
+      result.inboundFetchPath = '/api/get-reports';
+    }
     return result;
+  }
+
+  isSftpTransport(): boolean {
+    return (this.form?.get('connectionType')?.value as number) === ConnectionType.Sftp;
+  }
+
+  isHttpLikeTransport(): boolean {
+    const v = this.form?.get('connectionType')?.value as number;
+    return v === ConnectionType.Http || v === ConnectionType.Api;
   }
 }

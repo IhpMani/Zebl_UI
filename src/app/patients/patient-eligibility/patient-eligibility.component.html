@@ -8,58 +8,44 @@
     </div>
   </div>
 
-  <div class="status-row" *ngIf="lastResult">
-    <div class="status-label">Last Result:</div>
+  <div class="status-row" *ngIf="requestResult">
+    <div class="status-label">Request ID:</div>
+    <div class="status-value">{{ requestResult.id }}</div>
+  </div>
+
+  <div class="status-row" *ngIf="currentStatus">
+    <div class="status-label">Current Status:</div>
+    <div class="status-value">{{ currentStatus.status }}</div>
+  </div>
+
+  <div class="status-row" *ngIf="currentStatus?.eligibilityStatus">
+    <div class="status-label">Eligibility:</div>
     <div class="status-value">
-      {{ lastResult.status || 'Unknown' }}
-      <span *ngIf="lastResult.planName"> — {{ lastResult.planName }}</span>
+      {{ currentStatus?.eligibilityStatus }}
     </div>
+  </div>
+
+  <ng-container *ngIf="currentStatus as st">
+    <div class="status-row" *ngIf="st.providerNpi">
+      <div class="status-label">Provider:</div>
+      <div class="status-value">
+        Eligibility checked using provider: {{ st.providerNpi }}<ng-container *ngIf="st.providerMode"> ({{ st.providerMode }})</ng-container>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="status-row warning" *ngIf="currentStatus?.usedPayerOverride">
+    <div class="status-label">Notice:</div>
+    <div class="status-value">Using payer-specific provider override</div>
   </div>
 
   <div class="error-row" *ngIf="error">
     {{ error }}
   </div>
 
-  <div class="history-panel">
-    <div class="panel-header">
-      Eligibility History
-    </div>
-    <div class="panel-body" *ngIf="!loading; else loadingTpl">
-      <table class="history-grid" *ngIf="history.length > 0; else emptyTpl">
-        <thead>
-          <tr>
-            <th>Check Date</th>
-            <th>Status</th>
-            <th>Coverage Status</th>
-            <th>Plan Name</th>
-            <th>Copay</th>
-            <th>Deductible</th>
-            <th>Coverage Start</th>
-            <th>Coverage End</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of history">
-            <td>{{ row.checkDate | date:'short' }}</td>
-            <td>{{ row.status }}</td>
-            <td>{{ row.coverageStatus || '-' }}</td>
-            <td>{{ row.planName || '-' }}</td>
-            <td>{{ row.copayAmount != null ? (row.copayAmount | number:'1.2-2') : '-' }}</td>
-            <td>{{ row.deductibleAmount != null ? (row.deductibleAmount | number:'1.2-2') : '-' }}</td>
-            <td>{{ row.coverageStartDate ? (row.coverageStartDate | date:'shortDate') : '-' }}</td>
-            <td>{{ row.coverageEndDate ? (row.coverageEndDate | date:'shortDate') : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="status-row" *ngIf="currentStatus?.errorMessage">
+    <div class="status-label">Error:</div>
+    <div class="status-value">{{ currentStatus?.errorMessage }}</div>
   </div>
-
-  <ng-template #loadingTpl>
-    <div class="loading">Loading eligibility history...</div>
-  </ng-template>
-
-  <ng-template #emptyTpl>
-    <div class="empty">No eligibility checks have been recorded for this patient.</div>
-  </ng-template>
 </div>
 

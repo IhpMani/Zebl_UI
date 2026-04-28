@@ -3,34 +3,41 @@
   <div *ngIf="loading" class="loading">Loading payments...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
   <div *ngIf="!loading && !error">
-    <table class="claims-table">
-      <thead>
-        <tr>
-          <th class="action-col add-column-header">
-            <div class="header-cell">
-              <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">Add Column <span class="arrow">▼</span></button>
-            </div>
-            <div class="filter-row"><div class="filter-placeholder"></div></div>
-          </th>
-          <th *ngFor="let col of visibleColumns">
-            <div class="header-cell">
-              <span>{{ col.label }}</span>
-              <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">Filter <span class="arrow">▼</span></button>
-              <button class="clear-filter-btn" *ngIf="columnValueFilters[col.key]" (click)="clearFilter(col.key, $event)" title="Clear filter">✕</button>
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
+    <div class="table-wrapper">
+      <table class="claims-table">
+        <thead>
+          <tr>
+            <th class="action-col add-column-header">
+              <div class="header-cell">
+                <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">Add Column <span class="arrow">▼</span></button>
+              </div>
+            </th>
+            <th *ngFor="let col of visibleColumns">
+              <div class="header-cell">
+                <span>{{ col.label }}</span>
+                <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+              </div>
+            </th>
+          </tr>
+          <tr>
+            <th class="action-col"><div class="filter-placeholder"></div></th>
+            <th *ngFor="let col of visibleColumns">
+              <div class="filter-row">
+                <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">Filter <span class="arrow">▼</span></button>
+                <button class="clear-filter-btn" *ngIf="columnValueFilters[col.key]" (click)="clearFilter(col.key, $event)" title="Clear filter">✕</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
         <tr *ngFor="let payment of filteredPayments" (click)="onRowClick(payment)" class="claim-row">
           <td class="action-col"><button class="open-btn" (click)="$event.stopPropagation(); onRowClick(payment)">Open</button></td>
           <td *ngFor="let col of visibleColumns">
+            <ng-container *ngIf="isDateTimeColumnKey(col.key); else paymentCellSwitch">
+              <span>{{ formatDateTimeDisplay(getCellValue(payment, col.key)) }}</span>
+            </ng-container>
+            <ng-template #paymentCellSwitch>
             <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'pmtDateTimeCreated'">{{ payment.pmtDateTimeCreated | date:'short' }}</span>
-              <span *ngSwitchCase="'pmtDateTimeModified'">{{ payment.pmtDateTimeModified | date:'short' }}</span>
               <span *ngSwitchCase="'pmtDate'">{{ payment.pmtDate | date:'shortDate' }}</span>
               <span *ngSwitchCase="'pmtAmount'" [class.amount-zero]="payment.pmtAmount === 0">{{ payment.pmtAmount | currency:'USD':'symbol':'1.2-2' }}</span>
               <span *ngSwitchCase="'pmtRemainingCC'" [class.remaining-positive]="(payment.pmtRemainingCC ?? 0) > 0">{{ payment.pmtRemainingCC | currency:'USD':'symbol':'1.2-2' }}</span>
@@ -39,11 +46,13 @@
               <span *ngSwitchCase="'pmtDisbursedTRIG'">{{ payment.pmtDisbursedTRIG | currency:'USD':'symbol':'1.2-2' }}</span>
               <span *ngSwitchDefault>{{ getCellValue(payment, col.key) }}</span>
             </ng-container>
+            </ng-template>
           </td>
         </tr>
         <tr *ngIf="filteredPayments.length === 0 && !loading"><td [attr.colspan]="visibleColumns.length + 1" class="no-data">No payments found</td></tr>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
     <div *ngIf="meta" class="pagination-container">
       <div class="pagination-info">Showing {{ filteredPayments.length }} of {{ meta.totalCount }} payments (Page {{ meta.page }} of {{ getTotalPages() }})</div>
       <div class="pagination-controls">

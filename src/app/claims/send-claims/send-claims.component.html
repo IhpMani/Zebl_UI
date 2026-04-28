@@ -1,0 +1,166 @@
+<div class="send-claims-layout" [class.panel-collapsed]="!actionPanelOpen">
+  <div class="send-claims-main">
+    <div class="send-claims-header">
+      <h2>Send Claims</h2>
+      <button
+        *ngIf="!actionPanelOpen"
+        type="button"
+        class="btn-secondary btn-show-panel"
+        (click)="openActionPanel()"
+      >
+        Show actions
+      </button>
+    </div>
+
+    <div class="top-controls">
+      <label class="control-field">
+        <span>Connection Type</span>
+        <select
+          [value]="selectedConnectionLibraryId ?? ''"
+          (change)="onConnectionChange($any($event.target).value)"
+          [disabled]="sending || loading"
+        >
+          <option value="">Select connection</option>
+          <option *ngFor="let c of connections" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+
+      <label class="control-field">
+        <span>Submitter / Receiver</span>
+        <select
+          [value]="selectedSubmitterReceiverId ?? ''"
+          (change)="onSubmitterReceiverChange($any($event.target).value)"
+          [disabled]="sending || loading || loadingSubmitterReceivers"
+        >
+          <option value="">Select submitter/receiver</option>
+          <option *ngFor="let item of submitterReceivers" [value]="item.id">
+            {{ item.libraryEntryName }}
+          </option>
+        </select>
+      </label>
+
+    </div>
+
+    <div class="toolbar">
+      <button class="btn-secondary" type="button" (click)="reloadGrid()" [disabled]="loading || sending">Refresh</button>
+    </div>
+
+    <div *ngIf="loading || loadingSubmitterReceivers" class="status">
+      {{ loadingSubmitterReceivers ? 'Loading submitter/receiver options...' : 'Loading claims...' }}
+    </div>
+    <div *ngIf="error" class="status error">{{ error }}</div>
+    <div *ngIf="success" class="status success">{{ success }}</div>
+
+    <table class="claims-table" *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll($any($event.target).checked)" />
+          </th>
+          <th>Claim ID</th>
+          <th>Status</th>
+          <th>Submission Method</th>
+          <th *ngIf="gridSource === 'batch'">Batch item</th>
+          <th>Total Charge</th>
+          <th>Total Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let claim of claims">
+          <td>
+            <input
+              type="checkbox"
+              [checked]="isSelected(claim.claID)"
+              (change)="toggleClaim(claim.claID, $any($event.target).checked)"
+            />
+          </td>
+          <td>{{ claim.claID }}</td>
+          <td>{{ claim.claStatus }}</td>
+          <td>{{ claim.claSubmissionMethod || 'N/A' }}</td>
+          <td *ngIf="gridSource === 'batch'">{{ claim.additionalColumns?.['batchItemError'] || '—' }}</td>
+          <td>{{ claim.claTotalChargeTRIG }}</td>
+          <td>{{ claim.claTotalBalanceCC }}</td>
+        </tr>
+        <tr *ngIf="claims.length === 0">
+          <td [attr.colspan]="gridSource === 'batch' ? 7 : 6" class="no-data">No claims in this view.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <aside class="right-panel" *ngIf="actionPanelOpen">
+    <div class="rail-title">Batch workflow</div>
+    <div class="panel-top-buttons">
+      <button type="button" class="rail-btn rail-btn-primary" (click)="createAndSendBatch()" [disabled]="sending || loading || loadingSubmitterReceivers">
+        {{ sending ? 'Sending...' : 'Create and Send Batch' }}
+      </button>
+      <button type="button" class="rail-btn" (click)="open837DetailView()">837 Detailed View</button>
+      <button type="button" class="rail-btn rail-btn-muted" (click)="closeActionPanel()">Close</button>
+      <button type="button" class="rail-btn" (click)="openBatchPicker()">Select Previous Batch</button>
+    </div>
+
+    <div class="bottom-controls">
+      <label>
+        <input type="checkbox" [(ngModel)]="exportAsZip" [disabled]="sending" />
+        Export as a Zip File
+      </label>
+      <label class="claims-that-are-label">Claims that are:</label>
+      <label>
+        <input type="radio" name="claimFilter" [(ngModel)]="claimFilter" (ngModelChange)="onClaimFilterChange()" value="RTS" [disabled]="sending || loading" />
+        Ready to Submit
+      </label>
+      <label>
+        <input type="radio" name="claimFilter" [(ngModel)]="claimFilter" (ngModelChange)="onClaimFilterChange()" value="Electronic" [disabled]="sending || loading" />
+        All Electronic
+      </label>
+      <label>
+        <input type="radio" name="claimFilter" [(ngModel)]="claimFilter" (ngModelChange)="onClaimFilterChange()" value="All" [disabled]="sending || loading" />
+        All
+      </label>
+    </div>
+  </aside>
+</div>
+
+<!-- Previous batch picker -->
+<div class="modal-backdrop" *ngIf="showBatchPickerModal" (click)="closeBatchPicker()"></div>
+<div class="modal" *ngIf="showBatchPickerModal" role="dialog" aria-modal="true" aria-labelledby="batch-picker-title">
+  <div class="modal-header">
+    <h3 id="batch-picker-title">Select previous batch</h3>
+    <button type="button" class="modal-close" (click)="closeBatchPicker()" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="loadingBatches" class="status">Loading batches…</div>
+    <div *ngIf="batchPickerError" class="status error">{{ batchPickerError }}</div>
+    <div class="batch-list" *ngIf="!loadingBatches && batches.length > 0">
+      <label *ngFor="let b of batches" class="batch-row">
+        <input type="radio" name="pickBatch" [value]="b.id" [checked]="selectedBatchIdForPicker === b.id" (change)="selectedBatchIdForPicker = b.id" />
+        <span class="batch-meta">
+          <span class="batch-id">{{ b.id }}</span>
+          <span class="batch-status">{{ b.status }}</span>
+          <span class="batch-counts">{{ b.successCount }}/{{ b.totalClaims }} ok</span>
+          <span class="batch-conn">{{ b.connectionType || '—' }}</span>
+        </span>
+      </label>
+    </div>
+    <div *ngIf="!loadingBatches && batches.length === 0" class="no-data">No batches found.</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-secondary" (click)="closeBatchPicker()">Cancel</button>
+    <button type="button" class="btn-primary" (click)="confirmBatchPicker()" [disabled]="loading || !selectedBatchIdForPicker">Load into grid</button>
+  </div>
+</div>
+
+<!-- 837 / batch detail -->
+<div class="modal-backdrop" *ngIf="show837Modal" (click)="close837Modal()"></div>
+<div class="modal modal-wide" *ngIf="show837Modal" role="dialog" aria-modal="true" aria-labelledby="detail837-title">
+  <div class="modal-header">
+    <h3 id="detail837-title">{{ detail837Title }}</h3>
+    <button type="button" class="modal-close" (click)="close837Modal()" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <pre class="detail837-pre">{{ detail837Body }}</pre>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-primary" (click)="close837Modal()">Close</button>
+  </div>
+</div>

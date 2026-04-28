@@ -1,9 +1,10 @@
+/* strict-theme-normalized */
 /* Light blue theme - patient details */
 .patient-details-wrapper {
   position: relative;
   padding: 20px;
   min-height: 100vh;
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .patient-details-wrapper * {
@@ -54,8 +55,8 @@
 
 /* [ INSURANCE PANEL ] - light blue theme */
 .insurance-panel {
-  border: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   padding: 8px;
   margin-bottom: 10px;
 }
@@ -78,11 +79,11 @@
 
 .insurance-header-right .btn-ins-header {
   height: 26px;
-  font-size: 12px;
+  font-size: 13px;
   padding: 2px 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
-  border-radius: 0;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
+  border-radius: 2px;
   cursor: pointer;
 }
 
@@ -95,7 +96,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 13px;
   margin: 0;
   cursor: pointer;
 }
@@ -103,11 +104,11 @@
 .insurance-form-grid .btn-copy-from-patient {
   grid-column: 1 / -1;
   padding: 4px 10px;
-  font-size: 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  font-size: 13px;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 2px;
   width: auto;
   margin-bottom: 4px;
 }
@@ -142,11 +143,11 @@
 .insurance-form-grid .btn-link-compact {
   grid-column: 1 / -1;
   padding: 0 0 4px 0;
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 2px;
   background: none;
   border: none;
-  color: var(--color-primary-btn);
+  color: var(--ps-text);
   cursor: pointer;
   text-decoration: underline;
   text-align: left;
@@ -154,12 +155,12 @@
 
 .insurance-form-grid input,
 .insurance-form-grid select {
-  width: auto !important;
+  width: auto;
   height: 26px;
   padding: 2px 6px;
   font-size: 13px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   border-radius: 2px;
 }
 
@@ -167,26 +168,26 @@
   font-size: 13px;
   font-weight: 500;
   margin: 0;
-  color: var(--color-text);
+  color: var(--ps-text);
 }
 
 .insurance-form-grid .ins-inp-full {
   grid-column: 2 / 5;
-  width: auto !important;
+  width: auto;
   min-width: 360px;
 }
 
 .insurance-form-grid .ins-readonly {
-  background: var(--color-border);
-  color: var(--color-text-muted);
+  background: var(--ps-card);
+  color: var(--ps-muted);
 }
 
 .insurance-form-grid .ins-inp-state {
-  width: 60px !important;
+  width: 60px;
 }
 
 .insurance-form-grid .ins-inp-zip {
-  width: 80px !important;
+  width: 80px;
 }
 
 .insurance-form-grid .ins-cell-with-btns {
@@ -203,12 +204,12 @@
 .insurance-form-grid .btn-sm-icon {
   height: 26px;
   width: 28px;
-  font-size: 11px;
+  font-size: 13px;
   padding: 0;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -244,13 +245,13 @@
 
 .insurance-buttons-col button {
   height: 26px;
-  font-size: 12px;
+  font-size: 13px;
   padding: 2px 8px;
   width: auto;
   text-align: left;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
-  border-radius: 0;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
+  border-radius: 2px;
   cursor: pointer;
 }
 
@@ -285,10 +286,10 @@
 .insurance-tabs-compact .tab-btn {
   padding: 4px 12px;
   font-size: 13px;
-  border: 1px solid var(--color-card-bg)fff;
-  background: var(--color-body-bg);
+  border: 1px solid var(--ps-border)fff;
+  background: var(--ps-card);
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .insurance-tabs-compact .tab-btn:first-child {
@@ -296,25 +297,25 @@
 }
 
 .insurance-tabs-compact .tab-btn.active {
-  background: var(--color-border);
-  color: var(--color-text);
+  background: var(--ps-card);
+  color: var(--ps-text);
   font-weight: 600;
-  border-color: var(--color-text-muted);
+  border-color: var(--ps-border);
 }
 
 .insurance-tabs-compact .tab-btn.placeholder {
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
   font-style: italic;
 }
 
 .insurance-tabs-compact .tab-btn.placeholder.active {
-  color: var(--color-card-bg)fff;
+  color: var(--ps-text)fff;
   font-style: italic;
 }
 
 .insurance-panel .no-insurance {
   grid-column: 1;
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
   font-style: italic;
   margin: 0;
   font-size: 13px;
@@ -327,9 +328,9 @@
 .btn-link {
   background: none;
   border: none;
-  color: var(--color-primary-btn);
+  color: var(--ps-text);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 13px;
   padding: 0 0 8px 0;
   text-decoration: underline;
 }
@@ -340,7 +341,7 @@
   gap: 8px;
 }
 .copay-row input:first-child { width: 80px; }
-.copay-or { font-size: 0.85rem; color: var(--color-text-muted); }
+.copay-or { font-size: 13px; color: var(--ps-text); }
 .copay-pct { width: 60px; }
 
 .state-select { width: 70px; min-width: 70px; }
@@ -349,31 +350,31 @@
 
 /* Additional Claim Information - light blue theme */
 .additional-claim-panel {
-  background: var(--color-body-bg);
-  border-color: var(--color-border);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .additional-claim-header {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
   cursor: pointer;
   user-select: none;
 }
 
 .additional-claim-header:hover {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
 }
 
 .additional-claim-header .collapse-icon {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: var(--ps-muted);
 }
 
 .additional-claim-inline {
-  display: flex !important;
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 16px;
-  grid-template-columns: unset !important;
+  grid-template-columns: unset;
 }
 
 .additional-claim-inline .inline-checkbox {
@@ -391,8 +392,8 @@
 }
 
 .additional-claim-inline .inline-or {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+  color: var(--ps-muted);
+  font-size: 13px;
 }
 
 .additional-claim-inline .inline-date {
@@ -403,7 +404,7 @@
 .additional-claim-inline .inline-label {
   margin: 0;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 13px;
 }
 
 .additional-claim-inline .inline-select {
@@ -413,15 +414,15 @@
 
 .additional-claim-inline .btn-initial-claim {
   padding: 4px 12px;
-  font-size: 0.85rem;
-  background: var(--color-body-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  font-size: 13px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   cursor: pointer;
 }
 
 .additional-claim-inline .btn-initial-claim:hover {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .additional-claim-grid {
@@ -432,31 +433,31 @@
 
 /* Other Patient Information - light blue theme */
 .other-patient-panel {
-  background: var(--color-body-bg);
-  border-color: var(--color-border);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .other-patient-header {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
   cursor: pointer;
   user-select: none;
 }
 
 .other-patient-header:hover {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
 }
 
 .other-patient-header .collapse-icon {
-  font-size: 0.75rem;
-  color: var(--color-text);
+  font-size: 13px;
+  color: var(--ps-text);
 }
 
 .other-patient-body {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  grid-template-columns: unset !important;
+  grid-template-columns: unset;
 }
 
 .other-patient-row {
@@ -501,8 +502,8 @@
 }
 
 .other-patient-field .unit {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: var(--ps-muted);
 }
 
 .checkbox-row label {
@@ -517,27 +518,27 @@
 
 /* Light blue panels - Additional Data, Statement, Reminder, Patient Notes */
 .tan-panel {
-  background: var(--color-body-bg);
-  border-color: var(--color-border);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .tan-panel-header {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
   cursor: pointer;
   user-select: none;
 }
 
 .tan-panel-header:hover {
-  background: var(--color-body-bg) !important;
+  background: var(--ps-card);
 }
 
 .tan-panel-header .collapse-icon {
-  font-size: 0.75rem;
-  color: var(--color-text);
+  font-size: 13px;
+  color: var(--ps-text);
 }
 
 .tan-panel-body {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
   grid-template-columns: unset;
 }
 
@@ -546,9 +547,9 @@
 }
 
 .readonly-field {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
   cursor: not-allowed;
-  border-color: var(--color-border);
+  border-color: var(--ps-border);
 }
 
 .notes-hide-tracking {
@@ -578,25 +579,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--shadow-overlay-light);
+  background: var(--ps-card);
   z-index: 10;
 }
 
 .loading {
   padding: 12px 24px;
-  background: var(--color-card-bg);
-  border-radius: 8px;
-  box-shadow: 0 10px 24px var(--shadow-overlay-lg);
+  background: var(--ps-card);
+  border-radius: 2px;
   font-weight: 600;
 }
 
 .error-panel {
   padding: 12px 16px;
   margin-bottom: 20px;
-  border-radius: 6px;
-  background: var(--color-error-bg);
-  border: 1px solid var(--color-error-border);
-  color: var(--color-error);
+  border-radius: 2px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
 }
 
 .patient-header {
@@ -609,13 +609,13 @@
 
 .patient-header h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 13px;
 }
 
 .patient-context,
 .account-no {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: var(--ps-muted);
   margin-top: 4px;
 }
 
@@ -627,8 +627,8 @@
 
 /* Patient Information section - light blue theme */
 .section-panel {
-  border: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   padding: 12px;
   margin-bottom: 12px;
 }
@@ -715,12 +715,11 @@
 }
 
 .panel-card {
-  background: var(--color-card-bg);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border-radius: 2px;
+  border: 1px solid var(--ps-border);
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px var(--shadow-card);
 }
 
 .panel-card header {
@@ -729,16 +728,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--color-panel-header-bg);
-  border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid var(--color-panel-header-border);
+  background: var(--ps-card);
+  border-radius: 2px;
+  border-bottom: 1px solid var(--ps-border);
   cursor: pointer;
 }
 
 .panel-card header h3,
 .panel-card header span {
   margin: 0;
-  font-size: 1rem;
+  font-size: 13px;
 }
 
 /* [ PATIENT INFORMATION ] - Two columns */
@@ -766,7 +765,7 @@
 .name-row input:nth-child(2) { flex: 1; }
 .name-row .mi-input { width: 48px; flex: none; }
 
-.mt-1 { margin-top: 6px !important; }
+.mt-1 { margin-top: 6px; }
 
 .city-st-zip-row {
   display: flex;
@@ -838,9 +837,9 @@
   flex-shrink: 0;
   height: 26px;
   padding: 2px 8px;
-  font-size: 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  font-size: 13px;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
   border-radius: 2px;
 }
@@ -871,18 +870,18 @@
 
 .insurance-tabs .tab-btn {
   padding: 8px 16px;
-  border: 1px solid var(--color-border);
-  background: var(--color-body-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
-  font-size: 0.9rem;
-  border-radius: 0;
+  font-size: 13px;
+  border-radius: 2px;
 }
-.insurance-tabs .tab-btn:first-child { border-radius: 4px 0 0 4px; }
-.insurance-tabs .tab-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+.insurance-tabs .tab-btn:first-child { border-radius: 2px; }
+.insurance-tabs .tab-btn:last-child { border-radius: 2px; border-left: none; }
 .insurance-tabs .tab-btn.active {
-  background: var(--color-primary-btn);
-  color: var(--color-card-bg);
-  border-color: var(--color-primary-btn);
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border-color: var(--ps-border);
 }
 
 .insurance-actions {
@@ -917,9 +916,9 @@
   height: 24px;
   width: 24px;
   padding: 0;
-  font-size: 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  font-size: 13px;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
   border-radius: 2px;
 }
@@ -950,10 +949,10 @@
 .physician-section .btn-physician-sm {
   height: 24px;
   width: 24px;
-  font-size: 12px;
+  font-size: 13px;
   padding: 0;
-  border: 1px solid var(--color-border);
-  background: var(--color-card-bg);
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
   cursor: pointer;
   border-radius: 2px;
   line-height: 1;
@@ -963,7 +962,7 @@
 .physician-library-overlay {
   position: fixed;
   inset: 0;
-  background: var(--shadow-overlay);
+  background: var(--ps-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -971,9 +970,8 @@
 }
 
 .physician-library-modal {
-  background: var(--color-card-bg);
-  border-radius: 8px;
-  box-shadow: 0 12px 48px var(--shadow-popup);
+  background: var(--ps-card);
+  border-radius: 2px;
   width: 95%;
   max-width: 1400px;
   height: 90vh;
@@ -988,13 +986,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--ps-border);
   flex-shrink: 0;
 }
 
 .physician-library-modal-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1004,14 +1002,14 @@
   padding: 0;
   border: none;
   background: transparent;
-  font-size: 1.5rem;
+  font-size: 13px;
   cursor: pointer;
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
   line-height: 1;
 }
 
 .physician-library-close:hover {
-  color: var(--color-text);
+  color: var(--ps-text);
 }
 
 .physician-library-modal-body {
@@ -1029,9 +1027,9 @@
 }
 
 label {
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
 }
 
 input,
@@ -1040,11 +1038,11 @@ textarea {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   padding: 6px 10px;
-  font-size: 0.9rem;
-  background: var(--color-card-bg);
+  font-size: 13px;
+  background: var(--ps-card);
   box-sizing: border-box;
 }
 
@@ -1079,22 +1077,22 @@ textarea {
 
 .no-insurance {
   grid-column: 1 / -1;
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
   font-style: italic;
   margin: 0;
 }
 
 .btn-icon {
   background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   padding: 4px 8px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
 .btn-icon:hover {
-  background: var(--color-body-bg);
+  background: var(--ps-card);
 }
 
 .select-with-btn {
@@ -1105,13 +1103,13 @@ textarea {
 
 .btn-secondary.small {
   padding: 4px 10px;
-  font-size: 0.85rem;
+  font-size: 13px;
 }
 
 .notes-section {
-  background: var(--color-body-bg);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border-radius: 2px;
+  border: 1px solid var(--ps-border);
   padding: 16px;
   margin-top: 8px;
 }
@@ -1138,15 +1136,15 @@ textarea {
 .notes-history-table th,
 .notes-history-table td {
   padding: 8px 10px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--ps-border);
   text-align: left;
   vertical-align: top;
 }
 
 .notes-history-table th {
-  background: var(--color-body-bg);
+  background: var(--ps-blue-light);
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--ps-text);
 }
 
 .notes-history-table td.note-text {
@@ -1155,14 +1153,14 @@ textarea {
 }
 
 .notes-history-table td.no-data {
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
   font-style: italic;
   text-align: center;
 }
 
 .btn-primary,
 .btn-secondary {
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 6px 16px;
   font-weight: 600;
   border: none;
@@ -1170,19 +1168,19 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--color-primary-btn);
-  color: var(--color-card-bg);
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .btn-primary.ghost {
   background: transparent;
-  color: var(--color-primary-btn);
-  border: 1px solid var(--color-primary-btn);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
 }
 
 .btn-secondary {
-  background: var(--color-body-bg);
-  border: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
 }
 
 @media (max-width: 1200px) {
@@ -1219,8 +1217,8 @@ textarea {
   padding: 20px;
   min-height: 100%;
   width: 100%;
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .patient-header h1,
@@ -1229,7 +1227,7 @@ textarea {
 .tan-panel-header h3,
 .additional-claim-header h3,
 .other-patient-header h3 {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .patient-context,
@@ -1239,7 +1237,7 @@ label,
 .contact-section .contact-grid label,
 .physician-section .form-row-inline label,
 .insurance-form-grid .ins-lbl {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .section-panel,
@@ -1249,13 +1247,12 @@ label,
 .other-patient-panel,
 .tan-panel,
 .notes-section {
-  background: var(--color-nav-glass-tint) !important;
+  background: var(--ps-card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--color-nav-glass-border) !important;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
-  color: var(--color-primary-btn-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
+  color: var(--ps-text);
 }
 
 .panel-card header,
@@ -1263,8 +1260,8 @@ label,
 .additional-claim-header,
 .other-patient-header,
 .insurance-panel-header {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent) !important;
-  border-color: var(--color-nav-glass-border) !important;
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 input,
@@ -1277,21 +1274,21 @@ textarea,
 .contact-section .contact-grid input,
 .contact-section .contact-grid select,
 .physician-section .form-row-inline select {
-  background: var(--color-nav-item-hover-bg) !important;
-  color: var(--color-primary-btn-text) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
-  border-radius: 8px !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--color-nav-icon) !important;
+  color: var(--ps-text);
 }
 
 .patient-details-wrapper select option,
 .patient-details-wrapper select optgroup {
-  background-color: var(--color-card-bg) !important;
-  color: var(--color-text) !important;
+  background-color: var(--ps-card);
+  color: var(--ps-text);
 }
 
 /* Absolute fallback layer: wipe remaining legacy light blocks inside patient details */
@@ -1304,43 +1301,43 @@ textarea::placeholder {
 .patient-details-wrapper .contact-grid,
 .patient-details-wrapper .physician-list,
 .patient-details-wrapper .notes-history-table-wrapper {
-  background: transparent !important;
-  color: var(--color-primary-btn-text) !important;
+  background: transparent;
+  color: var(--ps-text);
 }
 
 .patient-details-wrapper .readonly-field,
 .patient-details-wrapper .ins-readonly {
-  background: color-mix(in srgb, var(--color-nav-item-active-bg) 70%, transparent) !important;
-  color: var(--color-nav-icon-hover) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
 }
 
 .patient-details-wrapper .notes-history-table td,
 .patient-details-wrapper .notes-history-table th {
-  color: var(--color-primary-btn-text) !important;
-  border-color: var(--color-nav-glass-border) !important;
+  color: var(--ps-text);
+  border-color: var(--ps-border);
 }
 
 .patient-details-wrapper .notes-history-table tbody tr td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent) !important;
+  background: var(--ps-card);
 }
 
 /* Native select popup readability fallback (Windows/Chromium) */
 .patient-details-wrapper select {
-  background: var(--color-nav-item-hover-bg) !important;
-  color: var(--color-primary-btn-text) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
   color-scheme: light;
 }
 
 .patient-details-wrapper select option,
 .patient-details-wrapper select optgroup,
 .patient-details-wrapper option {
-  background: var(--color-card-bg) !important;
-  color: var(--color-text) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .patient-details-wrapper select optgroup {
-  color: var(--color-text-muted) !important;
+  color: var(--ps-muted);
 }
 
 /* Prevent white-on-white dropdown entries on native Windows select menus */
@@ -1350,13 +1347,13 @@ textarea::placeholder {
 
 .patient-details-wrapper select option:checked,
 .patient-details-wrapper select option:hover {
-  background-color: var(--color-body-bg) !important;
-  color: var(--color-text) !important;
+  background-color: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .btn-primary.ghost,
@@ -1369,10 +1366,10 @@ textarea::placeholder {
 .btn-sm-icon,
 .btn-icon,
 .btn-initial-claim {
-  background: var(--color-nav-item-active-bg) !important;
-  color: var(--color-primary-btn-text) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
-  border-radius: 6px !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
 }
 
 .btn-secondary:hover,
@@ -1384,72 +1381,71 @@ textarea::placeholder {
 .btn-sm-icon:hover,
 .btn-icon:hover,
 .btn-initial-claim:hover {
-  background: var(--color-nav-item-hover-bg) !important;
+  background: var(--ps-card);
 }
 
 .insurance-tabs-compact .tab-btn,
 .insurance-tabs .tab-btn {
-  border: 1px solid var(--color-nav-glass-border) !important;
-  background: var(--color-nav-item-hover-bg) !important;
-  color: var(--color-primary-btn-text) !important;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .insurance-tabs-compact .tab-btn.active,
 .insurance-tabs .tab-btn.active {
-  background: color-mix(in srgb, var(--color-nav-icon-active) 35%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-nav-icon-active) 65%, transparent) !important;
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .notes-history-table,
 .notes-history-table th,
 .notes-history-table td {
-  border-color: var(--color-nav-glass-border) !important;
-  color: var(--color-primary-btn-text) !important;
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 }
 
 .notes-history-table {
-  background: transparent !important;
+  background: transparent;
 }
 
 .notes-history-table th {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 65%, transparent) !important;
+  background: var(--ps-blue-light);
 }
 
 .notes-history-table td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 35%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .notes-history-table tbody tr:hover {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .notes-history-table td.no-data,
 .insurance-panel .no-insurance,
 .no-insurance {
-  color: var(--color-nav-icon-hover) !important;
+  color: var(--ps-text);
 }
 
 .readonly-field,
 .ins-readonly {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent) !important;
-  color: var(--color-nav-icon-hover) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .physician-library-overlay {
-  background: var(--shadow-scrim);
+  background: var(--ps-card);
 }
 
 .physician-library-modal {
-  background: var(--color-nav-glass-tint);
+  background: var(--ps-card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 14px;
-  box-shadow: 0 20px 40px var(--color-nav-shell-shadow);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
 }
 
 .physician-library-modal-header h3 {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 /* Final consistency pass: force all cards and dropdown controls onto one glass system */
@@ -1461,9 +1457,9 @@ textarea::placeholder {
 .patient-details-wrapper .tan-panel,
 .patient-details-wrapper .notes-section,
 .patient-details-wrapper .physician-library-modal {
-  background: var(--color-nav-glass-tint) !important;
-  color: var(--color-primary-btn-text) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
 }
 
 .patient-details-wrapper .panel-card header,
@@ -1472,8 +1468,8 @@ textarea::placeholder {
 .patient-details-wrapper .other-patient-header,
 .patient-details-wrapper .insurance-panel-header,
 .patient-details-wrapper .physician-library-modal-header {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent) !important;
-  border-color: var(--color-nav-glass-border) !important;
+  background: var(--ps-card);
+  border-color: var(--ps-border);
 }
 
 .patient-details-wrapper select,
@@ -1482,13 +1478,553 @@ textarea::placeholder {
 .patient-details-wrapper .state-select,
 .patient-details-wrapper .sex-select,
 .patient-details-wrapper .marital-select {
-  background: var(--color-nav-item-hover-bg) !important;
-  color: var(--color-primary-btn-text) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
 }
 
 .patient-details-wrapper select option,
 .patient-details-wrapper select optgroup {
-  background-color: var(--color-card-bg) !important;
-  color: var(--color-text) !important;
+  background-color: var(--ps-card);
+  color: var(--ps-text);
+}
+
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}
+
+/* =========================
+   PATIENT DETAILS DECONGESTION PASS
+========================= */
+.patient-details-wrapper {
+  padding: 24px;
+}
+
+.patient-header {
+  margin-bottom: 20px;
+}
+
+.patient-header h1 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.row.two-col-layout {
+  margin: 0 -12px;
+}
+
+.col-md-6 {
+  padding: 0 12px;
+}
+
+.section-panel,
+.panel-card,
+.insurance-panel,
+.tan-panel,
+.notes-section {
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 12px !important;
+}
+
+.section-panel .section-title,
+.panel-card header h3,
+.tan-panel-header h3,
+.additional-claim-header h3,
+.other-patient-header h3 {
+  font-size: 15px;
+}
+
+.section-panel .form-row {
+  grid-template-columns: 190px 1fr;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.section-panel .patient-grid {
+  column-gap: 28px;
+  row-gap: 8px;
+}
+
+.section-panel .inline-three,
+.section-panel .inline-four {
+  gap: 8px;
+}
+
+.contact-section .contact-grid {
+  grid-template-columns: 180px 1fr;
+  row-gap: 8px;
+  column-gap: 10px;
+}
+
+.physician-section .physician-list {
+  gap: 10px;
+}
+
+.physician-section .form-row-inline {
+  grid-template-columns: 180px 1fr 30px 30px;
+  column-gap: 8px;
+}
+
+.insurance-panel {
+  padding: 14px;
+}
+
+.insurance-form-grid {
+  row-gap: 10px;
+  column-gap: 12px;
+}
+
+.insurance-form-grid .ins-lbl {
+  line-height: 1.35;
+}
+
+.additional-claim-inline {
+  gap: 14px 18px;
+}
+
+.other-patient-row {
+  gap: 14px 24px;
+}
+
+.additional-data-two-col {
+  gap: 24px;
+}
+
+.field-row {
+  margin-bottom: 14px;
+  gap: 6px;
+}
+
+input,
+select,
+textarea,
+.section-panel .form-row input,
+.section-panel .form-row select,
+.contact-section .contact-grid input,
+.contact-section .contact-grid select,
+.physician-section .form-row-inline select,
+.insurance-form-grid input,
+.insurance-form-grid select {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 10px !important;
+}
+
+textarea {
+  min-height: 96px;
+}
+
+.notes-input-row textarea {
+  min-height: 88px;
+  height: auto;
+}
+
+.notes-history-table th,
+.notes-history-table td {
+  padding: 10px 12px;
+}
+
+@media (max-width: 1200px) {
+  .section-panel .form-row,
+  .contact-section .contact-grid,
+  .physician-section .form-row-inline {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   CLAIM DETAILS THEME PARITY (FINAL LAYER)
+========================= */
+.patient-details-wrapper {
+  background: #eef2f7 !important;
+  color: #0f172a !important;
+}
+
+.section-panel,
+.panel-card,
+.insurance-panel,
+.tan-panel,
+.notes-section,
+.physician-library-modal {
+  background: #ffffff !important;
+  border: 1px solid #d9e2ec !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.panel-card header,
+.tan-panel-header,
+.additional-claim-header,
+.other-patient-header,
+.insurance-panel-header,
+.physician-library-modal-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #d9e2ec !important;
+}
+
+.patient-header h1 {
+  color: #0c2744 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+}
+
+.patient-context,
+label,
+.section-panel .form-row label,
+.contact-section .contact-grid label,
+.physician-section .form-row-inline label,
+.insurance-form-grid .ins-lbl {
+  color: #475569 !important;
+}
+
+input,
+select,
+textarea,
+.section-panel .form-row input,
+.section-panel .form-row select,
+.contact-section .contact-grid input,
+.contact-section .contact-grid select,
+.physician-section .form-row-inline select,
+.insurance-form-grid input,
+.insurance-form-grid select {
+  background: #ffffff !important;
+  border: 1px solid #d9e2ec !important;
+  border-radius: 10px !important;
+  color: #0f172a !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+  outline: none !important;
+}
+
+.btn-primary {
+  background: #2563eb !important;
+  border: 1px solid #1d4ed8 !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+}
+
+.btn-primary.ghost,
+.btn-secondary,
+.btn-email,
+.btn-physician-icon,
+.btn-physician-sm,
+.btn-ins-header,
+.btn-copy-from-patient,
+.btn-sm-icon,
+.btn-icon,
+.btn-initial-claim {
+  background: #f8fbff !important;
+  color: #0f2742 !important;
+  border: 1px solid #d9e2ec !important;
+  border-radius: 10px !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-email:hover,
+.btn-physician-icon:hover,
+.btn-physician-sm:hover,
+.btn-ins-header:hover,
+.btn-copy-from-patient:hover,
+.btn-sm-icon:hover,
+.btn-icon:hover,
+.btn-initial-claim:hover {
+  background: #eef5ff !important;
+}
+
+.insurance-tabs-compact .tab-btn,
+.insurance-tabs .tab-btn {
+  border: 1px solid #d9e2ec !important;
+  background: #f8fbff !important;
+  color: #334155 !important;
+  border-radius: 10px !important;
+}
+
+.insurance-tabs-compact .tab-btn.active,
+.insurance-tabs .tab-btn.active {
+  background: #ffffff !important;
+  border-color: #c8d4e3 !important;
+  color: #0f2742 !important;
+}
+
+.notes-history-table th {
+  background: #f3f8ff !important;
+  color: #334155 !important;
+  border-color: #d9e2ec !important;
+}
+
+.notes-history-table td {
+  background: #ffffff !important;
+  border-color: #e6edf5 !important;
+}
+
+.patient-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title,
+.panel-card header h3,
+.tan-panel-header h3,
+.additional-claim-header h3,
+.other-patient-header h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-header-card-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #2563eb;
+}
+
+/* Add Insurance: decongest eligibility controls */
+.insurance-form-grid .eligibility-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.insurance-form-grid .eligibility-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8fbff;
+  border: 1px solid #dbe5f2;
+}
+
+.insurance-form-grid .eligibility-action {
+  width: auto !important;
+  min-width: 56px;
+  height: 30px;
+  padding: 4px 10px;
+  line-height: 1;
+}
+
+/* =========================
+   PRIMARY INSURANCE - CLAIM DETAILS PARITY
+========================= */
+.insurance-panel {
+  border: 1px solid #d9e2ec !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  background: #ffffff !important;
+  padding: 16px !important;
+}
+
+.insurance-panel-header {
+  padding-bottom: 12px;
+  margin-bottom: 14px !important;
+  border-bottom: 1px solid #e6edf5 !important;
+  gap: 10px 14px !important;
+}
+
+.insurance-tabs.insurance-tabs-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.insurance-tabs-compact .tab-btn {
+  min-height: 34px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  border: 1px solid #d9e2ec !important;
+  background: #f8fbff !important;
+  color: #334155 !important;
+}
+
+.insurance-tabs-compact .tab-btn.active {
+  background: #ffffff !important;
+  border-color: #c8d4e3 !important;
+  color: #0f2742 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.insurance-header-right {
+  gap: 8px !important;
+}
+
+.insurance-header-right .btn-ins-header,
+.insurance-header-right .btn-icon {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 7px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d9e2ec !important;
+  background: #f8fbff !important;
+  color: #0f2742 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.insurance-header-right .btn-ins-header:hover:not(:disabled),
+.insurance-header-right .btn-icon:hover:not(:disabled) {
+  background: #eef5ff !important;
+}
+
+.insurance-header-right .ins-header-chk {
+  min-height: 34px;
+  padding: 0 4px;
+  font-size: 12px !important;
+  color: #475569 !important;
+}
+
+.insurance-panel-body {
+  gap: 10px !important;
+}
+
+.insurance-form-grid {
+  grid-template-columns: minmax(120px, 170px) minmax(220px, 1fr) minmax(120px, 170px) minmax(220px, 1fr) !important;
+  row-gap: 12px !important;
+  column-gap: 14px !important;
+  align-items: center !important;
+}
+
+.insurance-form-grid .ins-lbl {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.insurance-form-grid .ins-inp,
+.insurance-form-grid input,
+.insurance-form-grid select {
+  min-height: 36px !important;
+  height: 36px !important;
+  border: 1px solid #d9e2ec !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  padding: 7px 10px !important;
+  font-size: 13px !important;
+}
+
+.insurance-form-grid .ins-inp-full {
+  grid-column: 2 / 5 !important;
+  min-width: 0 !important;
+}
+
+.insurance-form-grid .ins-cell-with-btns {
+  gap: 8px !important;
+}
+
+.insurance-form-grid .btn-sm-icon {
+  min-height: 34px !important;
+  height: 34px !important;
+  width: auto !important;
+  min-width: 34px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d9e2ec !important;
+  background: #f8fbff !important;
+  color: #0f2742 !important;
+  padding: 6px 10px !important;
+}
+
+.insurance-form-grid .btn-copy-from-patient {
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d9e2ec !important;
+  background: #f8fbff !important;
+  color: #0f2742 !important;
+  font-weight: 600 !important;
+}
+
+.insurance-form-grid .ins-grid-spacer {
+  display: none !important;
+}
+
+@media (max-width: 1280px) {
+  .insurance-form-grid {
+    grid-template-columns: minmax(120px, 170px) minmax(220px, 1fr) !important;
+  }
+
+  .insurance-form-grid .ins-inp-full {
+    grid-column: 2 / 3 !important;
+  }
+}
+
+/* Keep Add Insurance as a single panel (no nested inner card) */
+.insurance-panel .insurance-container {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.insurance-panel .insurance-form-grid {
+  background: transparent !important;
 }

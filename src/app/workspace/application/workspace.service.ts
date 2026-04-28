@@ -310,10 +310,12 @@ export class WorkspaceService {
 
   private static readonly ROUTE_TITLES: Record<string, string> = {
     '/claims/find-claim': 'Find Claims',
+    '/claims/send': 'Send Claims',
     '/claims/rejections': 'Claim Rejections',
     '/patients/find-patient': 'Find Patients',
     '/services/find-service': 'Find Services',
     '/payments/find-payment': 'Find Payments',
+    '/payments/ledger': 'Payments Ledger',
     '/payments/entry': 'Payment Entry',
     '/payments/era-exceptions': 'ERA Exceptions',
     '/adjustments/find-adjustment': 'Find Adjustments',

@@ -1,11 +1,11 @@
+/* strict-theme-normalized */
 .login-container {
   max-width: 360px;
   margin: 60px auto;
   padding: 24px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-card-bg);
-  box-shadow: 0 2px 8px var(--shadow-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
+  background: var(--ps-card);
 }
 
 form {
@@ -22,18 +22,70 @@ label {
 
 input {
   padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   max-width: 100%;
   box-sizing: border-box;
 }
 
 .error {
-  color: var(--color-error);
+  color: var(--ps-text);
 }
 
 button {
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}

@@ -131,10 +131,11 @@ export class FacilityService {
   getFacilityIdStrict(): number {
 
     const id = this.getFacilityIdOptional();
+    console.log('FacilityId:', id);
 
     if (id == null || id <= 0) {
 
-      throw new Error('Select facility');
+      throw new Error('FacilityId not set in context');
 
     }
 

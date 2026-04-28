@@ -2,9 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { ClaimListItem, ClaimsApiResponse, PaginationMeta } from '../../core/services/claim.models';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, of, switchMap, takeUntil, catchError } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from './claim-list-additional-columns';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import {
+  formatApiDateTimeDisplay,
+  isApiDateTimeColumnKey,
+  isApiPlaceholderDateTime
+} from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-claim-list',
@@ -12,12 +17,43 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
   styleUrls: ['./claim-list.component.css']
 })
 export class ClaimListComponent implements OnInit, OnDestroy {
-  private readonly columnPreferenceVersion = 2;
+  /** Prefer top-level list DTO fields so additionalColumns cannot override audit timestamps. */
+  private static readonly CLAIM_ROOT_AUDIT_KEYS = new Set(['createdDate', 'modifiedDate']);
+
+  private readonly columnPreferenceVersion = 3;
+  /** Keys shown when preferences are missing or migrated (must match intended product default grid). */
   private readonly defaultClaimColumns: Array<{ key: string; label: string }> = [
     { key: 'claID', label: 'Claim ID' },
     { key: 'claStatus', label: 'Status' },
+    { key: 'createdDate', label: 'Date Created' },
+    { key: 'modifiedDate', label: 'Modified Date' },
+    { key: 'claTotalChargeTRIG', label: 'Total Charge' },
+    { key: 'claTotalBalanceCC', label: 'Total Balance' },
     { key: 'patFullNameCC', label: 'Name' }
   ];
+  private static readonly CLAIM_API_KEY_MAP: Record<string, string> = {
+    claFirstDOS: 'claFirstDateTRIG',
+    claLastDOS: 'claLastDateTRIG',
+    claTotalCharge: 'claTotalChargeTRIG',
+    claTotalBalance: 'claTotalBalanceCC',
+    claTotalInsBalance: 'claTotalInsBalanceTRIG',
+    claTotalPatBalance: 'claTotalPatBalanceTRIG',
+    claTotalInsAmtPaid: 'claTotalInsAmtPaidTRIG',
+    claTotalPatAmtPaid: 'claTotalPatAmtPaidTRIG',
+    claPaidDate: 'claPaidDateTRIG',
+    claCreatedTimestamp: 'claDateTimeCreated',
+    claModifiedTimestamp: 'claDateTimeModified',
+    createdDate: 'createdDate',
+    modifiedDate: 'modifiedDate',
+    patID: 'claPatFID',
+    claDischargeDate: 'claDischargedDate',
+    claStatementFromOverride: 'claStatementCoversFromOverride',
+    claStatementToOverride: 'claStatementCoversThroughOverride',
+    claDischargeHour: 'claDischargedHour',
+    claPatientReason1: 'claPatientReasonDiagnosis1',
+    claPatientReason2: 'claPatientReasonDiagnosis2',
+    claPatientReason3: 'claPatientReasonDiagnosis3'
+  };
 
   claims: ClaimListItem[] = [];
   filteredClaims: ClaimListItem[] = [];
@@ -55,7 +91,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }> = [
     { key: 'claID', label: 'Claim ID', visible: true, filterValue: '' },
     { key: 'claStatus', label: 'Status', visible: true, filterValue: '' },
-    { key: 'claDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: true, filterValue: '' },
     { key: 'claTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
     { key: 'facilityName', label: 'Facility', visible: false, filterValue: '' },
@@ -63,7 +99,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
     { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
     { key: 'claBillTo', label: 'Bill To', visible: false, filterValue: '' },
-    { key: 'claDateTimeModified', label: 'Modified Timestamp', visible: false, filterValue: '' },
+    { key: 'modifiedDate', label: 'Modified Date', visible: false, filterValue: '' },
     { key: 'claLastUserName', label: 'Modified User', visible: false, filterValue: '' },
     { key: 'claPatFID', label: 'Patient ID', visible: false, filterValue: '' },
     { key: 'claAttendingPhyFID', label: 'Attending Physician ID', visible: false, filterValue: '' },
@@ -232,6 +268,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   pageSize: number = 25;
 
   private destroy$ = new Subject<void>();
+  private loadTrigger$ = new Subject<void>();
 
   ngOnInit(): void {
     this.workspace.updateActiveTabTitle('Find Claims');
@@ -240,9 +277,40 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     // Load saved column preferences
     this.loadColumnPreferences();
     this.deduplicateColumns();
+
+    this.loadTrigger$
+      .pipe(
+        switchMap(() => {
+          this.loading = true;
+          this.error = null;
+          const filters = this.buildClaimFilters();
+          return this.claimApiService.getClaims(this.currentPage, this.pageSize, filters).pipe(
+            catchError((err) => {
+              if (err.status === 0) {
+                console.warn('Request cancelled or network error (likely due to navigation):', err);
+              } else {
+                this.error = 'Failed to load claims. Please check if the backend is running.';
+                console.error('Error loading claims:', err);
+              }
+              this.loading = false;
+              return of(null);
+            })
+          );
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((response) => {
+        if (!response) return;
+        this.claims = response.data || [];
+        this.filteredClaims = this.claims;
+        this.meta = response.meta;
+        this.loading = false;
+        this.error = null;
+      });
+
     // React to query param changes (e.g. patientId from ribbon Claim button)
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.loadClaims(this.currentPage, this.pageSize);
+      this.loadTrigger$.next();
     });
   }
 
@@ -262,9 +330,12 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   loadClaims(page: number, pageSize: number): void {
-    this.loading = true;
-    this.error = null;
     this.currentPage = page;
+    this.pageSize = pageSize;
+    this.loadTrigger$.next();
+  }
+
+  private buildClaimFilters(): any {
 
     // Build filters object from component state
     const filters: any = {};
@@ -354,7 +425,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     const requestedAdditionalColumns = Array.from(new Set([
       ...Array.from(this.selectedAdditionalColumns),
       ...visibleAdditionalKeys
-    ]));
+    ])).map(key => this.toBackendColumnKey(key));
     if (requestedAdditionalColumns.length > 0) {
       filters.additionalColumns = requestedAdditionalColumns;
     }
@@ -368,27 +439,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.claimApiService.getClaims(page, pageSize, filters)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: ClaimsApiResponse) => {
-          this.claims = response.data || [];
-          this.filteredClaims = this.claims; // No client-side filtering needed
-          this.meta = response.meta;
-          this.loading = false;
-          this.error = null;
-        },
-        error: (err) => {
-          // Don't show error if request was cancelled (component destroyed during navigation)
-          if (err.status === 0) {
-            console.warn('Request cancelled or network error (likely due to navigation):', err);
-          } else {
-            this.error = 'Failed to load claims. Please check if the backend is running.';
-            console.error('Error loading claims:', err);
-          }
-          this.loading = false;
-        }
-      });
+    return filters;
   }
 
   ngOnDestroy(): void {
@@ -452,16 +503,165 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(claim: ClaimListItem, key: string): any {
-    // Check if it's a related column
-    if (claim.additionalColumns && Object.prototype.hasOwnProperty.call(claim.additionalColumns, key)) {
-      const relatedValue = claim.additionalColumns[key];
-      // If related mapper returned null/empty for an aliased key, fall back to base claim property.
-      if (relatedValue !== null && relatedValue !== undefined && relatedValue !== '') {
-        return relatedValue;
+    const claimRecord = claim as unknown as Record<string, unknown>;
+    const additionalColumns = (claim.additionalColumns ?? {}) as Record<string, unknown>;
+    const canonicalKey = this.toBackendColumnKey(key);
+
+    // Resolve created/modified from list DTO (or legacy alias keys) before additionalColumns.
+    if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(canonicalKey)) {
+      const rootOrder =
+        canonicalKey === 'createdDate'
+          ? (['createdDate', 'CreatedDate', 'claDateTimeCreated', 'claCreatedTimestamp'] as const)
+          : (['modifiedDate', 'ModifiedDate', 'claDateTimeModified', 'claModifiedTimestamp'] as const);
+      for (const k of rootOrder) {
+        const v = this.getRecordValue(claimRecord, k);
+        if (v !== null && v !== undefined && v !== '') {
+          return v;
+        }
+      }
+      for (const k of rootOrder) {
+        const v = this.getRecordValue(additionalColumns, k);
+        if (v !== null && v !== undefined && v !== '') {
+          return v;
+        }
       }
     }
-    // Otherwise, get from main claim object
-    return (claim as any)[key];
+
+    const candidates = this.getColumnCandidates(key);
+    for (const candidate of candidates) {
+      if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(this.toBackendColumnKey(candidate))) {
+        continue;
+      }
+      const additionalValue = this.getRecordValue(additionalColumns, candidate);
+      if (additionalValue !== null && additionalValue !== undefined && additionalValue !== '') {
+        return additionalValue;
+      }
+
+      const claimValue = this.getRecordValue(claimRecord, candidate);
+      if (claimValue !== null && claimValue !== undefined && claimValue !== '') {
+        return claimValue;
+      }
+    }
+
+    for (const candidate of candidates) {
+      if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(this.toBackendColumnKey(candidate))) {
+        continue;
+      }
+      if (this.getRecordValue(additionalColumns, candidate) === '') {
+        return '';
+      }
+      if (this.getRecordValue(claimRecord, candidate) === '') {
+        return '';
+      }
+    }
+
+    return null;
+  }
+
+  formatDateDisplay(value: unknown): string {
+    if (isApiPlaceholderDateTime(value)) return '';
+    const d = new Date(String(value));
+    return Number.isNaN(d.getTime()) ? String(value ?? '') : d.toLocaleDateString('en-US');
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  /**
+   * Read created/modified audit timestamps from the list row (root + additionalColumns).
+   * Values always come from the API/SQL projection — the UI does not synthesize them.
+   */
+  claimAuditTimestamp(claim: ClaimListItem, which: 'created' | 'modified'): string | number | Date | null {
+    const row = claim as unknown as Record<string, unknown>;
+    const add = (claim.additionalColumns ?? {}) as Record<string, unknown>;
+    const keys =
+      which === 'created'
+        ? (['createdDate', 'CreatedDate', 'claDateTimeCreated', 'ClaDateTimeCreated', 'claCreatedTimestamp', 'ClaCreatedTimestamp'] as const)
+        : (['modifiedDate', 'ModifiedDate', 'claDateTimeModified', 'ClaDateTimeModified', 'claModifiedTimestamp', 'ClaModifiedTimestamp'] as const);
+    for (const k of keys) {
+      const v = this.getRecordValue(row, k);
+      if (v !== null && v !== undefined && !(typeof v === 'string' && v.trim() === '')) {
+        return this.toDatePipeValue(v);
+      }
+    }
+    for (const k of keys) {
+      const v = this.getRecordValue(add, k);
+      if (v !== null && v !== undefined && !(typeof v === 'string' && v.trim() === '')) {
+        return this.toDatePipeValue(v);
+      }
+    }
+    return null;
+  }
+
+  private toDatePipeValue(v: unknown): string | number | Date | null {
+    if (v == null) return null;
+    if (v instanceof Date) return v;
+    if (typeof v === 'string') {
+      const s = v.trim();
+      if (!s || s.startsWith('0001-01-01')) return null;
+      return s;
+    }
+    if (typeof v === 'number') return v;
+    if (typeof v === 'object' && '$date' in (v as Record<string, unknown>)) {
+      const inner = (v as { $date?: unknown }).$date;
+      if (inner instanceof Date) return inner;
+      if (typeof inner === 'string') {
+        const s = inner.trim();
+        if (!s || s.startsWith('0001-01-01')) return null;
+        return s;
+      }
+      if (typeof inner === 'number') return inner;
+    }
+    return String(v);
+  }
+
+  /** Values in the default table cell: format registry datetime columns and *DateTime* keys. */
+  formatDefaultCellValue(claim: ClaimListItem, columnKey: string): string {
+    const raw = this.getCellValue(claim, columnKey);
+    const def = ClaimListAdditionalColumns.findByKey(columnKey);
+    if (def?.dataType === 'datetime') {
+      return formatApiDateTimeDisplay(raw);
+    }
+    if (isApiDateTimeColumnKey(columnKey)) {
+      return formatApiDateTimeDisplay(raw);
+    }
+    if (raw == null) return '';
+    return String(raw);
+  }
+
+  getStatusTone(status: unknown): string {
+    const value = String(status ?? '').trim().toLowerCase();
+    if (!value) return 'status-chip-neutral';
+    if (value.includes('paid') || value.includes('closed') || value.includes('submitted')) return 'status-chip-success';
+    if (value.includes('onhold') || value.includes('hold') || value.includes('pending') || value.includes('rts')) return 'status-chip-warning';
+    if (value.includes('reject') || value.includes('denied') || value.includes('error') || value.includes('void')) return 'status-chip-danger';
+    return 'status-chip-neutral';
+  }
+
+  getCurrencyTone(amount: unknown): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return 'money-neutral';
+    if (n > 0) return 'money-positive';
+    if (n < 0) return 'money-negative';
+    return 'money-zero';
+  }
+
+  private toBackendColumnKey(key: string): string {
+    return ClaimListComponent.CLAIM_API_KEY_MAP[key] ?? key;
+  }
+
+  private getColumnCandidates(key: string): string[] {
+    const mapped = this.toBackendColumnKey(key);
+    if (mapped === key) return [key];
+    return [key, mapped];
+  }
+
+  private getRecordValue(record: Record<string, unknown>, key: string): unknown {
+    if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
+    const normalizedTarget = key.toLowerCase();
+    const actualKey = Object.keys(record).find(k => k.toLowerCase() === normalizedTarget);
+    return actualKey ? record[actualKey] : undefined;
   }
 
   private deduplicateColumns(): void {

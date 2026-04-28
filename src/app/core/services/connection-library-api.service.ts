@@ -3,10 +3,20 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+/** Must match backend Zebl.Application.Domain.ConnectionType */
+export enum ConnectionType {
+  Sftp = 0,
+  Http = 1,
+  Api = 2
+}
+
 export interface ConnectionLibraryDto {
   id: string;
   name: string;
   host: string;
+  connectionType: ConnectionType;
+  /** Relative path for HTTP/API inbound fetch, e.g. /api/get-reports */
+  inboundFetchPath?: string | null;
   port: number;
   username: string;
   password: string; // Always masked as "********"
@@ -26,6 +36,8 @@ export interface ConnectionLibraryDto {
 export interface CreateConnectionLibraryCommand {
   name: string;
   host: string;
+  connectionType: ConnectionType;
+  inboundFetchPath?: string | null;
   port: number;
   username: string;
   password: string; // Plain text password from client
@@ -43,6 +55,8 @@ export interface CreateConnectionLibraryCommand {
 export interface UpdateConnectionLibraryCommand {
   name: string;
   host: string;
+  connectionType: ConnectionType;
+  inboundFetchPath?: string | null;
   port: number;
   username: string;
   password?: string; // Optional - only sent if user wants to change password

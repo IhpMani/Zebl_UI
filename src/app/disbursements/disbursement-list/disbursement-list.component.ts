@@ -4,6 +4,7 @@ import { DisbursementApiService } from '../../core/services/disbursement-api.ser
 import { DisbursementListItem, DisbursementsApiResponse, PaginationMeta } from '../../core/services/disbursement.models';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
 
 @Component({
   selector: 'app-disbursement-list',
@@ -82,7 +83,7 @@ export class DisbursementListComponent implements OnInit, OnDestroy {
       .subscribe({
       next: (response: any) => {
         if (response) {
-          const columns = response.data || response;
+          const columns = response.data ?? response.Data ?? response;
           if (Array.isArray(columns) && columns.length > 0) {
             this.availableRelatedColumns = columns;
             this.availableRelatedColumns.forEach(col => {
@@ -206,11 +207,7 @@ export class DisbursementListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(disbursement: DisbursementListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && disbursement.additionalColumns) {
-      return disbursement.additionalColumns[key];
-    }
-    return (disbursement as any)[key];
+    return getListCellValue(disbursement, key);
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {

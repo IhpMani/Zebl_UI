@@ -135,6 +135,31 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     ctrl?.updateValueAndValidity();
   }
 
+  private resetForNewEntry(): void {
+    this.isNew = true;
+    this.currentId = null;
+    this.form.reset({
+      paySubmissionMethod: 'Paper',
+      payClaimType: 'Professional',
+      payInactive: false,
+      payIgnoreRenderingProvider: false,
+      payForwardsClaims: false,
+      payExportAuthIn2400: false,
+      payExportSSN: false,
+      payExportOriginalRefIn2330B: false,
+      payExportPaymentDateIn2330B: false,
+      payExportPatientAmtDueIn2430: false,
+      payUseTotalAppliedInBox29: false,
+      payPrintBox30: false,
+      paySuppressWhenPrinting: false,
+      payEligibilityPhyID: 0,
+      payFollowUpDays: 0
+    });
+    this.setPayerIdValidator();
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
+
   loadPayer(id: number): void {
     this.loading = true;
     this.error = null;
@@ -249,8 +274,8 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       this.payerApi.create(payload).subscribe({
         next: () => {
           this.saving = false;
-          this.form.reset({ paySubmissionMethod: 'Paper', payClaimType: 'Professional', payInactive: false });
-          this.form.patchValue({ paySubmissionMethod: 'Paper', payClaimType: 'Professional' });
+          this.resetForNewEntry();
+          this.router.navigate(['../new'], { relativeTo: this.route });
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to create payer';
@@ -261,6 +286,8 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       this.payerApi.update(this.currentId!, { ...payload, payID: this.currentId! }).subscribe({
         next: () => {
           this.saving = false;
+          this.resetForNewEntry();
+          this.router.navigate(['../new'], { relativeTo: this.route });
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to update payer';

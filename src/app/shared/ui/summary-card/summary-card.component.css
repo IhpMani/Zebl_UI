@@ -1,0 +1,29 @@
+:host {
+  display: block;
+}
+
+.summary-card {
+  background: var(--primary-light);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.summary-card .label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.summary-card .value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  font-weight: 700;
+  line-height: 1.25;
+  font-weight: 700;
+  line-height: 1.25;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--primary);
+}
+

@@ -1,548 +1,298 @@
 <div class="claim-details-wrapper">
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading">Loading claim details...</div>
+  </div>
+
   <div class="page-container">
-    <div *ngIf="loading" class="loading-overlay">
-      <div class="loading">Loading claim data...</div>
-    </div>
+    <div class="page-content">
+      <div class="card" *ngIf="error">{{ error }}</div>
 
-    <div *ngIf="error" class="error-panel section">
-      <p>{{ error }}</p>
-      <button class="btn-secondary" (click)="goBackToList()">Back to List</button>
-    </div>
-
-    <ng-container *ngIf="!loading && !error && claim">
-      <header class="claim-header section card card-primary">
-        <div>
-          <p class="claim-context">Claim {{ claim.claID }} · {{ claim.claStatus || 'Unknown status' }}</p>
-          <h1 class="page-title">{{ getPatientName() }}</h1>
-          <p class="dos">DOS {{ formatDate(claim.claFirstDateTRIG) || 'N/A' }}</p>
-        </div>
-        <div class="actions">
-          <button class="btn-primary" (click)="save()">Save</button>
-          <button class="btn-primary ghost" (click)="saveAndClose()">Save &amp; Close</button>
-          <button class="btn-secondary" (click)="close()">Close</button>
-          <button class="btn-secondary" (click)="deleteClaim()">Delete</button>
-          <button class="btn-secondary" (click)="scrub()">Scrub Claim</button>
-        </div>
-      </header>
-
-      <div class="claim-panels section">
-        <aside class="left-panel">
-          <section class="panel-card card section">
-          <header>
-            <h3 class="section-title">Prior Authorization &amp; Diagnosis</h3>
-          </header>
-          <div class="diag-grid">
-            <div class="diag-row" *ngFor="let diag of diagnosisFields">
-              <label>{{ diag.label }}</label>
-              <input type="text" [(ngModel)]="claim[diag.field]" />
+      <ng-container *ngIf="claim as c">
+        <app-card class="claim-header">
+          <div class="claim-header-inner">
+            <div class="header-left">
+              <div class="claim-icon">
+                <svg class="claim-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                  <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                </svg>
+              </div>
+              <div class="header-text">
+                <div class="claim-meta">
+                  <span class="claim-id-label">{{ isNewMode ? 'New Claim' : ('Claim ' + c.claID) }}</span>
+                  <span class="status-badge" [ngClass]="getStatusClass(c.claStatus)">
+                    {{ c.claStatus || 'OnHold' }}
+                  </span>
+                </div>
+                <h1 class="title">{{ getPatientName() }}</h1>
+                <div class="claim-sub">DOS {{ formatDate(c.claFirstDateTRIG) || '-' }}</div>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn-primary btn-header" type="button" (click)="save()">Save</button>
+              <button class="btn-secondary btn-header" type="button" (click)="saveAndClose()">Save & Close</button>
+              <button class="btn-warning btn-header" type="button" (click)="scrub()" [disabled]="isNewMode || scrubbingClaim">Scrub</button>
+              <button class="btn-danger btn-header" type="button" (click)="deleteClaim()" [disabled]="isNewMode">Delete</button>
+              <button class="btn-secondary btn-header" type="button" (click)="close()">Close</button>
             </div>
           </div>
-        </section>
+        </app-card>
 
-          <section class="panel-card card section">
-          <header>
-            <h3 class="section-title">Calendar</h3>
-          </header>
-          <label>Date Received</label>
-          <input type="date" [(ngModel)]="claim.claBillDate" />
-          <label>First DOS</label>
-          <input type="date" [(ngModel)]="claim.claFirstDateTRIG" />
-          <label>Last DOS</label>
-          <input type="date" [(ngModel)]="claim.claLastDateTRIG" />
-        </section>
+        <div class="claim-grid">
+          <div class="column-stack">
+            <app-card>
+              <app-section-header title="Claim Information" iconKey="template"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid" [formGroup]="claimForm">
+                  <div class="form-group">
+                    <label>Status</label>
+                    <select formControlName="ClaStatus">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let s of claimStatuses" [ngValue]="s.value">{{ s.label }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Classification</label>
+                    <select formControlName="ClaClassification">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let item of classificationOptions" [ngValue]="item.value">{{ item.value }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Method</label>
+                    <select formControlName="ClaSubmissionMethod">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let m of methodOptions" [ngValue]="m">{{ m }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group form-group--checkbox">
+                    <label>Locked</label>
+                    <input type="checkbox" [(ngModel)]="c.claLocked" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Admitted Date</label>
+                    <input type="date" [(ngModel)]="c.claAdmittedDate" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Discharged Date</label>
+                    <input type="date" [(ngModel)]="c.claDischargedDate" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Date Last Seen</label>
+                    <input type="date" [(ngModel)]="c.claDateLastSeen" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                </div>
+              </div>
+            </app-card>
 
-          <section class="panel-card card section">
-          <header>
-            <h3 class="section-title">Claim Template</h3>
-          </header>
-          <select [(ngModel)]="claim.claSubmissionMethod">
-            <option *ngFor="let template of claimTemplates" [value]="template.id">
-              {{ template.label }}
-            </option>
-          </select>
-        </section>
-        </aside>
+            <app-card>
+              <app-section-header title="Diagnosis" iconKey="clinical"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid clinical-card">
+                  <div class="form-group" *ngFor="let field of diagnosisFields">
+                    <label>{{ field.label }}</label>
+                    <input type="text" [(ngModel)]="c[field.field]" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                </div>
+              </div>
+            </app-card>
+          </div>
 
-        <section class="right-panel">
-        <div class="sections-stack">
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Claim Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.claimInfo">
-              <div class="field-row">
-                <label>Bill Date</label>
-                <input type="date" [(ngModel)]="claim.claBillDate" />
+          <div class="column-stack">
+            <app-card>
+              <app-section-header title="Financial" iconKey="financial"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid financial-card">
+                  <div class="form-group">
+                    <label>Bill To</label>
+                    <select [(ngModel)]="c.claBillTo" [ngModelOptions]="{standalone: true}">
+                      <option *ngFor="let opt of getBillToOptions()" [ngValue]="opt.value" [disabled]="opt.disabled">{{ opt.label }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Bill Date</label>
+                    <input type="date" [(ngModel)]="c.claBillDate" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Delay Code</label>
+                    <select [(ngModel)]="c.claDelayCode" [ngModelOptions]="{standalone: true}">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let d of delayCodeOptions" [ngValue]="d.value">{{ d.label }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Resubmission</label>
+                    <select [(ngModel)]="c.claMedicaidResubmissionCode" [ngModelOptions]="{standalone: true}">
+                      <option [ngValue]="null">--</option>
+                      <option *ngFor="let r of resubmissionCodeOptions" [ngValue]="r.value">{{ r.label }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Original Ref #</label>
+                    <input type="text" [(ngModel)]="c.claOriginalRefNo" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                </div>
               </div>
-              <div class="field-row" [formGroup]="claimForm">
-                <label>Status</label>
-                <select formControlName="ClaStatus">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let s of claimStatuses" [ngValue]="s.value">
-                    {{ s.label }}
-                  </option>
-                </select>
+            </app-card>
+
+            <app-card>
+              <app-section-header title="Claim Template" iconKey="template"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Template</label>
+                    <select>
+                      <option *ngFor="let t of claimTemplates" [ngValue]="t.id">{{ t.label }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Invoice #</label>
+                    <input type="text" [(ngModel)]="c.claInvoiceNumber" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                </div>
               </div>
-              <div class="field-row" [formGroup]="claimForm">
-                <label>Classification</label>
-                <select formControlName="ClaClassification">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let option of classificationOptions" [ngValue]="option.value">
-                    {{ option.value }}
-                  </option>
-                </select>
+            </app-card>
+
+            <app-card>
+              <app-section-header title="Data Information" iconKey="template"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>External ID</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="c.additionalData!.externalId"
+                      [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Payment Matching Key</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="c.additionalData!.paymentMatchingKey"
+                      [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>EDI Notes</label>
+                    <input type="text" [(ngModel)]="c.claEDINotes" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" [(ngModel)]="c.claRemarks" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                </div>
               </div>
-              <div class="field-row" [formGroup]="claimForm">
-                <label>Method</label>
-                <select formControlName="ClaSubmissionMethod">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let opt of methodOptions" [ngValue]="opt">{{ opt }}</option>
-                </select>
+            </app-card>
+
+            <app-card>
+              <app-section-header title="Physician / Facility Information" iconKey="provider"></app-section-header>
+              <div class="section-body">
+                <div class="form-grid" [formGroup]="claimForm">
+                  <div class="form-group">
+                    <label>Rendering Provider</label>
+                    <select formControlName="ClaRenderingPhyFID">
+                      <option [ngValue]="0">--</option>
+                      <option *ngFor="let phy of renderingProviders" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Service Facility</label>
+                    <select formControlName="ClaFacilityPhyFID">
+                      <option [ngValue]="0">--</option>
+                      <option *ngFor="let phy of serviceFacilities" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div class="field-row">
-                <label>Invoice #</label>
-                <input type="text" [(ngModel)]="claim.claInvoiceNumber" />
-              </div>
-              <div class="field-row">
-                <label>Locked</label>
-                <input type="checkbox" [(ngModel)]="claim.claLocked" />
-              </div>
+            </app-card>
+
+          </div>
+        </div>
+
+        <app-card class="service-lines-section">
+          <app-section-header title="Service Lines" iconKey="timeline"></app-section-header>
+          <div class="section-body">
+            <div style="margin-bottom: 10px;">
+              <button class="btn-primary" type="button" (click)="addServiceLine()" [disabled]="isNewMode">Add Service Line</button>
             </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Scrub Results</h3>
-            </header>
-            <div class="section-body">
-              <div *ngIf="scrubError" class="error-panel">
-                {{ scrubError }}
-              </div>
-              <table class="scrub-grid" *ngIf="scrubResults && scrubResults.length > 0">
+            <div class="service-lines-table-wrapper">
+              <table class="service-lines-table">
                 <thead>
                   <tr>
-                    <th>Rule</th>
-                    <th>Severity</th>
-                    <th>Message</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Procedure</th>
+                    <th>Units</th>
+                    <th>Charge</th>
+                    <th>Allowed</th>
+                    <th>Balance</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let r of scrubResults">
-                    <td>{{ r.ruleName }}</td>
-                    <td>{{ r.severity }}</td>
-                    <td>{{ r.message }}</td>
+                  <tr *ngFor="let line of serviceLinesArray; trackBy: trackByServiceLine" [class.active]="line.srvID === selectedServiceLineId">
+                    <td><input type="date" [(ngModel)]="line.srvFromDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td><input type="date" [(ngModel)]="line.srvToDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td><input type="text" [(ngModel)]="line.srvProcedureCode" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td><input type="number" [(ngModel)]="line.srvUnits" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td>{{ formatCurrency(line.srvCharges) }}</td>
+                    <td>{{ formatCurrency(line.srvAllowedAmt) }}</td>
+                    <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
+                    <td>
+                      <button class="btn-secondary" type="button" *ngIf="!isEditingServiceLine(line)" (click)="startEditServiceLine(line)" [disabled]="isNewMode">Edit</button>
+                      <button class="btn-primary" type="button" *ngIf="isEditingServiceLine(line)" (click)="saveServiceLine(line)" [disabled]="isNewMode">Save</button>
+                      <button class="btn-secondary" type="button" *ngIf="isEditingServiceLine(line)" (click)="cancelEditServiceLine(line)">Cancel</button>
+                      <button class="btn-danger" type="button" (click)="deleteServiceLine(line)" [disabled]="isNewMode">Delete</button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="serviceLinesArray.length === 0">
+                    <td colspan="8">No service lines.</td>
                   </tr>
                 </tbody>
               </table>
-              <div *ngIf="(!scrubResults || scrubResults.length === 0) && !scrubError">
-                No scrub results yet. Click "Scrub Claim" to run rules.
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Physician / Facility Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.physician">
-              <div class="field-row" [formGroup]="claimForm">
-                <label>Rendering Provider</label>
-                <select formControlName="ClaRenderingPhyFID">
-                  <option [ngValue]="0">-- Select --</option>
-                  <option *ngFor="let p of renderingProviders" [value]="p.phyID">{{ p.phyFullNameCC || p.phyName || 'Unknown' }}</option>
-                </select>
-              </div>
-              <div class="field-row" [formGroup]="claimForm">
-                <label>Service Facility</label>
-                <select formControlName="ClaFacilityPhyFID">
-                  <option [ngValue]="0">-- Select --</option>
-                  <option *ngFor="let p of serviceFacilities" [value]="p.phyID">{{ p.phyFullNameCC || p.phyName || 'Unknown' }}</option>
-                </select>
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Date Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.dates">
-              <div class="field-row">
-                <label>Admitted Date</label>
-                <input type="date" [(ngModel)]="claim.claAdmittedDate" />
-              </div>
-              <div class="field-row">
-                <label>Discharged Date</label>
-                <input type="date" [(ngModel)]="claim.claDischargedDate" />
-              </div>
-              <div class="field-row">
-                <label>Date Last Seen</label>
-                <input type="date" [(ngModel)]="claim.claDateLastSeen" />
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Misc Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.misc">
-              <div class="field-row">
-                <label>EDI Notes</label>
-                <input type="text" [(ngModel)]="claim.claEDINotes" />
-              </div>
-              <div class="field-row">
-                <label>Condition Related To</label>
-                <select [(ngModel)]="claim.claRelatedTo">
-                  <option *ngFor="let opt of conditionRelatedOptions" [ngValue]="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-              <div class="field-row">
-                <label>Auto Accident State</label>
-                <input [(ngModel)]="claim.claRelatedToState" />
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Resubmission Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.resubmission">
-              <div class="field-row">
-                <label>Original Ref Number</label>
-                <input [(ngModel)]="claim.claOriginalRefNo" />
-              </div>
-              <div class="field-row">
-                <label>Delay Code</label>
-                <select [(ngModel)]="claim.claDelayCode">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let opt of delayCodeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-              <div class="field-row">
-                <label>Resubmission Code</label>
-                <select [(ngModel)]="claim.claMedicaidResubmissionCode">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let opt of resubmissionCodeOptions" [ngValue]="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section">
-            <header>
-              <h3 class="section-title">Paperwork Information</h3>
-            </header>
-            <div class="section-body form-grid" [hidden]="!sectionsState.paperwork">
-              <div class="field-row">
-                <label>Transmission Code</label>
-                <select [(ngModel)]="claim.claPaperWorkTransmissionCode">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let opt of transmissionCodeOptions" [ngValue]="opt">{{ opt }}</option>
-                </select>
-              </div>
-              <div class="field-row">
-                <label>Control Number</label>
-                <input [(ngModel)]="claim.claPaperWorkControlNumber" />
-              </div>
-              <div class="field-row">
-                <label>Paperwork Indicator</label>
-                <select [(ngModel)]="claim.claPaperWorkInd">
-                  <option [ngValue]="null">-- Select --</option>
-                  <option *ngFor="let opt of paperworkIndOptions" [ngValue]="opt">{{ opt }}</option>
-                </select>
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card section-card-collapsible card section">
-            <header (click)="toggleSection('additionalData')" class="collapsible-header">
-              <h3 class="section-title">Additional Data</h3>
-              <span class="collapse-icon">{{ sectionsState.additionalData ? '▼' : '▶' }}</span>
-            </header>
-            <div class="section-body additional-data-grid" [hidden]="!sectionsState.additionalData" *ngIf="claim.additionalData">
-              <div class="additional-data-left">
-                <div class="field-row">
-                  <label>Custom Text Value</label>
-                  <input type="text" [(ngModel)]="claim.additionalData.customTextValue" placeholder="Enter text" />
-                </div>
-                <div class="field-row">
-                  <label>Custom Currency Value</label>
-                  <input type="number" [(ngModel)]="claim.additionalData.customCurrencyValue" placeholder="0.00" step="0.01" min="0" />
-                </div>
-                <div class="field-row">
-                  <label>Custom Date Value</label>
-                  <input type="date" [(ngModel)]="claim.additionalData.customDateValue" />
-                </div>
-                <div class="field-row">
-                  <label>Payment Matching Key</label>
-                  <input type="text" [(ngModel)]="claim.additionalData.paymentMatchingKey" placeholder="Enter key" />
-                </div>
-              </div>
-              <div class="additional-data-right">
-                <div class="field-row">
-                  <label>Custom Number Value</label>
-                  <input type="number" [(ngModel)]="claim.additionalData.customNumberValue" placeholder="0" step="1" />
-                </div>
-                <div class="field-row">
-                  <label>Custom True / False Value</label>
-                  <label class="checkbox-inline">
-                    <input type="checkbox" [(ngModel)]="claim.additionalData.customTrueFalseValue" />
-                    <span>Enabled</span>
-                  </label>
-                </div>
-                <div class="field-row">
-                  <label>External ID</label>
-                  <input type="text" [(ngModel)]="claim.additionalData.externalId" placeholder="Enter ID" />
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article class="section-card card section" *ngIf="claimCustomFieldDefinitions.length">
-            <header (click)="toggleSection('customFields')" class="collapsible-header">
-              <h3 class="section-title">Custom Fields</h3>
-              <span class="collapse-icon">{{ sectionsState.customFields ? '▼' : '▶' }}</span>
-            </header>
-            <div class="section-body additional-data-grid" [hidden]="!sectionsState.customFields">
-              <div class="additional-data-left" *ngFor="let def of claimCustomFieldDefinitions">
-                <div class="field-row" *ngIf="def.fieldType !== 'YESNO'">
-                  <label>{{ def.label }}</label>
-                  <input *ngIf="def.fieldType === 'TEXT' || def.fieldType === 'TEXT-LIST'" type="text"
-                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
-                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
-                  <input *ngIf="def.fieldType === 'CURRENCY'" type="number" step="0.01"
-                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
-                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
-                  <input *ngIf="def.fieldType === 'DATE'" type="date"
-                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
-                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
-                  <input *ngIf="def.fieldType === 'TIME'" type="time"
-                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
-                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
-                  <input *ngIf="def.fieldType === 'NUMBER'" type="number"
-                    [ngModel]="getClaimCustomFieldValue(def.fieldKey)"
-                    (ngModelChange)="setClaimCustomFieldValue(def.fieldKey, $event)" />
-                </div>
-                <div class="field-row" *ngIf="def.fieldType === 'YESNO'">
-                  <label class="checkbox-inline">
-                    <input type="checkbox"
-                      [checked]="getClaimCustomFieldValue(def.fieldKey) === '1' || getClaimCustomFieldValue(def.fieldKey) === 'true'"
-                      (change)="setClaimCustomFieldValue(def.fieldKey, $any($event.target).checked ? '1' : '0')" />
-                    {{ def.label }}
-                  </label>
-                </div>
-              </div>
-            </div>
-          </article>
-        </div>
-        </section>
-      </div>
-
-      <section class="service-lines-section card section">
-      <div class="section-header">
-        <h2 class="section-title">Service Lines</h2>
-        <div class="service-actions">
-          <button class="btn-secondary" (click)="addServiceLine()" [disabled]="serviceLoading || !canAddServiceLine()">Add</button>
-        </div>
-      </div>
-      <div class="service-lines-table-wrapper">
-        <table class="service-lines-table">
-          <thead>
-            <tr>
-              <th>From</th>
-              <th>To</th>
-              <th>Procedure</th>
-              <th>M1</th>
-              <th>M2</th>
-              <th>M3</th>
-              <th>M4</th>
-              <th>Units</th>
-              <th>Charges</th>
-              <th>Allowed</th>
-              <th>Ins Paid</th>
-              <th>Pat Paid</th>
-              <th>Balance</th>
-              <th>Responsible</th>
-              <th>Description</th>
-              <th>NDC</th>
-              <th>Drug Count</th>
-              <th>Drug UOM</th>
-              <th>Rx #</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let line of serviceLinesArray; trackBy: trackBySrvId"
-              [class.selected]="line.srvID === selectedServiceLineId"
-              (click)="selectServiceLine(line)">
-              <td>
-                <input *ngIf="isEditingServiceLine(line)" type="date" [(ngModel)]="line.srvFromDate" />
-                <span *ngIf="!isEditingServiceLine(line)">{{ formatDate(line.srvFromDate) }}</span>
-              </td>
-              <td>
-                <input *ngIf="isEditingServiceLine(line)" type="date" [(ngModel)]="line.srvToDate" />
-                <span *ngIf="!isEditingServiceLine(line)">{{ formatDate(line.srvToDate) }}</span>
-              </td>
-              <td (dblclick)="openProcedureLookup(line)">
-                <input
-                  *ngIf="isEditingServiceLine(line)"
-                  [(ngModel)]="line.srvProcedureCode"
-                  (ngModelChange)="onServiceLineProcedureCodeChanged(line)"
-                  (input)="onServiceLineProcedureCodeInput(line, $event)"
-                  (paste)="onServiceLineProcedureCodePaste(line)"
-                  (change)="onServiceLineProcedureCodeChanged(line)"
-                  (blur)="onServiceLineProcedureCodeBlur(line)"
-                />
-                <span *ngIf="!isEditingServiceLine(line)">{{ line.srvProcedureCode || '—' }}</span>
-              </td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier1" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier1 || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier2" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier2 || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier3" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier3 || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvModifier4" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvModifier4 || '—' }}</span></td>
-              <td>
-                <input *ngIf="isEditingServiceLine(line)" type="number" step="1" min="1" [(ngModel)]="line.srvUnits" (ngModelChange)="onServiceLineUnitsChanged(line)" />
-                <span *ngIf="!isEditingServiceLine(line)">{{ line.srvUnits ?? '—' }}</span>
-              </td>
-              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvCharges" /><span *ngIf="!isEditingServiceLine(line)">{{ formatCurrency(line.srvCharges) }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvAllowedAmt" /><span *ngIf="!isEditingServiceLine(line)">{{ formatCurrency(line.srvAllowedAmt) }}</span></td>
-              <td>{{ formatCurrency(line.srvTotalInsAmtPaidTRIG) }}</td>
-              <td>{{ formatCurrency(line.srvTotalPatAmtPaidTRIG) }}</td>
-              <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
-              <td>
-                <select
-                  *ngIf="isEditingServiceLine(line)"
-                  [(ngModel)]="line.srvResponsibleParty"
-                  (ngModelChange)="onResponsiblePartyChanged(line)"
-                >
-                  <option *ngIf="primaryPayerId" [ngValue]="primaryPayerId">Primary payer - {{ primaryPayerName }}</option>
-                  <option *ngIf="secondaryPayerId" [ngValue]="secondaryPayerId">Secondary payer - {{ secondaryPayerName }}</option>
-                  <option [ngValue]="0">Patient</option>
-                </select>
-                <span *ngIf="!isEditingServiceLine(line)">{{ getResponsiblePartyLabel(line.srvResponsibleParty) }}</span>
-              </td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvDesc" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDesc || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvNationalDrugCode" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvNationalDrugCode || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" type="number" step="0.01" [(ngModel)]="line.srvDrugUnitCount" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDrugUnitCount ?? '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvDrugUnitMeasurement" maxlength="2" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvDrugUnitMeasurement || '—' }}</span></td>
-              <td><input *ngIf="isEditingServiceLine(line)" [(ngModel)]="line.srvPrescriptionNumber" /><span *ngIf="!isEditingServiceLine(line)">{{ line.srvPrescriptionNumber || '—' }}</span></td>
-              <td>
-                <button *ngIf="!isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); startEditServiceLine(line)">Edit</button>
-                <button *ngIf="isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); saveServiceLine(line)">Save</button>
-                <button *ngIf="isEditingServiceLine(line)" class="btn-secondary" (click)="$event.stopPropagation(); cancelEditServiceLine(line)">Cancel</button>
-                <button class="btn-danger" (click)="$event.stopPropagation(); deleteServiceLine(line)">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div *ngIf="showProcedureLookupDialog" class="dialog-overlay" (click)="closeProcedureLookup()">
-        <div class="dialog" (click)="$event.stopPropagation()">
-          <header class="dialog-header">
-            <h2>Procedure Code Lookup</h2>
-            <button type="button" class="btn-close" (click)="closeProcedureLookup()">&times;</button>
-          </header>
-          <div class="dialog-body">
-            <input
-              type="text"
-              class="search-input"
-              placeholder="Search procedure code..."
-              [(ngModel)]="procedureLookupKeyword"
-              (keyup)="searchProcedureLookup()"
-            />
-            <div *ngIf="procedureLookupLoading" class="loading">Loading...</div>
-            <ul class="result-list" *ngIf="!procedureLookupLoading && procedureLookupResults.length">
-              <li
-                *ngFor="let item of procedureLookupResults"
-                class="result-item"
-                (dblclick)="onProcedureLookupSelect(item)"
-                (click)="onProcedureLookupSelect(item)"
-              >
-                <span class="code">{{ item.code }}</span>
-                <span class="desc">{{ item.description }}</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="service-line-custom-fields" *ngIf="selectedServiceLineId != null && serviceLineCustomFieldDefinitions.length">
-        <h4>Service Line Custom Fields</h4>
-        <div class="additional-data-grid">
-          <div class="additional-data-left" *ngFor="let def of serviceLineCustomFieldDefinitions">
-            <div class="field-row" *ngIf="def.fieldType !== 'YESNO'">
-              <label>{{ def.label }}</label>
-              <input *ngIf="def.fieldType === 'TEXT' || def.fieldType === 'TEXT-LIST'" type="text"
-                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
-                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
-              <input *ngIf="def.fieldType === 'CURRENCY'" type="number" step="0.01"
-                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
-                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
-              <input *ngIf="def.fieldType === 'DATE'" type="date"
-                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
-                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
-              <input *ngIf="def.fieldType === 'TIME'" type="time"
-                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
-                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
-              <input *ngIf="def.fieldType === 'NUMBER'" type="number"
-                [ngModel]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey)"
-                (ngModelChange)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $event)" />
-            </div>
-            <div class="field-row" *ngIf="def.fieldType === 'YESNO'">
-              <label class="checkbox-inline">
-                <input type="checkbox"
-                  [checked]="getServiceLineCustomValue(selectedServiceLineId, def.fieldKey) === '1' || getServiceLineCustomValue(selectedServiceLineId, def.fieldKey) === 'true'"
-                  (change)="setServiceLineCustomValue(selectedServiceLineId, def.fieldKey, $any($event.target).checked ? '1' : '0')" />
-                {{ def.label }}
-              </label>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+        </app-card>
 
-      <section class="notes-section card section">
-      <header>
-        <h3 class="section-title">Notes / Audit Trail</h3>
-        <button type="button" class="btn-refresh-notes" (click)="refreshClaimAndNotes()" title="Reload claim to see latest notes (e.g. after payment applied)">Refresh</button>
-      </header>
-      <div [hidden]="!showNotes">
-        <div class="notes-input">
-          <textarea
-            placeholder="Click here to add a new note"
-            [(ngModel)]="newNote">
-          </textarea>
+        <div class="summary-grid summary-grid--compact">
+          <app-summary-card label="Total Charge" [value]="formatCurrency(getClaimTotalCharge())"></app-summary-card>
+          <app-summary-card label="Insurance Paid" [value]="formatCurrency(getClaimTotalInsurancePaid())"></app-summary-card>
+          <app-summary-card label="Patient Balance" [value]="formatCurrency(getClaimTotalPatientBalance())"></app-summary-card>
+          <app-summary-card label="Service Lines" [value]="serviceLinesArray.length.toString()"></app-summary-card>
         </div>
-        <div class="notes-history-table-wrapper">
-          <table class="notes-history-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>User</th>
-                <th>Note Text</th>
-                <th class="num">Total Charge</th>
-                <th class="num">Insurance Balance</th>
-                <th class="num">Patient Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let note of getNotesHistory()">
-                <td>{{ formatDateTime(note.date) }}</td>
-                <td>{{ note.user }}</td>
-                <td class="note-text">{{ note.content }}</td>
-                <td class="num">{{ formatCurrency(note.totalCharge) }}</td>
-                <td class="num">{{ formatCurrency(note.insuranceBalance) }}</td>
-                <td class="num">{{ formatCurrency(note.patientBalance) }}</td>
-              </tr>
-              <tr *ngIf="getNotesHistory().length === 0">
-                <td colspan="6" class="no-data">No notes or activity recorded.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-    </ng-container>
+
+        <app-card class="notes-section">
+          <app-section-header title="Notes / Audit" iconKey="template"></app-section-header>
+          <div class="section-body">
+            <div class="form-group">
+              <label>Add Note</label>
+              <textarea [(ngModel)]="newNote" [ngModelOptions]="{standalone: true}" rows="3"></textarea>
+            </div>
+            <div class="notes-history-table-wrapper">
+              <table class="notes-history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let n of getNotesHistory()">
+                    <td>{{ formatDateTime(n.date) }}</td>
+                    <td>{{ n.user || '-' }}</td>
+                    <td>{{ n.content || '-' }}</td>
+                  </tr>
+                  <tr *ngIf="getNotesHistory().length === 0">
+                    <td colspan="3">No notes yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </app-card>
+      </ng-container>
+    </div>
   </div>
 </div>
+
+                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">

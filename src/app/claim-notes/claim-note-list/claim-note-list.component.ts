@@ -5,6 +5,7 @@ import { ClaimNoteListItem, ClaimNotesApiResponse, PaginationMeta } from '../../
 import { Subject, takeUntil } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from '../../claims/claim-list/claim-list-additional-columns';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { formatApiDateTimeDisplay } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-claim-note-list',
@@ -40,6 +41,8 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     claLastDOS: 'claLastDateTRIG',
     claTotalCharge: 'claTotalChargeTRIG',
     claTotalBalance: 'claTotalBalanceCC',
+    claCreatedUser: 'claCreatedUserName',
+    claModifiedUser: 'claLastUserName',
     claCreatedTimestamp: 'claDateTimeCreated',
     claModifiedTimestamp: 'claDateTimeModified',
     patID: 'claPatFID'
@@ -47,7 +50,8 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
 
   private buildInitialColumns(): Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> {
     const noteCols: Array<{ key: string; label: string; visible: boolean; filterValue: string; dataType: string }> = [
-      { key: 'activityDate', label: 'Timestamp', visible: true, filterValue: '', dataType: 'datetime' },
+      { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '', dataType: 'datetime' },
+      { key: 'modifiedDate', label: 'Date Modified', visible: true, filterValue: '', dataType: 'datetime' },
       { key: 'userName', label: 'User', visible: true, filterValue: '', dataType: 'string' },
       { key: 'noteText', label: 'Note Text', visible: true, filterValue: '', dataType: 'string' }
     ];
@@ -56,7 +60,17 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       return {
         key: apiKey,
         label: c.label,
-        visible: ['claID', 'claStatus', 'claTotalChargeTRIG', 'claTotalBalanceCC', 'patFullNameCC'].includes(apiKey),
+        visible: [
+          'claID',
+          'claStatus',
+          'claDateTimeCreated',
+          'claDateTimeModified',
+          'claTotalChargeTRIG',
+          'claTotalBalanceCC',
+          'patFullNameCC',
+          'claCreatedUserName',
+          'claLastUserName'
+        ].includes(apiKey),
         filterValue: '',
         dataType: c.dataType
       };
@@ -92,7 +106,7 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          const cols = response?.data || response;
+          const cols = response?.data ?? response?.Data ?? response;
           this.availableRelatedColumns = Array.isArray(cols) ? cols : [];
         },
         error: () => { this.availableRelatedColumns = []; }
@@ -106,21 +120,34 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
     const filters: any = {};
     const textFilters = this.columns.filter(c => c.filterValue && c.filterValue.toString().trim() !== '').map(c => c.filterValue.toString().trim()).join(' ');
     if (textFilters) filters.searchText = textFilters;
-    if (this.selectedAdditionalColumns.size > 0) {
-      filters.additionalColumns = Array.from(this.selectedAdditionalColumns);
+    // Same pattern as claim-list: request additionalColumns for every visible curated claim column,
+    // not only rows added from "Related tables" (otherwise Created/Modified User never get requested).
+    const visibleRegistryKeys = this.columns
+      .filter(c => c.visible)
+      .map(c => this.getRegistryKeyForNoteColumnApiKey(c.key))
+      .filter((k): k is string => !!k && ClaimListAdditionalColumns.isValidColumn(k));
+    const requestedAdditional = Array.from(new Set([
+      ...Array.from(this.selectedAdditionalColumns),
+      ...visibleRegistryKeys
+    ]));
+    if (requestedAdditional.length > 0) {
+      filters.additionalColumns = requestedAdditional;
     }
 
     this.claimNoteApiService.getClaimNotes(page, pageSize, filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: ClaimNotesApiResponse) => {
-          // Handle both direct { data, meta } and wrapped { data: { data, meta } } responses
-          const data = Array.isArray(response?.data)
-            ? response.data
-            : Array.isArray((response as any)?.data?.data)
-              ? (response as any).data.data
-              : [];
-          const meta = response?.meta ?? (response as any)?.data?.meta ?? null;
+          const raw = response as any;
+          // Handle { data }, nested { data: { data } }, or ApiResponse-style { Data }
+          const data = Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.data?.data)
+              ? raw.data.data
+              : Array.isArray(raw?.Data)
+                ? raw.Data
+                : [];
+          const meta = raw?.meta ?? raw?.data?.meta ?? raw?.Meta ?? null;
           this.claimNotes = data;
           this.filteredClaimNotes = this.applyValueFilters(this.claimNotes);
           this.meta = meta;
@@ -163,8 +190,53 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   getCellValue(note: ClaimNoteListItem, key: string): any {
     const rec = note as unknown as Record<string, unknown>;
     const addCols = rec['additionalColumns'] as Record<string, unknown> | undefined;
-    if (addCols && typeof addCols === 'object' && key in addCols) return addCols[key];
-    return rec[key];
+    for (const candidate of this.getNoteCellKeyCandidates(key)) {
+      const v = this.pickRecordValue(addCols, candidate);
+      if (v != null && String(v).trim() !== '') return v;
+    }
+    for (const candidate of this.getNoteCellKeyCandidates(key)) {
+      const v = this.pickRecordValue(rec, candidate);
+      if (v != null && String(v).trim() !== '') return v;
+    }
+    const fromAdd = this.pickRecordValue(addCols, key);
+    if (fromAdd !== undefined) return fromAdd;
+    return this.pickRecordValue(rec, key);
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  /** Resolve a value from a record; supports camelCase / PascalCase keys from the API. */
+  private pickRecordValue(record: Record<string, unknown> | undefined, key: string): unknown {
+    if (!record || typeof record !== 'object') return undefined;
+    if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
+    const lower = key.toLowerCase();
+    const found = Object.keys(record).find(k => k.toLowerCase() === lower);
+    return found ? record[found] : undefined;
+  }
+
+  /** Map a column's API key (e.g. claCreatedUserName) back to registry key (claCreatedUser) for additionalColumns. */
+  private getRegistryKeyForNoteColumnApiKey(apiKey: string): string | null {
+    const direct = ClaimListAdditionalColumns.AVAILABLE_COLUMNS.find(ac => ac.key === apiKey);
+    if (direct) return direct.key;
+    return ClaimListAdditionalColumns.AVAILABLE_COLUMNS.find(
+      ac => (ClaimNoteListComponent.NOTES_API_KEY_MAP[ac.key] ?? ac.key) === apiKey
+    )?.key ?? null;
+  }
+
+  private getNoteCellKeyCandidates(key: string): string[] {
+    const set = new Set<string>([key]);
+    if (key === 'claCreatedUserName') {
+      set.add('claCreatedUser');
+    } else if (key === 'claLastUserName') {
+      set.add('claModifiedUser');
+    } else if (key === 'claCreatedUser') {
+      set.add('claCreatedUserName');
+    } else if (key === 'claModifiedUser') {
+      set.add('claLastUserName');
+    }
+    return Array.from(set);
   }
   openFilterPopup(columnKey: string, event: MouseEvent): void {
     event.stopPropagation();
@@ -252,7 +324,12 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       this.showCustomizationDialog = false; this.columnSearchText = '';
     } else if (!event) { this.showCustomizationDialog = false; this.columnSearchText = ''; }
   }
-  toggleColumnVisibility(columnKey: string): void { const col = this.columns.find(c => c.key === columnKey); if (col) col.visible = !col.visible; }
+  toggleColumnVisibility(columnKey: string): void {
+    const col = this.columns.find(c => c.key === columnKey);
+    if (!col) return;
+    col.visible = !col.visible;
+    this.loadClaimNotes(this.currentPage, this.pageSize);
+  }
   clearAllColumns(): void { this.columns.forEach(col => col.visible = false); }
   get filteredColumnsForDialog() {
     if (!this.columnSearchText.trim()) return this.columns;

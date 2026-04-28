@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { PaymentEntryServiceLine, PaymentForEdit, PaymentsApiResponse } from './payment.models';
+import { ClaimPaymentLedgerResponse, PaymentEntryServiceLine, PaymentForEdit, PaymentsApiResponse } from './payment.models';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -67,6 +67,42 @@ export class PaymentApiService {
 
   getAvailableColumns(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/available-columns`);
+  }
+
+  getClaimPaymentLedger(
+    page: number = 1,
+    pageSize: number = 50,
+    filters?: {
+      isApplied?: boolean | null;
+      fromDateUtc?: string;
+      toDateUtc?: string;
+      payer?: string;
+      claimExternalId?: string;
+    }
+  ): Observable<ClaimPaymentLedgerResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (filters) {
+      if (filters.isApplied !== undefined && filters.isApplied !== null) {
+        params = params.set('isApplied', String(filters.isApplied));
+      }
+      if (filters.fromDateUtc) {
+        params = params.set('fromDateUtc', filters.fromDateUtc);
+      }
+      if (filters.toDateUtc) {
+        params = params.set('toDateUtc', filters.toDateUtc);
+      }
+      if (filters.payer?.trim()) {
+        params = params.set('payer', filters.payer.trim());
+      }
+      if (filters.claimExternalId?.trim()) {
+        params = params.set('claimExternalId', filters.claimExternalId.trim());
+      }
+    }
+
+    return this.http.get<ClaimPaymentLedgerResponse>(`${this.baseUrl}/ledger`, { params });
   }
 
   getPaymentsByClaim(claId: number): Observable<any> {

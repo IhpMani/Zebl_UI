@@ -1,3 +1,4 @@
+/* strict-theme-normalized */
 .program-setup-container {
   display: flex;
   flex-direction: column;
@@ -13,7 +14,7 @@
   margin-bottom: 12px;
 
   .title {
-    font-size: 20px;
+    font-size: 13px;
     font-weight: 600;
   }
 
@@ -23,20 +24,20 @@
 
     .btn {
       padding: 6px 14px;
-      border-radius: 3px;
-      border: 1px solid var(--color-border);
+      border-radius: 2px;
+      border: 1px solid var(--ps-border);
       cursor: pointer;
       font-size: 13px;
 
       &.primary {
-        background-color: var(--color-toolbar);
-        color: var(--color-primary-btn-text);
-        border-color: var(--color-header);
+        background-color: var(--ps-card);
+        color: var(--ps-text);
+        border-color: var(--ps-border);
       }
 
       &.secondary {
-        background-color: var(--color-body-bg);
-        color: var(--color-text);
+        background-color: var(--ps-card);
+        color: var(--ps-text);
       }
     }
   }
@@ -46,14 +47,14 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-card-bg);
+  border: 1px solid var(--ps-border);
+  background-color: var(--ps-card);
 }
 
 .left-panel {
   width: 220px;
-  border-right: 1px solid var(--color-border);
-  background-color: var(--color-body-bg);
+  border-right: 1px solid var(--ps-border);
+  background-color: var(--ps-card);
   padding: 8px;
   box-sizing: border-box;
 
@@ -75,12 +76,12 @@
       font-size: 13px;
 
       &:hover {
-        background-color: var(--color-border);
+        background-color: var(--ps-card);
       }
 
       &.active {
-        background-color: var(--color-toolbar);
-        color: var(--color-primary-btn-text);
+        background-color: var(--ps-card);
+        color: var(--ps-text);
       }
     }
   }
@@ -93,7 +94,7 @@
 
   .section-title {
     margin: 0 0 12px;
-    font-size: 18px;
+    font-size: 13px;
     font-weight: 600;
   }
 
@@ -103,20 +104,20 @@
 
   .placeholder {
     padding: 12px;
-    border: 1px dashed var(--color-border);
-    border-radius: 4px;
-    background-color: var(--color-body-bg);
+    border: 1px dashed var(--ps-border);
+    border-radius: 2px;
+    background-color: var(--ps-card);
 
     &.error {
-      border-color: var(--color-error);
-      color: var(--color-error);
-      background-color: var(--color-error-bg);
+      border-color: var(--ps-border);
+      color: var(--ps-text);
+      background-color: var(--ps-card);
     }
   }
 
   .settings-debug {
     margin-top: 12px;
-    font-size: 12px;
+    font-size: 13px;
 
     .settings-debug-title {
       font-weight: 600;
@@ -126,10 +127,10 @@
     pre {
       max-height: 240px;
       overflow: auto;
-      background-color: var(--color-text);
-      color: var(--color-text-muted);
+      background-color: var(--ps-card);
+      color: var(--ps-muted);
       padding: 8px;
-      border-radius: 4px;
+      border-radius: 2px;
     }
   }
 }
@@ -168,7 +169,7 @@
       select {
         max-width: 260px;
         padding: 4px 6px;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--ps-border);
         border-radius: 2px;
         font-size: 13px;
       }
@@ -186,12 +187,12 @@
 
   .save-error {
     margin-top: 8px;
-    color: var(--color-error);
+    color: var(--ps-text);
   }
 
   .field-error {
-    font-size: 12px;
-    color: var(--color-error);
+    font-size: 13px;
+    color: var(--ps-text);
     font-weight: 400;
   }
 }
@@ -200,9 +201,9 @@
   .restart-notice {
     margin: 0 0 12px;
     padding: 8px 10px;
-    background-color: var(--color-warning-bg);
-    border: 1px solid var(--color-warning-border);
-    border-radius: 3px;
+    background-color: var(--ps-card);
+    border: 1px solid var(--ps-border);
+    border-radius: 2px;
     font-size: 13px;
   }
 
@@ -217,7 +218,7 @@
     gap: 8px;
     align-items: center;
     padding: 6px 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--ps-border);
     font-size: 13px;
   }
 
@@ -236,7 +237,7 @@
   .btn-link {
     background: none;
     border: none;
-    color: var(--color-toolbar);
+    color: var(--ps-text);
     cursor: pointer;
     font-size: 13px;
     padding: 0 4px;
@@ -251,24 +252,23 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.35);
+  background-color: var(--ps-text);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 
   .modal {
-    background-color: var(--color-card-bg);
+    background-color: var(--ps-card);
     padding: 16px 20px;
-    border-radius: 4px;
+    border-radius: 2px;
     max-width: 600px;
     width: 100%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
     h3 {
       margin-top: 0;
       margin-bottom: 8px;
-      font-size: 18px;
+      font-size: 13px;
     }
 
     p {
@@ -289,13 +289,13 @@
 
         th,
         td {
-          border: 1px solid var(--color-border);
+          border: 1px solid var(--ps-border);
           padding: 4px 6px;
           text-align: left;
         }
 
         th {
-          background-color: var(--color-body-bg);
+          background-color: var(--ps-card);
           font-weight: 600;
         }
       }
@@ -307,10 +307,10 @@
 
       .btn.primary {
         padding: 6px 14px;
-        border-radius: 3px;
-        border: 1px solid var(--color-header);
-        background-color: var(--color-toolbar);
-        color: var(--color-primary-btn-text);
+        border-radius: 2px;
+        border: 1px solid var(--ps-border);
+        background-color: var(--ps-card);
+        color: var(--ps-text);
         cursor: pointer;
         font-size: 13px;
       }
@@ -323,96 +323,94 @@
 ========================= */
 .program-setup-container {
   padding: 16px;
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .program-setup-header .title {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .program-setup-header .actions .btn,
 .btn.primary,
 .btn.secondary {
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 7px 14px;
 }
 
 .program-setup-header .actions .btn.primary,
 .btn.primary {
-  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
   border: 1px solid transparent;
 }
 
 .program-setup-header .actions .btn.secondary,
 .btn.secondary {
-  background: var(--color-nav-item-active-bg);
-  color: var(--color-primary-btn-text);
-  border: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
 }
 
 .program-setup-header .actions .btn:hover,
 .btn.primary:hover,
 .btn.secondary:hover {
-  background: var(--color-nav-item-hover-bg);
+  background: var(--ps-card);
 }
 
 .program-setup-body {
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 14px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
   overflow: hidden;
 }
 
 .left-panel {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 70%, transparent);
-  border-right: 1px solid var(--color-nav-glass-border);
+  background: var(--ps-card);
+  border-right: 1px solid var(--ps-border);
 }
 
 .left-panel .left-panel-title {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .left-panel .section-list li {
-  border-radius: 8px;
-  color: var(--color-primary-btn-text);
+  border-radius: 2px;
+  color: var(--ps-text);
 }
 
 .left-panel .section-list li:hover {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 78%, transparent);
+  background: var(--ps-card);
 }
 
 .left-panel .section-list li.active {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 84%, transparent);
-  color: var(--color-nav-icon-hover);
-  box-shadow: inset 3px 0 0 var(--color-nav-icon-active);
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .right-panel .section-title {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .right-panel .placeholder {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 55%, transparent);
-  border: 1px dashed var(--color-nav-glass-border);
-  color: var(--color-nav-icon-hover);
+  background: var(--ps-card);
+  border: 1px dashed var(--ps-border);
+  color: var(--ps-text);
 }
 
 .right-panel .placeholder.error,
 .save-error,
 .field-error {
-  color: #ffd4de !important;
+  color: var(--ps-text);
 }
 
 .patient-settings-form .form-row label,
 .patient-settings-form .form-row span,
 .custom-fields-section .config-grid-header,
 .custom-fields-section .config-grid-row {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .patient-settings-form .form-row label input[type='text'],
@@ -421,46 +419,46 @@
 .patient-settings-form .form-row label select,
 .modal .modal-form input,
 .modal .modal-form select {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 82%, transparent) !important;
-  color: var(--color-primary-btn-text) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
-  border-radius: 8px;
+  background: var(--ps-card);
+  color: var(--ps-text);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
 }
 
 .patient-settings-form .form-row label input::placeholder,
 .modal .modal-form input::placeholder {
-  color: var(--color-nav-icon-hover) !important;
+  color: var(--ps-text);
 }
 
 .patient-settings-form .form-row label select option,
 .modal .modal-form select option {
-  background: var(--color-card-bg);
-  color: var(--color-text);
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .custom-fields-section .restart-notice {
-  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
-  color: var(--color-primary-btn-text);
-  border-radius: 10px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
+  border-radius: 2px;
 }
 
 .custom-fields-section .config-grid-header,
 .custom-fields-section .config-grid-row {
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+  border-color: var(--ps-border);
 }
 
 .custom-fields-section .btn-link {
-  color: var(--color-nav-icon-hover);
+  color: var(--ps-text);
 }
 
 .modal-backdrop .modal {
-  background: var(--color-nav-glass-tint);
-  border: 1px solid var(--color-nav-glass-border);
-  border-radius: 14px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .modal-backdrop .modal h3,
@@ -468,16 +466,67 @@
 .modal-backdrop .modal label,
 .modal-backdrop .modal th,
 .modal-backdrop .modal td {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .modal-backdrop .modal .modal-table-wrapper table th {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent);
+  background: var(--ps-card);
 }
 
 .modal-backdrop .modal .modal-table-wrapper table th,
 .modal-backdrop .modal .modal-table-wrapper table td {
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent);
+  border-color: var(--ps-border);
 }
 
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
 
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}

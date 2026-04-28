@@ -1,11 +1,12 @@
+/* strict-theme-normalized */
 .interface-data-review {
   padding: 8px;
 }
 
 .top-section, .bottom-section {
   margin-bottom: 16px;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
   padding: 10px;
 }
 
@@ -23,18 +24,18 @@
 
 .table th,
 .table td {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--ps-border);
   padding: 6px 8px;
   text-align: left;
 }
 
 .empty {
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--ps-muted);
 }
 
 .error {
-  color: var(--color-error);
+  color: var(--ps-text);
 }
 
 .import-outcome {
@@ -42,24 +43,24 @@
   padding: 10px 12px;
   font-size: 13px;
   line-height: 1.45;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-card-bg) 92%, #22c55e);
-  border: 1px solid color-mix(in srgb, #22c55e 35%, var(--color-border));
+  border-radius: 2px;
+  background: var(--ps-card);
+  border: var(--ps-border);
 }
 
 .import-outcome--error {
-  background: color-mix(in srgb, var(--color-card-bg) 88%, #f87171);
-  border-color: color-mix(in srgb, #f87171 45%, var(--color-border));
-  color: var(--color-error, #b91c1c);
+  background: var(--ps-card);
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 }
 
 .loading {
-  color: var(--color-text);
+  color: var(--ps-text);
 }
 
 .review-panel {
   margin-top: 12px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--ps-border);
   padding-top: 8px;
 }
 
@@ -81,24 +82,23 @@
 .interface-data-review {
   padding: 16px;
   min-height: calc(100vh - 60px);
-  background: linear-gradient(180deg, var(--color-nav-bg-start), #0f3f5e);
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
 .interface-data-review h2,
 .interface-data-review h3 {
-  color: var(--color-primary-btn-text);
+  color: var(--ps-text);
 }
 
 .top-section,
 .bottom-section,
 .review-panel {
-  background: var(--color-nav-glass-tint) !important;
-  border: 1px solid var(--color-nav-glass-border) !important;
-  border-radius: 14px;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  border-radius: 2px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px var(--color-nav-shell-shadow);
 }
 
 .table,
@@ -107,59 +107,110 @@
 .table tr,
 .table th,
 .table td {
-  background: transparent !important;
-  color: var(--color-primary-btn-text) !important;
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 55%, transparent) !important;
+  background: transparent;
+  color: var(--ps-text);
+  border-color: var(--ps-border);
 }
 
 .table thead th {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 78%, transparent) !important;
-  color: var(--color-nav-icon-hover) !important;
+  background: var(--ps-card);
+  color: var(--ps-text);
 }
 
 .table tbody tr td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 30%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .table tbody tr:hover td {
-  background: color-mix(in srgb, var(--color-nav-item-hover-bg) 62%, transparent) !important;
+  background: var(--ps-card);
 }
 
 .empty,
 .loading {
-  color: var(--color-nav-icon-hover) !important;
+  color: var(--ps-text);
 }
 
 .error {
-  color: #ffd4de !important;
+  color: var(--ps-text);
 }
 
 .review-actions button,
 .header-row button {
-  background: linear-gradient(135deg, var(--color-nav-icon-active), var(--color-link));
-  color: var(--color-primary-btn-text);
+  background: var(--ps-bg);
+  color: var(--ps-text);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 6px 12px;
 }
 
 .review-actions button:hover,
 .header-row button:hover {
-  background: var(--color-nav-item-hover-bg);
+  background: var(--ps-card);
 }
 
 .import-outcome {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 68%, var(--color-nav-icon-active)) !important;
-  border: 1px solid color-mix(in srgb, var(--color-nav-glass-border) 45%, var(--color-nav-icon-active)) !important;
-  color: var(--color-primary-btn-text) !important;
+  background: var(--ps-card);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 14px var(--color-nav-shell-shadow);
 }
 
 .import-outcome--error {
-  background: color-mix(in srgb, var(--color-nav-bg-start) 62%, #fb7185) !important;
-  border-color: color-mix(in srgb, var(--color-nav-glass-border) 40%, #fb7185) !important;
-  color: #ffd4de !important;
+  background: var(--ps-bg);
+  border-color: var(--ps-border);
+  color: var(--ps-text);
 }
 
+/* PS COLOR LAYERING */
+.section-header {
+  background: var(--ps-blue-light);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.section-body {
+  background: var(--ps-bg);
+}
+
+.tab-btn,
+.tab {
+  background: var(--ps-blue-mid);
+}
+
+.tab-btn.active,
+.tab.active {
+  background: var(--ps-card);
+  border-bottom: 2px solid var(--ps-blue);
+}
+
+.menu-item.active,
+.menu-item.is-active {
+  background: var(--ps-blue);
+  border-left: 2px solid var(--ps-card);
+}
+
+table th {
+  background: var(--ps-blue-light);
+}
+
+tr.selected {
+  background: var(--ps-blue-mid);
+}
+
+.btn-save {
+  background: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+}
+
+.btn-delete {
+  background: var(--ps-red);
+  border-color: var(--ps-red);
+  color: var(--color-text-light);
+}
+
+.btn-warning {
+  background: var(--ps-orange);
+  border-color: var(--ps-orange);
+  color: var(--color-text-light);
+}

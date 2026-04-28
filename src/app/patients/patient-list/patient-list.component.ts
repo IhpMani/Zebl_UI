@@ -6,6 +6,8 @@ import { PatientListItem, PatientsApiResponse, PaginationMeta } from '../../core
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { getListCellValue } from '../../core/utils/list-cell-value';
+import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
 @Component({
   selector: 'app-patient-list',
@@ -47,7 +49,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
     { key: 'patID', label: 'Patient ID', visible: true, filterValue: '' },
     { key: 'patAccountNo', label: 'Account No', visible: true, filterValue: '' },
     { key: 'patFullNameCC', label: 'Full Name', visible: true, filterValue: '' },
-    { key: 'patDateTimeCreated', label: 'Date Created', visible: true, filterValue: '' },
+    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
     { key: 'patActive', label: 'Active', visible: true, filterValue: '' },
     { key: 'patPhoneNo', label: 'Phone', visible: true, filterValue: '' },
     { key: 'patTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
@@ -65,7 +67,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
     { key: 'patPriEmail', label: 'Email', visible: false, filterValue: '' },
     { key: 'patBillingPhyFID', label: 'Billing Physician ID', visible: false, filterValue: '' },
     { key: 'patMI', label: 'MI', visible: false, filterValue: '' },
-    { key: 'patDateTimeModified', label: 'Date Modified', visible: false, filterValue: '' },
+    { key: 'modifiedDate', label: 'Date Modified', visible: false, filterValue: '' },
     { key: 'patCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
     { key: 'patLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
     { key: 'patCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
@@ -185,7 +187,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
       .subscribe({
       next: (response: any) => {
         if (response) {
-          const columns = response.data || response;
+          const columns = response.data ?? response.Data ?? response;
           if (Array.isArray(columns) && columns.length > 0) {
             this.availableRelatedColumns = columns;
             // Add related columns that are already selected to the columns array
@@ -360,15 +362,19 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(patient: PatientListItem, key: string): any {
-    const columnDefinition = this.columns.find(c => c.key === key);
-    if (columnDefinition?.isRelatedColumn && patient.additionalColumns) {
-      return patient.additionalColumns[key];
-    }
-    const p = patient as any;
     if (key === 'patAccountNo') {
-      return p.patAccountNo ?? p.PatAccountNo ?? '';
+      const p = patient as any;
+      return p.patAccountNo ?? p.PatAccountNo ?? getListCellValue(patient, key) ?? '';
     }
-    return p[key];
+    return getListCellValue(patient, key);
+  }
+
+  formatDateTimeDisplay(value: unknown): string {
+    return formatApiDateTimeDisplay(value);
+  }
+
+  isDateTimeColumnKey(key: string): boolean {
+    return isApiDateTimeColumnKey(key);
   }
 
   openFilterPopup(columnKey: string, event: MouseEvent): void {

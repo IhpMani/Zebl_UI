@@ -70,14 +70,14 @@
 
     <div class="actions">
       <button
-        class="action-btn btn-primary"
+        class="action-btn btn-primary btn-save"
         [disabled]="saving || rows.length === 0 || !dirtyIds.size"
         (click)="saveAndClose()"
       >
         Save &amp; Close
       </button>
       <button
-        class="action-btn btn-primary"
+        class="action-btn btn-primary btn-save"
         [disabled]="saving || !dirtyIds.size"
         (click)="save()"
       >

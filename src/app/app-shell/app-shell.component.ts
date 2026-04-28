@@ -15,47 +15,56 @@ import { SuperAdminService } from '../super-admin/super-admin.service';
   template: `
     <div class="app-container">
       <div class="api-error-banner" *ngIf="httpBanner">{{ httpBanner }}</div>
+      <div class="app-toast-container" *ngIf="toastVisible">
+        <div class="app-toast">{{ toastMessage }}</div>
+      </div>
       <div class="topbar">
         <div class="topbar-left">
-          <img class="topbar-logo" src="assets/icons/broadbill.png" alt="Broadbill">
+          <span class="topbar-brand" aria-label="BroadBill">
+            <span class="topbar-brand-main">Broad</span><span class="topbar-brand-accent">Bill</span>
+          </span>
         </div>
-        <div class="topbar-center">
+        <div class="topbar-right"></div>
+      </div>
+      <div class="app-layout" [class.app-layout--collapsed]="sidebarCollapsed">
+        <aside class="sidebar">
           <div
-            class="facility-inline"
-            *ngIf="auth.isLoggedIn() && !auth.isSuperAdmin()"
+            class="facility-sidebar"
+            *ngIf="auth.isLoggedIn() && !auth.isSuperAdmin() && !sidebarCollapsed"
           >
-            <span class="facility-label" id="facility-label">Facility</span>
-            <div class="facility-dropdown">
-              <button
-                type="button"
-                class="facility-select-trigger"
-                id="facility-trigger"
-                [class.facility-select-trigger--open]="facilityMenuOpen"
-                [attr.aria-expanded]="facilityMenuOpen"
-                aria-haspopup="listbox"
-                aria-labelledby="facility-label facility-trigger"
-                (click)="toggleFacilityMenu($event)"
-              >
-                <span class="facility-select-label">{{ getSelectedFacilityLabel() }}</span>
-                <span class="facility-select-chevron" aria-hidden="true"></span>
-              </button>
-              <div
-                class="facility-select-panel"
-                *ngIf="facilityMenuOpen"
-                role="listbox"
-                aria-labelledby="facility-label"
-              >
+            <div class="facility-sidebar__top">
+              <div class="facility-dropdown">
                 <button
                   type="button"
-                  *ngFor="let f of facilityOptions"
-                  role="option"
-                  class="facility-option"
-                  [attr.aria-selected]="isFacilitySelected(f.facilityId)"
-                  [class.facility-option--active]="isFacilitySelected(f.facilityId)"
-                  (click)="pickFacility(toFacilityId(f.facilityId))"
+                  class="facility-select-trigger"
+                  id="facility-trigger"
+                  [class.facility-select-trigger--open]="facilityMenuOpen"
+                  [attr.aria-expanded]="facilityMenuOpen"
+                  aria-haspopup="listbox"
+                  aria-label="Facility"
+                  (click)="toggleFacilityMenu($event)"
                 >
-                  {{ f.name }}
+                  <span class="facility-select-label">{{ getSelectedFacilityLabel() }}</span>
+                  <span class="facility-select-chevron" aria-hidden="true"></span>
                 </button>
+                <div
+                  class="facility-select-panel"
+                  *ngIf="facilityMenuOpen"
+                  role="listbox"
+                  aria-label="Facility options"
+                >
+                  <button
+                    type="button"
+                    *ngFor="let f of facilityOptions"
+                    role="option"
+                    class="facility-option"
+                    [attr.aria-selected]="isFacilitySelected(f.facilityId)"
+                    [class.facility-option--active]="isFacilitySelected(f.facilityId)"
+                    (click)="pickFacility(toFacilityId(f.facilityId))"
+                  >
+                    {{ f.name }}
+                  </button>
+                </div>
               </div>
             </div>
             <span class="facility-hint facility-hint--error" *ngIf="facilityLoadError">{{ facilityLoadError }}</span>
@@ -66,33 +75,39 @@ import { SuperAdminService } from '../super-admin/super-admin.service';
               Select facility to use the application.
             </span>
           </div>
-        </div>
-        <div class="user-menu topbar-right" *ngIf="auth.isLoggedIn()">
-          <div class="profile-icon" (click)="toggleMenu()">
-            {{ getInitials() }}
-          </div>
-          <div class="dropdown" *ngIf="showMenu">
-            <div class="menu-item username-display">
-              {{ (auth.userName$ | async) || '' }}
+          <app-ribbon
+            (reviewIncoming)="onReviewIncoming()"
+            (sidebarStateChange)="onSidebarStateChange($event)">
+          </app-ribbon>
+          <div class="sidebar-profile" *ngIf="auth.isLoggedIn()">
+            <div class="user-menu">
+              <div class="profile-icon" (click)="toggleMenu()">
+                <span class="profile-initials">{{ getInitials() }}</span>
+                <span class="profile-name" *ngIf="!sidebarCollapsed">{{ (auth.userName$ | async) || '' }}</span>
+              </div>
+              <div class="dropdown" *ngIf="showMenu">
+                <div class="menu-item username-display">
+                  {{ (auth.userName$ | async) || '' }}
+                </div>
+                <div class="menu-item" *ngIf="auth.getIsAdmin()" (click)="goToUserManagement()">User Management</div>
+                <div class="menu-item" *ngIf="auth.isSuperAdmin()" (click)="goToSuperAdmin()">Super Admin</div>
+                <div class="menu-item" *ngIf="auth.isImpersonating()" (click)="exitTenantView()">Exit tenant view</div>
+                <div class="menu-item" (click)="resetPassword()">Reset Password</div>
+                <div class="menu-item" (click)="logout()">Logout</div>
+              </div>
             </div>
-            <div class="menu-item divider" *ngIf="auth.getIsAdmin()"></div>
-            <div class="menu-item" *ngIf="auth.getIsAdmin()" (click)="goToUserManagement()">User Management</div>
-            <div class="menu-item" *ngIf="auth.isSuperAdmin()" (click)="goToSuperAdmin()">Super Admin</div>
-            <div class="menu-item" *ngIf="auth.isImpersonating()" (click)="exitTenantView()">Exit tenant view</div>
-            <div class="menu-item divider"></div>
-            <div class="menu-item" (click)="resetPassword()">Reset Password</div>
-            <div class="menu-item" (click)="logout()">Logout</div>
           </div>
-        </div>
-        <div class="topbar-right" *ngIf="!auth.isLoggedIn()"></div>
-      </div>
-      <app-ribbon (reviewIncoming)="onReviewIncoming()">
-      </app-ribbon>
-      <app-workspace-tabs *ngIf="auth.isLoggedIn() && !auth.isSuperAdmin()"></app-workspace-tabs>
-      <div class="content-area">
-        <div class="workspace-content">
-          <router-outlet></router-outlet>
-        </div>
+        </aside>
+
+        <main class="main-content">
+          <app-workspace-tabs *ngIf="auth.isLoggedIn() && !auth.isSuperAdmin()"></app-workspace-tabs>
+          <div class="content-container" [class.content-container--flat]="isReceiverLibraryRoute()">
+            <div class="content-heading" *ngIf="showHomeDashboardHeading()">Home Dashboard</div>
+            <div class="workspace-content" [class.workspace-content--flat]="isReceiverLibraryRoute()">
+              <router-outlet></router-outlet>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   `,
@@ -101,15 +116,21 @@ import { SuperAdminService } from '../super-admin/super-admin.service';
 export class AppShellComponent implements OnDestroy, OnInit {
   showMenu = false;
   facilityMenuOpen = false;
+  sidebarCollapsed = false;
+  mobileSidebarOpen = false;
   selectedFacilityId: number | null = null;
   facilityOptions: OperationalFacilityRow[] = [];
   facilityLoadError: string | null = null;
   facilityOptionsLoaded = false;
   httpBanner: string | null = null;
+  toastMessage: string | null = null;
+  toastVisible = false;
 
   private navSub?: Subscription;
   private httpErrSub?: Subscription;
   private facilitiesLoadSub?: Subscription;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly originalAlert = window.alert.bind(window);
 
   constructor(
     public auth: AuthService,
@@ -139,6 +160,7 @@ export class AppShellComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
+    this.installAlertProxy();
     this.httpErrSub = this.httpErrors.message$.subscribe((m) => {
       this.httpBanner = m;
     });
@@ -148,9 +170,34 @@ export class AppShellComponent implements OnDestroy, OnInit {
   }
 
   ngOnDestroy(): void {
+    window.alert = this.originalAlert;
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
     this.navSub?.unsubscribe();
     this.httpErrSub?.unsubscribe();
     this.facilitiesLoadSub?.unsubscribe();
+  }
+
+  private installAlertProxy(): void {
+    window.alert = (message?: unknown): void => {
+      const text = typeof message === 'string' ? message : String(message ?? '');
+      this.showToast(text);
+    };
+  }
+
+  private showToast(message: string): void {
+    this.toastMessage = message;
+    this.toastVisible = true;
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
+    this.toastTimer = setTimeout(() => {
+      this.toastVisible = false;
+      this.toastMessage = null;
+      this.toastTimer = null;
+    }, 1000);
   }
 
   toggleMenu(): void {
@@ -159,6 +206,11 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
   onReviewIncoming(): void {
     void this.router.navigateByUrl('/interface-data-review');
+  }
+
+  onSidebarStateChange(state: { collapsed: boolean; mobileOpen: boolean }): void {
+    this.sidebarCollapsed = state.collapsed;
+    this.mobileSidebarOpen = state.mobileOpen;
   }
 
   onFacilityChange(id: number | null): void {
@@ -254,6 +306,14 @@ export class AppShellComponent implements OnDestroy, OnInit {
   resetPassword(): void {
     this.showMenu = false;
     alert('Reset Password feature - to be implemented');
+  }
+
+  showHomeDashboardHeading(): boolean {
+    return false;
+  }
+
+  isReceiverLibraryRoute(): boolean {
+    return this.router.url.startsWith('/receiver-library');
   }
 
   /** Compare facility ids from API/storage without strict === (avoids string/number mismatch). */
