@@ -162,22 +162,38 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
 
 
 
+  /**
+   * Routes that must NOT require a selected facility on the request.
+   *
+   * Two categories — kept in lock-step with
+   * `FacilityContextValidationMiddleware.OperationalContextWithoutFacility`
+   * on the backend:
+   *
+   *   1. Tenant bootstrap (GET only): `/api/facilities`,
+   *      `/api/integrations/by-facility` — used by the UI to *discover*
+   *      which facility to select.
+   *   2. Globally-scoped resources (any method): entities whose table has
+   *      no TenantId/FacilityId column at all. Currently
+   *      `/api/connections` (ConnectionLibrary). For these, demanding a
+   *      facility on the wire is a schema/policy mismatch.
+   */
   private operationalBootstrapNoFacility(method: string, url: string): boolean {
+    if (this.isGloballyScopedRoute(url)) {
+      return true;
+    }
 
     if (!['GET', 'HEAD'].includes(method.toUpperCase())) {
-
       return false;
-
     }
 
     return (
-
       url.includes('/api/facilities') ||
-
       url.includes('/api/integrations/by-facility')
-
     );
+  }
 
+  private isGloballyScopedRoute(url: string): boolean {
+    return url.includes('/api/connections');
   }
 
 
