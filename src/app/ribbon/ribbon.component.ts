@@ -309,19 +309,39 @@ export class RibbonComponent implements OnInit, OnDestroy {
     const target = event.currentTarget as HTMLElement | null;
     if (!target) return;
 
-    const rect = target.getBoundingClientRect();
-    const top = Math.max(8, rect.top);
-    const left = this.sidebarCollapsed ? 72 : 220;
-
     if (this.sidebarState.activeMenu === menu) {
       this.closeFloatingPanel();
       return;
     }
 
+    const rect = target.getBoundingClientRect();
+    const items = menu === 'find' ? this.findItems : this.libraryItems;
+    const left = this.sidebarCollapsed ? 72 : 220;
+    const top = this.computePanelTop(rect.top, items.length);
+
     this.panelTop = top;
     this.panelLeft = left;
     this.panelTitle = menu === 'find' ? 'Find' : 'Libraries';
     this.sidebarState.setActiveMenu(menu, top);
+  }
+
+  /**
+   * Place the panel so its bottom never exceeds the viewport.
+   * Estimates panel height from item count (matches CSS: ~36px per item + ~28px title + ~16px padding).
+   * The CSS also enforces `max-height: calc(100vh - 16px)` and `overflow-y: auto` as a safety net.
+   */
+  private computePanelTop(triggerTop: number, itemCount: number): number {
+    if (typeof window === 'undefined') return Math.max(8, triggerTop);
+    const estimatedHeight = 28 + 16 + Math.max(1, itemCount) * 36;
+    const maxTop = window.innerHeight - estimatedHeight - 8;
+    return Math.max(8, Math.min(triggerTop, maxTop));
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (!this.activeMenu) return;
+    const items = this.panelItems;
+    this.panelTop = this.computePanelTop(this.panelTop, items.length);
   }
 
   private closeFloatingPanel(): void {

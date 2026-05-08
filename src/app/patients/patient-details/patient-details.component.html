@@ -188,7 +188,7 @@
                 <label>Rendering Provider</label>
                 <select formControlName="patRenderingPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngFor="let phy of renderingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patRenderingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patRenderingPhyFID')" title="Clear">×</button>
@@ -197,7 +197,7 @@
                 <label>Service Facility</label>
                 <select formControlName="patFacilityPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngFor="let phy of facilityProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patFacilityPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patFacilityPhyFID')" title="Clear">×</button>
@@ -206,7 +206,7 @@
                 <label>Referring Provider</label>
                 <select formControlName="patReferringPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngFor="let phy of referringProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patReferringPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patReferringPhyFID')" title="Clear">×</button>
@@ -215,7 +215,7 @@
                 <label>Ordering Provider</label>
                 <select formControlName="patOrderingPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngFor="let phy of orderingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patOrderingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patOrderingPhyFID')" title="Clear">×</button>
@@ -224,7 +224,7 @@
                 <label>Supervising Provider</label>
                 <select formControlName="patSupervisingPhyFID">
                   <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of physicians" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  <option *ngFor="let phy of supervisingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
                 </select>
                 <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patSupervisingPhyFID')" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm" (click)="clearPhysician('patSupervisingPhyFID')" title="Clear">×</button>

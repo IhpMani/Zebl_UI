@@ -18,6 +18,7 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
 import { FacilityService } from '../../core/services/facility.service';
 import { FacilitiesApiService } from '../../core/services/facilities-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
+import { toHtmlDateInputValue } from '../../core/utils/html-date-input';
 
 interface PhysicianOption {
   phyID: number;
@@ -25,6 +26,10 @@ interface PhysicianOption {
   phyName: string;
   phyEntityType: string | null;
   phyType: string | null;
+  phyPrimaryCodeType?: string | null;
+  isFacility?: boolean;
+  isPerson?: boolean;
+  isSystemPlaceholder?: boolean;
 }
 
 @Component({
@@ -47,8 +52,29 @@ export class PatientDetailsComponent implements OnInit {
   showEligibilityResponseViewer = true;
   private eligibilityPollTimer: ReturnType<typeof setInterval> | null = null;
 
+  /**
+   * @deprecated Single shared list — kept only for back-compat with callers
+   * that still iterate `physicians`. New code must use the slot-specific
+   * arrays below (`renderingProviders`, `facilityProviders`, …) which are
+   * loaded with proper backend classification filters.
+   */
   physicians: PhysicianOption[] = [];
+
+  /** Service Facility (PhyPrimaryCodeType=FA, Non-Person). */
+  facilityProviders: PhysicianOption[] = [];
+  /** Billing Provider (PhyPrimaryCodeType=BI, Non-Person preferred). */
   billingProviders: PhysicianOption[] = [];
+  /** Raw backend response for billing providers, before topbar facility scoping. */
+  private billingProvidersRaw: PhysicianOption[] = [];
+  /** Rendering Provider (PhyPrimaryCodeType=RE, Person). */
+  renderingProviders: PhysicianOption[] = [];
+  /** Referring Provider (PhyPrimaryCodeType=RF, Person). */
+  referringProviders: PhysicianOption[] = [];
+  /** Ordering Provider (PhyPrimaryCodeType=OP, Person). */
+  orderingProviders: PhysicianOption[] = [];
+  /** Supervising Provider (PhyPrimaryCodeType=SU, Person). */
+  supervisingProviders: PhysicianOption[] = [];
+
   selectedFacilityId: number | null = null;
   selectedFacilityName: string | null = null;
   payers: Array<{ payID: number; payName: string }> = [];
@@ -340,23 +366,95 @@ export class PatientDetailsComponent implements OnInit {
     });
   }
 
+  /**
+   * Loads the six provider dropdown datasets from the backend, each filtered
+   * by classification at the SQL layer. We make six small (typically <200
+   * row) HTTP calls instead of fetching one 10k-row blob and filtering in
+   * memory. Placeholders are excluded server-side by default.
+   *
+   * Slot mapping (mirrors backend `PhysicianTaxonomy.Classification`):
+   *   * Billing       → BI, Non-Person preferred
+   *   * Rendering     → RE, Person
+   *   * Service Fac.  → FA, Non-Person
+   *   * Referring     → RF, Person
+   *   * Ordering      → OP, Person
+   *   * Supervising   → SU, Person
+   */
   loadPhysicians(): void {
-    this.physicianApi.getPhysicians(1, 10000, { inactive: false }).subscribe({
+    const toOption = (p: any): PhysicianOption => ({
+      phyID: p.phyID,
+      facilityId: p.facilityId,
+      phyName: p.phyFullNameCC || p.phyName || 'Unknown',
+      phyEntityType: p.phyEntityType ?? p.phyType ?? null,
+      phyType: p.phyType ?? null,
+      phyPrimaryCodeType: p.phyPrimaryCodeType ?? null,
+      isFacility: !!p.isFacility,
+      isPerson: !!p.isPerson,
+      isSystemPlaceholder: !!p.isSystemPlaceholder
+    });
+
+    const loadSlot = (
+      filters: Parameters<PhysicianApiService['getPhysicians']>[2],
+      assign: (rows: PhysicianOption[]) => void
+    ) => {
+      this.physicianApi.getPhysicians(1, 500, filters).subscribe({
+        next: (r) => {
+          assign((r.data ?? []).map(toOption));
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          assign([]);
+          this.cdr.markForCheck();
+        }
+      });
+    };
+
+    // Service Facility — only organisations classified as FA.
+    loadSlot(
+      { inactive: false, classification: 'FA', isFacility: true, excludePlaceholders: true },
+      (rows) => { this.facilityProviders = rows; this.refreshBillingProviders(); }
+    );
+
+    // Billing Provider — BI classification, Non-Person preferred.
+    loadSlot(
+      { inactive: false, classification: 'BI', isFacility: true, excludePlaceholders: true },
+      (rows) => { this.billingProvidersRaw = rows; this.refreshBillingProviders(); }
+    );
+
+    // Rendering Provider — RE classification, Person only.
+    loadSlot(
+      { inactive: false, classification: 'RE', isPerson: true, excludePlaceholders: true },
+      (rows) => { this.renderingProviders = rows; }
+    );
+
+    // Referring Provider — RF classification, Person only.
+    loadSlot(
+      { inactive: false, classification: 'RF', isPerson: true, excludePlaceholders: true },
+      (rows) => { this.referringProviders = rows; }
+    );
+
+    // Ordering Provider — OP classification, Person only.
+    loadSlot(
+      { inactive: false, classification: 'OP', isPerson: true, excludePlaceholders: true },
+      (rows) => { this.orderingProviders = rows; }
+    );
+
+    // Supervising Provider — SU classification, Person only.
+    loadSlot(
+      { inactive: false, classification: 'SU', isPerson: true, excludePlaceholders: true },
+      (rows) => { this.supervisingProviders = rows; }
+    );
+
+    // Legacy `physicians` array — keep populated for back-compat with any
+    // remaining call sites (search, picker dialog). Always exclude
+    // placeholders here too.
+    this.physicianApi.getPhysicians(1, 1000, { inactive: false, excludePlaceholders: true }).subscribe({
       next: (r) => {
-        const data = r.data ?? [];
-        this.physicians = data.map(p => ({
-          phyID: p.phyID,
-          facilityId: p.facilityId,
-          phyName: p.phyFullNameCC || p.phyName || 'Unknown',
-          phyEntityType: (p as any).phyEntityType ?? p.phyType ?? null,
-          phyType: (p as any).phyType ?? null
-        }));
-        this.refreshBillingProviders();
+        this.physicians = (r.data ?? []).map(toOption);
         this.cdr.markForCheck();
       },
       error: () => {
         this.physicians = [];
-        this.billingProviders = [];
         this.cdr.markForCheck();
       }
     });
@@ -385,18 +483,33 @@ export class PatientDetailsComponent implements OnInit {
       error: () => {
         this.selectedFacilityName = null;
         this.selectedFacilityId = null;
+        this.billingProvidersRaw = [];
         this.billingProviders = [];
       }
     });
   }
 
+  /**
+   * Restricts the Billing Provider dropdown to the active facility context.
+   * The backend already filters by classification=BI / isFacility=true, so
+   * here we only need to apply the topbar facility scoping (facilityId match
+   * + optional name hint, e.g. "NJ") on top of the BI dataset.
+   */
+  /**
+   * Restricts the Billing Provider dropdown to the active facility context.
+   * The backend already filters by classification=BI / isFacility=true and
+   * caches the unfiltered result in `billingProvidersRaw`. Here we apply
+   * the topbar facility scoping (facilityId match + optional name hint,
+   * e.g. "NJ") on top of that base set.
+   */
   private refreshBillingProviders(): void {
     const selectedFacilityId = this.selectedFacilityId ?? this.facilityService.getFacilityIdOptional();
     const selectedFacilityName = (this.selectedFacilityName ?? '').trim().toLowerCase();
-    const nonPerson = this.physicians.filter(p => p.phyType === 'Non-Person');
-    let filtered = selectedFacilityId && selectedFacilityId > 0
-      ? nonPerson.filter(p => p.facilityId === selectedFacilityId)
-      : [];
+
+    let filtered = this.billingProvidersRaw;
+    if (selectedFacilityId && selectedFacilityId > 0) {
+      filtered = filtered.filter(p => p.facilityId === selectedFacilityId);
+    }
 
     // Enforce topbar facility context by name (e.g., NJ) with no broad fallback.
     if (selectedFacilityName) {
@@ -481,7 +594,8 @@ export class PatientDetailsComponent implements OnInit {
       patCity: p.patCity ?? '',
       patState: p.patState ?? null,
       patZip: p.patZip ?? '',
-      patBirthDate: p.patBirthDate ?? null,
+      // API returns DateTime as ISO (e.g. 1957-01-23T00:00:00); <input type="date"> needs yyyy-MM-dd
+      patBirthDate: toHtmlDateInputValue(p.patBirthDate),
       patSex: p.patSex ?? null,
       patMarried: p.patMarried ?? null,
       patEmployed: p.patEmployed ?? null,
@@ -592,7 +706,14 @@ export class PatientDetailsComponent implements OnInit {
 
   private normalizeInsurance(ins: InsuranceInfo | null | undefined): InsuranceInfo | null {
     if (!ins) return null;
-    return { ...ins, patInsGUID: ins.patInsGUID ?? '', insAcceptAssignment: ins.insAcceptAssignment ?? 0, patInsActive: ins.patInsActive ?? true, patInsLocked: ins.patInsLocked ?? false };
+    return {
+      ...ins,
+      patInsGUID: ins.patInsGUID ?? '',
+      insAcceptAssignment: ins.insAcceptAssignment ?? 0,
+      patInsActive: ins.patInsActive ?? true,
+      patInsLocked: ins.patInsLocked ?? false,
+      insBirthDate: toHtmlDateInputValue(ins.insBirthDate)
+    };
   }
 
   private loadPatientCustomFieldsAndValues(patId: number): void {
@@ -992,7 +1113,7 @@ export class PatientDetailsComponent implements OnInit {
       insMI: ins.insMI,
       planName: ins.insPlanName,
       relationToInsured: ins.patInsRelationToInsured,
-      insBirthDate: ins.insBirthDate || undefined,
+      insBirthDate: toHtmlDateInputValue(ins.insBirthDate) ?? undefined,
       insAddress: ins.insAddress,
       insCity: ins.insCity,
       insState: ins.insState,
@@ -1006,9 +1127,28 @@ export class PatientDetailsComponent implements OnInit {
     return this.insuranceList.map(toUpdate);
   }
 
+  /**
+   * Extracts a human-readable message from a HttpErrorResponse so backend
+   * validation codes (e.g. PROVIDER_KIND_MISMATCH,
+   * PROVIDER_PLACEHOLDER_NOT_SELECTABLE) surface to the user instead of a
+   * generic "Failed to save patient" toast.
+   */
+  private describeBackendError(err: any, fallback: string): string {
+    const body = err?.error;
+    if (body && typeof body === 'object') {
+      const msg = body.message ?? body.Message;
+      const code = body.errorCode ?? body.ErrorCode;
+      if (msg && code) return `${msg} (${code})`;
+      if (msg) return msg;
+      if (code) return `${fallback} (${code})`;
+    }
+    return fallback;
+  }
+
   save(): void {
     if (this.isNewMode) {
       if (this.saving || !this.patient) return;
+      if (!this.assertSlotAssignmentsClientSide()) return;
       this.syncFormToPatient();
       this.saving = true;
       this.cdr.markForCheck();
@@ -1034,12 +1174,13 @@ export class PatientDetailsComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to create patient', err);
-          alert('Failed to create patient');
+          alert(this.describeBackendError(err, 'Failed to create patient'));
         }
       });
       return;
     }
     if (!this.patient || !this.patId || this.saving) return;
+    if (!this.assertSlotAssignmentsClientSide()) return;
     this.syncFormToPatient();
     this.saving = true;
     this.cdr.markForCheck();
@@ -1058,9 +1199,41 @@ export class PatientDetailsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to save patient', err);
-        alert('Failed to save patient');
+        alert(this.describeBackendError(err, 'Failed to save patient'));
       }
     });
+  }
+
+  /**
+   * Phase 9 — front-stop validation that mirrors the backend rules. We never
+   * trust this alone (the API is the source of truth), but it gives the
+   * user immediate feedback before a roundtrip.
+   */
+  private assertSlotAssignmentsClientSide(): boolean {
+    const v = this.patientForm.value;
+    const checks: Array<{ id: number; required: 'Person' | 'Non-Person'; slot: string; pool: PhysicianOption[] }> = [
+      { id: Number(v.patRenderingPhyFID),   required: 'Person',     slot: 'Rendering',       pool: this.renderingProviders },
+      { id: Number(v.patBillingPhyFID),     required: 'Non-Person', slot: 'Billing',         pool: this.billingProvidersRaw },
+      { id: Number(v.patFacilityPhyFID),    required: 'Non-Person', slot: 'Service Facility', pool: this.facilityProviders },
+      { id: Number(v.patReferringPhyFID),   required: 'Person',     slot: 'Referring',       pool: this.referringProviders },
+      { id: Number(v.patOrderingPhyFID),    required: 'Person',     slot: 'Ordering',        pool: this.orderingProviders },
+      { id: Number(v.patSupervisingPhyFID), required: 'Person',     slot: 'Supervising',     pool: this.supervisingProviders },
+    ];
+
+    for (const c of checks) {
+      if (!Number.isFinite(c.id) || c.id <= 0) continue;
+      const found = c.pool.find(p => p.phyID === c.id)
+        ?? this.physicians.find(p => p.phyID === c.id);
+      if (found?.isSystemPlaceholder) {
+        alert(`Cannot assign "${found.phyName}" to ${c.slot}: it is a system placeholder.`);
+        return false;
+      }
+      if (found && found.phyType && found.phyType !== c.required) {
+        alert(`Cannot assign "${found.phyName}" (${found.phyType}) to ${c.slot}: that slot requires ${c.required}.`);
+        return false;
+      }
+    }
+    return true;
   }
 
   saveAndClose(): void {
@@ -1129,7 +1302,7 @@ export class PatientDetailsComponent implements OnInit {
       patMI: p.patMI,
       patAccountNo: p.patAccountNo,
       patActive: p.patActive,
-      patBirthDate: p.patBirthDate,
+      patBirthDate: toHtmlDateInputValue(p.patBirthDate) ?? null,
       patSSN: p.patSSN,
       patSex: p.patSex,
       patAddress: p.patAddress,

@@ -18,6 +18,12 @@ export class SidebarFloatingPanelComponent {
   @Input() title = '';
   @Output() itemSelect = new EventEmitter<string>();
 
+  /** Available vertical space below `top`, leaving an 8px gutter. CSS also caps it. */
+  get maxHeight(): number {
+    if (typeof window === 'undefined') return 600;
+    return Math.max(160, window.innerHeight - this.top - 8);
+  }
+
   onSelect(value: string): void {
     this.itemSelect.emit(value);
   }

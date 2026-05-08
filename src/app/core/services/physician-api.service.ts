@@ -24,6 +24,15 @@ export class PhysicianApiService {
       minPhysicianId?: number;
       maxPhysicianId?: number;
       additionalColumns?: string[];
+      // Phase 3 — slot-specific filters
+      /** 2-letter classification, e.g. 'RE'. Multiple codes may be passed as an array. */
+      classification?: string | string[];
+      /** Restrict to organisation/facility rows (PhyType = Non-Person). */
+      isFacility?: boolean;
+      /** Restrict to human/provider rows (PhyType = Person). */
+      isPerson?: boolean;
+      /** Override automatic placeholder exclusion. Defaults to true when any slot filter is used. */
+      excludePlaceholders?: boolean;
     }
   ): Observable<PhysiciansApiResponse> {
     let params = new HttpParams();
@@ -54,6 +63,23 @@ export class PhysicianApiService {
       }
       if (filters.additionalColumns && filters.additionalColumns.length > 0) {
         params = params.append('additionalColumns', filters.additionalColumns.join(','));
+      }
+      if (filters.classification !== undefined) {
+        const classCsv = Array.isArray(filters.classification)
+          ? filters.classification.join(',')
+          : filters.classification;
+        if (classCsv) {
+          params = params.append('classification', classCsv);
+        }
+      }
+      if (filters.isFacility !== undefined) {
+        params = params.append('isFacility', filters.isFacility.toString());
+      }
+      if (filters.isPerson !== undefined) {
+        params = params.append('isPerson', filters.isPerson.toString());
+      }
+      if (filters.excludePlaceholders !== undefined) {
+        params = params.append('excludePlaceholders', filters.excludePlaceholders.toString());
       }
     }
 

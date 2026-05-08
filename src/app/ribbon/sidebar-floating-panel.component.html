@@ -2,7 +2,8 @@
   class="floating-panel"
   *ngIf="visible"
   [style.left.px]="left"
-  [style.top.px]="top">
+  [style.top.px]="top"
+  [style.maxHeight.px]="maxHeight">
   <div class="floating-panel__title">{{ title }}</div>
   <button
     type="button"

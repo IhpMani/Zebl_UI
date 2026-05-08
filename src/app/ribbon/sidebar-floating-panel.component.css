@@ -1,15 +1,22 @@
 /* strict-theme-normalized */
 .floating-panel {
-  position: absolute;
+  /* fixed positioning keeps the panel anchored to viewport coords from getBoundingClientRect */
+  position: fixed;
   min-width: 248px;
+  max-width: 320px;
   background: #fbfdff;
   border-radius: 16px;
   padding: 8px;
   border: 1px solid #dbe5f2;
+  box-shadow: 0 12px 28px rgba(15, 32, 64, 0.12);
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Never spill outside viewport. Inline [style.maxHeight.px] tightens this further when known. */
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .floating-panel__title {
@@ -19,6 +26,11 @@
   letter-spacing: 0.06em;
   font-weight: 700;
   margin: 4px 8px 8px;
+  position: sticky;
+  top: 0;
+  background: #fbfdff;
+  padding-top: 4px;
+  z-index: 1;
 }
 
 .floating-panel__item {

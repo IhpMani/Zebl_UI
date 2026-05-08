@@ -102,7 +102,9 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    this.physicianApiService.getPhysicians(1, 1000, {})
+    // Always exclude system placeholders from the user-facing library —
+    // they are internal HL7/EDI fallback rows that must never be picked.
+    this.physicianApiService.getPhysicians(1, 1000, { excludePlaceholders: true })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
