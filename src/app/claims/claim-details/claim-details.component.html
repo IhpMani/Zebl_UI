@@ -224,6 +224,8 @@
                     <th>Units</th>
                     <th>Charge</th>
                     <th>Allowed</th>
+                    <th>Paid</th>
+                    <th>Adjustments</th>
                     <th>Balance</th>
                     <th>Actions</th>
                   </tr>
@@ -236,6 +238,8 @@
                     <td><input type="number" [(ngModel)]="line.srvUnits" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td>{{ formatCurrency(line.srvCharges) }}</td>
                     <td>{{ formatCurrency(line.srvAllowedAmt) }}</td>
+                    <td>{{ formatCurrency(line.srvTotalAmtPaidCC) }}</td>
+                    <td>{{ formatCurrency(line.srvTotalAdjCC) }}</td>
                     <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
                     <td>
                       <button class="btn-secondary" type="button" *ngIf="!isEditingServiceLine(line)" (click)="startEditServiceLine(line)" [disabled]="isNewMode">Edit</button>
@@ -245,7 +249,7 @@
                     </td>
                   </tr>
                   <tr *ngIf="serviceLinesArray.length === 0">
-                    <td colspan="8">No service lines.</td>
+                    <td colspan="10">No service lines.</td>
                   </tr>
                 </tbody>
               </table>
@@ -274,6 +278,8 @@
                     <th>Date</th>
                     <th>User</th>
                     <th>Note</th>
+                    <th class="notes-amt">Charge</th>
+                    <th class="notes-amt">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -281,9 +287,11 @@
                     <td>{{ formatDateTime(n.date) }}</td>
                     <td>{{ n.user || '-' }}</td>
                     <td>{{ n.content || '-' }}</td>
+                    <td class="notes-amt">{{ n.totalCharge != null ? formatCurrency(n.totalCharge) : '-' }}</td>
+                    <td class="notes-amt">{{ getNoteBalance(n) != null ? formatCurrency(getNoteBalance(n)!) : '-' }}</td>
                   </tr>
                   <tr *ngIf="getNotesHistory().length === 0">
-                    <td colspan="3">No notes yet.</td>
+                    <td colspan="5">No notes yet.</td>
                   </tr>
                 </tbody>
               </table>

@@ -870,6 +870,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       srvAllowedAmt: 0,
       srvTotalInsAmtPaidTRIG: 0,
       srvTotalPatAmtPaidTRIG: 0,
+      srvTotalAmtPaidCC: 0,
+      srvTotalAdjCC: 0,
       srvTotalBalanceCC: 0,
       // Default Responsible should follow the previous line, otherwise primary payer.
       srvResponsibleParty: defaultResponsibleParty,
@@ -1165,6 +1167,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       srvTotalInsAmtPaidTRIG: line?.srvTotalInsAmtPaidTRIG ?? line?.SrvTotalInsAmtPaidTRIG ?? 0,
       srvTotalPatAmtPaidTRIG: line?.srvTotalPatAmtPaidTRIG ?? line?.SrvTotalPatAmtPaidTRIG ?? 0,
       srvTotalAmtAppliedCC: line?.srvTotalAmtAppliedCC ?? line?.SrvTotalAmtAppliedCC ?? null,
+      srvTotalAmtPaidCC: line?.srvTotalAmtPaidCC ?? line?.SrvTotalAmtPaidCC
+        ?? ((line?.srvTotalInsAmtPaidTRIG ?? line?.SrvTotalInsAmtPaidTRIG ?? 0)
+          + (line?.srvTotalPatAmtPaidTRIG ?? line?.SrvTotalPatAmtPaidTRIG ?? 0)),
+      srvTotalAdjCC: line?.srvTotalAdjCC ?? line?.SrvTotalAdjCC ?? 0,
       srvTotalBalanceCC: line?.srvTotalBalanceCC ?? line?.SrvTotalBalanceCC ?? 0,
       srvResponsibleParty,
       responsiblePartyName,
@@ -1522,6 +1528,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       insuranceBalance: a.insuranceBalance ?? null,
       patientBalance: a.patientBalance ?? null
     })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  /**
+   * Combined balance shown next to each note row: insurance balance + patient balance
+   * captured on the audit row at the time the note was written. Returns null when both
+   * sides are unknown so the UI can render a dash instead of "$0.00".
+   */
+  getNoteBalance(n: { insuranceBalance?: number | null; patientBalance?: number | null }): number | null {
+    const ins = n?.insuranceBalance;
+    const pat = n?.patientBalance;
+    if (ins == null && pat == null) return null;
+    return (Number(ins) || 0) + (Number(pat) || 0);
   }
 
   toggleNotes(): void {

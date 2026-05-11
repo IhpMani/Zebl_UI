@@ -517,6 +517,15 @@ button:disabled {
   overflow-x: auto;
 }
 
+/* Money columns inside the Notes / Audit table right-align so values line up vertically. */
+.notes-history-table th.notes-amt,
+.notes-history-table td.notes-amt {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  min-width: 90px;
+}
+
 .dialog-overlay {
   position: fixed;
   inset: 0;
