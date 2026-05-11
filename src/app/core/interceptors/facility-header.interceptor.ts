@@ -193,7 +193,7 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
   }
 
   private isGloballyScopedRoute(url: string): boolean {
-    return url.includes('/api/connections');
+    return url.includes('/api/connections') || url.includes('/api/debug');
   }
 
 
