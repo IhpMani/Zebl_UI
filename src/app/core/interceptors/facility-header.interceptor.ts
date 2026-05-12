@@ -172,10 +172,13 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
    *   1. Tenant bootstrap (GET only): `/api/facilities`,
    *      `/api/integrations/by-facility` — used by the UI to *discover*
    *      which facility to select.
-   *   2. Globally-scoped resources (any method): entities whose table has
-   *      no TenantId/FacilityId column at all. Currently
-   *      `/api/connections` (ConnectionLibrary). For these, demanding a
-   *      facility on the wire is a schema/policy mismatch.
+   *   2. `/api/debug` (developer diagnostic endpoint, not in prod).
+   *
+   * SECURITY (2026-05-12): `/api/connections` was previously exempt on the
+   * assumption that ConnectionLibrary was a globally-scoped table. The schema
+   * has been migrated to tenant + facility scoping, so the bypass is removed —
+   * every connection-library request now sends `X-Facility-Id` like every other
+   * tenant-scoped resource.
    */
   private operationalBootstrapNoFacility(method: string, url: string): boolean {
     if (this.isGloballyScopedRoute(url)) {
@@ -193,7 +196,7 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
   }
 
   private isGloballyScopedRoute(url: string): boolean {
-    return url.includes('/api/connections') || url.includes('/api/debug');
+    return url.includes('/api/debug');
   }
 
 

@@ -36,6 +36,12 @@ export class ConnectionLibraryDetailComponent implements OnInit {
       this.currentId = idParam;
     }
 
+    // SECURITY: always start from a fresh form so a stale `loadedUsername` from a
+    // previous tenant's connection can never leak into the "new connection" flow if a
+    // user switches tenants without reloading the SPA. The backend will reject any
+    // cross-tenant id with 404 (see ConnectionLibraryRepository), but defense-in-depth
+    // here also prevents flashed-in stale form values in the UI.
+    this.loadedUsername = '';
     this.buildForm();
 
     if (this.currentId) {
@@ -114,7 +120,15 @@ export class ConnectionLibraryDetailComponent implements OnInit {
         }, 0);
       },
       error: (err) => {
-        this.error = err?.message || 'Failed to load connection library';
+        // SECURITY: when the API returns 404 (cross-tenant access blocked or row
+        // genuinely missing), the form MUST stay empty. Wipe any prior loaded
+        // credentials so the next render shows a blank detail panel, never a
+        // partial / stale connection.
+        this.loadedUsername = '';
+        this.buildForm();
+        this.error = err?.status === 404
+          ? 'Connection not found.'
+          : (err?.message || 'Failed to load connection library');
         this.loading = false;
       }
     });
