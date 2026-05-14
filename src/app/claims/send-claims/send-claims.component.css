@@ -169,6 +169,9 @@
 
 .status.error {
   color: #b42318;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .status.success {

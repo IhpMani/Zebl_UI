@@ -19,6 +19,51 @@ function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * HTTP 409 from POST /api/claims/send-batch is used for two cases:
+ * (1) All selected claims blocked by send eligibility — body is SendBatchResponseDto
+ *     with `blockedClaims` (often no top-level `message`).
+ * (2) BATCH_CONFLICT / BATCH_CONCURRENCY — body is ErrorResponseDto with `message`.
+ */
+function formatSendBatchHttpError(err: unknown): string {
+  const e = err as {
+    error?: {
+      message?: string;
+      errorCode?: string;
+      blockedClaims?: Array<{ claimId?: number; reason?: string; ruleCode?: string }>;
+      batchId?: string;
+    };
+  };
+  const body = e?.error;
+  if (!body) {
+    return 'Batch send failed (no details). Check Network tab for response body.';
+  }
+
+  if (body.errorCode) {
+    const parts = [body.errorCode];
+    if (body.message) parts.push(body.message);
+    return parts.join(': ');
+  }
+
+  const blocked = body.blockedClaims;
+  if (Array.isArray(blocked) && blocked.length > 0) {
+    const lines = blocked.map((b) => {
+      const id = b.claimId != null ? `Claim ${b.claimId}` : 'Claim';
+      const code = b.ruleCode ? ` [${b.ruleCode}]` : '';
+      const reason = b.reason || 'Blocked';
+      return `${id}${code}: ${reason}`;
+    });
+    const batch = body.batchId ? ` Batch id: ${body.batchId}.` : '';
+    return `Cannot send — all selected claims were blocked.${batch}\n${lines.join('\n')}`;
+  }
+
+  if (body.message) {
+    return body.message;
+  }
+
+  return 'Batch send failed. Inspect the send-batch response in the Network tab.';
+}
+
 @Component({
   selector: 'app-send-claims',
   templateUrl: './send-claims.component.html',
@@ -413,8 +458,7 @@ export class SendClaimsComponent implements OnInit {
           }
         },
         error: (err) => {
-          const message = err?.error?.message || 'Batch send failed.';
-          this.error = message;
+          this.error = formatSendBatchHttpError(err);
           this.sending = false;
         }
       });

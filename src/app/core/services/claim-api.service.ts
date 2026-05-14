@@ -406,12 +406,16 @@ export class ClaimApiService {
     filePath?: string | null;
     submittedCount?: number;
     failedClaims?: Array<{ claimId: number; errorMessage: string }>;
-    blockedClaims?: Array<{ claimId: number; reason: string }>;
+    blockedClaims?: Array<{ claimId: number; reason: string; ruleCode?: string }>;
   }> {
+    // Log the same fields sent in the POST body (connectionLibraryId is required for
+    // Clearinghouse — omitting it from logs made 409 debugging look like the id was dropped).
     console.log('[SendBatch][API] POST /api/claims/send-batch payload', {
       claimIds: body.claimIds,
       submitterReceiverId: body.submitterReceiverId,
-      connectionType: body.connectionType
+      connectionType: body.connectionType,
+      connectionLibraryId: body.connectionLibraryId,
+      forceResubmit: body.forceResubmit
     });
     return this.http.post<{
       success?: boolean;
@@ -422,7 +426,7 @@ export class ClaimApiService {
       filePath?: string | null;
       submittedCount?: number;
       failedClaims?: Array<{ claimId: number; errorMessage: string }>;
-      blockedClaims?: Array<{ claimId: number; reason: string }>;
+      blockedClaims?: Array<{ claimId: number; reason: string; ruleCode?: string }>;
     }>(
       `${this.baseUrl}/send-batch`,
       body
