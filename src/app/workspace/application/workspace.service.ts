@@ -71,9 +71,34 @@ export class WorkspaceService {
     }
 
     const state = this.stateSubject.value;
-    const existing = state.tabs.find((t) => this.isSameTarget(t, route, params));
+    const existing = this.findExistingTabForNavigation(route, params ?? {});
 
     if (existing) {
+      const isConnectionLibrary = this.isConnectionLibraryPath(route);
+
+      if (isConnectionLibrary) {
+        // One workspace tab for the whole Connection Library module (list + any :id / new).
+        const nextTabs = state.tabs.map((t) =>
+          t.id === existing.id
+            ? {
+                ...t,
+                route,
+                params: params ?? {},
+                title,
+                tabType: tabType || t.tabType,
+                isActive: true
+              }
+            : { ...t, isActive: false }
+        );
+        this.commit({ tabs: nextTabs, activeTabId: existing.id });
+        if (this.isHandlingNavigation) {
+          // Route already applied; only sync tab chrome.
+          return this.getTabById(existing.id)!;
+        }
+        this.activateTab(existing.id);
+        return this.getTabById(existing.id)!;
+      }
+
       // If caller provides a more specific tab type, apply it (title/dup logic stays route+params based)
       if (tabType && existing.tabType !== tabType) {
         const nextTabs = state.tabs.map((t) =>
@@ -280,6 +305,20 @@ export class WorkspaceService {
     if (prev) return prev.id;
     const next = tabs[idx + 1];
     return next?.id ?? null;
+  }
+
+  /** Connection Library uses child routes; keep a single workspace tab for the whole module. */
+  private isConnectionLibraryPath(path: string): boolean {
+    const n = path && path.startsWith('/') ? path : `/${path ?? ''}`;
+    return n === '/connection-library' || n.startsWith('/connection-library/');
+  }
+
+  private findExistingTabForNavigation(route: string, params: Record<string, unknown>): WorkspaceTab | undefined {
+    const state = this.stateSubject.value;
+    if (this.isConnectionLibraryPath(route)) {
+      return state.tabs.find((t) => this.isConnectionLibraryPath(t.route));
+    }
+    return state.tabs.find((t) => this.isSameTarget(t, route, params));
   }
 
   private normalizeRestored(tabs: WorkspaceTab[], activeTabId: string | null): WorkspaceState {

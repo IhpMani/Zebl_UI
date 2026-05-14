@@ -90,6 +90,31 @@ function formatSendBatchBody(body: Record<string, unknown>): string {
     return msg;
   }
 
+  const failedRaw = pick<unknown[]>(body, 'failedClaims', 'FailedClaims');
+  if (Array.isArray(failedRaw) && failedRaw.length > 0) {
+    const lines = failedRaw.map((row) => {
+      if (!row || typeof row !== 'object') return 'Claim: failed';
+      const r = row as Record<string, unknown>;
+      const claimId = pick<number | string>(r, 'claimId', 'ClaimId');
+      const id = claimId != null && `${claimId}`.length > 0 ? `Claim ${claimId}` : 'Claim';
+      const errMsg = pick<string>(r, 'errorMessage', 'ErrorMessage') || 'Failed';
+      return `${id}: ${errMsg}`;
+    });
+    const batchId = pick<string>(body, 'batchId', 'BatchId');
+    const total = pick<number | string>(body, 'total', 'Total');
+    const failureCount = pick<number | string>(body, 'failureCount', 'FailureCount');
+    const successCount = pick<number | string>(body, 'successCount', 'SuccessCount');
+    const batch = batchId ? ` Batch id: ${batchId}.` : '';
+    const sc = successCount != null ? Number(successCount) : undefined;
+    const fc = failureCount != null ? Number(failureCount) : failedRaw.length;
+    const tot = total != null ? Number(total) : undefined;
+    const counts =
+      sc !== undefined || fc > 0 || tot !== undefined
+        ? ` (${sc ?? 0} sent, ${fc} failed${tot !== undefined ? ` of ${tot}` : ''}).`
+        : '.';
+    return `Batch send did not complete successfully.${batch}${counts}\n${lines.join('\n')}`;
+  }
+
   if (message) {
     return message;
   }
@@ -155,10 +180,13 @@ export class SendClaimsComponent implements OnInit {
     this.receiverLibraryApi.getAll().subscribe({
       next: (response) => {
         this.submitterReceivers = response?.data ?? [];
+        this.applyDefaultSubmitterReceiverSelection();
         this.loadingSubmitterReceivers = false;
       },
       error: () => {
         this.error = 'Failed to load submitter/receiver options.';
+        this.submitterReceivers = [];
+        this.selectedSubmitterReceiverId = null;
         this.loadingSubmitterReceivers = false;
       }
     });
@@ -171,10 +199,12 @@ export class SendClaimsComponent implements OnInit {
         this.connections = (rows ?? []).filter(
           (c) => c?.isActive && (c.connectionType === ConnectionType.Sftp || c.connectionType === undefined)
         );
+        this.applyDefaultConnectionSelection();
         this.loadingConnections = false;
       },
       error: () => {
         this.connections = [];
+        this.selectedConnectionLibraryId = null;
         this.loadingConnections = false;
       }
     });
@@ -182,6 +212,32 @@ export class SendClaimsComponent implements OnInit {
 
   onConnectionChange(value: string): void {
     this.selectedConnectionLibraryId = value || null;
+  }
+
+  /** When nothing is selected or the selection is gone, pick the first connection (e.g. only one SFTP row). */
+  private applyDefaultConnectionSelection(): void {
+    if (this.connections.length === 0) {
+      this.selectedConnectionLibraryId = null;
+      return;
+    }
+    const current = this.selectedConnectionLibraryId;
+    const stillValid = current != null && current !== '' && this.connections.some((c) => c.id === current);
+    if (!stillValid) {
+      this.selectedConnectionLibraryId = this.connections[0].id;
+    }
+  }
+
+  /** When nothing is selected or the selection is gone, pick the first submitter/receiver library row. */
+  private applyDefaultSubmitterReceiverSelection(): void {
+    if (this.submitterReceivers.length === 0) {
+      this.selectedSubmitterReceiverId = null;
+      return;
+    }
+    const current = this.selectedSubmitterReceiverId;
+    const stillValid = current != null && current !== '' && this.submitterReceivers.some((r) => r.id === current);
+    if (!stillValid) {
+      this.selectedSubmitterReceiverId = this.submitterReceivers[0].id;
+    }
   }
 
   onSubmitterReceiverChange(value: string): void {
@@ -449,6 +505,26 @@ export class SendClaimsComponent implements OnInit {
       .sendBatch(sendBatchPayload)
       .subscribe({
         next: (res) => {
+          if (res.success === false) {
+            this.success = null;
+            this.error = formatSendBatchBody(res as unknown as Record<string, unknown>);
+            this.sending = false;
+            if (this.gridSource === 'batch') {
+              this.claimApi.getBatchById(res.batchId).subscribe({
+                next: (detail) => {
+                  this.claims = this.mapBatchItemsToClaimRows(detail);
+                  this.lastBatchDetail = detail;
+                },
+                error: () => {
+                  this.reloadGrid();
+                }
+              });
+            } else {
+              this.reloadGrid();
+            }
+            return;
+          }
+
           const total = res.total ?? claimIds.length;
           const successCount = res.successCount ?? res.submittedCount ?? 0;
           const failureCount = res.failureCount ?? 0;
