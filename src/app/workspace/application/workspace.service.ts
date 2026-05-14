@@ -74,10 +74,11 @@ export class WorkspaceService {
     const existing = this.findExistingTabForNavigation(route, params ?? {});
 
     if (existing) {
-      const isConnectionLibrary = this.isConnectionLibraryPath(route);
+      const reuseSingleTabForLibrary =
+        this.isConnectionLibraryPath(route) || this.isPayerLibraryPath(route);
 
-      if (isConnectionLibrary) {
-        // One workspace tab for the whole Connection Library module (list + any :id / new).
+      if (reuseSingleTabForLibrary) {
+        // One workspace tab for Connection Library or Payer Library (list + any :id / new).
         const nextTabs = state.tabs.map((t) =>
           t.id === existing.id
             ? {
@@ -313,10 +314,19 @@ export class WorkspaceService {
     return n === '/connection-library' || n.startsWith('/connection-library/');
   }
 
+  /** Payer Library uses the same single-tab pattern as Connection Library (list + :id / new). */
+  private isPayerLibraryPath(path: string): boolean {
+    const n = path && path.startsWith('/') ? path : `/${path ?? ''}`;
+    return n === '/payer-library' || n.startsWith('/payer-library/');
+  }
+
   private findExistingTabForNavigation(route: string, params: Record<string, unknown>): WorkspaceTab | undefined {
     const state = this.stateSubject.value;
     if (this.isConnectionLibraryPath(route)) {
       return state.tabs.find((t) => this.isConnectionLibraryPath(t.route));
+    }
+    if (this.isPayerLibraryPath(route)) {
+      return state.tabs.find((t) => this.isPayerLibraryPath(t.route));
     }
     return state.tabs.find((t) => this.isSameTarget(t, route, params));
   }
@@ -389,6 +399,18 @@ export class WorkspaceService {
     if (first === 'claims' && segs.length >= 2) return 'Loading...';
     if (first === 'patients' && segs.length >= 2) return 'Loading...';
     if (first === 'payments' && segs[1] === 'entry' && segs.length >= 3) return 'Loading...';
+
+    if (first === 'connection-library' && segs.length >= 2) {
+      const leaf = segs[1] ?? '';
+      if (leaf === 'new') return 'Connection Library — New';
+      return 'Connection Library';
+    }
+
+    if (first === 'payer-library' && segs.length >= 2) {
+      const leaf = segs[1] ?? '';
+      if (leaf === 'new') return 'Payer Library — New';
+      return 'Payer Library';
+    }
 
     const last = segs.at(-1) ?? 'Tab';
     return last.charAt(0).toUpperCase() + last.slice(1);

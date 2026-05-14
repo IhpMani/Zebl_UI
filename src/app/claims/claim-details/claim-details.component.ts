@@ -213,9 +213,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       )
       .subscribe((e) => {
         if (!this.claId || this.claId <= 0) return;
-        if (this.loading || this.claimRequestInFlight) return;
         const url = e.urlAfterRedirects || '';
         if (!this.isUrlForThisClaim(url)) return;
+        // Ribbon context is global; re-apply when this claim tab becomes active again (route reuse / workspace tabs).
+        this.syncRibbonContextFromClaim();
+        if (this.loading || this.claimRequestInFlight) return;
         this.refreshServiceLinesFromApi();
       });
   }
@@ -413,6 +415,13 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return new RegExp(`/claims/${this.claId}(?:[/?#]|$)`).test(url);
   }
 
+  /** Ribbon uses a single global context; keep it in sync with whichever claim route is active. */
+  private syncRibbonContextFromClaim(): void {
+    if (!this.claId || !this.claim) return;
+    const patId = this.claim.patient?.patID ?? null;
+    this.ribbonContext.setContext({ claimId: this.claId, patientId: patId });
+  }
+
   /**
    * Merge GET /api/services/claims/{id} rows over embedded claim lines so totals stay current
    * while preserving fields not returned by the services endpoint (e.g. responsiblePartyName, place).
@@ -594,14 +603,16 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           if (!this.claim.additionalData) {
             this.claim.additionalData = this.getEmptyAdditionalData();
           }
-          const patId = claim.patient?.patID;
-          this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
-          const title = this.toFullName(
-            claim.patient?.patFirstName,
-            claim.patient?.patLastName,
-            claim.patient?.patFullNameCC
-          );
-          if (title) this.workspace.updateActiveTabTitle(title);
+          if (this.isUrlForThisClaim(this.router.url)) {
+            const patId = claim.patient?.patID;
+            this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
+            const title = this.toFullName(
+              claim.patient?.patFirstName,
+              claim.patient?.patLastName,
+              claim.patient?.patFullNameCC
+            );
+            if (title) this.workspace.updateActiveTabTitle(title);
+          }
           this.ensureCurrentStatusInOptions();
           this.ensureCurrentClassificationInOptions();
           this.ensureCurrentPhysiciansInOptions();

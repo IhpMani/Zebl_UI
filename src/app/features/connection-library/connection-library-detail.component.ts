@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConnectionLibraryService } from './connection-library.service';
 import { ConnectionLibraryDto, ConnectionType, CreateConnectionLibraryCommand, UpdateConnectionLibraryCommand } from '../../core/services/connection-library-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-connection-library-detail',
@@ -24,7 +25,8 @@ export class ConnectionLibraryDetailComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private service: ConnectionLibraryService
+    private service: ConnectionLibraryService,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
@@ -47,6 +49,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
     if (this.currentId) {
       this.loadConnection(this.currentId);
     } else {
+      this.workspace.updateActiveTabTitle('Connection Library — New');
       // New entry: ensure credentials stay empty (defeat browser autofill)
       setTimeout(() => {
         this.form.get('username')?.setValue('', { emitEvent: false });
@@ -118,6 +121,10 @@ export class ConnectionLibraryDetailComponent implements OnInit {
         setTimeout(() => {
           this.form.get('password')?.setValue('', { emitEvent: false });
         }, 0);
+        const displayName = (connection.name ?? '').trim();
+        this.workspace.updateActiveTabTitle(
+          displayName.length > 0 ? displayName : 'Connection Library'
+        );
       },
       error: (err) => {
         // SECURITY: when the API returns 404 (cross-tenant access blocked or row
@@ -130,6 +137,7 @@ export class ConnectionLibraryDetailComponent implements OnInit {
           ? 'Connection not found.'
           : (err?.message || 'Failed to load connection library');
         this.loading = false;
+        this.workspace.updateActiveTabTitle('Connection Library');
       }
     });
   }

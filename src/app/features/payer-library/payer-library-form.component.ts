@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { PayerApiService } from '../../core/services/payer-api.service';
 import { PayerDetailDto } from '../../core/services/payer.models';
 import { ListApiService, ListValueDto } from '../../core/services/list-api.service';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
 
 @Component({
   selector: 'app-payer-library-form',
@@ -26,7 +27,8 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private payerApi: PayerApiService,
-    private listApi: ListApiService
+    private listApi: ListApiService,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
@@ -39,6 +41,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       if (idParam === 'new') {
         this.isNew = true;
         this.currentId = null;
+        this.workspace.updateActiveTabTitle('Payer Library — New');
         this.form.reset({
           paySubmissionMethod: 'Paper',
           payClaimType: 'Professional',
@@ -64,6 +67,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       } else {
         this.isNew = true;
         this.currentId = null;
+        this.workspace.updateActiveTabTitle('Payer Library — New');
         this.setPayerIdValidator();
       }
     });
@@ -168,6 +172,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
         if (!p) {
           this.error = 'Payer not found.';
           this.loading = false;
+          this.workspace.updateActiveTabTitle('Payer Library');
           return;
         }
         this.form.patchValue({
@@ -205,6 +210,10 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
         });
         this.setPayerIdValidator();
         this.loading = false;
+        const displayName = (p.payName ?? '').trim();
+        this.workspace.updateActiveTabTitle(
+          displayName.length > 0 ? displayName : 'Payer Library'
+        );
       },
       error: (err) => {
         const status = err?.status;
@@ -218,6 +227,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
           this.error = err?.error?.message || err?.message || 'Failed to load payer';
         }
         this.loading = false;
+        this.workspace.updateActiveTabTitle('Payer Library');
       }
     });
   }
