@@ -104,6 +104,10 @@
         <input type="checkbox" [(ngModel)]="exportAsZip" [disabled]="sending" />
         Export as a Zip File
       </label>
+      <label class="force-resubmit-label" title="Overrides the server rule that blocks claims submitted or exported in the last 5 minutes.">
+        <input type="checkbox" [(ngModel)]="forceResubmit" [disabled]="sending" />
+        Force resubmit (ignore 5-minute guard)
+      </label>
       <label class="claims-that-are-label">Claims that are:</label>
       <label>
         <input type="radio" name="claimFilter" [(ngModel)]="claimFilter" (ngModelChange)="onClaimFilterChange()" value="RTS" [disabled]="sending || loading" />

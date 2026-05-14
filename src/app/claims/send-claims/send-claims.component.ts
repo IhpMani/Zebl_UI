@@ -25,43 +25,76 @@ function downloadBlob(blob: Blob, filename: string): void {
  *     with `blockedClaims` (often no top-level `message`).
  * (2) BATCH_CONFLICT / BATCH_CONCURRENCY — body is ErrorResponseDto with `message`.
  */
+function pick<T>(obj: Record<string, unknown> | undefined, camel: string, pascal: string): T | undefined {
+  if (!obj) return undefined;
+  const c = obj[camel];
+  if (c !== undefined && c !== null) return c as T;
+  const p = obj[pascal];
+  if (p !== undefined && p !== null) return p as T;
+  return undefined;
+}
+
 function formatSendBatchHttpError(err: unknown): string {
-  const e = err as {
-    error?: {
-      message?: string;
-      errorCode?: string;
-      blockedClaims?: Array<{ claimId?: number; reason?: string; ruleCode?: string }>;
-      batchId?: string;
-    };
-  };
-  const body = e?.error;
-  if (!body) {
-    return 'Batch send failed (no details). Check Network tab for response body.';
+  const httpErr = err as { error?: unknown; message?: string };
+  const raw = httpErr?.error;
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      return formatSendBatchBody(parsed);
+    } catch {
+      return raw || httpErr?.message || 'Batch send failed.';
+    }
   }
 
-  if (body.errorCode) {
-    const parts = [body.errorCode];
-    if (body.message) parts.push(body.message);
+  if (raw && typeof raw === 'object') {
+    return formatSendBatchBody(raw as Record<string, unknown>);
+  }
+
+  return httpErr?.message || 'Batch send failed (no response body). Open Network → send-batch → Response.';
+}
+
+function formatSendBatchBody(body: Record<string, unknown>): string {
+  const errorCode = pick<string>(body, 'errorCode', 'ErrorCode');
+  const message = pick<string>(body, 'message', 'Message');
+  if (errorCode) {
+    const parts = [errorCode];
+    if (message) parts.push(message);
     return parts.join(': ');
   }
 
-  const blocked = body.blockedClaims;
-  if (Array.isArray(blocked) && blocked.length > 0) {
-    const lines = blocked.map((b) => {
-      const id = b.claimId != null ? `Claim ${b.claimId}` : 'Claim';
-      const code = b.ruleCode ? ` [${b.ruleCode}]` : '';
-      const reason = b.reason || 'Blocked';
+  const blockedRaw = pick<unknown[]>(body, 'blockedClaims', 'BlockedClaims');
+  if (Array.isArray(blockedRaw) && blockedRaw.length > 0) {
+    const lines = blockedRaw.map((row) => {
+      if (!row || typeof row !== 'object') return 'Claim: blocked';
+      const r = row as Record<string, unknown>;
+      const claimId = pick<number | string>(r, 'claimId', 'ClaimId');
+      const id = claimId != null && `${claimId}`.length > 0 ? `Claim ${claimId}` : 'Claim';
+      const ruleCode = pick<string>(r, 'ruleCode', 'RuleCode');
+      const reason = pick<string>(r, 'reason', 'Reason') || 'Blocked';
+      const code = ruleCode ? ` [${ruleCode}]` : '';
       return `${id}${code}: ${reason}`;
     });
-    const batch = body.batchId ? ` Batch id: ${body.batchId}.` : '';
-    return `Cannot send — all selected claims were blocked.${batch}\n${lines.join('\n')}`;
+    const batchId = pick<string>(body, 'batchId', 'BatchId');
+    const batch = batchId ? ` Batch id: ${batchId}.` : '';
+    let msg = `Cannot send — all selected claims were blocked.${batch}\n${lines.join('\n')}`;
+    const needsForce = blockedRaw.some((row) => {
+      if (!row || typeof row !== 'object') return false;
+      const code = pick<string>(row as Record<string, unknown>, 'ruleCode', 'RuleCode');
+      return code === 'ALREADY_SUBMITTED_OR_RECENTLY_EXPORTED';
+    });
+    if (needsForce) {
+      msg +=
+        '\n\nTip: enable "Force resubmit" in the right-hand Batch workflow panel, then send again.';
+    }
+    return msg;
   }
 
-  if (body.message) {
-    return body.message;
+  if (message) {
+    return message;
   }
 
-  return 'Batch send failed. Inspect the send-batch response in the Network tab.';
+  return 'Batch send failed. Open DevTools → Network → failed send-batch → Response tab for JSON details.';
 }
 
 @Component({
@@ -85,6 +118,8 @@ export class SendClaimsComponent implements OnInit {
 
   claimFilter: SendClaimsClaimFilter = 'RTS';
   exportAsZip = false;
+  /** When true, API skips "already submitted / exported in last 5 minutes" guard. */
+  forceResubmit = false;
 
   /** Claims loaded from sendable / list filters vs a previous batch. */
   gridSource: 'filter' | 'batch' = 'filter';
@@ -406,7 +441,8 @@ export class SendClaimsComponent implements OnInit {
       claimIds,
       submitterReceiverId: this.selectedSubmitterReceiverId,
       connectionType: 'Clearinghouse',
-      connectionLibraryId: this.selectedConnectionLibraryId
+      connectionLibraryId: this.selectedConnectionLibraryId,
+      forceResubmit: this.forceResubmit
     };
     console.log('[SendBatch][UI] button click -> POST /api/claims/send-batch', sendBatchPayload);
     this.claimApi
