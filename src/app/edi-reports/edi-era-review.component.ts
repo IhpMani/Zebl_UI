@@ -108,7 +108,26 @@ export class EdiEraReviewComponent implements OnInit {
         },
         error: (err) => {
           this.loading = false;
-          this.error = err?.error?.error || err?.message || 'Failed to load ERA review';
+          const body = err?.error;
+          const code = body?.errorCode as string | undefined;
+          const msg =
+            body?.message ||
+            body?.error ||
+            (typeof body === 'string' ? body : null) ||
+            err?.message ||
+            'Failed to load ERA review';
+          if (code === 'ReportNotFound') {
+            this.error = 'This EDI report was not found for your tenant. It may have been deleted or you may need to switch facility.';
+          } else if (code === 'NotAn835') {
+            this.error = `${msg} Open the file from EDI Reports using Quick View, or re-download the remittance as an 835.`;
+          } else if (code === 'FileUnavailable') {
+            this.error = 'ERA file bytes are missing from storage. Re-download the report or contact support.';
+          } else if (err?.status === 404) {
+            this.error =
+              'ERA review endpoint returned 404. Deploy the latest API (GET /api/edi-reports/{id}/review) and run database migrations, then try again.';
+          } else {
+            this.error = msg;
+          }
         }
       });
   }
