@@ -20,6 +20,7 @@ import { UserManagementComponent } from './admin/user-management/user-management
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { EdiEraReviewComponent } from './edi-reports/edi-era-review.component';
 import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions.component';
 import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
 import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
@@ -60,6 +61,7 @@ const routes: Routes = [
   { path: 'disbursements/find-disbursement', component: DisbursementListComponent, canActivate: [AuthGuard] },
   { path: 'claim-notes/find-claim-note', component: ClaimNoteListComponent, canActivate: [AuthGuard] },
   { path: 'edi-reports', component: EdiReportsComponent, canActivate: [AuthGuard] },
+  { path: 'edi-reports/:id/review', component: EdiEraReviewComponent, canActivate: [AuthGuard] },
   { path: 'interface-data-review', component: InterfaceDataReviewComponent, canActivate: [AuthGuard] },
   { path: 'procedure-codes', component: ProcedureCodesPageComponent, canActivate: [AuthGuard] },
   { path: 'lists', loadChildren: () => import('./lists/lists.module').then(m => m.ListsModule) },

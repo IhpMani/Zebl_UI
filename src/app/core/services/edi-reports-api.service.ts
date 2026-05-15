@@ -26,6 +26,127 @@ export interface EdiApplyResponseDto {
   correlationId?: string;
 }
 
+export interface Era835ReviewMatchingDto {
+  matchedClaimId?: number | null;
+  matchedServiceLineId?: number | null;
+  matchingStrategy: string;
+  unmatchedReason?: string | null;
+  creditsNote?: string | null;
+}
+
+export interface Era835ReviewCasDto {
+  groupCode?: string | null;
+  reasonCode?: string | null;
+  amount?: number | null;
+}
+
+export interface Era835ReviewLineRowDto {
+  lineKey: string;
+  claimExternalId: string;
+  lineIndexInClaim: number;
+  status: string;
+  statusCategory: string;
+  matchedClaimId?: number | null;
+  claimInvoiceNumber?: string | null;
+  claimStatus?: string | null;
+  patientName?: string | null;
+  procedureCode: string;
+  procedureCompositeRaw?: string | null;
+  serviceDate?: string | null;
+  chargeAmount?: number | null;
+  paidAmount: number;
+  remainingInsuranceBalance?: number | null;
+  coAmount?: number | null;
+  oaAmount?: number | null;
+  piAmount?: number | null;
+  prAmount?: number | null;
+  adjustmentCodes: string;
+  traceNumber: string;
+  payerId835: string;
+  autoApplyStatus: string;
+  matchingConfidence: string;
+  appliedTimestampUtc?: string | null;
+  claimPaymentId?: number | null;
+  insuranceAppliedAmount?: number | null;
+  patientResponsibilityPosted?: number | null;
+  matching: Era835ReviewMatchingDto;
+  lineCas: Era835ReviewCasDto[];
+  remarkCodes: string[];
+}
+
+export interface Era835ReviewClaimContextDto {
+  claimExternalId: string;
+  matchedClaimId?: number | null;
+  claimInvoiceNumber?: string | null;
+  claimStatus835?: string | null;
+  patientName?: string | null;
+  totalClaimCharge835?: number | null;
+  claimPayment835?: number | null;
+  patientResponsibility835?: number | null;
+  claimLevelCas: Era835ReviewCasDto[];
+  serviceLines: {
+    lineIndex: number;
+    procedureCompositeRaw?: string | null;
+    procedureCodeNormalized: string;
+    serviceDate?: string | null;
+    chargeAmount?: number | null;
+    paidAmount?: number | null;
+    cas: Era835ReviewCasDto[];
+  }[];
+}
+
+export interface Era835ReviewAdjustmentPanelRowDto {
+  key: string;
+  groupCode?: string | null;
+  reasonCode?: string | null;
+  description?: string | null;
+  totalAmount: number;
+  adjustmentType: string;
+  applyIgnoreToggle: boolean;
+}
+
+export interface Era835ReviewResponseDto {
+  report: {
+    id: string;
+    fileName: string;
+    fileType: string;
+    status: string;
+    traceNumber?: string | null;
+    createdAt: string;
+    receivedAt?: string | null;
+  };
+  summary: {
+    payerName835?: string | null;
+    payerId835?: string | null;
+    matchedInternalPayerId?: number | null;
+    matchedInternalPayerName?: string | null;
+    paymentMethodCode?: string | null;
+    paymentMethodDescription?: string | null;
+    traceNumber: string;
+    paymentDateUtc?: string | null;
+    totalPaymentAmount?: number | null;
+    totalAppliedAmount: number;
+    totalAdjustmentAmount: number;
+    unmatchedLineCount: number;
+    appliedLineCount: number;
+    duplicateLineCount: number;
+    reversalLineCount: number;
+  };
+  lines: Era835ReviewLineRowDto[];
+  claimContexts: Era835ReviewClaimContextDto[];
+  adjustmentPanel: Era835ReviewAdjustmentPanelRowDto[];
+  reconciliation: {
+    bpr02?: number | null;
+    sumClpClaimPayments: number;
+    sumFlattenedLinePaid: number;
+    sumInsuranceAppliedFromRows: number;
+    sumPatientResponsibility835: number;
+  };
+  totalLines: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface EdiReportDto {
   id: string;
   receiverLibraryId?: string;
@@ -111,5 +232,38 @@ export class EdiReportsApiService {
 
   apply(reportId: string): Observable<EdiApplyResponseDto> {
     return this.http.post<EdiApplyResponseDto>(`${this.baseUrl}/${reportId}/apply`, {});
+  }
+
+  get835Review(
+    reportId: string,
+    opts?: {
+      refresh?: boolean;
+      page?: number;
+      pageSize?: number;
+      unmatchedOnly?: boolean;
+      appliedOnly?: boolean;
+      duplicatesOnly?: boolean;
+      reversalsOnly?: boolean;
+      payer?: string;
+      claimId?: string;
+      cpt?: string;
+      dos?: string;
+      adjustmentCode?: string;
+    }
+  ): Observable<Era835ReviewResponseDto> {
+    const p: Record<string, string> = {};
+    if (opts?.refresh) p['refresh'] = 'true';
+    if (opts?.page != null) p['page'] = String(opts.page);
+    if (opts?.pageSize != null) p['pageSize'] = String(opts.pageSize);
+    if (opts?.unmatchedOnly) p['unmatchedOnly'] = 'true';
+    if (opts?.appliedOnly) p['appliedOnly'] = 'true';
+    if (opts?.duplicatesOnly) p['duplicatesOnly'] = 'true';
+    if (opts?.reversalsOnly) p['reversalsOnly'] = 'true';
+    if (opts?.payer?.trim()) p['payer'] = opts.payer.trim();
+    if (opts?.claimId?.trim()) p['claimId'] = opts.claimId.trim();
+    if (opts?.cpt?.trim()) p['cpt'] = opts.cpt.trim();
+    if (opts?.dos?.trim()) p['dos'] = opts.dos.trim();
+    if (opts?.adjustmentCode?.trim()) p['adjustmentCode'] = opts.adjustmentCode.trim();
+    return this.http.get<Era835ReviewResponseDto>(`${this.baseUrl}/${reportId}/review`, { params: p });
   }
 }

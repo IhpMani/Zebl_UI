@@ -29,6 +29,7 @@ import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { FacilityHeaderInterceptor } from './core/interceptors/facility-header.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
+import { EdiEraReviewComponent } from './edi-reports/edi-era-review.component';
 import { EraExceptionsComponent } from './features/era-exceptions/era-exceptions.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { ProcedureCodesPageComponent } from './procedure-codes/procedure-codes-page.component';
@@ -71,6 +72,7 @@ import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.comp
     UserManagementComponent,
     InterfaceDataReviewComponent,
     EdiReportsComponent,
+    EdiEraReviewComponent,
     EraExceptionsComponent,
     ProcedureCodesPageComponent,
     ColumnChooserDialogComponent,

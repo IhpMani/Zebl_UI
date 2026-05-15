@@ -1,4 +1,5 @@
 import { Component, OnInit, HostListener } from '@angular/core';
+import { Router } from '@angular/router';
 import { EdiReportsApiService, EdiReportDto } from '../core/services/edi-reports-api.service';
 import { ConnectionLibraryApiService } from '../core/services/connection-library-api.service';
 import { ReceiverLibraryApiService, ReceiverLibraryDto } from '../core/services/receiver-library-api.service';
@@ -46,7 +47,8 @@ export class EdiReportsComponent implements OnInit {
     private connectionApi: ConnectionLibraryApiService,
     private receiverApi: ReceiverLibraryApiService,
     private ediReportCountService: EdiReportCountService,
-    private workspace: WorkspaceService
+    private workspace: WorkspaceService,
+    private router: Router
   ) {}
 
   @HostListener('document:click') closeCheckAllMenu(): void {
@@ -317,6 +319,10 @@ export class EdiReportsComponent implements OnInit {
   openFullViewer(r: EdiReportDto): void {
     this.selectedReport = r;
     this.quickViewMessage = null;
+    if ((r.fileType || '').toLowerCase() === '835') {
+      void this.router.navigate(['/edi-reports', r.id, 'review']);
+      return;
+    }
     this.ediApi.getContent(r.id, false).subscribe({
       next: (content) => {
         this.previewContent = content;

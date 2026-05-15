@@ -412,6 +412,10 @@ export class WorkspaceService {
       return 'Payer Library';
     }
 
+    if (first === 'edi-reports' && segs.length >= 3 && segs[2] === 'review') {
+      return 'ERA Payment Review';
+    }
+
     const last = segs.at(-1) ?? 'Tab';
     return last.charAt(0).toUpperCase() + last.slice(1);
   }

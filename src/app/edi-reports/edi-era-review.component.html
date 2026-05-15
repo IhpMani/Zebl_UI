@@ -1,0 +1,325 @@
+<p *ngIf="loading && !data" class="era-review__loading">Loading ERA review…</p>
+
+<div class="era-review" *ngIf="data as d">
+  <header class="era-review__header">
+    <div class="era-review__title">
+      <h1>EDI Payment Review</h1>
+      <p class="era-review__subtitle">{{ d.report.fileName }} · {{ d.report.status }}</p>
+    </div>
+    <div class="era-review__actions">
+      <button type="button" class="btn btn-primary" (click)="applyPayments()" [disabled]="applying || d.report.fileType !== '835'">
+        Apply Payments and Adjustments
+      </button>
+      <button type="button" class="btn btn-secondary" disabled title="No standalone reprocess endpoint; use Apply with a fresh ERA.">Reprocess</button>
+      <button type="button" class="btn btn-secondary" disabled title="Reversals are applied when a correction ERA is processed through Apply.">Reverse Payment</button>
+      <button type="button" class="btn btn-secondary" (click)="exportEra()">Export ERA Details</button>
+      <button type="button" class="btn btn-secondary" (click)="viewRawEdi()">View Raw EDI</button>
+      <button type="button" class="btn btn-outline" (click)="loadReview(true)" [disabled]="loading">Refresh parse</button>
+      <button type="button" class="btn btn-outline" (click)="close()">Close</button>
+    </div>
+  </header>
+
+  <div *ngIf="error" class="era-review__banner era-review__banner--error">{{ error }}</div>
+  <div *ngIf="info" class="era-review__banner era-review__banner--info">{{ info }}</div>
+
+  <section class="era-review__summary">
+    <div class="summary-card">
+      <div class="summary-card__label">835 payer</div>
+      <div class="summary-card__value">{{ d.summary.payerName835 || '—' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Payer ID (835)</div>
+      <div class="summary-card__value">{{ d.summary.payerId835 || '—' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Matched payer (internal)</div>
+      <div class="summary-card__value">
+        <ng-container *ngIf="d.summary.matchedInternalPayerName; else noPayer">{{ d.summary.matchedInternalPayerName }}</ng-container>
+        <ng-template #noPayer>—</ng-template>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Payment method</div>
+      <div class="summary-card__value">{{ d.summary.paymentMethodDescription || d.summary.paymentMethodCode || '—' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Trace / EFT ref</div>
+      <div class="summary-card__value">{{ d.summary.traceNumber || '—' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Payment date</div>
+      <div class="summary-card__value">{{ formatDate(d.summary.paymentDateUtc) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Total payment (BPR02)</div>
+      <div class="summary-card__value">{{ formatMoney(d.summary.totalPaymentAmount) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Total applied (insurance)</div>
+      <div class="summary-card__value">{{ formatMoney(d.summary.totalAppliedAmount) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Total adjustments (stored)</div>
+      <div class="summary-card__value">{{ formatMoney(d.summary.totalAdjustmentAmount) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Unmatched / applied lines</div>
+      <div class="summary-card__value">{{ d.summary.unmatchedLineCount }} / {{ d.summary.appliedLineCount }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card__label">Duplicates / reversals</div>
+      <div class="summary-card__value">{{ d.summary.duplicateLineCount }} / {{ d.summary.reversalLineCount }}</div>
+    </div>
+  </section>
+
+  <section class="era-review__filters">
+    <label><input type="checkbox" [(ngModel)]="filterUnmatched" /> Unmatched only</label>
+    <label><input type="checkbox" [(ngModel)]="filterApplied" /> Applied only</label>
+    <label><input type="checkbox" [(ngModel)]="filterDuplicates" /> Duplicates</label>
+    <label><input type="checkbox" [(ngModel)]="filterReversals" /> Reversals</label>
+    <input type="text" [(ngModel)]="filterPayer" placeholder="Payer id / name" class="era-input" />
+    <input type="text" [(ngModel)]="filterClaimId" placeholder="Claim id" class="era-input" />
+    <input type="text" [(ngModel)]="filterCpt" placeholder="CPT" class="era-input" />
+    <input type="text" [(ngModel)]="filterDos" placeholder="DOS" class="era-input" />
+    <input type="text" [(ngModel)]="filterAdj" placeholder="Adj code" class="era-input" />
+    <button type="button" class="btn btn-primary" (click)="applyFilters()">Apply filters</button>
+  </section>
+
+  <p *ngIf="loading" class="era-inline-loading">Refreshing…</p>
+
+  <section #tableScroll class="era-review__table-wrap">
+    <table class="era-grid">
+      <thead>
+        <tr>
+          <th class="col-expand"></th>
+          <th>Status</th>
+          <th>Claim ID</th>
+          <th>Invoice #</th>
+          <th>Claim status</th>
+          <th>Patient</th>
+          <th>CPT</th>
+          <th>DOS</th>
+          <th>Charge</th>
+          <th>Paid</th>
+          <th>Ins balance</th>
+          <th>CO</th>
+          <th>PR</th>
+          <th>OA</th>
+          <th>PI</th>
+          <th>Adj codes</th>
+          <th>Trace</th>
+          <th>Auto apply</th>
+          <th>Confidence</th>
+          <th>Applied at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let row of d.lines">
+          <tr
+            [class.era-grid__row--selected]="selectedLine?.lineKey === row.lineKey"
+            (click)="selectLine(row)"
+          >
+            <td class="col-expand">
+              <button
+                type="button"
+                class="btn-expand"
+                *ngIf="row.lineIndexInClaim === 0"
+                (click)="toggleClaimExpand(row.claimExternalId); $event.stopPropagation()"
+                [attr.aria-expanded]="isClaimExpanded(row.claimExternalId)"
+              >
+                {{ isClaimExpanded(row.claimExternalId) ? '▼' : '▶' }}
+              </button>
+            </td>
+            <td><span [class]="statusClass(row)">{{ row.status }}</span></td>
+            <td class="era-claim-cell" (click)="$event.stopPropagation()">
+              <ng-container *ngIf="row.matchedClaimId as cid; else noMatchClaim">
+                <a
+                  class="era-claim-link"
+                  [routerLink]="['/claims', cid]"
+                  [href]="claimHref(cid)"
+                  (click)="onClaimNavClick($event)"
+                  [title]="'Open claim ' + cid"
+                  >{{ cid }}</a>
+                <span class="muted"> ({{ row.claimExternalId }})</span>
+              </ng-container>
+              <ng-template #noMatchClaim>
+                <span class="era-claim-link--disabled" title="No matched claim">{{ row.matchedClaimId ?? '—' }}</span>
+                <span class="muted" *ngIf="row.claimExternalId"> ({{ row.claimExternalId }})</span>
+              </ng-template>
+            </td>
+            <td class="era-claim-cell" (click)="$event.stopPropagation()">
+              <ng-container *ngIf="row.matchedClaimId as cidInv; else noMatchInv">
+                <a
+                  class="era-claim-link"
+                  [routerLink]="['/claims', cidInv]"
+                  [href]="claimHref(cidInv)"
+                  (click)="onClaimNavClick($event)"
+                  [title]="'Open claim ' + cidInv"
+                  >{{ row.claimInvoiceNumber || '—' }}</a>
+              </ng-container>
+              <ng-template #noMatchInv>
+                <span class="era-claim-link--disabled" title="No matched claim">{{ row.claimInvoiceNumber || '—' }}</span>
+              </ng-template>
+            </td>
+            <td>{{ row.claimStatus || '—' }}</td>
+            <td class="era-claim-cell" (click)="$event.stopPropagation()">
+              <ng-container *ngIf="row.matchedClaimId as cidPat">
+                <a
+                  *ngIf="row.patientName"
+                  class="era-claim-link"
+                  [routerLink]="['/claims', cidPat]"
+                  [href]="claimHref(cidPat)"
+                  (click)="onClaimNavClick($event)"
+                  [title]="'Open claim ' + cidPat"
+                  >{{ row.patientName }}</a>
+                <span *ngIf="!row.patientName">—</span>
+              </ng-container>
+              <ng-container *ngIf="!row.matchedClaimId">
+                <span class="era-claim-link--disabled" title="No matched claim">{{ row.patientName || '—' }}</span>
+              </ng-container>
+            </td>
+            <td>{{ row.procedureCode || '—' }}</td>
+            <td>{{ row.serviceDate || '—' }}</td>
+            <td class="num">{{ formatMoney(row.chargeAmount) }}</td>
+            <td class="num">{{ formatMoney(row.paidAmount) }}</td>
+            <td class="num">{{ formatMoney(row.remainingInsuranceBalance) }}</td>
+            <td class="num">{{ formatMoney(row.coAmount) }}</td>
+            <td class="num">{{ formatMoney(row.prAmount) }}</td>
+            <td class="num">{{ formatMoney(row.oaAmount) }}</td>
+            <td class="num">{{ formatMoney(row.piAmount) }}</td>
+            <td class="adj">{{ row.adjustmentCodes || '—' }}</td>
+            <td class="muted">{{ row.traceNumber }}</td>
+            <td>{{ row.autoApplyStatus }}</td>
+            <td>{{ row.matchingConfidence }}</td>
+            <td>{{ formatDate(row.appliedTimestampUtc) }}</td>
+          </tr>
+          <tr *ngIf="isClaimExpanded(row.claimExternalId) && row.lineIndexInClaim === 0" class="era-grid__expand">
+            <td colspan="20">
+              <div class="expand-inner" *ngIf="claimContext(row.claimExternalId) as ctx">
+                <h4>
+                  Claim {{ ctx.claimExternalId }} — SVC &amp; CAS
+                  <span *ngIf="ctx.matchedClaimId as mx" class="expand-claim-link-wrap">
+                    <a
+                      class="era-claim-link"
+                      [routerLink]="['/claims', mx]"
+                      [href]="claimHref(mx)"
+                      (click)="onClaimNavClick($event)"
+                      >Open claim {{ mx }}</a>
+                  </span>
+                </h4>
+                <table class="era-subgrid">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Procedure</th>
+                      <th>DOS</th>
+                      <th>Charge</th>
+                      <th>Paid</th>
+                      <th>CAS (group / reason / amt)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let s of ctx.serviceLines">
+                      <td>{{ s.lineIndex }}</td>
+                      <td>{{ s.procedureCodeNormalized }} <span class="muted" *ngIf="s.procedureCompositeRaw">{{ s.procedureCompositeRaw }}</span></td>
+                      <td>{{ s.serviceDate || '—' }}</td>
+                      <td class="num">{{ formatMoney(s.chargeAmount) }}</td>
+                      <td class="num">{{ formatMoney(s.paidAmount) }}</td>
+                      <td>
+                        <span *ngFor="let c of s.cas; let last = last">
+                          {{ c.groupCode }}-{{ c.reasonCode }} {{ formatMoney(c.amount) }}<span *ngIf="!last">; </span>
+                        </span>
+                        <span *ngIf="!s.cas?.length">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div *ngIf="ctx.claimLevelCas?.length" class="claim-cas">
+                  <strong>Claim-level CAS:</strong>
+                  <span *ngFor="let c of ctx.claimLevelCas; let last = last">
+                    {{ c.groupCode }}-{{ c.reasonCode }} {{ formatMoney(c.amount) }}<span *ngIf="!last">; </span>
+                  </span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+    <div class="era-review__pager">
+      <button type="button" class="btn btn-secondary" (click)="prevPage()" [disabled]="page <= 1">Previous</button>
+      <span>Page {{ page }} / {{ totalPages }} ({{ d.totalLines }} lines)</span>
+      <button type="button" class="btn btn-secondary" (click)="nextPage()" [disabled]="page >= totalPages">Next</button>
+    </div>
+  </section>
+
+  <section class="era-review__adj" *ngIf="d.adjustmentPanel?.length">
+    <h2>Adjustments (grouped)</h2>
+    <table class="era-grid era-grid--compact">
+      <thead>
+        <tr>
+          <th>Group</th>
+          <th>Reason</th>
+          <th>Description</th>
+          <th class="num">Total</th>
+          <th>Type</th>
+          <th>Apply / ignore</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of d.adjustmentPanel">
+          <td>{{ a.groupCode }}</td>
+          <td>{{ a.reasonCode }}</td>
+          <td>{{ a.description }}</td>
+          <td class="num">{{ formatMoney(a.totalAmount) }}</td>
+          <td>{{ a.adjustmentType }}</td>
+          <td>
+            <label class="toggle">
+              <input type="checkbox" [checked]="isAdjIgnored(a.key)" (change)="toggleAdjIgnore(a.key)" />
+              Ignore
+            </label>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="era-review__matching" *ngIf="selectedLine as sl">
+    <h2>Matching details (selected line)</h2>
+    <dl class="match-dl">
+      <dt>Matched claim id</dt>
+      <dd>{{ sl.matching.matchedClaimId ?? '—' }}</dd>
+      <dt>Matched service line id</dt>
+      <dd>{{ sl.matching.matchedServiceLineId ?? '—' }}</dd>
+      <dt>Strategy</dt>
+      <dd>{{ sl.matching.matchingStrategy }}</dd>
+      <dt>Unmatched reason</dt>
+      <dd>{{ sl.matching.unmatchedReason || '—' }}</dd>
+      <dt>Insurance applied / PR (posted)</dt>
+      <dd>{{ formatMoney(sl.insuranceAppliedAmount) }} / {{ formatMoney(sl.patientResponsibilityPosted) }}</dd>
+      <dt>Claim payment id</dt>
+      <dd>{{ sl.claimPaymentId ?? '—' }}</dd>
+      <dt *ngIf="sl.matching.creditsNote">Credits</dt>
+      <dd *ngIf="sl.matching.creditsNote">{{ sl.matching.creditsNote }}</dd>
+    </dl>
+  </section>
+
+  <section class="era-review__recon" *ngIf="d.reconciliation">
+    <h2>Reconciliation</h2>
+    <p class="recon-line">
+      BPR02: {{ formatMoney(d.reconciliation.bpr02) }} · Sum CLP payments: {{ formatMoney(d.reconciliation.sumClpClaimPayments) }} · Sum line paid (flattened):
+      {{ formatMoney(d.reconciliation.sumFlattenedLinePaid) }} · Sum insurance applied (ClaimPayment rows): {{ formatMoney(d.reconciliation.sumInsuranceAppliedFromRows) }} · Sum PR (flattened lines):
+      {{ formatMoney(d.reconciliation.sumPatientResponsibility835) }}
+    </p>
+  </section>
+</div>
+
+<div class="modal-overlay" *ngIf="rawEdiOpen" (click)="closeRaw()">
+  <div class="modal modal--wide" (click)="$event.stopPropagation()">
+    <header class="modal__head">
+      <h3>Raw EDI</h3>
+      <button type="button" class="btn btn-outline" (click)="closeRaw()">Close</button>
+    </header>
+    <pre class="raw-pre">{{ rawEdiText || 'Loading…' }}</pre>
+  </div>
+</div>
