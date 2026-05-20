@@ -4,7 +4,7 @@
   <div class="top-section">
     <div class="header-row">
       <h3>Incoming / Pending Files</h3>
-      <button (click)="onImportClick()">Import...</button>
+      <button type="button" class="btn btn-primary" (click)="onImportClick()">Import File</button>
       <input #fileInput type="file" accept=".hl7" class="u-hidden" (change)="onFileSelected($event)" />
     </div>
 
@@ -35,20 +35,62 @@
     <!-- Review Summary block (pre-import counts) -->
     <div class="review-panel" *ngIf="review">
       <h3>Review Details</h3>
-      <div class="review-grid">
-        <div><strong>File Name:</strong> {{ review.fileName }}</div>
-        <div><strong>Interface:</strong> {{ review.interfaceName }}</div>
-        <div><strong>New Patients:</strong> {{ review.newPatientsCount }}</div>
-        <div><strong>Updated Patients:</strong> {{ review.updatedPatientsCount }}</div>
-        <div><strong>Duplicate Patients:</strong> {{ review.duplicatePatientsCount }}</div>
-        <div><strong>Duplicate Claims:</strong> {{ review.duplicateClaimsCount ?? 0 }}</div>
-        <div><strong>New Claims:</strong> {{ review.newClaimsCount }}</div>
-        <div><strong>Total Amount:</strong> {{ review.totalAmount | currency }}</div>
+
+      <div class="review-body">
+        <section class="review-group review-group--source">
+          <h4 class="review-group__title">Source file</h4>
+          <dl class="review-meta">
+            <div class="review-meta__row">
+              <dt>File name</dt>
+              <dd>{{ review.fileName }}</dd>
+            </div>
+            <div class="review-meta__row">
+              <dt>Interface</dt>
+              <dd>{{ review.interfaceName }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="review-group">
+          <h4 class="review-group__title">Patients</h4>
+          <div class="review-stats">
+            <div class="review-stat">
+              <span class="review-stat__value">{{ review.newPatientsCount }}</span>
+              <span class="review-stat__label">New</span>
+            </div>
+            <div class="review-stat">
+              <span class="review-stat__value">{{ review.updatedPatientsCount }}</span>
+              <span class="review-stat__label">Updated</span>
+            </div>
+            <div class="review-stat review-stat--muted">
+              <span class="review-stat__value">{{ review.duplicatePatientsCount }}</span>
+              <span class="review-stat__label">Duplicates</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="review-group">
+          <h4 class="review-group__title">Claims</h4>
+          <div class="review-stats">
+            <div class="review-stat">
+              <span class="review-stat__value">{{ review.newClaimsCount }}</span>
+              <span class="review-stat__label">New</span>
+            </div>
+            <div class="review-stat review-stat--muted">
+              <span class="review-stat__value">{{ review.duplicateClaimsCount ?? 0 }}</span>
+              <span class="review-stat__label">Duplicates</span>
+            </div>
+            <div class="review-stat review-stat--total">
+              <span class="review-stat__value">{{ review.totalAmount | currency }}</span>
+              <span class="review-stat__label">Total amount</span>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div class="review-actions">
-        <button (click)="onConfirmImport()" [disabled]="reviewing || importing">OK / Import</button>
-        <button (click)="onCancelReview()" [disabled]="reviewing || importing">Cancel</button>
+        <button type="button" class="btn btn-primary btn-save" (click)="onConfirmImport()" [disabled]="reviewing || importing">OK / Import</button>
+        <button type="button" class="btn btn-secondary" (click)="onCancelReview()" [disabled]="reviewing || importing">Cancel</button>
       </div>
     </div>
   </div>
@@ -88,4 +130,3 @@
     </table>
   </div>
 </div>
-

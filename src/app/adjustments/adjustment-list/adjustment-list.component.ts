@@ -525,4 +525,12 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
       this.removeRelatedColumn(columnKey);
     }
   }
+
+  getCurrencyTone(amount: unknown): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return 'money-neutral';
+    if (n > 0) return 'money-positive';
+    if (n < 0) return 'money-negative';
+    return 'money-zero';
+  }
 }

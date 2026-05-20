@@ -14,7 +14,7 @@
     <div class="toolbar-right">
       <button type="button" class="btn btn-primary" (click)="openSelected()" [disabled]="!singleSelected">Open</button>
       <button type="button" class="btn btn-primary" (click)="applySelected()" [disabled]="applying || !singleSelected || singleSelected.fileType !== '835'">Apply</button>
-      <button type="button" class="btn btn-save" (click)="saveNotesSelected()" [disabled]="!singleSelected">Save</button>
+      <button type="button" class="btn btn-primary btn-save" (click)="saveNotesSelected()" [disabled]="!singleSelected">Save</button>
       <button type="button" class="btn btn-secondary" (click)="exportSelected()" [disabled]="!singleSelected">Export</button>
     </div>
   </div>
@@ -174,7 +174,7 @@
         <textarea [(ngModel)]="noteEditText" class="form-input" rows="4" maxlength="255"></textarea>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-primary" (click)="saveNote()" [disabled]="noteSaving">Save Notes</button>
+        <button type="button" class="btn btn-primary btn-save" (click)="saveNote()" [disabled]="noteSaving">Save Notes</button>
         <button type="button" class="btn btn-secondary" (click)="cancelNoteEdit()">Cancel</button>
       </div>
     </div>

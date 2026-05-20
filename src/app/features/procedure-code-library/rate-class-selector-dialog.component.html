@@ -1,52 +1,58 @@
-<div class="dialog-overlay" (click)="cancel.emit()">
-  <div class="dialog" (click)="$event.stopPropagation()">
-    <div class="dialog-header">
-      <h3>Rate Class</h3>
-    </div>
+<div class="import-modal-overlay" (click)="cancel.emit()" role="presentation">
+  <div class="import-modal import-modal--wide" role="dialog" aria-labelledby="rate-class-import-title" (click)="$event.stopPropagation()">
+    <header class="import-modal__header">
+      <h2 id="rate-class-import-title" class="import-modal__title">{{ dialogTitle }}</h2>
+      <button type="button" class="import-modal__close" (click)="cancel.emit()" aria-label="Close">&times;</button>
+    </header>
 
-    <div class="dialog-body">
-      <div class="row">
-        <label>Procedure Code File</label>
-        <div class="file-row">
+    <div class="import-modal__body">
+      <p class="import-modal__hint" *ngIf="importFileLabel">
+        Choose the procedure code file and rate class settings, then click <strong>OK</strong> to import.
+      </p>
+
+      <div class="import-modal__row">
+        <label class="import-modal__row-label">Procedure file</label>
+        <div class="import-modal__file-row">
           <input
             type="text"
-            [(ngModel)]="model.procedureCodeFile"
+            class="import-modal__file-display"
+            [value]="model.procedureCodeFile || ''"
+            placeholder="No file selected"
             readonly
             (click)="browseProcedureFile.emit()"
           />
-          <button type="button" class="btn-small" (click)="browseProcedureFile.emit()">...</button>
+          <button type="button" class="import-modal__btn-browse" (click)="browseProcedureFile.emit()">Browse…</button>
         </div>
       </div>
 
-      <div class="row">
-        <label>Rate Class</label>
+      <div class="import-modal__row">
+        <label class="import-modal__row-label">Rate class</label>
         <select [(ngModel)]="model.rateClass">
-          <option [ngValue]="null">--</option>
+          <option [ngValue]="null">— Select —</option>
           <option *ngFor="let rc of rateClassOptions" [ngValue]="rc">{{ rc }}</option>
         </select>
       </div>
 
-      <div class="row">
-        <label>Billing Physician</label>
+      <div class="import-modal__row">
+        <label class="import-modal__row-label">Billing physician</label>
         <select [(ngModel)]="model.billingPhysicianId">
-          <option [ngValue]="null">--</option>
+          <option [ngValue]="null">— Select —</option>
           <option *ngFor="let phy of physicianOptions" [ngValue]="phy.value">{{ phy.label }}</option>
         </select>
       </div>
 
-      <div class="row">
-        <label>Payer</label>
+      <div class="import-modal__row">
+        <label class="import-modal__row-label">Payer</label>
         <select [(ngModel)]="model.payerId">
-          <option [ngValue]="null">--</option>
+          <option [ngValue]="null">— Select —</option>
           <option *ngFor="let p of payerOptions" [ngValue]="p.value">{{ p.label }}</option>
         </select>
       </div>
     </div>
 
-    <div class="dialog-footer">
-      <button type="button" class="btn" (click)="cancel.emit()">Cancel</button>
-      <button type="button" class="btn-primary" (click)="submit()">OK</button>
-    </div>
+    <footer class="import-modal__footer">
+      <button type="button" class="import-modal__btn import-modal__btn--secondary" (click)="cancel.emit()">Cancel</button>
+      <button type="button" class="import-modal__btn import-modal__btn--primary" (click)="submit()">OK</button>
+    </footer>
   </div>
 </div>
-

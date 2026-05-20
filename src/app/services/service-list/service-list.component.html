@@ -1,11 +1,14 @@
 <div class="claim-list-container">
-  <h2>Service List</h2>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Service List</h2>
+    </div>
 
-  <div *ngIf="loading" class="loading">Loading services...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading section">Loading services...</div>
+    <div *ngIf="error" class="error section">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
-    <div class="table-wrapper">
+    <div *ngIf="!loading && !error" class="section card table-container">
+      <div class="table-wrapper">
       <table class="claims-table">
         <thead>
           <tr>
@@ -45,29 +48,29 @@
         <tbody>
         <tr *ngFor="let service of filteredServices" (click)="onRowClick(service)" class="claim-row">
           <td class="action-col">
-            <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(service)">
+            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(service)">
               Open
             </button>
           </td>
           <td *ngFor="let col of visibleColumns">
             <ng-container *ngIf="isDateTimeColumnKey(col.key); else serviceCellSwitch">
-              <span>{{ formatDateTimeDisplay(getCellValue(service, col.key)) }}</span>
+              <span class="cell-muted">{{ formatDateTimeDisplay(getCellValue(service, col.key)) }}</span>
             </ng-container>
             <ng-template #serviceCellSwitch>
             <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'srvFromDate'">
+              <span *ngSwitchCase="'srvFromDate'" class="cell-muted">
                 {{ service.srvFromDate | date:'shortDate' }}
               </span>
-              <span *ngSwitchCase="'srvToDate'">
+              <span *ngSwitchCase="'srvToDate'" class="cell-muted">
                 {{ service.srvToDate | date:'shortDate' }}
               </span>
-              <span *ngSwitchCase="'srvCharges'">
+              <span *ngSwitchCase="'srvCharges'" class="money-amount" [ngClass]="getCurrencyTone(service.srvCharges)">
                 {{ service.srvCharges | currency:'USD':'symbol':'1.2-2' }}
               </span>
-              <span *ngSwitchCase="'srvTotalBalanceCC'">
+              <span *ngSwitchCase="'srvTotalBalanceCC'" class="money-amount" [ngClass]="getCurrencyTone(service.srvTotalBalanceCC)">
                 {{ service.srvTotalBalanceCC | currency:'USD':'symbol':'1.2-2' }}
               </span>
-              <span *ngSwitchCase="'srvTotalAmtPaidCC'">
+              <span *ngSwitchCase="'srvTotalAmtPaidCC'" class="money-amount" [ngClass]="getCurrencyTone(service.srvTotalAmtPaidCC)">
                 {{ service.srvTotalAmtPaidCC | currency:'USD':'symbol':'1.2-2' }}
               </span>
               <span *ngSwitchDefault>
@@ -130,6 +133,7 @@
           <option value="100">100 per page</option>
         </select>
       </div>
+    </div>
     </div>
   </div>
 

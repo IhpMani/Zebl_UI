@@ -1,34 +1,33 @@
 <div class="program-setup-container">
-  <div class="program-setup-header">
-    <div class="title">
-      Program Setup
+  <div class="page-container">
+    <div class="program-setup-header">
+      <h2 class="page-title">Program Setup</h2>
+      <div class="actions">
+        <button type="button" class="btn btn-primary btn-save" (click)="onSave()">Save</button>
+        <button type="button" class="btn btn-primary btn-save" (click)="onSaveAndClose()">Save &amp; Close</button>
+        <button type="button" class="btn btn-secondary" (click)="onClose()">Close</button>
+      </div>
     </div>
-    <div class="actions">
-      <button type="button" class="btn primary btn-save" (click)="onSave()">Save</button>
-      <button type="button" class="btn primary btn-save" (click)="onSaveAndClose()">Save &amp; Close</button>
-      <button type="button" class="btn secondary" (click)="onClose()">Close</button>
-    </div>
-  </div>
 
-  <div class="program-setup-body">
-    <div class="left-panel">
-      <div class="left-panel-title">Options</div>
-      <ul class="section-list">
+    <div class="program-setup-body">
+      <div class="left-panel card">
+        <div class="left-panel-title">Options</div>
+        <ul class="section-list">
         <li
           *ngFor="let section of sections"
           (click)="onSelectSection(section.id)"
           [class.active]="section.id === selectedSection">
           {{ section.label }}
         </li>
-      </ul>
-    </div>
+        </ul>
+      </div>
 
-    <div class="right-panel">
-      <h2 class="section-title">
+      <div class="right-panel card">
+        <h2 class="section-title">
         {{ selectedSectionLabel }}
       </h2>
 
-      <div class="section-content">
+      <div class="section-content" [class.section-content--eligibility]="selectedSection === 'patient-eligibility'">
         <ng-container *ngIf="isLoading">
           <div class="placeholder">Loading settings...</div>
         </ng-container>
@@ -419,7 +418,8 @@
             </ng-container>
 
             <ng-container *ngSwitchCase="'patient-eligibility'">
-              <div *ngIf="settingsData" class="patient-settings-form">
+              <div *ngIf="settingsData" class="eligibility-settings-form">
+                <h3 class="eligibility-section-title">Receiver &amp; provider</h3>
                 <div class="form-row">
                   <label>
                     <span>Receiver</span>
@@ -457,6 +457,8 @@
                   </label>
                 </div>
 
+                <h3 class="eligibility-section-title">Clearinghouse credentials</h3>
+
                 <div class="form-row">
                   <label [attr.title]="'Clearinghouse account username used for eligibility 270 requests.'">
                     <span>Username</span>
@@ -467,7 +469,7 @@
                       placeholder="Clearinghouse account username"
                     />
                   </label>
-                  <span class="form-hint">Clearinghouse account username used for eligibility 270 requests.</span>
+                  <p class="form-hint">Clearinghouse account username used for eligibility 270 requests.</p>
                 </div>
 
                 <div class="form-row">
@@ -480,7 +482,7 @@
                       placeholder="Clearinghouse account password"
                     />
                   </label>
-                  <span class="form-hint">Clearinghouse account password used for eligibility 270 requests.</span>
+                  <p class="form-hint">Clearinghouse account password used for eligibility 270 requests.</p>
                 </div>
 
                 <div class="form-row">
@@ -494,13 +496,15 @@
                   </label>
                 </div>
 
+                <h3 class="eligibility-section-title">Response options</h3>
+
                 <div class="form-row checkbox-row">
                   <label>
                     <input type="checkbox" [(ngModel)]="settingsData.showEligibilityResponseViewer" />
                     Show Eligibility Response Viewer
                   </label>
                 </div>
-                <p class="form-hint" *ngIf="!settingsData.showEligibilityResponseViewer">
+                <p class="form-hint form-hint--block" *ngIf="!settingsData.showEligibilityResponseViewer">
                   If unchecked, eligibility responses will skip the viewer screen and process automatically.
                 </p>
 
@@ -566,6 +570,7 @@
           </ng-container>
         </ng-container>
       </div>
+      </div>
     </div>
   </div>
 </div>
@@ -591,8 +596,8 @@
     </div>
     <div *ngIf="customFieldModalError" class="field-error">{{ customFieldModalError }}</div>
     <div class="modal-actions">
-      <button type="button" class="btn primary btn-save" (click)="saveCustomFieldModal()" [disabled]="customFieldModalSaving">Save</button>
-      <button type="button" class="btn secondary" (click)="closeCustomFieldModal()">Cancel</button>
+      <button type="button" class="btn btn-primary btn-save" (click)="saveCustomFieldModal()" [disabled]="customFieldModalSaving">Save</button>
+      <button type="button" class="btn btn-secondary" (click)="closeCustomFieldModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -623,7 +628,7 @@
     </div>
 
     <div class="modal-actions">
-      <button type="button" class="btn primary" (click)="closeMissingAccountsModal()">Close</button>
+      <button type="button" class="btn btn-secondary" (click)="closeMissingAccountsModal()">Close</button>
     </div>
   </div>
 </div>

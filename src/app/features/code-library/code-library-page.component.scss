@@ -94,6 +94,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 6px;
   padding-bottom: 12px;
 }
 
@@ -117,7 +118,6 @@
   background: var(--ps-card);
   color: var(--ps-text);
   border: 1px solid var(--ps-border);
-  margin-bottom: 6px;
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover:not(:disabled) {
@@ -130,22 +130,21 @@
     color: var(--ps-text);
     border: 1px solid var(--ps-border);
     margin-top: 12px;
-    margin-bottom: 10px;
     font-weight: 600;
-  }
 
-  &.primary:hover:not(:disabled) {
-    filter: brightness(1.08);
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
   }
 
   &.danger {
     background: var(--ps-bg);
     color: var(--ps-text);
     border: var(--ps-border);
-  }
 
-  &.danger:hover:not(:disabled) {
-    filter: brightness(1.06);
+    &:hover:not(:disabled) {
+      filter: brightness(1.06);
+    }
   }
 
   &:disabled {

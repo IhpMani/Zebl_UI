@@ -1,11 +1,14 @@
 <div class="claim-list-container">
-  <h2>Patient List</h2>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Patient List</h2>
+    </div>
 
-  <div *ngIf="loading" class="loading">Loading patients...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading section">Loading patients...</div>
+    <div *ngIf="error" class="error section">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
-    <div class="table-wrapper">
+    <div *ngIf="!loading && !error" class="section card table-container">
+      <div class="table-wrapper">
       <table class="claims-table">
         <thead>
           <tr>
@@ -45,23 +48,23 @@
         <tbody>
         <tr *ngFor="let patient of filteredPatients" (click)="onRowClick(patient)" class="claim-row">
           <td class="action-col">
-            <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(patient)">
+            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(patient)">
               Open
             </button>
           </td>
           <td *ngFor="let col of visibleColumns">
             <ng-container *ngIf="isDateTimeColumnKey(col.key); else patientCellSwitch">
-              <span>{{ formatDateTimeDisplay(getCellValue(patient, col.key)) }}</span>
+              <span class="cell-muted">{{ formatDateTimeDisplay(getCellValue(patient, col.key)) }}</span>
             </ng-container>
             <ng-template #patientCellSwitch>
             <ng-container [ngSwitch]="col.key">
               <span *ngSwitchCase="'patAccountNo'">
                 {{ patient.patAccountNo ?? '' }}
               </span>
-              <span *ngSwitchCase="'patBirthDate'">
+              <span *ngSwitchCase="'patBirthDate'" class="cell-muted">
                 {{ patient.patBirthDate | date:'shortDate' }}
               </span>
-              <span *ngSwitchCase="'patTotalBalanceCC'">
+              <span *ngSwitchCase="'patTotalBalanceCC'" class="money-amount" [ngClass]="getCurrencyTone(patient.patTotalBalanceCC)">
                 {{ patient.patTotalBalanceCC | currency:'USD':'symbol':'1.2-2' }}
               </span>
               <span *ngSwitchCase="'patActive'">
@@ -127,6 +130,7 @@
           <option value="100">100 per page</option>
         </select>
       </div>
+    </div>
     </div>
   </div>
 

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { CodeLibraryApiService, LibraryKey } from '../../core/services/code-library-api.service';
 
 @Component({
@@ -9,8 +9,10 @@ import { CodeLibraryApiService, LibraryKey } from '../../core/services/code-libr
 export class CodeImportDialogComponent {
   @Input() libraryKey!: LibraryKey;
   @Output() close = new EventEmitter<void>();
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   file: File | null = null;
+  selectedFileName: string | null = null;
   importing = false;
   result: { importedCount: number; skippedCount: number } | null = null;
   error: string | null = null;
@@ -21,9 +23,14 @@ export class CodeImportDialogComponent {
     return this.api.getImportTypeForLibrary(this.libraryKey);
   }
 
+  browseFile(): void {
+    this.fileInput?.nativeElement?.click();
+  }
+
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.file = input.files?.[0] ?? null;
+    this.selectedFileName = this.file?.name ?? null;
     this.result = null;
     this.error = null;
   }

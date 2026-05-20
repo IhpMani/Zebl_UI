@@ -452,9 +452,24 @@
   justify-content: flex-end;
 }
 
+.btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 2px;
+  border: 1px solid var(--ps-border);
+  cursor: pointer;
+  background: var(--ps-card);
+  color: var(--ps-text);
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .btn-primary {
   background: var(--ps-blue);
-  color: var(--color-text-light)fff;
+  color: var(--color-text-light);
   padding: 6px 16px;
   font-size: 13px;
   border-radius: 2px;
@@ -467,10 +482,16 @@
   }
 }
 
+/* Match procedure code library Save / Save & Close (green) */
 .btn-save {
   background: var(--ps-green);
-  color: var(--color-text-light)fff;
-  border: 1px solid var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--color-text-light);
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
 }
 
 .btn-warning {
@@ -597,12 +618,27 @@ textarea.form-input {
   border: 1px solid var(--ps-border);
 }
 
+.btn-save,
+.btn-primary.btn-save {
+  background: var(--ps-green) !important;
+  border-color: var(--ps-green) !important;
+  color: var(--color-text-light) !important;
+}
+
+.toolbar-right .btn-save {
+  min-height: 32px;
+}
+
 .btn-sidebar:hover:not(:disabled),
 .btn-clear:hover,
 .btn-icon:hover,
-.btn-primary:hover:not(:disabled),
+.btn-primary:hover:not(:disabled):not(.btn-save),
 .btn-secondary:hover {
   background: var(--ps-card);
+}
+
+.btn-save:hover:not(:disabled) {
+  filter: brightness(1.05);
 }
 
 .dropdown-menu {

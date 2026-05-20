@@ -1,21 +1,52 @@
-<div class="dialog-overlay" (click)="closeDialog()">
-  <div class="dialog" (click)="$event.stopPropagation()">
-    <header class="dialog-header">
-      <h2>Import Codes</h2>
-      <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
+<div class="import-modal-overlay" (click)="closeDialog()" role="presentation">
+  <div class="import-modal" role="dialog" aria-labelledby="code-import-title" (click)="$event.stopPropagation()">
+    <header class="import-modal__header">
+      <h2 id="code-import-title" class="import-modal__title">Import Codes</h2>
+      <button type="button" class="import-modal__close" (click)="closeDialog()" aria-label="Close">&times;</button>
     </header>
-    <div class="dialog-body">
-      <p class="hint">CSV format: Code[TAB]Description (tab-separated). Duplicates are skipped.</p>
-      <input type="file" accept=".csv,.txt" (change)="onFileSelect($event)" />
-      <div *ngIf="result" class="result">
-        Imported: {{ result.importedCount }} · Skipped: {{ result.skippedCount }}
+
+    <div class="import-modal__body">
+      <p class="import-modal__hint">
+        Upload a tab-delimited text or CSV file with one code per line:
+        <strong>Code</strong>, then tab, then <strong>Description</strong>. Duplicate codes are skipped.
+      </p>
+
+      <div class="import-modal__field">
+        <label class="import-modal__label" for="code-import-file-display">File</label>
+        <div class="import-modal__file-row">
+          <input
+            id="code-import-file-display"
+            type="text"
+            class="import-modal__file-display"
+            [value]="selectedFileName || ''"
+            placeholder="No file selected"
+            readonly
+          />
+          <button type="button" class="import-modal__btn-browse" (click)="browseFile()">Browse…</button>
+          <input
+            #fileInput
+            type="file"
+            class="import-modal__file-input"
+            accept=".csv,.txt,.tsv,.tab"
+            (change)="onFileSelect($event)"
+          />
+        </div>
       </div>
-      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="result" class="import-modal__message import-modal__message--success">
+        Imported {{ result.importedCount }} code(s). Skipped {{ result.skippedCount }} duplicate(s).
+      </div>
+      <div *ngIf="error" class="import-modal__message import-modal__message--error">{{ error }}</div>
     </div>
-    <footer class="dialog-footer">
-      <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
-      <button type="button" class="btn btn-primary" (click)="import()" [disabled]="!file || importing">
-        {{ importing ? 'Importing...' : 'Import' }}
+
+    <footer class="import-modal__footer">
+      <button type="button" class="import-modal__btn import-modal__btn--secondary" (click)="closeDialog()">Cancel</button>
+      <button
+        type="button"
+        class="import-modal__btn import-modal__btn--primary"
+        (click)="import()"
+        [disabled]="!file || importing">
+        {{ importing ? 'Importing…' : 'Import' }}
       </button>
     </footer>
   </div>

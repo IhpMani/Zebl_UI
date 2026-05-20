@@ -27,8 +27,10 @@ export class RibbonComponent implements OnInit, OnDestroy {
     { label: 'Find Patients', value: 'Find Patient' },
     { label: 'Find Services', value: 'Find Service' },
     { label: 'Find Payments', value: 'Find Payment' },
+    { label: 'Find Disbursements', value: 'Find Disbursement' },
     { label: 'Find Adjustments', value: 'Find Adjustment' },
     { label: 'Find Payers', value: 'Find Payer' },
+    { label: 'Find Physicians', value: 'Find Physician' },
     { label: 'Find Claim Notes', value: 'Find Claim Note' },
   ];
   private readonly libraryItems: SidebarPanelItem[] = [

@@ -52,6 +52,20 @@ export class CodeLibraryPageComponent implements OnInit, AfterViewChecked {
     return this.selectedRow != null && this.selectedRow.id != null;
   }
 
+  /** True when the entry form differs from the last saved / selected row. */
+  get isDirty(): boolean {
+    if (!this.canSave) return false;
+    const codeTrim = (this.code ?? '').trim();
+    const descTrim = (this.description ?? '').trim();
+    if (this.selectedRow?.id != null) {
+      return (
+        codeTrim !== (this.selectedRow.code ?? '').trim() ||
+        descTrim !== (this.selectedRow.description ?? '').trim()
+      );
+    }
+    return true;
+  }
+
   constructor(
     private api: CodeLibraryApiService,
     private router: Router
@@ -114,6 +128,14 @@ export class CodeLibraryPageComponent implements OnInit, AfterViewChecked {
     this.description = row.description ?? '';
   }
 
+  save(): void {
+    if (!this.canSave) return;
+    this.saveCurrent().subscribe({
+      next: () => this.loadGrid(),
+      error: err => this.error = err?.message || 'Save failed'
+    });
+  }
+
   saveAndNew(): void {
     if (!this.canSave) return;
     this.saveCurrent().subscribe({
@@ -140,6 +162,7 @@ export class CodeLibraryPageComponent implements OnInit, AfterViewChecked {
   }
 
   close(): void {
+    if (this.isDirty && !confirm('You have unsaved changes. Close anyway?')) return;
     this.router.navigate(['/']);
   }
 

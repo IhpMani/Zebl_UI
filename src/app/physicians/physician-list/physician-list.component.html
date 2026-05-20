@@ -1,11 +1,15 @@
 <div class="claim-list-container">
-  <h2>Physician List</h2>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Physician List</h2>
+    </div>
 
-  <div *ngIf="loading" class="loading">Loading physicians...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading section">Loading physicians...</div>
+    <div *ngIf="error" class="error section">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
-    <table class="claims-table">
+    <div *ngIf="!loading && !error" class="section card table-container">
+      <div class="table-wrapper">
+      <table class="claims-table">
       <thead>
         <tr>
           <th class="action-col add-column-header">
@@ -14,15 +18,17 @@
                 Add Column <span class="arrow">▼</span>
               </button>
             </div>
-            <div class="filter-row">
-              <div class="filter-placeholder"></div>
-            </div>
           </th>
           <th *ngFor="let col of visibleColumns">
             <div class="header-cell">
               <span>{{ col.label }}</span>
               <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
             </div>
+          </th>
+        </tr>
+        <tr>
+          <th class="action-col"><div class="filter-placeholder"></div></th>
+          <th *ngFor="let col of visibleColumns">
             <div class="filter-row">
               <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">
                 Filter <span class="arrow">▼</span>
@@ -42,13 +48,13 @@
       <tbody>
         <tr *ngFor="let physician of filteredPhysicians" (click)="onRowClick(physician)" class="claim-row">
           <td class="action-col">
-            <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(physician)">
+            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(physician)">
               Open
             </button>
           </td>
           <td *ngFor="let col of visibleColumns">
             <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'phyDateTimeCreated'">
+              <span *ngSwitchCase="'phyDateTimeCreated'" class="cell-muted">
                 {{ (!physician.phyDateTimeCreated || physician.phyDateTimeCreated.startsWith('0001-01-01')) ? '' : (physician.phyDateTimeCreated | date:'dd/MM/yyyy HH:mm') }}
               </span>
               <span *ngSwitchCase="'phyInactive'">
@@ -65,8 +71,9 @@
         </tr>
       </tbody>
     </table>
+      </div>
 
-    <div *ngIf="meta" class="pagination-container">
+      <div *ngIf="meta" class="pagination-container">
       <div class="pagination-info">
         Showing {{ filteredPhysicians.length }} of {{ meta.totalCount }} physicians
         (Page {{ meta.page }} of {{ getTotalPages() }})
@@ -112,6 +119,7 @@
           <option value="100">100 per page</option>
         </select>
       </div>
+    </div>
     </div>
   </div>
 

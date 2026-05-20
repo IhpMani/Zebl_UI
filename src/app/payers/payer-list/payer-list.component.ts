@@ -228,7 +228,8 @@ export class PayerListComponent implements OnInit, OnDestroy {
   }
 
   onRowClick(payer: PayerListItem): void {
-    // Navigate to payer details if needed
+    if (!payer?.payID) return;
+    this.router.navigate(['/payer-library', payer.payID]);
   }
 
   getTotalPages(): number {

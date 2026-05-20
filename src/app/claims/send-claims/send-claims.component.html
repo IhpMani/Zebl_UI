@@ -1,7 +1,7 @@
-<div class="send-claims-layout" [class.panel-collapsed]="!actionPanelOpen">
-  <div class="send-claims-main">
-    <div class="send-claims-header">
-      <h2>Send Claims</h2>
+<div class="send-claims-layout claim-list-container" [class.panel-collapsed]="!actionPanelOpen">
+  <div class="send-claims-main page-container">
+    <div class="send-claims-header section">
+      <h2 class="page-title">Send Claims</h2>
       <button
         *ngIf="!actionPanelOpen"
         type="button"
@@ -12,7 +12,7 @@
       </button>
     </div>
 
-    <div class="top-controls">
+    <div class="top-controls card">
       <label class="control-field">
         <span>Connection Type</span>
         <select
@@ -51,7 +51,9 @@
     <div *ngIf="error" class="status error">{{ error }}</div>
     <div *ngIf="success" class="status success">{{ success }}</div>
 
-    <table class="claims-table" *ngIf="!loading">
+    <div class="table-card card" *ngIf="!loading">
+    <div class="table-wrapper">
+    <table class="claims-table">
       <thead>
         <tr>
           <th>
@@ -86,9 +88,11 @@
         </tr>
       </tbody>
     </table>
+    </div>
+    </div>
   </div>
 
-  <aside class="right-panel" *ngIf="actionPanelOpen">
+  <aside class="right-panel card" *ngIf="actionPanelOpen">
     <div class="rail-title">Batch workflow</div>
     <div class="panel-top-buttons">
       <button type="button" class="rail-btn rail-btn-primary" (click)="createAndSendBatch()" [disabled]="sending || loading || loadingSubmitterReceivers">

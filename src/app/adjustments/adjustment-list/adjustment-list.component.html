@@ -1,11 +1,14 @@
 <div class="claim-list-container">
-  <h2>Adjustment List</h2>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Adjustment List</h2>
+    </div>
 
-  <div *ngIf="loading" class="loading">Loading adjustments...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngIf="loading" class="loading section">Loading adjustments...</div>
+    <div *ngIf="error" class="error section">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
-    <div class="table-wrapper">
+    <div *ngIf="!loading && !error" class="section card table-container">
+      <div class="table-wrapper">
       <table class="claims-table">
         <thead>
           <tr>
@@ -45,20 +48,20 @@
         <tbody>
         <tr *ngFor="let adjustment of filteredAdjustments" (click)="onRowClick(adjustment)" class="claim-row">
           <td class="action-col">
-            <button class="open-btn" (click)="$event.stopPropagation(); onRowClick(adjustment)">
+            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(adjustment)">
               Open
             </button>
           </td>
           <td *ngFor="let col of visibleColumns">
             <ng-container *ngIf="isDateTimeColumnKey(col.key); else adjustmentCellSwitch">
-              <span>{{ formatDateTimeDisplay(getCellValue(adjustment, col.key)) }}</span>
+              <span class="cell-muted">{{ formatDateTimeDisplay(getCellValue(adjustment, col.key)) }}</span>
             </ng-container>
             <ng-template #adjustmentCellSwitch>
             <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'adjDate'">
+              <span *ngSwitchCase="'adjDate'" class="cell-muted">
                 {{ adjustment.adjDate | date:'shortDate' }}
               </span>
-              <span *ngSwitchCase="'adjAmount'">
+              <span *ngSwitchCase="'adjAmount'" class="money-amount" [ngClass]="getCurrencyTone(adjustment.adjAmount)">
                 {{ adjustment.adjAmount | currency:'USD':'symbol':'1.2-2' }}
               </span>
               <span *ngSwitchDefault>
@@ -121,6 +124,7 @@
           <option value="100">100 per page</option>
         </select>
       </div>
+    </div>
     </div>
   </div>
 

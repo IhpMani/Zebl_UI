@@ -1,10 +1,14 @@
 <div class="payment-entry-container">
-  <h2>Payment Entry</h2>
-  <div *ngIf="error" class="error-msg">{{ error }}</div>
-  <div *ngIf="successMessage" class="success-msg">{{ successMessage }}</div>
+  <div class="page-container">
+    <div class="section">
+      <h2 class="page-title">Payment Entry</h2>
+    </div>
 
-  <!-- Top: Payment source + details (left), Action buttons (right) -->
-  <div class="top-row">
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+    <div *ngIf="successMessage" class="success-msg">{{ successMessage }}</div>
+
+    <!-- Top: Payment source + details (left), Action buttons (right) -->
+    <div class="top-row card">
     <form [formGroup]="paymentForm" class="payment-details">
       <div class="detail-row">
         <span class="label">Payment Source</span>
@@ -67,7 +71,7 @@
   <!-- Payments context header + summary (like reference) -->
   <div class="payments-context-bar" *ngIf="paymentForm.get('claimId')?.value || serviceLineRows.length">
     <span class="context-title">Claim <strong>#{{ displayClaimLabel }}</strong> — <strong>{{ patientDisplayName || 'Patient' }}</strong> (lines with a balance):</span>
-    <div class="summary-bar">
+    <div class="summary-bar card">
       <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
       <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
       <div class="summary-cell"><span class="summary-label">Remaining</span><span class="summary-value">{{ remaining | currency:'USD':'symbol':'1.2-2' }}</span></div>
@@ -76,7 +80,7 @@
       <div class="summary-cell"><span class="summary-label">Ref #</span><span class="summary-value">{{ paymentForm.get('reference1')?.value || '—' }}</span></div>
     </div>
   </div>
-  <div class="summary-bar" *ngIf="!paymentForm.get('claimId')?.value && !serviceLineRows.length">
+  <div class="summary-bar card" *ngIf="!paymentForm.get('claimId')?.value && !serviceLineRows.length">
     <div class="summary-cell"><span class="summary-label">Pmt Amt</span><span class="summary-value">{{ pmtAmt | currency:'USD':'symbol':'1.2-2' }}</span></div>
     <div class="summary-cell"><span class="summary-label">Applied Amt</span><span class="summary-value">{{ appliedAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
     <div class="summary-cell"><span class="summary-label">Remaining</span><span class="summary-value">{{ remaining | currency:'USD':'symbol':'1.2-2' }}</span></div>
@@ -85,9 +89,9 @@
     <div class="summary-cell"><span class="summary-label">Ref #</span><span class="summary-value">{{ paymentForm.get('reference1')?.value || '—' }}</span></div>
   </div>
 
-  <!-- Main: Grid (left) + Sidebar (right) -->
-  <div class="main-area">
-    <div class="grid-wrapper">
+    <!-- Main: Grid (left) + Sidebar (right) -->
+    <div class="main-area">
+      <div class="grid-wrapper card">
       <table class="line-grid">
         <thead>
           <tr class="header-row">
@@ -151,7 +155,7 @@
         </tbody>
       </table>
     </div>
-    <div class="sidebar">
+      <div class="sidebar card">
       <div class="sidebar-section">
         <div class="sidebar-title">Need to enter more adjustments?</div>
         <div class="adjustment-buttons">
@@ -171,6 +175,7 @@
         <label><input type="checkbox" [(ngModel)]="ignoreResponsibleParty" (change)="onIgnoreResponsiblePartyChanged($any($event.target).checked)" [ngModelOptions]="{standalone: true}"> Ignore Responsible Party</label>
         <label><input type="checkbox" [(ngModel)]="matchByPayerId" [ngModelOptions]="{standalone: true}"> Match By Payer ID</label>
         <button type="button" class="btn-secondary small">Filter Settings</button>
+      </div>
       </div>
     </div>
   </div>

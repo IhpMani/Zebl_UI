@@ -30,6 +30,10 @@ export class RateClassSelectorDialogComponent implements OnChanges {
     payerId: null
   };
 
+  get dialogTitle(): string {
+    return this.importFileLabel ? 'Import Procedure Codes' : 'Rate Class';
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['importFileLabel']) {
       const v = this.importFileLabel?.trim();

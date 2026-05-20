@@ -2,9 +2,7 @@
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: var(--ps-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,8 +15,6 @@
   border-radius: 2px;
   min-width: 380px;
   max-width: 90vw;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   color: var(--ps-text);
 }
 
