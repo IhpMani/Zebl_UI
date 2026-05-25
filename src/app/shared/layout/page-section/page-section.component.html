@@ -1,0 +1,6 @@
+<section class="page-section" [class.page-section--divided]="divided">
+  <app-section-header *ngIf="title" [title]="title" [iconKey]="iconKey"></app-section-header>
+  <div class="page-section__body">
+    <ng-content></ng-content>
+  </div>
+</section>

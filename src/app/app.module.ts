@@ -12,6 +12,7 @@ import { ClaimListComponent } from './claims/claim-list/claim-list.component';
 import { ClaimDetailsComponent } from './claims/claim-details/claim-details.component';
 import { HomeComponent } from './home/home.component';
 import { PatientListComponent } from './patients/patient-list/patient-list.component';
+import { PatientListLegacyComponent } from './patients/patient-list-legacy/patient-list-legacy.component';
 import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
@@ -43,9 +44,11 @@ import { EligibilityResponseComponent } from './patients/eligibility-response/el
 import { WorkspaceModule } from './workspace/workspace.module';
 import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
 import { SendClaimsComponent } from './claims/send-claims/send-claims.component';
-import { CardComponent } from './shared/ui/card/card.component';
-import { SectionHeaderComponent } from './shared/ui/section-header/section-header.component';
-import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.component';
+import { SharedUiModule } from './shared/ui/shared-ui.module';
+import { LayoutModule } from './shared/layout/layout.module';
+import { WorkspaceLayoutModule } from './shared/layout/workspace/workspace-layout.module';
+import { OperationalUxModule } from './shared/operational/operational-ux.module';
+import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-preview/patient-workspace-preview.component';
 
 @NgModule({
   declarations: [
@@ -57,7 +60,9 @@ import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.comp
     ClaimDetailsComponent,
     HomeComponent,
     PatientListComponent,
+    PatientListLegacyComponent,
     PatientDetailsComponent,
+    PatientWorkspacePreviewComponent,
     ServiceListComponent,
     PaymentListComponent,
     PaymentEntryComponent,
@@ -82,9 +87,6 @@ import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.comp
     ClaimRejectionsComponent,
     SuperAdminComponent,
     UnauthorizedComponent,
-    CardComponent,
-    SectionHeaderComponent,
-    SummaryCardComponent
   ],
   imports: [
     BrowserModule,
@@ -93,7 +95,11 @@ import { SummaryCardComponent } from './shared/ui/summary-card/summary-card.comp
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule,
-    WorkspaceModule
+    WorkspaceModule,
+    SharedUiModule,
+    LayoutModule,
+    WorkspaceLayoutModule,
+    OperationalUxModule,
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

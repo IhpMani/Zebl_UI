@@ -10,20 +10,26 @@ import { BehaviorSubject } from 'rxjs';
 export interface RibbonContext {
   claimId: number | null;
   patientId: number | null;
+  patientName?: string | null;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class RibbonContextService {
-  private readonly subject = new BehaviorSubject<RibbonContext>({ claimId: null, patientId: null });
+  private readonly subject = new BehaviorSubject<RibbonContext>({
+    claimId: null,
+    patientId: null,
+    patientName: null
+  });
   readonly context$ = this.subject.asObservable();
 
   setContext(ctx: Partial<RibbonContext>): void {
     const current = this.subject.value;
     this.subject.next({
       claimId: ctx.claimId !== undefined ? ctx.claimId : current.claimId,
-      patientId: ctx.patientId !== undefined ? ctx.patientId : current.patientId
+      patientId: ctx.patientId !== undefined ? ctx.patientId : current.patientId,
+      patientName: ctx.patientName !== undefined ? ctx.patientName : current.patientName
     });
   }
 
@@ -32,6 +38,6 @@ export class RibbonContextService {
   }
 
   clearContext(): void {
-    this.subject.next({ claimId: null, patientId: null });
+    this.subject.next({ claimId: null, patientId: null, patientName: null });
   }
 }

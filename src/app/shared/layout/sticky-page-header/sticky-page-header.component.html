@@ -1,0 +1,9 @@
+﻿<header class="sticky-page-header">
+  <div class="sticky-page-header__text">
+    <h1 class="sticky-page-header__title" *ngIf="title">{{ title }}</h1>
+    <p class="sticky-page-header__subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+  </div>
+  <div class="sticky-page-header__actions">
+    <ng-content></ng-content>
+  </div>
+</header>

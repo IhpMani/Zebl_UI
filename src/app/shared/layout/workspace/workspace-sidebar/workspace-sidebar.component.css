@@ -1,0 +1,13 @@
+.bb-workspace-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bb-space-md);
+  min-width: 0;
+}
+
+.bb-workspace-sidebar--sticky {
+  position: sticky;
+  top: var(--bb-space-md);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}

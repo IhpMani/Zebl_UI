@@ -559,6 +559,12 @@ export class PatientDetailsComponent implements OnInit {
         this.insuranceLoaded = true;
         this.loadPatientCustomFieldsAndValues(patId);
         const title = this.toFullName(p.patFirstName, p.patLastName, p.patFullNameCC);
+        const claimId = this.ribbonContext.getContext().claimId;
+        this.ribbonContext.setContext({
+          patientId: this.patId,
+          claimId,
+          patientName: title || null
+        });
         if (title) this.workspace.updateActiveTabTitle(title);
         this.cdr.markForCheck();
       },

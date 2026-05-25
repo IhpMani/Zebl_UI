@@ -1,0 +1,83 @@
+<app-page-shell variant="dense" class="pat-lookup-page">
+  <app-sticky-page-header title="Patient Lookup">
+    <div class="pat-lookup-page__actions">
+      <button type="button" class="bb-btn" (click)="openClassicList()">Classic patient list</button>
+    </div>
+  </app-sticky-page-header>
+
+  <p class="pat-lookup-page__hint">
+    Search by name, account #, MRN, or phone. Use ↑↓ and Enter to open. Command palette:
+    <kbd>Ctrl</kbd>+<kbd>K</kbd>
+  </p>
+
+  <div class="pat-lookup__toolbar">
+    <input
+      #searchInput
+      type="search"
+      class="pat-lookup__search"
+      [formControl]="searchControl"
+      placeholder="Search patients…"
+      autocomplete="off"
+      aria-label="Patient search"
+    />
+    <span class="pat-lookup__status" *ngIf="loading">Searching…</span>
+    <span class="pat-lookup__status" *ngIf="!loading && showGrid">{{ totalCount }} match(es)</span>
+  </div>
+
+  <div class="pat-lookup__chips" *ngIf="!showGrid && recentSearches.length">
+    <span class="pat-lookup-page__chip-label">Recent searches</span>
+    <button type="button" class="pat-lookup__chip" *ngFor="let s of recentSearches" (click)="applyRecentSearch(s)">
+      {{ s }}
+    </button>
+  </div>
+
+  <div class="pat-lookup__chips" *ngIf="!showGrid && recentPatients.length">
+    <span class="pat-lookup-page__chip-label">Recent patients</span>
+    <button type="button" class="pat-lookup__chip" *ngFor="let r of recentPatients" (click)="openRecent(r.patId)">
+      {{ r.label }}
+    </button>
+  </div>
+
+  <div class="pat-lookup__grid-wrap" *ngIf="showGrid">
+    <div class="pat-lookup__empty" *ngIf="!loading && rows.length === 0">
+      No patients match. Try account # or a different spelling.
+    </div>
+    <table class="pat-lookup__grid" *ngIf="rows.length" role="grid">
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Status</th>
+          <th>DOB</th>
+          <th>Account #</th>
+          <th>Primary payer</th>
+          <th>Balance</th>
+          <th>Claims</th>
+          <th>Last DOS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let row of rows; let i = index; trackBy: trackRow"
+          [class.pat-lookup__row--active]="i === highlightedIndex"
+          (click)="openPatient(row)"
+          (mouseenter)="highlightedIndex = i"
+        >
+          <td class="pat-lookup__name">{{ row.patientName }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ row.dob || '—' }}</td>
+          <td>{{ row.accountNo || '—' }}</td>
+          <td>{{ row.primaryPayer || '—' }}</td>
+          <td [class.pat-lookup__bal--due]="(row.totalBalance ?? 0) > 0">
+            {{ row.totalBalance != null ? (row.totalBalance | currency) : '—' }}
+          </td>
+          <td>{{ row.openClaimCount ?? '—' }}</td>
+          <td>{{ row.lastDos || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pat-lookup__empty" *ngIf="!showGrid && !recentPatients.length && !recentSearches.length">
+    Start typing to search patients.
+  </div>
+</app-page-shell>

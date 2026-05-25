@@ -1,0 +1,33 @@
+<ng-container *ngIf="slice$ | async as slice">
+  <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 72px"></div>
+  <ng-container *ngIf="header$ | async as h">
+    <app-workspace-header *ngIf="slice.status === 'loaded'" [title]="'Claim ' + h.claimId" subtitle="Claims Operations Workspace">
+      <div workspaceHeaderMeta>
+        <span><strong>DOS</strong> {{ h.dos || '—' }}</span>
+        <span><strong>Patient</strong> {{ h.patientName || '—' }}</span>
+        <span><strong>Payer</strong> {{ h.primaryPayer || '—' }}</span>
+        <span><strong>Type</strong> {{ h.claimType || '—' }}</span>
+        <span>
+          <strong>Status</strong>
+          <app-operational-status-badge [claimStatus]="h.statusCategory" [labelOverride]="h.status"></app-operational-status-badge>
+        </span>
+        <span><strong>Charges</strong> {{ h.totalCharges != null ? (h.totalCharges | currency) : '—' }}</span>
+        <span><strong>Ins Bal</strong> {{ h.insuranceBalance != null ? (h.insuranceBalance | currency) : '—' }}</span>
+        <span><strong>Pat Bal</strong> {{ h.patientBalance != null ? (h.patientBalance | currency) : '—' }}</span>
+        <span><strong>Last Activity</strong> {{ h.lastActivity || '—' }}</span>
+        <span><strong>EDI</strong> {{ h.lastEdiEvent || '—' }}</span>
+        <span *ngIf="h.agingDays != null"><strong>Aging</strong> {{ h.agingDays }}d</span>
+      </div>
+      <div workspaceHeaderActions>
+        <a
+          class="bb-btn"
+          [routerLink]="['/patients', h.patientId]"
+          [queryParams]="{ claimId: h.claimId }"
+          *ngIf="h.patientId"
+        >Patient</a>
+        <button type="button" class="bb-btn" (click)="state.refresh()">Refresh</button>
+      </div>
+    </app-workspace-header>
+  </ng-container>
+  <div *ngIf="slice.status === 'error'" class="bb-widget-error">{{ slice.error }}</div>
+</ng-container>

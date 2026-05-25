@@ -1,0 +1,38 @@
+.bb-workspace-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 0 var(--bb-space-xs);
+  border-bottom: 1px solid var(--bb-border);
+  background: var(--bb-surface);
+}
+
+.bb-workspace-tabs__tab {
+  height: 32px;
+  padding: 0 var(--bb-space-md);
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--bb-muted);
+  font-size: var(--bb-font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bb-workspace-tabs__tab:hover:not(:disabled) {
+  color: var(--bb-text);
+  background: var(--bb-bg);
+}
+
+.bb-workspace-tabs__tab--active {
+  color: var(--bb-primary);
+  border-bottom-color: var(--bb-primary);
+}
+
+.bb-workspace-tabs__tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

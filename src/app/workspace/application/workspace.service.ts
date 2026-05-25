@@ -76,16 +76,19 @@ export class WorkspaceService {
     if (existing) {
       const reuseSingleTabForLibrary =
         this.isConnectionLibraryPath(route) || this.isPayerLibraryPath(route);
+      const reuseSingleTabForPatientWorkspace =
+        this.isPatientWorkspacePath(route) && this.isPatientWorkspacePath(existing.route);
 
-      if (reuseSingleTabForLibrary) {
-        // One workspace tab for Connection Library or Payer Library (list + any :id / new).
+      if (reuseSingleTabForLibrary || reuseSingleTabForPatientWorkspace) {
+        const resolvedTitle = this.resolveTabTitleOnReuse(existing.title, title);
+        // One workspace tab for Connection/Payer Library or patient workspace (overview/claims/payments).
         const nextTabs = state.tabs.map((t) =>
           t.id === existing.id
             ? {
                 ...t,
                 route,
                 params: params ?? {},
-                title,
+                title: resolvedTitle,
                 tabType: tabType || t.tabType,
                 isActive: true
               }
@@ -320,6 +323,27 @@ export class WorkspaceService {
     return n === '/payer-library' || n.startsWith('/payer-library/');
   }
 
+  /** Patient workspace uses one tab per patient across overview/claims/payments child routes. */
+  private isPatientWorkspacePath(path: string): boolean {
+    const n = path && path.startsWith('/') ? path : `/${path ?? ''}`;
+    return /^\/patients\/\d+\/workspace(\/|$)/.test(n);
+  }
+
+  private patientWorkspacePatId(path: string): number | null {
+    const n = path && path.startsWith('/') ? path : `/${path ?? ''}`;
+    const m = n.match(/^\/patients\/(\d+)\/workspace/);
+    if (!m?.[1]) return null;
+    const id = Number(m[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  /** Do not replace a resolved patient name with the generic placeholder on sub-tab navigation. */
+  private resolveTabTitleOnReuse(existingTitle: string, nextTitle: string): string {
+    if (nextTitle !== 'Loading...') return nextTitle;
+    if (existingTitle && existingTitle !== 'Loading...') return existingTitle;
+    return nextTitle;
+  }
+
   private findExistingTabForNavigation(route: string, params: Record<string, unknown>): WorkspaceTab | undefined {
     const state = this.stateSubject.value;
     if (this.isConnectionLibraryPath(route)) {
@@ -327,6 +351,10 @@ export class WorkspaceService {
     }
     if (this.isPayerLibraryPath(route)) {
       return state.tabs.find((t) => this.isPayerLibraryPath(t.route));
+    }
+    const patientPatId = this.patientWorkspacePatId(route);
+    if (patientPatId != null) {
+      return state.tabs.find((t) => this.patientWorkspacePatId(t.route) === patientPatId);
     }
     return state.tabs.find((t) => this.isSameTarget(t, route, params));
   }
@@ -359,9 +387,13 @@ export class WorkspaceService {
 
   private static readonly ROUTE_TITLES: Record<string, string> = {
     '/claims/find-claim': 'Find Claims',
+    '/claims/operations': 'Claims Command Center',
     '/claims/send': 'Send Claims',
     '/claims/rejections': 'Claim Rejections',
+    '/patients': 'Patient Lookup',
     '/patients/find-patient': 'Find Patients',
+    '/patients/lookup': 'Patient Lookup',
+    '/patients/workspace-preview': 'Patient Workspace (Preview)',
     '/services/find-service': 'Find Services',
     '/payments/find-payment': 'Find Payments',
     '/payments/ledger': 'Payments Ledger',

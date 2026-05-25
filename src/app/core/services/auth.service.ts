@@ -71,13 +71,16 @@ export class AuthService {
       this.facility.clearTenantStorage();
     }
 
-    // Keep facility context initialized after refresh/session restore.
+    // JWT default facility only when the user has not chosen one in the top bar.
+    const storedFacility = this.facility.getFacilityIdOptional();
     const rawFacility = p?.facilityId ?? p?.FacilityId;
     const parsedFacility = rawFacility == null ? NaN : Math.floor(Number(rawFacility));
-    if (!this.isSuperAdmin() && Number.isFinite(parsedFacility) && parsedFacility > 0) {
-      this.facility.setFacilityId(parsedFacility);
-    } else if (this.isSuperAdmin()) {
+    if (this.isSuperAdmin()) {
       this.facility.clearFacilityStorage();
+    } else if (storedFacility != null && storedFacility > 0) {
+      // Preserve top-bar selection across refresh; X-Facility-Id drives API scope.
+    } else if (Number.isFinite(parsedFacility) && parsedFacility > 0) {
+      this.facility.setFacilityId(parsedFacility);
     }
   }
 

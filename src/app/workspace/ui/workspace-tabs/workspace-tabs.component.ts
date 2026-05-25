@@ -3,12 +3,13 @@ import { Observable } from 'rxjs';
 import { WorkspaceService } from '../../application/workspace.service';
 import { WorkspaceState } from '../../application/workspace.state';
 
+/** Browser-level multi-document tabs (app chrome). */
 @Component({
-  selector: 'app-workspace-tabs',
+  selector: 'app-workspace-chrome-tabs',
   templateUrl: './workspace-tabs.component.html',
   styleUrls: ['./workspace-tabs.component.css']
 })
-export class WorkspaceTabsComponent {
+export class WorkspaceChromeTabsComponent {
   readonly state$: Observable<WorkspaceState> = this.workspace.state$;
   @ViewChild('tabContainer') tabContainer!: ElementRef<HTMLDivElement>;
 

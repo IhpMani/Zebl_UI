@@ -1,0 +1,36 @@
+// BroadBill design tokens (SCSS) — mirror of :root in broadbill-theme.css
+// Import in component SCSS: @use 'src/shared/styles/design-tokens' as bb;
+
+$bb-bg: #f3f6fb;
+$bb-surface: #ffffff;
+$bb-surface-soft: #eef3f9;
+$bb-sidebar: #0f1f3a;
+$bb-sidebar-soft: #162947;
+$bb-sidebar-hover: #1d3557;
+$bb-primary: #2563eb;
+$bb-success: #16a34a;
+$bb-warning: #f59e0b;
+$bb-danger: #dc2626;
+$bb-border: #d9e3ee;
+$bb-text: #172b4d;
+$bb-text-muted: #5e6c84;
+
+$bb-space-1: 4px;
+$bb-space-2: 8px;
+$bb-space-3: 12px;
+$bb-space-4: 16px;
+$bb-space-5: 24px;
+$bb-space-6: 32px;
+
+$bb-radius-sm: 4px;
+$bb-radius-md: 6px;
+
+$bb-font-xs: 11px;
+$bb-font-sm: 12px;
+$bb-font-md: 13px;
+$bb-font-lg: 15px;
+$bb-font-xl: 18px;
+
+$bb-ease: cubic-bezier(0.4, 0, 0.2, 1);
+$bb-duration-fast: 120ms;
+$bb-duration: 180ms;

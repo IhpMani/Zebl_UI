@@ -116,6 +116,8 @@ export interface UserKpiValuePoint {
 
 export interface Claim {
   claID: number;
+  /** Patient foreign key — always present on claim detail even when patient nav is null. */
+  claPatFID?: number | null;
   claStatus: string | null;
   claDateTimeCreated: string | null;
   claDateTimeModified: string | null;

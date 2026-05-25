@@ -58,7 +58,8 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 16px;
+  padding: 16px 20px 24px;
+  box-sizing: border-box;
 }
 
 app-card {
@@ -71,7 +72,18 @@ app-card {
   border-radius: 12px !important;
   box-shadow: var(--shadow-card) !important;
   background: var(--bg-card) !important;
+  padding: 18px 20px !important;
   transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+:host ::ng-deep app-section-header .section-header {
+  margin-bottom: 14px;
+}
+
+:host ::ng-deep app-summary-card .summary-card {
+  padding: 12px 14px;
+  background: var(--blue-light);
+  border: 1px solid var(--border-soft);
 }
 
 :host ::ng-deep app-card .card:hover {
@@ -247,8 +259,9 @@ app-card.claim-header {
 }
 
 .summary-grid--compact {
-  gap: 10px 12px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 0;
 }
 
 .claim-grid {
@@ -307,9 +320,10 @@ app-card.claim-header {
   color: var(--blue);
 }
 
-.section-body {
+.claim-details-wrapper .section-body {
   display: block;
-  padding: 2px 2px 0;
+  padding: 0;
+  background: transparent;
 }
 
 .form-grid {
@@ -547,11 +561,50 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: var(--space-3);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.dialog-close-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.dialog-close-btn:hover {
+  color: var(--blue);
 }
 
 .dialog-body {
-  padding: 0 var(--space-3) var(--space-3);
+  padding: var(--space-3);
+}
+
+.dialog-body .form-group {
+  margin-bottom: 12px;
+}
+
+.dialog-empty {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.result-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .result-list {

@@ -1,15 +1,15 @@
-/* Global design tokens — single source of truth (colors, spacing, radii, shadows). */
+/* Legacy theme bridge — canonical tokens: shared/styles/broadbill-theme.css */
 
 :root {
-  /* Primary palette */
-  --color-primary: #1f4e79;
-  --color-primary-light: #2b6ea6;
-  --color-primary-dark: #163a5a;
+  /* Primary palette (aliased to BroadBill in broadbill-theme.css) */
+  --color-primary: var(--bb-primary, #2563eb);
+  --color-primary-light: var(--bb-primary-hover, #1d4ed8);
+  --color-primary-dark: #1e3a8a;
 
   /* Backgrounds */
-  --color-bg-main: #f4f7fb;
-  --color-bg-card: #ffffff;
-  --color-bg-sidebar: #1c2e4a;
+  --color-bg-main: var(--bb-bg, #f3f6fb);
+  --color-bg-card: var(--bb-surface, #ffffff);
+  --color-bg-sidebar: var(--bb-sidebar, #0f1f3a);
 
   /* Text */
   --color-text-primary: #1a1a1a;
@@ -34,8 +34,9 @@
   --radius-sm: 6px;
   --radius-md: 10px;
 
-  /* Shadows */
-  --shadow-card-elevated: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* Shadows — overlays only in flat layout */
+  --shadow-card-elevated: none;
+  --shadow-overlay: 0 8px 24px rgba(15, 23, 42, 0.12);
 
   /* Legacy aliases kept for compatibility */
   --color-header: var(--color-primary);
@@ -113,7 +114,7 @@
   --color-radius-md: var(--radius-md);
   --color-radius-lg: 12px;
   --color-radius-pill: 999px;
-  --color-space-page: var(--space-lg);
+  --color-space-page: var(--space-md);
   --color-space-section: var(--space-md);
   --color-space-card-padding: var(--space-md);
   --color-space-grid-gap: var(--space-md);

@@ -1,0 +1,93 @@
+<ng-container *ngIf="slice$ | async as slice">
+  <div class="pw-tab-full">
+    <app-workspace-widget-skeleton *ngIf="slice.status === 'loading'" variant="table" [rows]="8"></app-workspace-widget-skeleton>
+    <div *ngIf="slice.status === 'error'" class="pw-tab-error">
+      <span>{{ slice.error }}</span>
+      <button type="button" class="bb-btn" (click)="retry()">Retry</button>
+    </div>
+
+    <section class="pw-section pw-section--flush" *ngIf="slice.status === 'loaded'">
+      <div class="pw-tab-toolbar" *ngIf="pageState$ | async as pg">
+        <span><strong>{{ pg.totalCount }}</strong> claim(s) · page {{ pg.page }}</span>
+        <span class="pw-tab-toolbar__hint">Click row for detail · double-click quick review</span>
+      </div>
+
+      <app-operational-empty-state
+        *ngIf="(rows$ | async)?.length === 0"
+        title="No claims for this patient"
+        hint="Start billing workflow from a new claim."
+        actionLabel="Create claim"
+        (action)="createClaim()"
+      ></app-operational-empty-state>
+
+      <div class="bb-grid-wrap bb-grid-wrap--tall" *ngIf="(rows$ | async)?.length">
+        <table class="bb-grid bb-grid--compact bb-grid--wide">
+          <thead>
+            <tr>
+              <th class="bb-grid__expand-col"></th>
+              <th>Claim #</th>
+              <th>DOS</th>
+              <th>Payer</th>
+              <th>Status</th>
+              <th>Charges</th>
+              <th>Ins paid</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let r of rows$ | async; trackBy: trackRow">
+              <tr
+                class="bb-grid__row"
+                [class.bb-grid__row--selected]="r.claimId === expandedClaimId"
+                (click)="toggleExpand(r)"
+                (dblclick)="openClaimSlideover(r)"
+              >
+                <td class="bb-grid__expand">{{ expandedClaimId === r.claimId ? '▼' : '▶' }}</td>
+                <td class="pw-cell--id">{{ r.claimId }}</td>
+                <td>{{ r.dos || '—' }}</td>
+                <td>{{ r.payerName || '—' }}</td>
+                <td>
+                  <app-operational-status-badge [claimStatus]="r.statusCategory" [labelOverride]="r.status"></app-operational-status-badge>
+                </td>
+                <td class="pw-cell--num">{{ r.charges != null ? (r.charges | currency) : '—' }}</td>
+                <td class="pw-cell--num">{{ r.insurancePaid != null ? (r.insurancePaid | currency) : '—' }}</td>
+                <td class="pw-cell--num pw-cell--balance" [class.bb-balance--due]="r.balanceOverdue">
+                  {{ r.balance != null ? (r.balance | currency) : '—' }}
+                </td>
+              </tr>
+              <tr *ngIf="expandedClaimId === r.claimId" class="bb-grid__detail">
+                <td colspan="8">
+                  <div class="bb-grid__detail-inner">
+                    <div class="bb-grid__detail-meta">
+                      <span class="bb-grid__detail-item">
+                        <span class="bb-grid__detail-label">Status</span>
+                        <span class="bb-grid__detail-value">{{ r.status || '—' }}</span>
+                      </span>
+                      <span class="bb-grid__detail-item">
+                        <span class="bb-grid__detail-label">Balance due</span>
+                        <span
+                          class="bb-grid__detail-value"
+                          [class.bb-grid__detail-value--warn]="r.balanceOverdue"
+                        >{{ r.balanceOverdue ? 'Yes' : 'No' }}</span>
+                      </span>
+                    </div>
+                    <div class="bb-grid__detail-actions">
+                      <button type="button" class="bb-btn bb-btn--primary" (click)="openClaimSlideover(r); $event.stopPropagation()">Quick review</button>
+                      <a class="bb-btn" [routerLink]="['/claims', r.claimId]" (click)="$event.stopPropagation()">Open claim</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bb-pager" *ngIf="pageState$ | async as pg">
+        <button type="button" class="bb-btn" [disabled]="pg.page <= 1" (click)="prevPage()">Previous</button>
+        <span class="bb-pager__meta">Page {{ pg.page }} · {{ pg.totalCount }} claim(s)</span>
+        <button type="button" class="bb-btn" [disabled]="pg.page * pg.pageSize >= pg.totalCount" (click)="nextPage()">Next</button>
+      </div>
+    </section>
+  </div>
+</ng-container>

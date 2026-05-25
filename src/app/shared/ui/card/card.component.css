@@ -2,15 +2,24 @@
   display: block;
 }
 
+/* Flat surface host — use app-page-section for layout; .surface-raised for opt-in elevation */
 .card {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  transition: none;
 }
 
 .card:hover {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
+:host(.surface-raised) .card,
+:host-context(.surface-raised) .card {
+  background: var(--surface-elevated, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-md);
+}

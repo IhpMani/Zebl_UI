@@ -4,7 +4,9 @@ import { ClaimListComponent } from './claims/claim-list/claim-list.component';
 import { ClaimDetailsComponent } from './claims/claim-details/claim-details.component';
 import { HomeComponent } from './home/home.component';
 import { PatientListComponent } from './patients/patient-list/patient-list.component';
+import { PatientListLegacyComponent } from './patients/patient-list-legacy/patient-list-legacy.component';
 import { PatientDetailsComponent } from './patients/patient-details/patient-details.component';
+import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-preview/patient-workspace-preview.component';
 import { ServiceListComponent } from './services/service-list/service-list.component';
 import { PaymentListComponent } from './payments/payment-list/payment-list.component';
 import { PaymentEntryComponent } from './payments/payment-entry/payment-entry.component';
@@ -42,11 +44,23 @@ const routes: Routes = [
   { path: 'claims/find-claim', component: ClaimListComponent, canActivate: [AuthGuard] },
   { path: 'claims/send', component: SendClaimsComponent, canActivate: [AuthGuard] },
   { path: 'claims/new', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
+  {
+    path: 'claims',
+    loadChildren: () => import('./features/claims/claims-feature.module').then((m) => m.ClaimsFeatureModule),
+    canActivate: [AuthGuard]
+  },
   { path: 'claims/:id', component: ClaimDetailsComponent, canActivate: [AuthGuard] },
-  { path: 'patients/find-patient', component: PatientListComponent, canActivate: [AuthGuard] },
+  { path: 'patients/find-patient', component: PatientListLegacyComponent, canActivate: [AuthGuard] },
+  { path: 'patients', component: PatientListComponent, pathMatch: 'full', canActivate: [AuthGuard] },
+  { path: 'patients/workspace-preview', component: PatientWorkspacePreviewComponent, canActivate: [AuthGuard] },
   { path: 'patients/new', component: PatientDetailsComponent, canActivate: [AuthGuard] },
-  { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
   { path: 'patients/:patId/eligibility', component: PatientEligibilityComponent, canActivate: [AuthGuard] },
+  { path: 'patients/:patId', component: PatientDetailsComponent, canActivate: [AuthGuard] },
+  {
+    path: 'patients',
+    loadChildren: () => import('./features/patients/patients-feature.module').then((m) => m.PatientsFeatureModule),
+    canActivate: [AuthGuard]
+  },
   { path: 'services/find-service', component: ServiceListComponent, canActivate: [AuthGuard] },
   { path: 'payments/entry/:id', component: PaymentEntryComponent, canActivate: [AuthGuard] },
   { path: 'payments/entry', component: PaymentEntryComponent, canActivate: [AuthGuard] },

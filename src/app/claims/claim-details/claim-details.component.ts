@@ -18,6 +18,7 @@ import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/ser
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
+import { resolveClaimPatientId, resolveClaimPatientName } from '../../core/utils/claim-patient-id.util';
 
 @Component({
   selector: 'app-claim-details',
@@ -197,15 +198,29 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       this.initNewClaim();
       return;
     }
-    const idParam = this.route.snapshot.paramMap.get('id');
-    if (idParam) {
-      this.claId = +idParam;
-      this.loadClaim(this.claId);
-    } else {
-      this.error = 'Invalid claim ID';
-    }
 
-    // Route reuse (workspace tabs): returning from Payment Entry does not re-run ngOnInit — refresh lines from DB.
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      const idParam = params.get('id');
+      if (!idParam) {
+        this.error = 'Invalid claim ID';
+        return;
+      }
+      const nextId = +idParam;
+      if (!Number.isFinite(nextId) || nextId <= 0) {
+        this.error = 'Invalid claim ID';
+        return;
+      }
+      if (this.claId === nextId && this.claim && !this.claimRequestInFlight) {
+        this.syncRibbonContextFromClaim();
+        this.syncTabTitleFromClaim();
+        return;
+      }
+      this.claId = nextId;
+      this.applyInitialTabTitleFromContext();
+      this.loadClaim(this.claId);
+    });
+
+    // Route reuse (workspace tabs): returning does not re-run param subscription — refresh on activate.
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -215,10 +230,14 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         if (!this.claId || this.claId <= 0) return;
         const url = e.urlAfterRedirects || '';
         if (!this.isUrlForThisClaim(url)) return;
-        // Ribbon context is global; re-apply when this claim tab becomes active again (route reuse / workspace tabs).
         this.syncRibbonContextFromClaim();
+        this.syncTabTitleFromClaim();
         if (this.loading || this.claimRequestInFlight) return;
-        this.refreshServiceLinesFromApi();
+        if (!this.claim) {
+          this.loadClaim(this.claId);
+        } else {
+          this.refreshServiceLinesFromApi();
+        }
       });
   }
 
@@ -418,8 +437,41 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   /** Ribbon uses a single global context; keep it in sync with whichever claim route is active. */
   private syncRibbonContextFromClaim(): void {
     if (!this.claId || !this.claim) return;
-    const patId = this.claim.patient?.patID ?? null;
-    this.ribbonContext.setContext({ claimId: this.claId, patientId: patId });
+    const patId = resolveClaimPatientId(this.claim);
+    const patientName = this.resolvePatientDisplayName();
+    this.ribbonContext.setContext({
+      claimId: this.claId,
+      patientId: patId,
+      patientName
+    });
+  }
+
+  /** Workspace tab title — avoid stale "Loading..." after route reuse or async claim fetch. */
+  private syncTabTitleFromClaim(): void {
+    if (!this.claId) return;
+    this.workspace.updateActiveTabTitle(this.resolvePatientDisplayName() ?? `Claim ${this.claId}`);
+  }
+
+  private applyInitialTabTitleFromContext(): void {
+    if (!this.claId) return;
+    const ctx = this.ribbonContext.getContext();
+    if (ctx.patientName?.trim()) {
+      this.workspace.updateActiveTabTitle(ctx.patientName.trim());
+      return;
+    }
+    this.workspace.updateActiveTabTitle(`Claim ${this.claId}`);
+  }
+
+  private resolvePatientDisplayName(): string | null {
+    if (this.claim) {
+      const fromClaim = resolveClaimPatientName(this.claim);
+      if (fromClaim?.trim()) return fromClaim.trim();
+      const composed = this.getPatientName();
+      if (composed && composed !== 'Unknown Patient') return composed;
+    }
+    const ctxName = this.ribbonContext.getContext().patientName;
+    if (ctxName?.trim()) return ctxName.trim();
+    return null;
   }
 
   /**
@@ -579,6 +631,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.claimRequestInFlight = true;
+    this.applyInitialTabTitleFromContext();
 
     forkJoin({
       claim: this.claimApiService.getClaimById(claId),
@@ -604,14 +657,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
             this.claim.additionalData = this.getEmptyAdditionalData();
           }
           if (this.isUrlForThisClaim(this.router.url)) {
-            const patId = claim.patient?.patID;
-            this.ribbonContext.setContext({ claimId: claId, patientId: patId ?? null });
-            const title = this.toFullName(
-              claim.patient?.patFirstName,
-              claim.patient?.patLastName,
-              claim.patient?.patFullNameCC
-            );
-            if (title) this.workspace.updateActiveTabTitle(title);
+            this.syncRibbonContextFromClaim();
+            this.syncTabTitleFromClaim();
           }
           this.ensureCurrentStatusInOptions();
           this.ensureCurrentClassificationInOptions();
@@ -1439,13 +1486,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   getPatientName(): string {
-    if (!this.claim?.patient) return 'Unknown Patient';
-    const firstName = this.claim.patient.patFirstName || '';
-    const lastName = this.claim.patient.patLastName || '';
-    if (firstName || lastName) {
-      return `${lastName.toUpperCase()}, ${firstName}`.trim();
-    }
-    return this.claim.patient.patFullNameCC || 'Unknown Patient';
+    const resolved = this.resolvePatientDisplayName();
+    if (resolved) return resolved;
+    if (this.loading && this.claId) return `Claim ${this.claId}`;
+    return 'Unknown Patient';
   }
 
   getCreatedUserDisplay(): string {

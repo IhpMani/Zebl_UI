@@ -1,10 +1,12 @@
 /* AG Grid (Procedure Code Library) */
 @import 'ag-grid-community/styles/ag-grid.css';
 @import 'ag-grid-community/styles/ag-theme-alpine.css';
+@import './shared/styles/broadbill-theme.css';
 @import './theme.css';
 @import './reset-theme.css';
 @import './ps-theme.css';
 @import './claim-enterprise-global.css';
+@import './shared/styles/flat-layout.css';
 /*
   Modal stacking vs ribbon:
   - app-ribbon :host uses z-index ~1000.
@@ -30,9 +32,10 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  background: var(--color-bg-main);
-  color: var(--color-text-primary);
+  font-family: var(--bb-font-family, 'Inter', 'Segoe UI', sans-serif);
+  background: var(--bb-bg);
+  color: var(--bb-text);
+  font-size: var(--bb-font-md);
 }
 
 /* =========================
@@ -43,20 +46,29 @@ select,
 textarea {
   max-width: 100%;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  font-size: 0.9rem;
-  background: var(--color-card-bg);
+  height: var(--bb-input-height);
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius-sm);
+  padding: 0 var(--bb-input-padding-x);
+  font-size: var(--bb-font-md);
+  font-family: var(--bb-font-family);
+  background: var(--bb-surface);
+  color: var(--bb-text);
   box-sizing: border-box;
+}
+
+textarea {
+  height: auto;
+  min-height: 72px;
+  padding: var(--bb-space-sm) var(--bb-input-padding-x);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--shadow-focus);
+  border-color: var(--bb-primary);
+  box-shadow: 0 0 0 2px var(--bb-primary-soft);
 }
 
 textarea {
@@ -73,12 +85,13 @@ textarea {
   min-width: 0;
 }
 
-/* Common panel styling */
+/* Legacy alias — use app-page-section or .surface-raised */
 .panel-card {
-  background: var(--color-card-bg);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  box-shadow: 0 2px 8px var(--shadow-card);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 /* Common button styles */
@@ -141,14 +154,23 @@ textarea {
    SHARED UI PRIMITIVES (design system)
 ========================= */
 .card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.surface-raised {
   background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   padding: var(--space-md);
 }
 
 .page {
-  padding: var(--color-space-page, 20px);
+  padding: var(--space-md);
 }
 
 .grid {

@@ -1,0 +1,45 @@
+<app-workspace-panel title="Service lines" [padded]="false">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 120px; margin: 8px"></div>
+    <div *ngIf="slice.status === 'error'" class="bb-widget-error">{{ slice.error }}</div>
+    <table class="bb-grid bb-grid--wide" *ngIf="slice.status === 'loaded'">
+      <thead>
+        <tr>
+          <th></th>
+          <th>DOS</th><th>Proc</th><th>Units</th><th>Charges</th><th>Ins Paid</th><th>Pat Paid</th>
+          <th>Adj</th><th>Balance</th><th>Resp</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of rows$ | async; trackBy: trackRow">
+          <tr (click)="toggle(r)" [class.bb-grid__row--selected]="(expandedId$ | async) === r.serviceLineId">
+            <td>{{ (expandedId$ | async) === r.serviceLineId ? '▼' : '▶' }}</td>
+            <td>{{ r.dos || '—' }}</td>
+            <td>{{ r.procedureCode || '—' }}</td>
+            <td>{{ r.units ?? '—' }}</td>
+            <td>{{ r.charges != null ? (r.charges | currency) : '—' }}</td>
+            <td>{{ r.insurancePaid != null ? (r.insurancePaid | currency) : '—' }}</td>
+            <td>{{ r.patientPaid != null ? (r.patientPaid | currency) : '—' }}</td>
+            <td>{{ r.adjustments != null ? (r.adjustments | currency) : '—' }}</td>
+            <td [class.bb-balance--due]="(r.remainingBalance ?? 0) > 0">{{ r.remainingBalance != null ? (r.remainingBalance | currency) : '—' }}</td>
+            <td>
+              {{ r.responsibleParty || '—' }}
+              <span class="bb-pill bb-pill--warn" *ngIf="r.hasDenial">Denial</span>
+            </td>
+          </tr>
+          <tr *ngIf="(expandedId$ | async) === r.serviceLineId" class="cw-grid__detail">
+            <td colspan="10">
+              <div class="bb-grid__detail-inner">
+                <span>Adjustments: {{ r.adjustmentCount }}</span>
+                <span>Payments: {{ r.paymentCount }}</span>
+                <span *ngIf="r.agingDays != null">Aging: {{ r.agingDays }}d</span>
+                <button type="button" class="bb-btn" (click)="preview(r); $event.stopPropagation()">Quick review</button>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="(rows$ | async)?.length === 0"><td colspan="10">No service lines.</td></tr>
+      </tbody>
+    </table>
+  </ng-container>
+</app-workspace-panel>

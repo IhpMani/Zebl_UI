@@ -303,13 +303,40 @@
   </div>
 </div>
 
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
+<div class="dialog-overlay" *ngIf="showProcedureLookupDialog" (click)="closeProcedureLookup()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Procedure lookup</h3>
+      <button type="button" class="dialog-close-btn" (click)="closeProcedureLookup()" aria-label="Close">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="form-group">
+        <label>Search procedure code</label>
+        <input
+          type="text"
+          [(ngModel)]="procedureLookupKeyword"
+          [ngModelOptions]="{ standalone: true }"
+          (keyup.enter)="searchProcedureLookup()"
+          placeholder="Enter code or description"
+        />
+      </div>
+      <button type="button" class="btn-secondary" (click)="searchProcedureLookup()" [disabled]="procedureLookupLoading">Search</button>
+      <div class="loading" *ngIf="procedureLookupLoading" style="margin-top: 10px;">Searching…</div>
+      <ul class="result-list" *ngIf="!procedureLookupLoading && procedureLookupResults.length">
+        <li
+          *ngFor="let item of procedureLookupResults"
+          class="result-item"
+          (dblclick)="onProcedureLookupSelect(item)"
+          (click)="onProcedureLookupSelect(item)"
+        >
+          <strong>{{ item.code }}</strong>
+          <span>{{ item.description }}</span>
+        </li>
+      </ul>
+      <p class="dialog-empty" *ngIf="!procedureLookupLoading && !procedureLookupResults.length">No procedures found.</p>
+    </div>
+  </div>
+</div>
 
                 <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
 

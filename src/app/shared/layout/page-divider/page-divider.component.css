@@ -1,0 +1,5 @@
+.page-divider {
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
+  margin: var(--space-lg) 0;
+}

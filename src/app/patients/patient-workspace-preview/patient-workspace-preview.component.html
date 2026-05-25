@@ -1,0 +1,71 @@
+<app-workspace-shell>
+  <app-workspace-header
+    title="JOHNSON, MARY A."
+    subtitle="BroadBill Patient Workspace — Phase 1 layout preview (no live data)"
+  >
+    <div workspaceHeaderMeta>
+      <span><strong>DOB</strong> 03/12/1985</span>
+      <span><strong>MRN</strong> 100234</span>
+      <span><strong>Acct #</strong> PA-88421</span>
+      <span><strong>Payer</strong> Blue Cross PPO</span>
+      <span><strong>Balance</strong> $1,240.00</span>
+    </div>
+    <div workspaceHeaderActions>
+      <button type="button" class="bb-btn bb-btn--primary">New Claim</button>
+      <button type="button" class="bb-btn">Payment Entry</button>
+      <button type="button" class="bb-btn">More Actions</button>
+    </div>
+  </app-workspace-header>
+
+  <app-workspace-page-tabs
+    [tabs]="previewTabs"
+    [activeTabId]="activeTabId"
+    (tabChange)="onTabChange($event)"
+  ></app-workspace-page-tabs>
+
+  <app-workspace-content sidebarWidth="340px">
+    <div workspaceMain>
+      <app-workspace-section-header title="Financial Summary" subtitle="Overview tab placeholder"></app-workspace-section-header>
+
+      <div class="preview-metrics">
+        <app-metric-card label="Patient Balance" value="$420.00"></app-metric-card>
+        <app-metric-card label="Insurance Balance" value="$820.00"></app-metric-card>
+        <app-metric-card label="Total Balance" value="$1,240.00" tone="warning"></app-metric-card>
+        <app-metric-card label="Open Claims" value="3"></app-metric-card>
+      </div>
+
+      <app-workspace-panel title="Recent Claims (placeholder)">
+        <p class="bb-muted preview-note">Phase 5 will bind Claim / Payment / Payer data here.</p>
+      </app-workspace-panel>
+
+      <app-data-card title="Patient Information">
+        <dl class="preview-dl">
+          <div><dt>Account #</dt><dd>PA-88421</dd></div>
+          <div><dt>Phone</dt><dd>(555) 123-4567</dd></div>
+          <div><dt>Email</dt><dd>mary.johnson&#64;example.com</dd></div>
+        </dl>
+      </app-data-card>
+    </div>
+
+    <div workspaceSidebar>
+      <app-data-card title="Insurance Summary">
+        <dl class="preview-dl">
+          <div><dt>Primary</dt><dd>Blue Cross PPO</dd></div>
+          <div><dt>Group #</dt><dd>GRP-2201</dd></div>
+        </dl>
+      </app-data-card>
+
+      <app-quick-action-panel>
+        <button type="button" class="bb-btn bb-btn--primary">New Claim</button>
+        <button type="button" class="bb-btn">Payment Entry</button>
+        <button type="button" class="bb-btn">Add Note</button>
+      </app-quick-action-panel>
+    </div>
+  </app-workspace-content>
+
+  <div workspaceBottom>
+    <app-workspace-panel title="Bottom Panels (Tasks / Alerts placeholder)" [padded]="true">
+      <p class="bb-muted preview-note">Reserved for Phase 9 polish: keyboard shortcuts, recent patients, hover previews.</p>
+    </app-workspace-panel>
+  </div>
+</app-workspace-shell>

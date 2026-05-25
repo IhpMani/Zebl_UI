@@ -12,7 +12,7 @@ export interface SidebarPanelItem {
 })
 export class SidebarFloatingPanelComponent {
   @Input() visible = false;
-  @Input() left = 220;
+  @Input() left = 76;
   @Input() top = 0;
   @Input() items: SidebarPanelItem[] = [];
   @Input() title = '';

@@ -1,20 +1,23 @@
-/* strict-theme-normalized */
-.interface-data-review {
-  padding: 8px;
+:host {
+  display: block;
+  min-height: calc(100vh - 60px);
+  background: var(--ps-bg);
+  color: var(--ps-text);
 }
 
-.top-section, .bottom-section {
-  margin-bottom: 16px;
+/* Match list pages: section blocks read as clear panels in the glass theme */
+:host ::ng-deep app-page-section .page-section {
+  padding: var(--space-md, 16px);
+  margin-bottom: var(--space-lg, 24px);
   background: var(--ps-card);
   border: 1px solid var(--ps-border);
-  padding: 10px;
+  border-radius: 2px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+:host ::ng-deep app-page-section:last-child .page-section {
+  margin-bottom: 0;
 }
 
 .table {
@@ -40,19 +43,22 @@
 }
 
 .import-outcome {
-  margin: 8px 0 12px;
-  padding: 10px 12px;
+  margin: 0 0 var(--space-md, 16px);
+  padding: var(--space-sm, 8px) var(--space-md, 16px);
   font-size: 13px;
   line-height: 1.45;
-  border-radius: 2px;
+  border-radius: var(--radius-sm, 6px);
   background: var(--ps-card);
-  border: var(--ps-border);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .import-outcome--error {
-  background: var(--ps-card);
-  border-color: var(--ps-border);
-  color: var(--ps-text);
+  background: #ffebee;
+  border-color: #ef9a9a;
+  color: #b71c1c;
 }
 
 .loading {
@@ -60,26 +66,24 @@
 }
 
 .review-panel {
-  margin-top: 16px;
+  margin-top: var(--space-md, 16px);
   border-top: 1px solid var(--ps-border);
-  padding: 16px 18px 22px;
+  padding-top: var(--space-md, 16px);
 }
 
-.review-panel h3 {
-  margin: 0 0 16px;
-  padding: 10px 14px;
+.review-panel__title {
+  margin: 0 0 var(--space-md, 16px);
+  padding: 0 0 var(--space-sm, 8px);
   font-size: 14px;
   font-weight: 600;
-  background: var(--ps-blue-light);
-  border: 1px solid var(--ps-border);
-  border-radius: 2px;
+  color: var(--ps-text);
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
 }
 
 .review-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  margin-bottom: 0;
 }
 
 .review-group {
@@ -209,7 +213,33 @@
   }
 }
 
-/* Themed buttons (match procedure code / EDI reports) */
+/* Tables inside sections */
+.table,
+.table thead,
+.table tbody,
+.table tr,
+.table th,
+.table td {
+  background: transparent;
+  color: var(--ps-text);
+  border-color: var(--ps-border);
+}
+
+.table thead th {
+  background: var(--ps-blue-light);
+  color: var(--ps-text);
+  font-weight: 600;
+}
+
+.table tbody tr td {
+  background: var(--ps-card);
+}
+
+.table tbody tr:hover td {
+  background: var(--ps-card);
+}
+
+/* Buttons */
 .btn {
   padding: 6px 16px;
   font-size: 13px;
@@ -219,6 +249,7 @@
   cursor: pointer;
   background: var(--ps-card);
   color: var(--ps-text);
+  min-height: 32px;
 }
 
 .btn:disabled {
@@ -247,115 +278,6 @@
   filter: brightness(1.05);
 }
 
-.btn-secondary {
-  background: var(--ps-card);
-  border-color: var(--ps-border);
-  color: var(--ps-text);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--ps-blue-mid);
-}
-
-.header-row .btn {
-  min-height: 32px;
-}
-
-/* =========================
-   GLASS THEME OVERRIDES
-========================= */
-.interface-data-review {
-  padding: 16px;
-  min-height: calc(100vh - 60px);
-  background: var(--ps-bg);
-  color: var(--ps-text);
-}
-
-.interface-data-review h2,
-.interface-data-review h3 {
-  color: var(--ps-text);
-}
-
-.top-section,
-.bottom-section,
-.review-panel {
-  background: var(--ps-card);
-  border: 1px solid var(--ps-border);
-  border-radius: 2px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.review-group {
-  background: var(--ps-bg);
-}
-
-.review-stat {
-  background: var(--ps-card);
-}
-
-.review-stat--total {
-  background: var(--ps-blue-light);
-}
-
-.table,
-.table thead,
-.table tbody,
-.table tr,
-.table th,
-.table td {
-  background: transparent;
-  color: var(--ps-text);
-  border-color: var(--ps-border);
-}
-
-.table thead th {
-  background: var(--ps-blue-light);
-  color: var(--ps-text);
-  font-weight: 600;
-}
-
-.table tbody tr td {
-  background: var(--ps-card);
-}
-
-.table tbody tr:hover td {
-  background: var(--ps-card);
-}
-
-.empty,
-.loading {
-  color: var(--ps-text);
-}
-
-.error {
-  color: var(--ps-red, #c62828);
-  font-weight: 500;
-}
-
-.header-row h3 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.header-row {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--ps-border);
-  margin-bottom: 12px;
-}
-
-.top-section > h3,
-.bottom-section > h3 {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  background: var(--ps-blue-light);
-  border-bottom: 1px solid var(--ps-border);
-  margin: -10px -10px 12px;
-}
-
 .btn-primary:not(.btn-save) {
   background: var(--ps-blue) !important;
   border-color: var(--ps-blue) !important;
@@ -376,18 +298,4 @@
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--ps-blue-mid) !important;
-}
-
-.import-outcome {
-  background: var(--ps-card);
-  border: 1px solid var(--ps-border);
-  color: var(--ps-text);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.import-outcome--error {
-  background: #ffebee;
-  border-color: #ef9a9a;
-  color: #b71c1c;
 }

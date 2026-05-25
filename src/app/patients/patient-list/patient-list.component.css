@@ -1,2 +1,15 @@
 /* Match Find Claims list theme (shared styles). */
 @import '../../claims/claim-list/claim-list.component.css';
+
+.legacy-patient-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--bb-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--bb-surface-muted, #f8fafc);
+  font-size: 13px;
+}

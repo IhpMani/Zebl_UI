@@ -1,0 +1,26 @@
+.bb-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius);
+  background: var(--bb-surface);
+  font-size: var(--bb-font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bb-btn--primary {
+  background: var(--bb-primary);
+  border-color: var(--bb-primary);
+  color: #fff;
+}
+
+.bb-workspace-skeleton,
+.bb-workspace-error {
+  font-size: var(--bb-font-sm);
+  padding: var(--bb-space-sm) 0;
+}
+
+.bb-workspace-error {
+  color: var(--bb-danger);
+}

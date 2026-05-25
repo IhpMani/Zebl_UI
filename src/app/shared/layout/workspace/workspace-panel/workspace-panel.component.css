@@ -1,0 +1,29 @@
+.bb-workspace-panel {
+  width: 100%;
+  overflow: hidden;
+}
+
+.bb-workspace-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bb-space-sm);
+  padding: var(--bb-space-sm) var(--bb-space-md);
+  border-bottom: 1px solid var(--bb-border);
+  background: var(--bb-bg);
+}
+
+.bb-workspace-panel__title {
+  margin: 0;
+  font-size: var(--bb-font-md);
+  font-weight: 600;
+  color: var(--bb-text);
+}
+
+.bb-workspace-panel__body {
+  padding: var(--bb-space-md);
+}
+
+.bb-workspace-panel--flat .bb-workspace-panel__body {
+  padding: 0;
+}

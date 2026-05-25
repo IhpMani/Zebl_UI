@@ -1,0 +1,13 @@
+<app-workspace-panel title="Activity & audit timeline">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 80px"></div>
+    <ul class="cw-timeline" *ngIf="slice.status === 'loaded' && (timeline$ | async) as events">
+      <li class="cw-timeline__item" *ngFor="let e of events">
+        <strong>{{ e.label }}</strong>
+        <div class="bb-type-meta">{{ e.at }}</div>
+        <div *ngIf="e.detail">{{ e.detail }}</div>
+      </li>
+      <li *ngIf="events.length === 0" class="bb-type-meta">No activity recorded.</li>
+    </ul>
+  </ng-container>
+</app-workspace-panel>

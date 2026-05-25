@@ -1,0 +1,20 @@
+<app-workspace-shell class="bb-workspace claims-workspace-page">
+  <app-claim-workspace-header></app-claim-workspace-header>
+
+  <div class="cw-layout">
+    <div class="cw-main bb-animate-fade">
+      <app-claim-lifecycle-panel></app-claim-lifecycle-panel>
+      <app-claim-financial-summary></app-claim-financial-summary>
+      <app-claim-service-lines-grid></app-claim-service-lines-grid>
+      <div class="cw-two-col">
+        <app-claim-adjustments-panel></app-claim-adjustments-panel>
+        <app-claim-payments-panel></app-claim-payments-panel>
+      </div>
+      <app-claim-era-panel></app-claim-era-panel>
+      <app-claim-timeline-panel></app-claim-timeline-panel>
+    </div>
+    <aside class="cw-sidebar">
+      <app-claim-workflow-sidebar></app-claim-workflow-sidebar>
+    </aside>
+  </div>
+</app-workspace-shell>

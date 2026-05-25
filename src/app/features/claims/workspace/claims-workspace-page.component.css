@@ -1,0 +1,31 @@
+.claims-workspace-page {
+  width: 100%;
+}
+
+.cw-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--bb-space-md);
+}
+
+@media (max-width: 900px) {
+  .cw-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bb-kv {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--bb-space-xs) var(--bb-space-md);
+  font-size: var(--bb-font-md);
+  margin: 0;
+}
+.bb-kv dt {
+  color: var(--bb-text-muted);
+  margin: 0;
+}
+.bb-kv dd {
+  margin: 0;
+  font-weight: 600;
+}

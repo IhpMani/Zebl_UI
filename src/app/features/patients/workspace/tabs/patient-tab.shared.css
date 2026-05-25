@@ -1,0 +1,130 @@
+/* Patient workspace tab extensions — base grid/buttons in broadbill-theme.css */
+
+.bb-kv--inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px 16px;
+}
+
+.bb-kv--inline dt {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--bb-muted, #64748b);
+}
+
+.bb-kv--inline dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+.tab-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bb-space-sm);
+  margin-bottom: var(--bb-space-md);
+}
+
+.bb-kv {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: var(--bb-space-xs) var(--bb-space-md);
+  margin: 0;
+  font-size: var(--bb-font-md);
+}
+.bb-kv dt {
+  color: var(--bb-text-muted);
+  margin: 0;
+}
+.bb-kv dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Workspace tab operational polish */
+.pw-tab-full {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pw-tab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--bb-muted, #64748b);
+  border-bottom: 1px solid var(--bb-border, #e2e8f0);
+  background: var(--bb-surface-soft, #f8fafc);
+}
+
+.pw-tab-toolbar__hint {
+  font-size: 11px;
+}
+
+.pw-cell--id {
+  font-weight: 700;
+  color: var(--bb-primary, #2563eb);
+  font-variant-numeric: tabular-nums;
+}
+
+.pw-cell--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.patient-workspace-page .bb-grid__row {
+  transition: background 0.1s ease;
+}
+
+.patient-workspace-page .bb-grid__row:hover {
+  background: #f8fafc;
+}
+
+.patient-workspace-page .bb-grid__row--selected {
+  background: #eff6ff;
+  box-shadow: inset 3px 0 0 var(--bb-primary, #2563eb);
+}
+
+.patient-workspace-page .bb-grid__detail td {
+  background: #f8fafc;
+}
+
+.patient-workspace-page .bb-grid__detail-inner {
+  border-left-color: var(--bb-primary, #2563eb);
+}
+
+.patient-workspace-page .bb-grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bb-surface-soft, #f8fafc);
+}
+
+.patient-workspace-page .bb-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-top: 1px solid var(--bb-border, #e2e8f0);
+}
+
+.patient-workspace-page .bb-pager__meta {
+  font-size: 12px;
+  color: var(--bb-muted, #64748b);
+}
+
+.pw-payment-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pw-payment-type {
+  font-size: 12px;
+  color: var(--bb-text, #334155);
+}

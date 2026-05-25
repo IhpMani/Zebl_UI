@@ -167,7 +167,7 @@ td {
 }
 
 .sidebar-nav .nav-item {
-  padding: 8px 12px !important;
+  padding: 5px 3px !important;
 }
 
 .sidebar-nav .nav-item.active {
@@ -208,11 +208,11 @@ td {
   border-bottom: 0 !important;
 }
 
-.sidebar-profile .dropdown {
+.topbar-profile .dropdown {
   border-radius: 12px !important;
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.1) !important;
 }
 
-.sidebar-profile .dropdown .menu-item {
+.topbar-profile .dropdown .menu-item {
   padding: 10px 14px !important;
 }

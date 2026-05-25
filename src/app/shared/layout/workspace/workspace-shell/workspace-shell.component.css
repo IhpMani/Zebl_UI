@@ -1,0 +1,20 @@
+.bb-workspace-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+  gap: var(--bb-space-sm);
+  padding: var(--bb-space-md);
+  box-sizing: border-box;
+}
+
+.bb-workspace-shell__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bb-space-md);
+  width: 100%;
+}
+
+.bb-workspace-shell__bottom:empty {
+  display: none;
+}

@@ -1,0 +1,29 @@
+<app-workspace-panel title="Financial summary">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 80px"></div>
+    <div *ngIf="slice.status === 'error'" class="bb-widget-error">{{ slice.error }}</div>
+    <ng-container *ngIf="slice.status === 'loaded' && (financial$ | async) as fin">
+      <div class="cw-metrics">
+        <app-metric-card label="Total Charges" [value]="(fin.totalCharges | currency) || ''"></app-metric-card>
+        <app-metric-card label="Insurance Paid" [value]="(fin.insurancePaid | currency) || ''"></app-metric-card>
+        <app-metric-card label="Patient Paid" [value]="(fin.patientPaid | currency) || ''"></app-metric-card>
+        <app-metric-card label="Adjustments" [value]="(fin.adjustments | currency) || ''"></app-metric-card>
+        <app-metric-card label="Remaining Ins" [value]="(fin.remainingInsurance | currency) || ''"></app-metric-card>
+        <app-metric-card label="Remaining Pat" [value]="(fin.remainingPatient | currency) || ''" tone="warning"></app-metric-card>
+        <app-metric-card label="Total Applied" [value]="(fin.totalApplied | currency) || ''"></app-metric-card>
+        <app-metric-card label="Balance" [value]="(fin.totalBalance | currency) || ''" tone="warning"></app-metric-card>
+      </div>
+      <div class="cw-flow">
+        <span class="cw-flow__step">Charge {{ fin.totalCharges | currency }}</span>
+        <span class="cw-flow__arrow">→</span>
+        <span class="cw-flow__step">Adj {{ fin.adjustments | currency }}</span>
+        <span class="cw-flow__arrow">→</span>
+        <span class="cw-flow__step">Ins Paid {{ fin.insurancePaid | currency }}</span>
+        <span class="cw-flow__arrow">→</span>
+        <span class="cw-flow__step">Pat Paid {{ fin.patientPaid | currency }}</span>
+        <span class="cw-flow__arrow">→</span>
+        <span class="cw-flow__step">Balance {{ fin.totalBalance | currency }}</span>
+      </div>
+    </ng-container>
+  </ng-container>
+</app-workspace-panel>

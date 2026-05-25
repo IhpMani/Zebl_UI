@@ -1,0 +1,21 @@
+.claims-ops-page {
+  padding: var(--bb-space-lg);
+  max-width: 100%;
+}
+
+.claims-ops-page__head {
+  margin-bottom: var(--bb-space-md);
+}
+
+.claims-ops-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bb-space-sm);
+  align-items: center;
+  margin-bottom: var(--bb-space-sm);
+}
+
+.claims-ops-page__search {
+  flex: 1;
+  min-width: 220px;
+}

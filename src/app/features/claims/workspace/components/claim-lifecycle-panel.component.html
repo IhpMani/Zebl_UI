@@ -1,0 +1,18 @@
+<app-workspace-panel title="Claim lifecycle">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 48px"></div>
+    <div *ngIf="slice.status === 'error'" class="bb-widget-error">{{ slice.error }}</div>
+    <div class="cw-lifecycle" *ngIf="slice.status === 'loaded' && (lifecycle$ | async) as steps">
+      <div
+        *ngFor="let s of steps"
+        class="cw-lifecycle__step"
+        [class.cw-lifecycle__step--complete]="s.state === 'complete'"
+        [class.cw-lifecycle__step--current]="s.state === 'current'"
+        [class.cw-lifecycle__step--error]="s.state === 'error'"
+        [class.cw-lifecycle__step--pending]="s.state === 'pending'"
+      >
+        <div>{{ s.label }}</div>
+      </div>
+    </div>
+  </ng-container>
+</app-workspace-panel>

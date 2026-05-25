@@ -247,6 +247,10 @@ export interface PatientListItem {
   patBillingPhyFID: number;
   patClassification: string | null;
   patTotalBalanceCC: number | null;
+  patMemberID?: string | null;
+  patLastServiceDateTRIG?: string | null;
+  patTotalPatBalanceTRIG?: number | null;
+  patTotalInsBalanceTRIG?: number | null;
   additionalColumns?: { [key: string]: any };
 }
 

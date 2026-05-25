@@ -1,0 +1,35 @@
+<app-workspace-shell class="patient-workspace-page bb-workspace bb-workspace-page">
+
+  <div class="pw-sticky-zone">
+    <nav class="pw-breadcrumb" *ngIf="header$ | async as h">
+      <a routerLink="/patients" class="pw-breadcrumb__link">Patient</a>
+      <span class="pw-breadcrumb__sep">/</span>
+      <span class="pw-breadcrumb__current">{{ h.patientName }}</span>
+    </nav>
+
+    <app-patient-workspace-header></app-patient-workspace-header>
+
+
+
+    <app-workspace-page-tabs
+
+      [tabs]="workspaceTabs"
+
+      [activeTabId]="activeTabId"
+
+      (tabChange)="onTabChange($event)"
+
+    ></app-workspace-page-tabs>
+
+  </div>
+
+
+
+  <div class="patient-workspace-page__outlet">
+
+    <router-outlet></router-outlet>
+
+  </div>
+
+</app-workspace-shell>
+

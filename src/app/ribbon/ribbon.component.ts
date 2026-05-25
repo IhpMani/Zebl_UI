@@ -2,7 +2,10 @@ import { Component, HostListener, Output, EventEmitter, OnInit, OnDestroy } from
 import { Router } from '@angular/router';
 import { take, Subscription } from 'rxjs';
 import { RibbonContextService } from '../core/services/ribbon-context.service';
+import { PatientNavigationService } from '../features/patients/services/patient-navigation.service';
+import { PatientWorkspaceStateService } from '../features/patients/services/patient-workspace-state.service';
 import { ClaimApiService } from '../core/services/claim-api.service';
+import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
 import { EdiReportCountService } from '../core/services/edi-report-count.service';
 import { SidebarStateService } from '../core/services/sidebar-state.service';
 import { SidebarPanelItem } from './sidebar-floating-panel.component';
@@ -18,13 +21,13 @@ export class RibbonComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   mobileSidebarOpen = false;
   ediReportCount = 0;
-  panelLeft = 220;
+  panelLeft = 76;
   panelTop = 0;
   panelTitle = '';
   private countSub?: Subscription;
   private readonly findItems: SidebarPanelItem[] = [
     { label: 'Find Claims', value: 'Find Claim' },
-    { label: 'Find Patients', value: 'Find Patient' },
+    { label: 'Find Patients', value: 'Find Patients' },
     { label: 'Find Services', value: 'Find Service' },
     { label: 'Find Payments', value: 'Find Payment' },
     { label: 'Find Disbursements', value: 'Find Disbursement' },
@@ -56,7 +59,9 @@ export class RibbonComponent implements OnInit, OnDestroy {
     private ribbonContext: RibbonContextService,
     private claimApiService: ClaimApiService,
     private ediReportCountService: EdiReportCountService,
-    private sidebarState: SidebarStateService
+    private sidebarState: SidebarStateService,
+    private readonly patientNav: PatientNavigationService,
+    private readonly patientWorkspaceState: PatientWorkspaceStateService
   ) { }
 
   ngOnInit(): void {
@@ -70,16 +75,50 @@ export class RibbonComponent implements OnInit, OnDestroy {
     this.countSub?.unsubscribe();
   }
 
-  /** Navigate to the patient for the current claim (Claim Details) or open Find Patient */
+  /** Context-aware: from claim editor → related patient; else patient directory. */
   onPatientClick(): void {
     const ctx = this.ribbonContext.getContext();
-    const isOnClaimDetails = this.router.url.startsWith('/claims/');
-    if (isOnClaimDetails && ctx.patientId) {
-      const qp = ctx.claimId ? { claimId: ctx.claimId } : {};
-      this.router.navigate(['patients', ctx.patientId], { queryParams: qp });
-    } else {
-      this.router.navigate(['patients/new']);
+    const claimId = this.activeClaimIdFromRoute();
+
+    if (claimId != null) {
+      const openPatient = (patientId: number) => {
+        this.ribbonContext.setContext({ claimId, patientId });
+        this.patientNav.navigateToPatientDetails(patientId, { claimId });
+      };
+
+      if (ctx.patientId) {
+        openPatient(ctx.patientId);
+        this.closeMobileSidebar();
+        return;
+      }
+
+      this.claimApiService
+        .getClaimById(claimId)
+        .pipe(take(1))
+        .subscribe({
+          next: (claim) => {
+            const patientId = resolveClaimPatientId(claim);
+            if (patientId) {
+              openPatient(patientId);
+            } else {
+              this.patientNav.navigateToPatientLookup();
+            }
+          },
+          error: () => this.patientNav.navigateToPatientLookup()
+        });
+      this.closeMobileSidebar();
+      return;
     }
+
+    const patientId = this.activePatientIdFromRoute();
+    if (patientId != null) {
+      this.ribbonContext.setContext({ patientId, claimId: ctx.claimId });
+      this.patientNav.navigateToPatientDetails(patientId);
+      this.closeMobileSidebar();
+      return;
+    }
+
+    this.patientNav.navigateToPatientLookup();
     this.closeMobileSidebar();
   }
 
@@ -89,32 +128,92 @@ export class RibbonComponent implements OnInit, OnDestroy {
     this.closeMobileSidebar();
   }
 
-  /** Navigate to the claim for the current patient (Patient Details) or open Find Claim */
+  /** Context-aware: from patient editor → related claim; else claim directory. */
   onClaimClick(): void {
     const ctx = this.ribbonContext.getContext();
-    const isOnPatientDetails = this.router.url.startsWith('/patients/');
-    if (isOnPatientDetails && ctx.claimId) {
-      this.router.navigate(['claims', ctx.claimId]);
-    } else if (isOnPatientDetails && ctx.patientId) {
-      this.claimApiService.getClaims(1, 1, { patientId: ctx.patientId })
+    const patientId = this.activePatientIdFromRoute() ?? ctx.patientId;
+
+    if (patientId != null) {
+      const claimId = this.resolveClaimIdForPatient(patientId, ctx);
+      if (claimId != null) {
+        this.ribbonContext.setContext({ patientId, claimId });
+        void this.router.navigate(['/claims', claimId]);
+        this.closeMobileSidebar();
+        return;
+      }
+
+      this.claimApiService
+        .getClaims(1, 1, { patientId })
         .pipe(take(1))
         .subscribe({
           next: (response) => {
             const first = response.data?.[0];
             if (first?.claID) {
-              this.router.navigate(['claims', first.claID]);
+              this.ribbonContext.setContext({ patientId, claimId: first.claID });
+              void this.router.navigate(['/claims', first.claID]);
             } else {
-              this.router.navigate(['claims/new'], { queryParams: { patientId: ctx.patientId } });
+              void this.router.navigate(['/claims/find-claim']);
             }
           },
-          error: () => {
-            this.router.navigate(['claims/new'], { queryParams: { patientId: ctx.patientId } });
-          }
+          error: () => void this.router.navigate(['/claims/find-claim'])
         });
-    } else {
-      this.router.navigate(['claims/new']);
+      this.closeMobileSidebar();
+      return;
     }
+
+    const claimId = this.activeClaimIdFromRoute();
+    if (claimId != null) {
+      void this.router.navigate(['/claims', claimId]);
+      this.closeMobileSidebar();
+      return;
+    }
+
+    void this.router.navigate(['/claims/find-claim']);
     this.closeMobileSidebar();
+  }
+
+  /** Numeric claim id from /claims/{id} or /claims/{id}/workspace (not find-claim, new, send). */
+  private activeClaimIdFromRoute(): number | null {
+    const match = this.currentUrlPath().match(/^\/claims\/(\d+)(?:\/|$)/);
+    if (!match?.[1]) return null;
+    const id = Number(match[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  /** Numeric patient id from /patients/{id}/… (not list, new, find-patient). */
+  private activePatientIdFromRoute(): number | null {
+    const match = this.currentUrlPath().match(/^\/patients\/(\d+)(?:\/|$)/);
+    if (!match?.[1]) return null;
+    const id = Number(match[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private currentUrlPath(): string {
+    return this.router.url.split('?')[0];
+  }
+
+  private queryClaimIdFromRoute(): number | null {
+    const idx = this.router.url.indexOf('?');
+    if (idx < 0) return null;
+    const raw = new URLSearchParams(this.router.url.slice(idx)).get('claimId');
+    if (!raw) return null;
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private resolveClaimIdForPatient(
+    patientId: number,
+    ctx: { claimId: number | null; patientId: number | null }
+  ): number | null {
+    const fromQuery = this.queryClaimIdFromRoute();
+    if (fromQuery != null) return fromQuery;
+    if (ctx.claimId != null) return ctx.claimId;
+
+    const ws = this.patientWorkspaceState.context;
+    if (ws.patId === patientId && ws.selectedClaimId != null) {
+      return ws.selectedClaimId;
+    }
+    return null;
   }
 
   /** Open Send Claims batch screen. */
@@ -172,8 +271,11 @@ export class RibbonComponent implements OnInit, OnDestroy {
       case 'Find Claim':
         this.router.navigate(['claims/find-claim']);
         break;
+      case 'Find Patients':
+        this.patientNav.navigateToClassicFindPatients();
+        break;
       case 'Find Patient':
-        this.router.navigate(['patients/find-patient']);
+        this.patientNav.navigateToClassicFindPatients();
         break;
       case 'Find Service':
         this.router.navigate(['services/find-service']);
@@ -270,7 +372,7 @@ export class RibbonComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.sidebarState.toggleCollapsed();
     this.sidebarCollapsed = this.sidebarState.isCollapsed;
-    this.panelLeft = this.sidebarCollapsed ? 72 : 220;
+    this.panelLeft = this.sidebarCollapsed ? 52 : 76;
     this.emitSidebarState();
   }
 
@@ -318,7 +420,7 @@ export class RibbonComponent implements OnInit, OnDestroy {
 
     const rect = target.getBoundingClientRect();
     const items = menu === 'find' ? this.findItems : this.libraryItems;
-    const left = this.sidebarCollapsed ? 72 : 220;
+    const left = this.sidebarCollapsed ? 52 : 76;
     const top = this.computePanelTop(rect.top, items.length);
 
     this.panelTop = top;

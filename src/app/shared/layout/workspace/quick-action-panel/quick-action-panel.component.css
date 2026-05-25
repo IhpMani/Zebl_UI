@@ -1,0 +1,23 @@
+.bb-quick-action-panel {
+  padding: var(--bb-space-md);
+}
+
+.bb-quick-action-panel__title {
+  margin: 0 0 var(--bb-space-sm);
+  font-size: var(--bb-font-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--bb-text);
+}
+
+.bb-quick-action-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bb-space-sm);
+}
+
+.bb-quick-action-panel__actions ::ng-deep .bb-btn {
+  width: 100%;
+  justify-content: flex-start;
+}

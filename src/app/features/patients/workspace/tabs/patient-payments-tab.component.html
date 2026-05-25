@@ -1,0 +1,81 @@
+<ng-container *ngIf="slice$ | async as slice">
+  <div class="pw-tab-full">
+    <app-workspace-widget-skeleton *ngIf="slice.status === 'loading'" variant="table" [rows]="6"></app-workspace-widget-skeleton>
+    <div *ngIf="slice.status === 'error'" class="pw-tab-error">
+      <span>{{ slice.error }}</span>
+      <button type="button" class="bb-btn" (click)="retry()">Retry</button>
+    </div>
+
+    <section class="pw-section" *ngIf="slice.status === 'loaded' && (financial$ | async) as fin">
+      <div class="pw-stat-strip">
+        <div class="pw-stat" [class.pw-stat--warn]="fin.patientBalance > 0">
+          <span class="pw-stat__label">Patient balance</span>
+          <span class="pw-stat__value">{{ fin.patientBalance | currency }}</span>
+        </div>
+        <div class="pw-stat">
+          <span class="pw-stat__label">Unapplied</span>
+          <span class="pw-stat__value">{{ fin.unappliedPayments != null ? (fin.unappliedPayments | currency) : '—' }}</span>
+        </div>
+        <div class="pw-stat" [class.pw-stat--warn]="fin.totalBalance > 0">
+          <span class="pw-stat__label">Total AR</span>
+          <span class="pw-stat__value">{{ fin.totalBalance | currency }}</span>
+        </div>
+        <div class="pw-stat">
+          <span class="pw-stat__label">Payments</span>
+          <span class="pw-stat__value">{{ (rows$ | async)?.length ?? 0 }} on page</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pw-section pw-section--flush" *ngIf="slice.status === 'loaded'">
+      <header class="pw-section__head">
+        <h2 class="pw-section__title">Payment activity</h2>
+        <button type="button" class="bb-btn bb-btn--primary" (click)="openPaymentEntry()">Add payment</button>
+      </header>
+
+      <app-operational-empty-state
+        *ngIf="(rows$ | async)?.length === 0"
+        title="No payments on file"
+        hint="Post a payment to apply to this patient's balance."
+        actionLabel="Payment entry"
+        (action)="openPaymentEntry()"
+      ></app-operational-empty-state>
+
+      <div class="bb-grid-wrap bb-grid-wrap--tall" *ngIf="(rows$ | async)?.length">
+        <table class="bb-grid bb-grid--compact bb-grid--wide">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Payer</th>
+              <th class="pw-cell--num">Amount</th>
+              <th class="pw-cell--num">Unapplied</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let r of rows$ | async; trackBy: trackRow"
+              class="bb-grid__row"
+              (click)="openPayment(r)"
+              title="Click for quick review"
+            >
+              <td class="pw-cell--id">{{ r.paymentId }}</td>
+              <td>{{ r.paymentDate || '—' }}</td>
+              <td class="pw-payment-type">{{ r.paymentType || '—' }}</td>
+              <td>{{ r.payerName || '—' }}</td>
+              <td class="pw-cell--num pw-payment-amount">{{ r.amount != null ? (r.amount | currency) : '—' }}</td>
+              <td class="pw-cell--num" [class.bb-balance--due]="hasUnapplied(r)">
+                {{ r.unappliedAmount != null ? (r.unappliedAmount | currency) : '—' }}
+              </td>
+              <td>
+                <span class="bb-pill bb-pill--warn" *ngIf="hasUnapplied(r)">Unapplied</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</ng-container>

@@ -1,0 +1,173 @@
+<div class="pw-overview-grid" *ngIf="state.header$ | async as h">
+  <section class="pw-section pw-overview-grid__info">
+    <header class="pw-section__head">
+      <h2 class="pw-section__title">Patient Information</h2>
+      <a *ngIf="state.context.patId as pid" class="pw-link-btn" [routerLink]="['/patients', pid]">Edit</a>
+    </header>
+    <div class="pw-section__body">
+      <dl class="pw-kv pw-kv--stacked">
+        <dt>Account #</dt><dd>{{ h.accountNo || '—' }}</dd>
+        <dt>MRN</dt><dd>{{ h.mrn || '—' }}</dd>
+        <dt>DOB</dt><dd>{{ h.dob || '—' }}</dd>
+        <dt>Gender</dt><dd>{{ h.sex || '—' }}</dd>
+        <dt>Phone</dt><dd>{{ h.phone || '—' }}</dd>
+        <dt>Email</dt><dd><a *ngIf="h.email" class="pw-email" [href]="'mailto:' + h.email">{{ h.email }}</a><span *ngIf="!h.email">—</span></dd>
+        <dt>Address</dt><dd>{{ h.addressLine || '—' }}</dd>
+        <dt>Status</dt>
+        <dd>
+          <span class="pw-pill" [class.pw-pill--active]="h.patActive" [class.pw-pill--inactive]="!h.patActive">
+            {{ h.patActive ? 'Active' : 'Inactive' }}
+          </span>
+        </dd>
+      </dl>
+    </div>
+  </section>
+
+  <div class="pw-overview-grid__center">
+    <ng-container *ngIf="financialSlice$ | async as finSlice">
+      <section class="pw-section">
+        <header class="pw-section__head"><h2 class="pw-section__title">Financial Summary</h2></header>
+        <div class="pw-section__body">
+          <app-workspace-widget-skeleton *ngIf="finSlice.status === 'loading'" variant="card"></app-workspace-widget-skeleton>
+          <div *ngIf="finSlice.status === 'error'" class="bb-widget-error">{{ finSlice.error }}</div>
+          <ng-container *ngIf="finSlice.status === 'loaded' && (financial$ | async) as fin">
+            <div class="pw-fin-cards">
+              <div class="pw-fin-card" [class.pw-fin-card--warn]="fin.patientBalance > 0">
+                <span class="pw-fin-card__label">Patient Balance</span>
+                <span class="pw-fin-card__value">{{ fin.patientBalance | currency }}</span>
+              </div>
+              <div class="pw-fin-card" [class.pw-fin-card--warn]="fin.insuranceBalance > 0">
+                <span class="pw-fin-card__label">Insurance Balance</span>
+                <span class="pw-fin-card__value">{{ fin.insuranceBalance | currency }}</span>
+              </div>
+              <div class="pw-fin-card" [class.pw-fin-card--warn]="fin.totalBalance > 0">
+                <span class="pw-fin-card__label">Total Balance</span>
+                <span class="pw-fin-card__value">{{ fin.totalBalance | currency }}</span>
+              </div>
+              <div class="pw-fin-card">
+                <span class="pw-fin-card__label">In Collections</span>
+                <span class="pw-fin-card__value">{{ fin.inCollections ? (fin.totalBalance | currency) : '$0.00' }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </section>
+    </ng-container>
+
+    <section class="pw-section">
+      <header class="pw-section__head"><h2 class="pw-section__title">Balance Aging</h2></header>
+      <div class="pw-section__body">
+        <ng-container *ngIf="agingSlice$ | async as agingSlice">
+          <app-workspace-widget-skeleton *ngIf="agingSlice.status === 'loading'" variant="card"></app-workspace-widget-skeleton>
+          <div *ngIf="agingSlice.status === 'error'" class="bb-widget-error">{{ agingSlice.error }}</div>
+          <div class="pw-aging" *ngIf="agingSlice.status === 'loaded' && (aging$ | async) as aging">
+            <div class="pw-aging__bucket" *ngFor="let b of agingBuckets(aging)">
+              <div class="pw-aging__label">{{ b.label }}</div>
+              <div class="pw-aging__amount">{{ b.amount | currency }}</div>
+              <div class="pw-aging__bar"><div class="pw-aging__fill" [style.width.%]="b.pct"></div></div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <section class="pw-section pw-section--flush">
+      <header class="pw-section__head">
+        <h2 class="pw-section__title">Recent Claims</h2>
+        <button type="button" class="pw-link-btn" (click)="goClaimsTab()">View all claims →</button>
+      </header>
+      <div class="pw-section__body pw-section__body--flush">
+        <ng-container *ngIf="claimsSlice$ | async as claimsSlice">
+          <app-workspace-widget-skeleton *ngIf="claimsSlice.status === 'loading'" variant="table" [rows]="4"></app-workspace-widget-skeleton>
+          <div *ngIf="claimsSlice.status === 'error'" class="bb-widget-error">{{ claimsSlice.error }}</div>
+          <div class="bb-grid-wrap" *ngIf="claimsSlice.status === 'loaded'">
+            <table class="bb-grid bb-grid--compact" *ngIf="(claimsPreview$ | async) as rows">
+              <thead>
+                <tr>
+                  <th>Claim #</th><th>DOS</th><th>Status</th><th>Charges</th><th>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of rows; trackBy: trackClaim" class="bb-grid__row" (click)="openClaim(r.claimId)">
+                  <td><button type="button" class="pw-claim-link" (click)="$event.stopPropagation(); openClaim(r.claimId)">{{ r.claimId }}</button></td>
+                  <td>{{ r.dos || '—' }}</td>
+                  <td>{{ r.status || '—' }}</td>
+                  <td>{{ r.charges != null ? (r.charges | currency) : '—' }}</td>
+                  <td class="pw-cell--num" [class.bb-balance--due]="(r.balance ?? 0) > 0">{{ r.balance != null ? (r.balance | currency) : '—' }}</td>
+                </tr>
+                <tr *ngIf="rows.length === 0"><td colspan="5" class="pw-muted-cell">No recent claims.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+  </div>
+
+  <div class="pw-overview-grid__rail">
+    <section class="pw-section">
+      <header class="pw-section__head">
+        <h2 class="pw-section__title">Insurance (Primary)</h2>
+        <span class="pw-badge-primary">Primary</span>
+      </header>
+      <div class="pw-section__body">
+        <ng-container *ngIf="insuranceSlice$ | async as insSlice">
+          <app-workspace-widget-skeleton *ngIf="insSlice.status === 'loading'" variant="card"></app-workspace-widget-skeleton>
+          <div *ngIf="insSlice.status === 'error'" class="bb-widget-error">{{ insSlice.error }}</div>
+          <dl class="pw-kv pw-kv--stacked" *ngIf="insSlice.status === 'loaded' && (insuranceSummary$ | async) as ins">
+            <dt>Payer</dt><dd>{{ ins.primaryPayer || '—' }}</dd>
+            <dt>Subscriber</dt><dd>{{ ins.subscriberName || '—' }}</dd>
+            <dt>Group #</dt><dd>{{ ins.groupNumber || '—' }}</dd>
+            <dt>Plan</dt><dd>{{ ins.planName || '—' }}</dd>
+            <dt>Effective</dt><dd>{{ ins.effectiveDate || '—' }}</dd>
+          </dl>
+        </ng-container>
+      </div>
+    </section>
+
+    <section class="pw-section">
+      <header class="pw-section__head">
+        <h2 class="pw-section__title">Recent Payments</h2>
+        <button type="button" class="pw-link-btn" (click)="goPaymentsTab()">View all →</button>
+      </header>
+      <div class="pw-section__body">
+        <ng-container *ngIf="paymentsSlice$ | async as paySlice">
+          <app-workspace-widget-skeleton *ngIf="paySlice.status === 'loading'" variant="card"></app-workspace-widget-skeleton>
+          <div *ngIf="paySlice.status === 'error'" class="bb-widget-error">{{ paySlice.error }}</div>
+          <ul class="pw-pay-list" *ngIf="paySlice.status === 'loaded' && (recentPayments$ | async) as pays">
+            <li *ngFor="let p of pays; trackBy: trackPayment" class="pw-pay-list__item">
+              <div>
+                <div class="pw-pay-list__date">{{ p.paymentDate || '—' }}</div>
+                <div class="pw-pay-list__desc">{{ p.paymentType || ('Payment #' + p.paymentId) }}</div>
+              </div>
+              <div class="pw-pay-list__amt">{{ p.amount != null ? (p.amount | currency) : '—' }}</div>
+            </li>
+            <li *ngIf="pays.length === 0" class="pw-muted-cell">No recent payments.</li>
+          </ul>
+        </ng-container>
+      </div>
+    </section>
+  </div>
+
+  <aside class="pw-overview-grid__actions">
+    <section class="pw-section">
+      <header class="pw-section__head"><h2 class="pw-section__title">Patient Actions</h2></header>
+      <ul class="pw-action-list">
+        <li><button type="button" class="pw-action-list__btn" (click)="goNewClaim()">New Claim</button></li>
+        <li><button type="button" class="pw-action-list__btn" (click)="goPaymentEntry()">Payment Entry</button></li>
+        <li><button type="button" class="pw-action-list__btn" (click)="goClaimsTab()">View Claims</button></li>
+        <li><button type="button" class="pw-action-list__btn" (click)="goPaymentsTab()">View Payments</button></li>
+      </ul>
+    </section>
+
+    <section class="pw-section">
+      <header class="pw-section__head"><h2 class="pw-section__title">Shortcuts</h2></header>
+      <ul class="pw-shortcut-list">
+        <li><button type="button" class="pw-shortcut-list__btn" (click)="goClaimsTab()">Claims ({{ h.totalClaimsCount ?? 0 }})</button></li>
+        <li><button type="button" class="pw-shortcut-list__btn" (click)="goPaymentEntry()">Post Payment</button></li>
+      </ul>
+    </section>
+
+    <app-patient-contextual-actions></app-patient-contextual-actions>
+  </aside>
+</div>

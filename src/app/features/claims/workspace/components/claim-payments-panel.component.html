@@ -1,0 +1,21 @@
+<app-workspace-panel title="Payments & disbursements" [padded]="false">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 64px; margin: 8px"></div>
+    <table class="bb-grid" *ngIf="slice.status === 'loaded' && (rows$ | async) as rows">
+      <thead>
+        <tr><th>Line</th><th>Payment #</th><th>Date</th><th>Amount</th><th>Method</th><th>ERA Ref</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of rows">
+          <td>{{ p.serviceLineId ?? '—' }}</td>
+          <td>{{ p.paymentId }}</td>
+          <td>{{ p.paymentDate || '—' }}</td>
+          <td>{{ p.amount != null ? (p.amount | currency) : '—' }}</td>
+          <td>{{ p.method || '—' }}</td>
+          <td>{{ p.eraRef || '—' }}</td>
+        </tr>
+        <tr *ngIf="rows.length === 0"><td colspan="6">No payments on this claim.</td></tr>
+      </tbody>
+    </table>
+  </ng-container>
+</app-workspace-panel>

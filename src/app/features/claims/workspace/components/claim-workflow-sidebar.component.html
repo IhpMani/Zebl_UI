@@ -1,0 +1,13 @@
+<app-quick-action-panel>
+  <div class="bb-type-section-header" style="margin-bottom: 8px">Workflow actions</div>
+  <button
+    *ngFor="let a of actions$ | async"
+    type="button"
+    class="bb-btn"
+    [class.bb-btn--primary]="a.tone === 'primary'"
+    [disabled]="a.disabled"
+    (click)="run(a)"
+  >
+    {{ a.label }}
+  </button>
+</app-quick-action-panel>

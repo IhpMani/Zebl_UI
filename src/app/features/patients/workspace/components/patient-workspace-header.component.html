@@ -1,0 +1,65 @@
+<ng-container *ngIf="slice$ | async as slice">
+  <app-workspace-widget-skeleton
+    *ngIf="slice.status === 'loading'"
+    variant="card"
+    class="patient-workspace-header__skel"
+  ></app-workspace-widget-skeleton>
+
+  <ng-container *ngIf="slice.status === 'loaded' && (header$ | async) as h">
+    <header class="pw-header" *ngIf="financial$ | async as fin">
+      <div class="pw-header__hero">
+        <div class="pw-header__identity">
+          <div class="pw-header__avatar" aria-hidden="true">{{ initials(h.patientName) }}</div>
+          <div class="pw-header__nameblock">
+            <div class="pw-header__title-row">
+              <h1 class="pw-header__title">{{ h.patientName }}</h1>
+              <span class="pw-header__status" [class.pw-header__status--active]="h.patActive" [class.pw-header__status--inactive]="!h.patActive">
+                {{ h.patActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            <p class="pw-header__meta">{{ demographicLine(h) }}</p>
+            <p class="pw-header__contact" *ngIf="h.phone || h.addressLine">
+              <span *ngIf="h.phone">{{ h.phone }}</span>
+              <span *ngIf="h.phone && h.addressLine"> · </span>
+              <span *ngIf="h.addressLine">{{ h.addressLine }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="pw-header__metrics">
+          <div class="pw-metric">
+            <span class="pw-metric__label">Total Balance</span>
+            <span class="pw-metric__value pw-metric__value--lg">{{ fin.totalBalance | currency }}</span>
+            <span class="pw-metric__sub">Patient {{ fin.patientBalance | currency }} · Insurance {{ fin.insuranceBalance | currency }}</span>
+          </div>
+          <div class="pw-metric">
+            <span class="pw-metric__label">Total Claims</span>
+            <span class="pw-metric__value pw-metric__value--lg">{{ h.totalClaimsCount ?? 0 }}</span>
+            <span class="pw-metric__sub">Open {{ h.openClaimsCount ?? 0 }} · Closed {{ h.closedClaimsCount ?? 0 }}</span>
+          </div>
+          <div class="pw-metric">
+            <span class="pw-metric__label">Last DOS</span>
+            <span class="pw-metric__value">{{ formatDos(h.lastDos) }}</span>
+            <span class="pw-metric__sub" *ngIf="daysSinceDos(h.lastDos) != null">{{ daysSinceDos(h.lastDos) }} days ago</span>
+          </div>
+          <div class="pw-metric">
+            <span class="pw-metric__label">Primary Payer</span>
+            <span class="pw-metric__value pw-metric__value--sm">{{ h.primaryPayer || '—' }}</span>
+            <span class="pw-metric__sub" *ngIf="h.accountNo">Account {{ h.accountNo }}</span>
+          </div>
+        </div>
+
+        <div class="pw-header__actions">
+          <button type="button" class="bb-btn bb-btn--primary" (click)="newClaim()">+ New Claim</button>
+          <button type="button" class="bb-btn" disabled title="Coming soon">Patient Statement</button>
+          <div class="pw-header__more">
+            <button type="button" class="bb-btn" (click)="addPayment()">Add Payment</button>
+            <button type="button" class="bb-btn" (click)="state.refresh()">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </header>
+  </ng-container>
+
+  <div *ngIf="slice.status === 'error'" class="bb-workspace-error">{{ slice.error }}</div>
+</ng-container>

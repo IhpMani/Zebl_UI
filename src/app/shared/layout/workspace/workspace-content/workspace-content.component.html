@@ -1,0 +1,13 @@
+<div
+  class="bb-workspace-content"
+  [class.bb-workspace-content--no-sidebar]="!showSidebar"
+  [style.--bb-sidebar-width]="sidebarWidth"
+>
+  <div class="bb-workspace-content__main">
+    <ng-content select="[workspaceMain]"></ng-content>
+    <ng-content></ng-content>
+  </div>
+  <aside class="bb-workspace-content__sidebar" *ngIf="showSidebar">
+    <ng-content select="[workspaceSidebar]"></ng-content>
+  </aside>
+</div>

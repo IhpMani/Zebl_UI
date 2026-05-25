@@ -1,0 +1,21 @@
+<app-workspace-panel title="Adjustments" [padded]="false">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 64px; margin: 8px"></div>
+    <table class="bb-grid" *ngIf="slice.status === 'loaded' && (rows$ | async) as rows">
+      <thead>
+        <tr><th>Line</th><th>Group</th><th>Reason</th><th>Amount</th><th>Payer</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of rows">
+          <td>{{ a.serviceLineId }}</td>
+          <td>{{ a.groupCode || '—' }}</td>
+          <td>{{ a.reasonCode || '—' }}</td>
+          <td>{{ a.amount | currency }}</td>
+          <td>{{ a.payer || '—' }}</td>
+          <td>{{ a.date || '—' }}</td>
+        </tr>
+        <tr *ngIf="rows.length === 0"><td colspan="6">No adjustments posted.</td></tr>
+      </tbody>
+    </table>
+  </ng-container>
+</app-workspace-panel>

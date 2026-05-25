@@ -1,13 +1,10 @@
-<div class="interface-data-review">
-  <h2>Interface Data Review</h2>
+<app-page-shell variant="dense">
+  <app-sticky-page-header title="Interface Data Review">
+    <button type="button" class="btn btn-primary" (click)="onImportClick()">Import File</button>
+    <input #fileInput type="file" accept=".hl7" class="u-hidden" (change)="onFileSelected($event)" />
+  </app-sticky-page-header>
 
-  <div class="top-section">
-    <div class="header-row">
-      <h3>Incoming / Pending Files</h3>
-      <button type="button" class="btn btn-primary" (click)="onImportClick()">Import File</button>
-      <input #fileInput type="file" accept=".hl7" class="u-hidden" (change)="onFileSelected($event)" />
-    </div>
-
+  <app-page-section title="Incoming / Pending Files" [divided]="true">
     <table class="table">
       <thead>
         <tr>
@@ -32,9 +29,8 @@
       </tbody>
     </table>
 
-    <!-- Review Summary block (pre-import counts) -->
     <div class="review-panel" *ngIf="review">
-      <h3>Review Details</h3>
+      <h3 class="review-panel__title">Review Details</h3>
 
       <div class="review-body">
         <section class="review-group review-group--source">
@@ -93,11 +89,9 @@
         <button type="button" class="btn btn-secondary" (click)="onCancelReview()" [disabled]="reviewing || importing">Cancel</button>
       </div>
     </div>
-  </div>
+  </app-page-section>
 
-  <div class="bottom-section">
-    <h3>Import History</h3>
-
+  <app-page-section title="Import History" [divided]="false">
     <div *ngIf="lastImportDetail" class="import-outcome" [class.import-outcome--error]="lastImportHadFailures">
       {{ lastImportDetail }}
     </div>
@@ -128,5 +122,5 @@
         </tr>
       </tbody>
     </table>
-  </div>
-</div>
+  </app-page-section>
+</app-page-shell>

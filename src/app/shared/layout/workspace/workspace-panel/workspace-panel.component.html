@@ -1,0 +1,11 @@
+<section class="bb-workspace-panel bb-surface" [class.bb-workspace-panel--flat]="!padded">
+  <header class="bb-workspace-panel__header" *ngIf="title">
+    <h2 class="bb-workspace-panel__title">{{ title }}</h2>
+    <div class="bb-workspace-panel__actions">
+      <ng-content select="[panelActions]"></ng-content>
+    </div>
+  </header>
+  <div class="bb-workspace-panel__body">
+    <ng-content></ng-content>
+  </div>
+</section>

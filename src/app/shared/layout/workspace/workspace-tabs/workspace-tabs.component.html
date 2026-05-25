@@ -1,0 +1,15 @@
+<nav class="bb-workspace-tabs" role="tablist" aria-label="Workspace sections">
+  <button
+    type="button"
+    class="bb-workspace-tabs__tab"
+    role="tab"
+    *ngFor="let tab of tabs"
+    [class.bb-workspace-tabs__tab--active]="tab.id === activeTabId"
+    [disabled]="tab.disabled"
+    [attr.aria-selected]="tab.id === activeTabId"
+    (click)="selectTab(tab)"
+  >
+    {{ tab.label }}
+  </button>
+  <ng-content></ng-content>
+</nav>

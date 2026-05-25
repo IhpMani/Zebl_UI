@@ -1,0 +1,13 @@
+<header class="bb-workspace-header bb-surface">
+  <div class="bb-workspace-header__main">
+    <h1 class="bb-workspace-header__title" *ngIf="title">{{ title }}</h1>
+    <p class="bb-workspace-header__subtitle bb-muted" *ngIf="subtitle">{{ subtitle }}</p>
+    <div class="bb-workspace-header__meta">
+      <ng-content select="[workspaceHeaderMeta]"></ng-content>
+    </div>
+  </div>
+  <div class="bb-workspace-header__actions">
+    <ng-content select="[workspaceHeaderActions]"></ng-content>
+    <ng-content></ng-content>
+  </div>
+</header>

@@ -1,0 +1,19 @@
+.bb-data-card {
+  width: 100%;
+}
+
+.bb-data-card__header {
+  padding: var(--bb-space-sm) var(--bb-space-md);
+  border-bottom: 1px solid var(--bb-border);
+}
+
+.bb-data-card__title {
+  margin: 0;
+  font-size: var(--bb-font-sm);
+  font-weight: 600;
+  color: var(--bb-text);
+}
+
+.bb-data-card__body {
+  padding: var(--bb-space-md);
+}

@@ -1,24 +1,4 @@
-<button type="button" class="sidebar-mobile-toggle" (click)="toggleMobileSidebar($event)" aria-label="Toggle navigation">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-    <line x1="3" y1="6" x2="21" y2="6"></line>
-    <line x1="3" y1="12" x2="21" y2="12"></line>
-    <line x1="3" y1="18" x2="21" y2="18"></line>
-  </svg>
-</button>
-
-<div class="sidebar-backdrop" *ngIf="mobileSidebarOpen" (click)="closeMobileSidebar()"></div>
-
 <aside class="sidebar-nav" [class.sidebar-nav--collapsed]="sidebarCollapsed" [class.sidebar-nav--mobile-open]="mobileSidebarOpen">
-  <div class="sidebar-header">
-    <button type="button" class="sidebar-toggle" (click)="toggleSidebarCollapse($event)" aria-label="Collapse or expand sidebar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-  </div>
-
   <nav class="sidebar-toolbar" role="navigation">
     <div class="sidebar-section">
       <button type="button" class="nav-item nav-item--icon-only" [class.active]="isRouteActive('/')" (click)="goToHome()" aria-label="Home" [attr.title]="sidebarCollapsed ? 'Home' : null">
@@ -35,7 +15,7 @@
           <span class="nav-item__label" *ngIf="!sidebarCollapsed">Find</span>
         </button>
         <div class="dropdown-content dropdown-content--find" [class.show]="showFindDropdown" role="menu" aria-label="Find menu">
-          <a role="menuitem" (click)="findOptionSelected('Find Patient')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>Find Patient</a>
+          <a role="menuitem" (click)="findOptionSelected('Find Patients')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>Find Patients</a>
           <a role="menuitem" (click)="findOptionSelected('Find Claim')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg></span>Find Claim</a>
           <a role="menuitem" (click)="findOptionSelected('Find Service')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg></span>Find Service</a>
           <a role="menuitem" (click)="findOptionSelected('Find Payment')"><span class="dropdown-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg></span>Find Payment</a>

@@ -1,0 +1,14 @@
+<app-workspace-panel title="ERA / EDI activity">
+  <ng-container *ngIf="slice$ | async as slice">
+    <div *ngIf="slice.status === 'loading'" class="bb-skeleton" style="height: 48px"></div>
+    <dl class="bb-kv" *ngIf="slice.status === 'loaded' && (era$ | async) as era">
+      <dt>EDI Status</dt><dd>{{ era.ediStatus }}</dd>
+      <dt>Submission</dt><dd>{{ era.submissionMethod || '—' }}</dd>
+      <dt>Notes</dt><dd>{{ era.notes || '—' }}</dd>
+    </dl>
+    <div class="bb-type-meta" style="margin-top: 8px">
+      <a class="bb-btn" routerLink="/edi-reports">Open EDI reports</a>
+      <a class="bb-btn" routerLink="/payments/era-exceptions" style="margin-left: 8px">ERA exceptions</a>
+    </div>
+  </ng-container>
+</app-workspace-panel>

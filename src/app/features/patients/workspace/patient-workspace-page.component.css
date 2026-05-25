@@ -1,0 +1,15 @@
+.patient-workspace-page {
+  width: 100%;
+  min-height: 100%;
+}
+
+.patient-workspace-page__outlet {
+  width: 100%;
+  min-width: 0;
+  animation: pw-fade-in 0.18s ease-out;
+}
+
+@keyframes pw-fade-in {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}

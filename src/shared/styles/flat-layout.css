@@ -1,0 +1,130 @@
+/**
+ * Flat enterprise layout system — opt-in surfaces, single page background owner.
+ * Loaded from styles.css after theme tokens.
+ */
+
+:root {
+  --surface-page: #f8fafc;
+  --surface-subtle: #f1f5f9;
+  --surface-elevated: #ffffff;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --shadow-overlay: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-overlay-sm: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+}
+
+/* Single page background owner */
+.app-container,
+.main-content,
+.content-container,
+.workspace-content {
+  background: var(--surface-page);
+}
+
+/* Layout wrappers — never surfaces */
+.page-container,
+.claim-list-container,
+.claim-details-wrapper,
+.patient-details-wrapper,
+[class$='-container']:not(.surface-raised):not(.cdk-overlay-container) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+[class$='-panel']:not(.surface-raised):not(.dropdown-content):not(.floating-panel) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Legacy .card — flat by default; use .surface-raised to opt in */
+.card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.panel-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Opt-in raised surface (rare: KPI tiles, login, etc.) */
+.surface-raised {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  padding: var(--space-md);
+}
+
+/* Overlays only */
+.dropdown-content,
+.floating-panel,
+.facility-select-panel,
+.topbar-profile .dropdown,
+.app-toast,
+.modal,
+.dialog,
+.popup,
+.popover,
+.cdk-overlay-pane {
+  box-shadow: var(--shadow-overlay);
+}
+
+/* Tables on page surface */
+.table-container,
+.claims-table,
+.page-table-wrap {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.page-table-wrap table,
+.claims-table {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+thead th {
+  background: var(--surface-subtle);
+}
+
+/* List / table page blocks */
+.section.card.table-container,
+.section.table-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.page-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin: 0 0 var(--space-md);
+  color: var(--text-primary);
+}
+
+.page-divider {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-lg) 0;
+}

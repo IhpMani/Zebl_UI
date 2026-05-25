@@ -1,0 +1,69 @@
+<div class="cmd-backdrop" *ngIf="open" (click)="onBackdropClick()" role="presentation">
+  <div class="cmd-panel" (click)="$event.stopPropagation()" (keydown)="onKeydown($event)" tabindex="-1">
+    <header class="cmd-panel__head">
+      <span class="cmd-panel__kicker">Command Center</span>
+      <h2 class="cmd-panel__title">Patient lookup</h2>
+      <p class="cmd-panel__hint">
+        <kbd>Ctrl</kbd>+<kbd>P</kbd> opens this panel · ↑↓ navigate · Enter open patient · Esc close
+      </p>
+    </header>
+
+    <div class="cmd-search">
+      <input
+        #searchInput
+        type="search"
+        class="cmd-search__input"
+        [formControl]="searchControl"
+        placeholder="Search name, account #, MRN, payer…"
+        autocomplete="off"
+        aria-label="Patient search"
+      />
+      <span class="cmd-search__status" *ngIf="loading">Searching…</span>
+    </div>
+
+    <div class="cmd-recent" *ngIf="!searchControl.value.trim() && recentSearches.length">
+      <div class="cmd-recent__label">Recent searches</div>
+      <div class="cmd-chips">
+        <button type="button" class="cmd-chip" *ngFor="let s of recentSearches" (click)="applyRecentSearch(s)">{{ s }}</button>
+      </div>
+    </div>
+
+    <div class="cmd-recent" *ngIf="!searchControl.value.trim() && recentPatients.length">
+      <div class="cmd-recent__label">Recent patients</div>
+      <div class="cmd-chips">
+        <button type="button" class="cmd-chip" *ngFor="let r of recentPatients" (click)="openRecent(r.patId)">
+          {{ r.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="cmd-results" *ngIf="searchControl.value.trim() || displayRows.length">
+      <div class="cmd-results__empty" *ngIf="!loading && displayRows.length === 0 && searchControl.value.trim()">
+        No patients match. Try account # or name.
+      </div>
+      <button
+        type="button"
+        class="cmd-result"
+        *ngFor="let row of displayRows; let i = index"
+        [class.cmd-result--active]="i === highlightedIndex"
+        (click)="openPatient(row)"
+        (mouseenter)="highlightedIndex = i"
+      >
+        <div class="cmd-result__main">
+          <span class="cmd-result__name">{{ row.patientName }}</span>
+          <app-operational-status-badge [labelOverride]="row.status"></app-operational-status-badge>
+        </div>
+        <div class="cmd-result__meta">
+          <span>DOB {{ row.dob || '—' }}</span>
+          <span>Acct {{ row.accountNo || '—' }}</span>
+          <span>{{ row.primaryPayer || 'No payer' }}</span>
+          <span class="cmd-result__bal" [class.cmd-result__bal--due]="(row.totalBalance ?? 0) > 0">
+            {{ row.totalBalance != null ? (row.totalBalance | currency) : '—' }}
+          </span>
+          <span>Claims {{ row.openClaimCount ?? '—' }}</span>
+          <span>Last DOS {{ row.lastDos || '—' }}</span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>

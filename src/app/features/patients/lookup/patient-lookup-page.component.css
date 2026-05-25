@@ -1,0 +1,27 @@
+.pat-lookup-page__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--bb-muted, #64748b);
+}
+
+.pat-lookup-page__hint kbd {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--bb-border, #cbd5e1);
+  background: #f8fafc;
+}
+
+.pat-lookup-page__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pat-lookup-page__chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bb-muted, #64748b);
+  width: 100%;
+}

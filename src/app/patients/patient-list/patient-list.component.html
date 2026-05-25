@@ -1,270 +1,179 @@
-<div class="claim-list-container">
-  <div class="page-container">
-    <div class="section">
-      <h2 class="page-title">Patient List</h2>
+<div class="pd-page">
+  <header class="pd-header">
+    <div>
+      <h1 class="pd-header__title">Find Patients</h1>
+      <p class="pd-header__sub">Browse and search the patient directory</p>
+    </div>
+    <div class="pd-header__actions">
+      <button type="button" class="pd-btn pd-btn--primary" (click)="goNewPatient()">+ New Patient</button>
+      <button type="button" class="pd-btn" (click)="goNewPatient()">Quick Registration</button>
+    </div>
+  </header>
+
+  <div class="pd-toolbar">
+    <div class="pd-toolbar__search-wrap">
+      <input
+        #searchInput
+        type="search"
+        class="pd-toolbar__search pd-toolbar__search--wide"
+        [(ngModel)]="globalSearchText"
+        (input)="onSearchInput()"
+        placeholder="Search by name, MRN, Account #, phone…"
+        (keyup.enter)="onGlobalSearch()"
+        aria-label="Search patients"
+        autocomplete="off"
+      />
+      <span class="pd-toolbar__spinner" *ngIf="loading" aria-hidden="true"></span>
+    </div>
+    <input
+      type="date"
+      class="pd-toolbar__date"
+      [(ngModel)]="dobFilter"
+      (change)="onDobFilterChange()"
+      title="Date of Birth"
+      aria-label="Date of Birth"
+    />
+    <label class="pd-toolbar__field">
+      Status
+      <select class="pd-toolbar__select" [(ngModel)]="activeFilter" (change)="onActiveFilterChange()">
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </label>
+    <label class="pd-toolbar__field">
+      Payer
+      <select class="pd-toolbar__select" [(ngModel)]="payerFilter" (change)="onPayerFilterChange()">
+        <option value="">All (page)</option>
+        <option *ngFor="let p of payerFilterOptions" [value]="p">{{ p }}</option>
+      </select>
+    </label>
+    <button type="button" class="pd-btn pd-btn--primary" (click)="onGlobalSearch()" [disabled]="loading">Search</button>
+    <button type="button" class="pd-btn" (click)="clearGlobalSearch()" [disabled]="loading">Clear</button>
+  </div>
+
+  <div class="pd-meta" *ngIf="!error">
+    <span class="pd-meta__status" *ngIf="searchStatus">{{ searchStatus }}</span>
+    <span class="pd-meta__kbd">↑↓ navigate · Enter open · Esc clear</span>
+  </div>
+
+  <div class="pd-recent" *ngIf="recentSearches.length && !globalSearchText">
+    <span class="pd-recent__label">Recent:</span>
+    <button
+      type="button"
+      class="pd-recent__chip"
+      *ngFor="let term of recentSearches"
+      (click)="applyRecentSearch(term)"
+    >{{ term }}</button>
+  </div>
+
+  <div class="pd-body">
+    <div *ngIf="error" class="pd-error-banner">
+      <span>{{ error }}</span>
+      <button type="button" class="pd-btn pd-btn--primary" (click)="retryLoad()">Retry</button>
     </div>
 
-    <div *ngIf="loading" class="loading section">Loading patients...</div>
-    <div *ngIf="error" class="error section">{{ error }}</div>
+    <div
+      class="pd-grid-scroll"
+      #gridHost
+      *ngIf="!error"
+      [class.pd-grid-scroll--busy]="loading && hasLoadedOnce"
+      [class.pd-grid-scroll--initial]="loading && !hasLoadedOnce"
+    >
+      <div class="pd-grid-loading" *ngIf="loading && !hasLoadedOnce">
+        <div class="pd-skeleton-row" *ngFor="let _ of [1,2,3,4,5,6,7,8]"></div>
+      </div>
 
-    <div *ngIf="!loading && !error" class="section card table-container">
-      <div class="table-wrapper">
-      <table class="claims-table">
+      <table class="pd-grid" *ngIf="hasLoadedOnce">
         <thead>
           <tr>
-            <th class="action-col add-column-header">
-              <div class="header-cell">
-                <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">
-                  Add Column <span class="arrow">▼</span>
-                </button>
-              </div>
-            </th>
-            <th *ngFor="let col of visibleColumns">
-              <div class="header-cell">
-                <span>{{ col.label }}</span>
-                <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
-              </div>
-            </th>
-          </tr>
-          <tr>
-            <th class="action-col"><div class="filter-placeholder"></div></th>
-            <th *ngFor="let col of visibleColumns">
-              <div class="filter-row">
-                <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">
-                  Filter <span class="arrow">▼</span>
-                </button>
-                <button
-                  class="clear-filter-btn"
-                  *ngIf="columnValueFilters[col.key]"
-                  (click)="clearFilter(col.key, $event)"
-                  title="Clear filter"
-                >
-                  ✕
-                </button>
-              </div>
-            </th>
+            <th class="pd-grid__sticky">Patient Name</th>
+            <th>Account #</th>
+            <th>MRN</th>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Primary Payer</th>
+            <th class="pd-grid__num">Patient Balance</th>
+            <th class="pd-grid__num">Insurance Balance</th>
+            <th class="pd-grid__num">Total Balance</th>
+            <th>Last DOS</th>
+            <th>Status</th>
+            <th class="pd-grid__sticky-end">Actions</th>
           </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let patient of filteredPatients" (click)="onRowClick(patient)" class="claim-row">
-          <td class="action-col">
-            <button class="open-btn btn-small" (click)="$event.stopPropagation(); onRowClick(patient)">
-              Open
-            </button>
-          </td>
-          <td *ngFor="let col of visibleColumns">
-            <ng-container *ngIf="isDateTimeColumnKey(col.key); else patientCellSwitch">
-              <span class="cell-muted">{{ formatDateTimeDisplay(getCellValue(patient, col.key)) }}</span>
-            </ng-container>
-            <ng-template #patientCellSwitch>
-            <ng-container [ngSwitch]="col.key">
-              <span *ngSwitchCase="'patAccountNo'">
-                {{ patient.patAccountNo ?? '' }}
+          <tr
+            *ngFor="let row of displayRows; let i = index; trackBy: trackRow"
+            class="pd-grid__row"
+            [class.pd-grid__row--active]="i === highlightedIndex"
+            (click)="onRowClick(row, i)"
+            (mouseenter)="onRowHover(i)"
+          >
+            <td class="pd-grid__sticky">
+              <div class="pd-patient-cell">
+                <span class="pd-avatar" aria-hidden="true">{{ initials(row) }}</span>
+                <button type="button" class="pd-patient-link" (click)="$event.stopPropagation(); openPatient(row)">
+                  {{ row.patientName }}
+                </button>
+              </div>
+            </td>
+            <td>{{ row.accountNo || '—' }}</td>
+            <td>{{ row.mrn || '—' }}</td>
+            <td>{{ formatDob(row.dob) }}</td>
+            <td>{{ row.phone || '—' }}</td>
+            <td class="pd-grid__payer" [title]="row.primaryPayer || ''">{{ row.primaryPayer || '—' }}</td>
+            <td class="pd-grid__num" [class.pd-grid__num--due]="(row.patientBalance ?? 0) > 0">
+              {{ row.patientBalance != null ? (row.patientBalance | currency) : '—' }}
+            </td>
+            <td class="pd-grid__num" [class.pd-grid__num--due]="(row.insuranceBalance ?? 0) > 0">
+              {{ row.insuranceBalance != null ? (row.insuranceBalance | currency) : '—' }}
+            </td>
+            <td class="pd-grid__num pd-grid__num--total" [class.pd-grid__num--due]="(row.totalBalance ?? 0) > 0">
+              {{ row.totalBalance != null ? (row.totalBalance | currency) : '—' }}
+            </td>
+            <td>{{ formatLastDos(row.lastDos) }}</td>
+            <td>
+              <span class="pd-status" [class.pd-status--active]="isActive(row)" [class.pd-status--inactive]="!isActive(row)">
+                {{ row.status || '—' }}
               </span>
-              <span *ngSwitchCase="'patBirthDate'" class="cell-muted">
-                {{ patient.patBirthDate | date:'shortDate' }}
-              </span>
-              <span *ngSwitchCase="'patTotalBalanceCC'" class="money-amount" [ngClass]="getCurrencyTone(patient.patTotalBalanceCC)">
-                {{ patient.patTotalBalanceCC | currency:'USD':'symbol':'1.2-2' }}
-              </span>
-              <span *ngSwitchCase="'patActive'">
-                {{ patient.patActive ? 'Yes' : 'No' }}
-              </span>
-              <span *ngSwitchDefault>
-                {{ getCellValue(patient, col.key) }}
-              </span>
-            </ng-container>
-            </ng-template>
-          </td>
-        </tr>
-        <tr *ngIf="filteredPatients.length === 0 && !loading">
-          <td [attr.colspan]="visibleColumns.length + 1" class="no-data">No patients found</td>
-        </tr>
+            </td>
+            <td class="pd-grid__sticky-end">
+              <button
+                type="button"
+                class="pd-open-btn"
+                (click)="$event.stopPropagation(); openPatient(row)"
+              >Open</button>
+            </td>
+          </tr>
         </tbody>
       </table>
+
+      <div class="pd-empty" *ngIf="hasLoadedOnce && !loading && displayRows.length === 0">
+        <p class="pd-empty__title">{{ emptyStateTitle() }}</p>
+        <p class="pd-empty__hint">{{ emptyStateHint() }}</p>
+      </div>
     </div>
 
-    <div *ngIf="meta" class="pagination-container">
-      <div class="pagination-info">
-        Showing {{ filteredPatients.length }} of {{ meta.totalCount }} patients
-        (Page {{ meta.page }} of {{ getTotalPages() }})
-      </div>
-      <div class="pagination-controls">
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(1)"
-          [disabled]="meta.page === 1 || loading"
-          title="First page">
-          ««
-        </button>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(meta.page - 1)"
-          [disabled]="meta.page === 1 || loading"
-          title="Previous page">
-          ‹
-        </button>
-        <span class="page-info">Page {{ meta.page }} of {{ getTotalPages() }}</span>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(meta.page + 1)"
-          [disabled]="meta.page >= getTotalPages() || loading"
-          title="Next page">
-          ›
-        </button>
-        <button 
-          class="pagination-btn" 
-          (click)="onPageChange(getTotalPages())"
-          [disabled]="meta.page >= getTotalPages() || loading"
-          title="Last page">
-          »»
-        </button>
-        <select 
-          class="page-size-select"
-          [value]="pageSize"
-          (change)="onPageSizeChange(+$any($event.target).value)"
-          [disabled]="loading">
-          <option value="10">10 per page</option>
-          <option value="25">25 per page</option>
-          <option value="50">50 per page</option>
-          <option value="100">100 per page</option>
+    <footer class="pd-footer" *ngIf="meta && !error && hasLoadedOnce">
+      <span>{{ paginationSummary() }}</span>
+      <div class="pd-footer__controls">
+        <button class="pd-footer__btn" (click)="onPageChange(1)" [disabled]="meta.page === 1 || loading" title="First">«</button>
+        <button class="pd-footer__btn" (click)="onPageChange(meta.page - 1)" [disabled]="meta.page === 1 || loading" title="Prev">‹</button>
+        <button
+          *ngFor="let p of visiblePageNumbers()"
+          class="pd-footer__btn"
+          [class.pd-footer__btn--active]="p === meta.page"
+          (click)="onPageChange(p)"
+          [disabled]="loading"
+        >{{ p }}</button>
+        <button class="pd-footer__btn" (click)="onPageChange(meta.page + 1)" [disabled]="meta.page >= getTotalPages() || loading" title="Next">›</button>
+        <button class="pd-footer__btn" (click)="onPageChange(getTotalPages())" [disabled]="meta.page >= getTotalPages() || loading" title="Last">»</button>
+        <select class="pd-toolbar__select" [value]="pageSize" (change)="onPageSizeChange(+$any($event.target).value)" [disabled]="loading">
+          <option [value]="10">10 / page</option>
+          <option [value]="25">25 / page</option>
+          <option [value]="50">50 / page</option>
         </select>
       </div>
-    </div>
-    </div>
-  </div>
-
-  <!-- Filter Popup -->
-  <div class="filter-popup-overlay" *ngIf="showFilterPopup" (click)="closeFilterPopup($event)">
-    <div
-      class="filter-popup"
-      (click)="$event.stopPropagation()"
-      [style.top.px]="filterPopupPosition.topPx"
-      [style.left.px]="filterPopupPosition.leftPx"
-    >
-      <div class="filter-popup-tabs">
-        <button class="tab active">Values</button>
-      </div>
-
-      <!-- Text input for numeric columns and Account No (PatAccountNo per DBML) -->
-      <div *ngIf="activeFilterColumnKey && (isNumericColumn(activeFilterColumnKey) || isTextFilterColumn(activeFilterColumnKey))" class="filter-popup-field-group">
-        <label class="filter-popup-label">
-          {{ getColumnLabel(activeFilterColumnKey) }}
-        </label>
-        <input
-          type="text"
-          [(ngModel)]="popupTextFilter"
-          class="filter-popup-input"
-          [placeholder]="activeFilterColumnKey === 'patID' ? 'Enter Patient ID (e.g., 123456)' : activeFilterColumnKey === 'patAccountNo' ? 'Enter Account Number to filter' : 'Enter value(s), comma-separated'"
-          (keyup.enter)="applyValueFilterAndClose()"
-        />
-        <div class="filter-popup-hint">
-          <span *ngIf="activeFilterColumnKey === 'patID'">Enter one or more Patient IDs, separated by commas</span>
-          <span *ngIf="activeFilterColumnKey === 'patAccountNo'">Filters by Patient Account Number (PatAccountNo)</span>
-          <span *ngIf="activeFilterColumnKey !== 'patID' && activeFilterColumnKey !== 'patAccountNo'">Enter one or more values, separated by commas</span>
-        </div>
-      </div>
-
-      <!-- Checkbox-based filter for other columns -->
-      <div *ngIf="activeFilterColumnKey && !isNumericColumn(activeFilterColumnKey) && !isTextFilterColumn(activeFilterColumnKey)">
-        <div class="filter-popup-search">
-          <input
-            type="text"
-            [(ngModel)]="filterPopupSearchText"
-            placeholder="Enter text to search..."
-          />
-        </div>
-
-        <div class="filter-popup-values">
-          <label class="value-item">
-            <input type="checkbox" [checked]="isPopupAllSelected()" (change)="onPopupAllChange($event)" />
-            <span>(All)</span>
-          </label>
-
-          <label *ngFor="let v of getFilterValuesForActiveColumn()" class="value-item">
-            <input
-              type="checkbox"
-              [checked]="isPopupValueChecked(v)"
-              (change)="onPopupValueChange(v, $event)"
-            />
-            <span>{{ v }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="filter-popup-actions">
-        <button class="btn-secondary" (click)="clearActiveColumnFilter()">Clear Filter</button>
-        <button class="btn-primary" (click)="applyValueFilterAndClose()">Apply</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Customization Dialog -->
-  <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
-    <div class="customization-dialog" (click)="$event.stopPropagation()">
-      <div class="dialog-header">
-        <h3>Customization</h3>
-        <button class="close-btn" (click)="closeCustomizationDialog()">×</button>
-      </div>
-      <div class="dialog-search">
-        <input
-          type="text"
-          [(ngModel)]="columnSearchText"
-          placeholder="Search columns..."
-          class="search-input"
-        />
-      </div>
-      <div class="dialog-content">
-        <!-- Standard Patient Columns -->
-        <div class="column-section">
-          <h4>Standard Patient Columns</h4>
-          <div class="column-list">
-            <label *ngFor="let col of getStandardColumns()" class="column-item">
-              <input
-                type="checkbox"
-                [checked]="col.visible"
-                (change)="toggleColumnVisibility(col.key)"
-              />
-              <span>{{ col.label }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Related Columns from Other Tables -->
-        <div class="column-section" *ngIf="availableRelatedColumns && availableRelatedColumns.length > 0">
-          <h4>Add Columns from Related Tables</h4>
-          <div *ngFor="let tableGroup of getRelatedColumnsByTable() | keyvalue" class="table-group">
-            <h5>{{ tableGroup.key }} Table</h5>
-            <div class="column-list">
-              <div
-                *ngFor="let col of tableGroup.value"
-                class="column-item related-column-option filter-popup-row"
-                (click)="toggleRelatedColumn(col.key, col.label, col.table); $event.stopPropagation()"
-              >
-                <input
-                  type="checkbox"
-                  [checked]="isRelatedColumnSelected(col.key)"
-                  (change)="onRelatedColumnToggle(col.key, col.label, col.table, $event)"
-                  (click)="$event.stopPropagation()"
-                />
-                <span class="filter-popup-row-label">
-                  {{ col.label }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="!availableRelatedColumns || availableRelatedColumns.length === 0" class="column-section">
-          <p class="filter-popup-empty">
-            <span *ngIf="availableRelatedColumns && availableRelatedColumns.length === 0">No related columns available</span>
-            <span *ngIf="!availableRelatedColumns">Loading related columns...</span>
-          </p>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
-        <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
-      </div>
-    </div>
+    </footer>
   </div>
 </div>
