@@ -151,7 +151,7 @@ import { PatientNavigationService } from '../features/patients/services/patient-
 
                   >
 
-                    {{ f.name?.trim() }}
+                    {{ f.name.trim() }}
 
                   </button>
 
@@ -586,7 +586,7 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
     const row = this.facilityOptions.find((r) => this.sameFacilityId(r.facilityId, id));
 
-    return row?.name?.trim() || `Facility #${id}`;
+    return row?.name.trim() || `Facility #${id}`;
 
   }
 
