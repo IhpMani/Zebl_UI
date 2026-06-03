@@ -22,4 +22,8 @@ export class Era835ReviewReturnCacheService {
   invalidate(reportId: string): void {
     if (reportId) this.payloads.delete(reportId);
   }
+
+  clearAll(): void {
+    this.payloads.clear();
+  }
 }

@@ -1,102 +1,155 @@
-<div class="eligibility-window" *ngIf="response">
+<dialog #dialogEl class="eligibility-dialog" *ngIf="response && view" (cancel)="$event.preventDefault(); close()">
+  <div class="eligibility-window">
 
-  <div class="header">
-    Eligibility Response
-    <button class="close" (click)="close()">X</button>
+    <header class="modal-header">
+      <h2 class="modal-title">Eligibility Response</h2>
+      <button type="button" class="close-btn" (click)="close()" aria-label="Close">×</button>
+    </header>
+
+    <div class="eligibility-body">
+
+      <section class="panel" aria-label="Payer information">
+        <h3 class="panel-title">Payer Information</h3>
+        <dl class="field-grid field-grid--payer">
+          <div class="field field--payer-name">
+            <dt>Payer</dt>
+            <dd class="field-value field-value--strong">{{ view.payerName }}</dd>
+          </div>
+          <div class="field">
+            <dt>Coverage</dt>
+            <dd>
+              <span class="coverage-emphasis" [attr.data-coverage]="view.coverageKind">{{ view.coverageLabel }}</span>
+            </dd>
+          </div>
+          <div class="field">
+            <dt>Plan</dt>
+            <dd class="field-value">{{ view.planType }}</dd>
+          </div>
+        </dl>
+        <p class="wait-line" *ngIf="view.waitingMessage" aria-live="polite">
+          <span class="wait-line__spinner" *ngIf="view.isLoading" aria-hidden="true"></span>
+          {{ view.waitingMessage }}
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Insured information">
+        <h3 class="panel-title">Insured's Information</h3>
+        <p class="insured-line">{{ view.insuredLine }}</p>
+        <dl class="field-grid field-grid--insured">
+          <div class="field">
+            <dt>Identification</dt>
+            <dd class="field-value mono">{{ view.memberId }}</dd>
+          </div>
+          <div class="field">
+            <dt>DOB</dt>
+            <dd class="field-value">{{ view.patientDob }}</dd>
+          </div>
+          <div class="field">
+            <dt>Gender</dt>
+            <dd class="field-value">{{ view.patientGender }}</dd>
+          </div>
+          <div class="field">
+            <dt>Eligibility Date</dt>
+            <dd class="field-value">{{ view.eligibilityDateRange }}</dd>
+          </div>
+          <div class="field">
+            <dt>Inquiry Date</dt>
+            <dd class="field-value">{{ view.inquiryDate }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel panel--benefits" aria-label="Benefit details">
+        <h3 class="panel-title">Benefit Details</h3>
+
+        <div class="benefits-table-wrap" *ngIf="view.hasBenefits">
+          <table class="benefits-table">
+            <thead>
+              <tr>
+                <th scope="col">Service Type</th>
+                <th scope="col">Benefit Information</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of view.benefitRows">
+                <td>{{ row.serviceType }}</td>
+                <td>
+                  <span class="benefit-info" [attr.data-coverage]="row.coverageKind">{{ row.coverage }}</span>
+                </td>
+                <td class="col-amount">{{ row.amount }}</td>
+                <td>{{ row.description }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="benefits-empty" *ngIf="!view.hasBenefits && view.benefitsEmptyTitle">
+          {{ view.benefitsEmptyTitle }}
+        </p>
+      </section>
+
+      <section class="panel panel--diagnostics">
+        <button
+          type="button"
+          class="diagnostics-toggle"
+          (click)="toggleDiagnostics()"
+          [attr.aria-expanded]="diagnosticsExpanded"
+        >
+          Advanced Diagnostics
+          <span class="chevron" [class.expanded]="diagnosticsExpanded">▾</span>
+        </button>
+
+        <div class="diagnostics-body" *ngIf="diagnosticsExpanded">
+          <dl class="field-grid field-grid--diag">
+            <div class="field">
+              <dt>Lifecycle</dt>
+              <dd>{{ view.diagnostics.lifecycleStatus }}</dd>
+            </div>
+            <div class="field">
+              <dt>Control Number</dt>
+              <dd class="mono">{{ view.controlNumber }}</dd>
+            </div>
+            <div class="field">
+              <dt>Provider</dt>
+              <dd>{{ view.providerDisplay }}</dd>
+            </div>
+            <div class="field">
+              <dt>Batch File</dt>
+              <dd class="mono">{{ view.diagnostics.batchFileName }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.showPayerOverrideWarning">
+              <dt>Notice</dt>
+              <dd>Using payer-specific provider override.</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.operationalSummary">
+              <dt>Summary</dt>
+              <dd>{{ view.operationalSummary }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.diagnostics.rawStatusMessage !== '—'">
+              <dt>Status Message</dt>
+              <dd class="technical">{{ view.diagnostics.rawStatusMessage }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.diagnostics.technicalError !== '—'">
+              <dt>Technical Error</dt>
+              <dd class="technical">{{ view.diagnostics.technicalError }}</dd>
+            </div>
+            <div class="field field--wide">
+              <dt>271 Preview</dt>
+              <dd><pre class="raw-preview">{{ view.diagnostics.raw271Preview }}</pre></dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </div>
+
+    <footer class="modal-footer">
+      <p class="disclaimer">
+        This is not a guarantee of benefits or payment. Information is based on payer data received at the inquiry time shown above.
+      </p>
+      <button type="button" class="btn-primary" (click)="close()">OK</button>
+    </footer>
+
   </div>
-
-  <div class="row provider-line" *ngIf="response?.providerNpi">
-    <span>Eligibility checked using provider: {{ response.providerNpi }}<ng-container *ngIf="response?.providerMode"> ({{ response.providerMode }})</ng-container></span>
-  </div>
-  <div class="row warning-line" *ngIf="response?.usedPayerOverride">
-    <span>Using payer-specific provider override</span>
-  </div>
-
-  <!-- Payer Information -->
-  <fieldset>
-    <legend>Payer Information</legend>
-
-    <div class="row">
-      <label>Payer</label>
-      <span>{{response?.payerName}}</span>
-    </div>
-
-    <div class="row">
-      <label>Coverage</label>
-      <span class="coverage">{{response?.status}}</span>
-
-      <label>Plan</label>
-      <span>{{response?.planName || '-'}}</span>
-    </div>
-
-    <div class="row">
-      <label>Plan Details</label>
-      <span>{{response?.planDetails || '-'}}</span>
-    </div>
-
-  </fieldset>
-
-
-  <!-- Eligibility Window -->
-  <fieldset>
-    <legend>Eligibility</legend>
-
-    <div class="grid">
-      <div>Start Date</div>
-      <div>{{formatDate(response?.eligibilityStartDate) || '-'}}</div>
-
-      <div>End Date</div>
-      <div>{{formatDate(response?.eligibilityEndDate) || '-'}}</div>
-
-      <div>Status Message</div>
-      <div>{{response?.errorMessage || '-'}}</div>
-    </div>
-
-  </fieldset>
-
-
-  <!-- Benefit Details -->
-  <fieldset>
-    <legend>Benefit Details</legend>
-
-    <table class="benefit-table">
-      <thead>
-        <tr>
-          <th>Service Type</th>
-          <th>Benefit Information</th>
-          <th>Amount</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        <tr *ngFor="let b of (response?.benefits || [])">
-          <td>{{b?.serviceType}}</td>
-          <td>{{b?.benefit}}</td>
-          <td>{{b?.amount}}</td>
-          <td>{{b?.description}}</td>
-        </tr>
-
-      </tbody>
-
-    </table>
-
-  </fieldset>
-
-
-  <div class="footer">
-
-    <p class="disclaimer">
-      This is not a guarantee of benefits or payment. Eligibility information
-      is based on data sent at the time shown above.
-    </p>
-
-    <div class="buttons">
-      <button type="button" (click)="close()">OK</button>
-    </div>
-
-  </div>
-
-</div>
-
+</dialog>

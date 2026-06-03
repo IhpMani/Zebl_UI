@@ -5,6 +5,7 @@ import { PatientFinancialSummaryDto } from '../models/patient-financial-summary.
 import { PatientRecentClaimDto } from '../models/patient-recent-claim.dto';
 import { PatientRecentPaymentDto } from '../models/patient-recent-payment.dto';
 import { PatientInsuranceSummaryDto } from '../models/patient-insurance-summary.dto';
+import { PatientEligibilitySnapshotDto } from '../models/patient-eligibility-snapshot.dto';
 import { PatientAgingSummaryDto } from '../models/patient-aging-summary.dto';
 import { PatientClaimRowDto } from '../models/patient-claim-row.dto';
 import { PatientPaymentRowDto } from '../models/patient-payment-row.dto';
@@ -44,6 +45,7 @@ const OVERVIEW_WIDGET_SLICES: WorkspaceSliceKey[] = [
   'financial',
   'claimsPreview',
   'insuranceSummary',
+  'eligibilitySnapshot',
   'recentPayments',
   'aging'
 ];
@@ -62,6 +64,7 @@ export class PatientWorkspaceStateService implements OnDestroy {
   private readonly financialSubject = new BehaviorSubject<PatientFinancialSummaryDto | null>(null);
   private readonly claimsPreviewSubject = new BehaviorSubject<PatientRecentClaimDto[]>([]);
   private readonly insuranceSummarySubject = new BehaviorSubject<PatientInsuranceSummaryDto | null>(null);
+  private readonly eligibilitySnapshotSubject = new BehaviorSubject<PatientEligibilitySnapshotDto | null>(null);
   private readonly recentPaymentsSubject = new BehaviorSubject<PatientRecentPaymentDto[]>([]);
   private readonly agingSubject = new BehaviorSubject<PatientAgingSummaryDto | null>(null);
   private readonly claimsPageSubject = new BehaviorSubject<ClaimsTabPageState>({
@@ -84,6 +87,7 @@ export class PatientWorkspaceStateService implements OnDestroy {
   readonly financial$ = this.financialSubject.asObservable();
   readonly claimsPreview$ = this.claimsPreviewSubject.asObservable();
   readonly insuranceSummary$ = this.insuranceSummarySubject.asObservable();
+  readonly eligibilitySnapshot$ = this.eligibilitySnapshotSubject.asObservable();
   readonly recentPayments$ = this.recentPaymentsSubject.asObservable();
   readonly aging$ = this.agingSubject.asObservable();
   readonly claimsPage$ = this.claimsPageSubject.asObservable();
@@ -209,6 +213,31 @@ export class PatientWorkspaceStateService implements OnDestroy {
     this.loadPaymentsTab(patId, true);
   }
 
+  /** Refetch eligibility summary (e.g. after check completes on Patient Details). */
+  reloadEligibilitySnapshot(): void {
+    const patId = this.context.patId;
+    if (!patId) return;
+    const gen = this.loadGeneration;
+    this.workspaceQuery.invalidateEligibility(patId);
+    this.setSlice('eligibilitySnapshot', 'loading');
+    this.loadOverviewSlice(
+      'eligibilitySnapshot',
+      gen,
+      this.workspaceQuery.getEligibilitySnapshot(patId, true),
+      (v) => this.eligibilitySnapshotSubject.next(v)
+    );
+    this.workspaceQuery.invalidateInsurance(patId);
+    if (this.getSlice('insuranceSummary').status !== 'idle') {
+      this.setSlice('insuranceSummary', 'loading');
+      this.loadOverviewSlice(
+        'insuranceSummary',
+        gen,
+        this.workspaceQuery.getInsuranceSummary(patId, true),
+        (v) => this.insuranceSummarySubject.next(v)
+      );
+    }
+  }
+
   isTabLoaded(tabId: PatientWorkspaceTabId): boolean {
     return this.tabLoaded.has(tabId);
   }
@@ -257,6 +286,12 @@ export class PatientWorkspaceStateService implements OnDestroy {
       gen,
       this.workspaceQuery.getInsuranceSummary(patId, force),
       (v) => this.insuranceSummarySubject.next(v)
+    );
+    this.loadOverviewSlice(
+      'eligibilitySnapshot',
+      gen,
+      this.workspaceQuery.getEligibilitySnapshot(patId, force),
+      (v) => this.eligibilitySnapshotSubject.next(v)
     );
     this.loadOverviewSlice(
       'recentPayments',
@@ -391,6 +426,7 @@ export class PatientWorkspaceStateService implements OnDestroy {
     this.financialSubject.next(null);
     this.claimsPreviewSubject.next([]);
     this.insuranceSummarySubject.next(null);
+    this.eligibilitySnapshotSubject.next(null);
     this.recentPaymentsSubject.next([]);
     this.agingSubject.next(null);
     this.claimsPageSubject.next({ page: 1, pageSize: CLAIMS_PAGE_SIZE, totalCount: 0 });
@@ -437,6 +473,7 @@ export class PatientWorkspaceStateService implements OnDestroy {
       'financial',
       'claimsPreview',
       'insuranceSummary',
+      'eligibilitySnapshot',
       'recentPayments',
       'aging',
       'overview',

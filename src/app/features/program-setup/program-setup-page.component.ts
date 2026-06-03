@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { PatientTemplatesApiService, PatientTemplateDto } from '../../core/services/patient-templates-api.service';
 import { CLAIM_STATUS_OPTIONS, ClaimStatusOption } from '../../shared/constants/claim-status';
@@ -14,6 +18,33 @@ import {
   CustomFieldDefinitionDto,
   CUSTOM_FIELD_TYPES
 } from '../../core/services/custom-fields-api.service';
+import {
+  EligibilityApiService,
+  EligibilityConfigurationStatusDto,
+  EligibilityConnectionTestRequestDto,
+  EligibilityConnectionTestResultDto
+} from '../../core/services/eligibility-api.service';
+import {
+  cloneSettings,
+  hydrateClaimSettings,
+  hydrateCompanySettings,
+  hydrateInterfaceSettings,
+  hydratePatientEligibilitySettings,
+  hydratePatientSettings,
+  hydrateSendingClaimsSettings,
+  toClaimSavePayload,
+  toPatientEligibilitySavePayload,
+  toSendingClaimsCorePayload,
+  toSendingClaimsExtendedPayload
+} from './program-setup-hydration';
+import {
+  ClaimProgramSettings,
+  CompanyProgramSettings,
+  InterfaceProgramSettings,
+  PatientEligibilityProgramSettings,
+  PatientProgramSettings,
+  SendingClaimsProgramSettings
+} from './program-setup.models';
 
 interface ProgramSetupSection {
   id: string;
@@ -42,11 +73,17 @@ export class ProgramSetupPageComponent implements OnInit {
   ];
 
   selectedSection: string = 'general';
+  /** Section-specific shape; hydrated via program-setup-hydration.ts before bind. */
   settingsData: any = null;
   isLoading = false;
   loadError: string | null = null;
   isSaving = false;
   saveError: string | null = null;
+  saveSuccessMessage: string | null = null;
+
+  eligibilityConfigStatus: EligibilityConfigurationStatusDto | null = null;
+  eligibilityTestResult: EligibilityConnectionTestResultDto | null = null;
+  isTestingEligibility = false;
 
   patientTemplates: PatientTemplateDto[] = [];
   showMissingAccountsModal = false;
@@ -54,10 +91,6 @@ export class ProgramSetupPageComponent implements OnInit {
 
   readonly claimStatusOptions: readonly ClaimStatusOption[] = CLAIM_STATUS_OPTIONS;
   posOptions: CodeLibraryRow[] = [];
-
-  get eligibilityCredentialsEnabled(): boolean {
-    return true;
-  }
 
   /** Receivers filtered for Format = "Eligibility Inquiry 270" (from receiver library). */
   eligibilityReceivers: ReceiverLibraryDto[] = [];
@@ -108,7 +141,9 @@ export class ProgramSetupPageComponent implements OnInit {
     private receiverLibraryApi: ReceiverLibraryApiService,
     private physicianApi: PhysicianApiService,
     private cityStateZipApi: CityStateZipApiService,
-    private customFieldsApi: CustomFieldsApiService
+    private customFieldsApi: CustomFieldsApiService,
+    private eligibilityApi: EligibilityApiService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -186,8 +221,9 @@ export class ProgramSetupPageComponent implements OnInit {
     if (sectionId === 'patient-eligibility') {
       this.programSettingsApi.getSection('patientEligibility').subscribe({
         next: data => {
-          this.settingsData = this.applyPatientEligibilityDefaults(data);
+          this.settingsData = hydratePatientEligibilitySettings(data);
           this.loadEligibilityLookups();
+          this.refreshEligibilityConfigStatus();
           this.isLoading = false;
         },
         error: err => {
@@ -228,9 +264,12 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     if (sectionId === 'sending-claims') {
-      this.programSettingsApi.getSendingClaimsSettings().subscribe({
-        next: data => {
-          this.settingsData = this.applySendingClaimsDefaults(data);
+      forkJoin({
+        core: this.programSettingsApi.getSendingClaimsSettings(),
+        extended: this.programSettingsApi.getSection('sendingClaims')
+      }).subscribe({
+        next: ({ core, extended }) => {
+          this.settingsData = hydrateSendingClaimsSettings(core, extended);
           this.loadSendingClaimsLookups();
           this.isLoading = false;
         },
@@ -244,20 +283,21 @@ export class ProgramSetupPageComponent implements OnInit {
       return;
     }
 
-    this.programSettingsApi.getSection(sectionId).subscribe({
+    const apiSection = this.toApiSectionName(sectionId);
+    this.programSettingsApi.getSection(apiSection).subscribe({
       next: data => {
         if (sectionId === 'patient') {
-          this.settingsData = this.applyPatientDefaults(data);
+          this.settingsData = hydratePatientSettings(data);
           this.loadPatientTemplates();
         } else if (sectionId === 'claim') {
-          this.settingsData = this.applyClaimDefaults(data);
+          this.settingsData = hydrateClaimSettings(data);
           this.loadClaimLookups();
         } else if (sectionId === 'company') {
-          this.settingsData = this.applyCompanyDefaults(data);
+          this.settingsData = hydrateCompanySettings(data);
         } else if (sectionId === 'interface') {
-          this.settingsData = this.applyInterfaceDefaults(data);
+          this.settingsData = cloneSettings(hydrateInterfaceSettings(data));
         } else {
-          this.settingsData = data;
+          this.settingsData = data ?? {};
         }
         this.isLoading = false;
       },
@@ -265,9 +305,17 @@ export class ProgramSetupPageComponent implements OnInit {
         this.loadError = 'Failed to load settings.';
         this.isLoading = false;
         // eslint-disable-next-line no-console
-        console.error('Error loading program settings', sectionId, err);
+        console.error('Error loading program settings', apiSection, err);
       }
     });
+  }
+
+  /** Maps UI section id to backend program-settings section key. */
+  private toApiSectionName(sectionId: string): string {
+    if (sectionId === 'patient-eligibility') {
+      return 'patientEligibility';
+    }
+    return sectionId;
   }
 
   onSave(): void {
@@ -279,30 +327,11 @@ export class ProgramSetupPageComponent implements OnInit {
   }
 
   onClose(): void {
-    window.history.back();
-  }
-
-  private applyPatientDefaults(data: any): any {
-    const defaults = {
-      automaticAccountNumber: true,
-      nextAccountNumber: 1000,
-      nextAccountPrefix: '',
-      requireAccountNumbers: false,
-      requireUniqueAccountNumbers: false,
-      automaticPatientTemplateId: null,
-      initialAcceptAssignment: true
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+      return;
     }
-
-    const merged = { ...defaults, ...data };
-    if (merged.source === 'EDIConnection') {
-      // Legacy fake source is no longer supported.
-      merged.source = '';
-    }
-    return merged;
+    void this.router.navigate(['/']);
   }
 
   private loadPatientTemplates(): void {
@@ -324,7 +353,7 @@ export class ProgramSetupPageComponent implements OnInit {
   private save(closeAfter: boolean): void {
     if (this.selectedSection === 'patient-custom-fields' || this.selectedSection === 'claim-custom-fields') {
       if (closeAfter) {
-        window.history.back();
+        this.onClose();
       }
       return;
     }
@@ -335,87 +364,57 @@ export class ProgramSetupPageComponent implements OnInit {
 
     this.isSaving = true;
     this.saveError = null;
+    this.saveSuccessMessage = null;
     this.showMissingAccountsModal = false;
     this.missingAccountPatients = [];
 
     if (this.selectedSection === 'patient') {
-      this.programSettingsApi.saveSection('patient', this.settingsData).subscribe({
-        next: () => {
-          this.isSaving = false;
-          if (closeAfter) {
-            window.history.back();
-          }
+      const payload = cloneSettings(this.settingsData as PatientProgramSettings);
+      this.programSettingsApi.saveSection('patient', payload).pipe(
+        switchMap(() => this.programSettingsApi.getSection('patient'))
+      ).subscribe({
+        next: data => {
+          this.settingsData = hydratePatientSettings(data);
+          this.finishSave(closeAfter, 'Patient settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          const errorBody = err?.error;
-          if (errorBody?.errorCode === 'PATIENTS_MISSING_ACCOUNT_NUMBERS' && Array.isArray(errorBody.patients)) {
-            this.missingAccountPatients = errorBody.patients;
-            this.showMissingAccountsModal = true;
-          } else {
-            this.saveError = 'Failed to save settings.';
-            // eslint-disable-next-line no-console
-            console.error('Error saving patient program settings', err);
-          }
-        }
+        error: err => this.handlePatientSaveError(err)
       });
     } else if (this.selectedSection === 'claim') {
-      const claimPayload = {
-        initialClaimStatus: (this.settingsData.initialClaimStatus ?? 'OnHold'),
-        initialPlaceOfService: this.settingsData.initialPlaceOfService ?? '11',
-        initialICDIndicator: this.settingsData.initialICDIndicator ?? '0',
-        lockClaimsAfterPrint: !!this.settingsData.lockClaimsAfterPrint,
-        checkDuplicateServiceLines: this.settingsData.checkDuplicateServiceLines !== false,
-        validateICDLogic: this.settingsData.validateICDLogic !== false
-      };
-      // Debug visibility for persisted program settings payload.
-      // eslint-disable-next-line no-console
-      console.log('PROGRAM SETTINGS PAYLOAD', claimPayload);
-      this.programSettingsApi.saveSection('claim', claimPayload).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.settingsData = { ...this.settingsData, ...claimPayload };
-          if (closeAfter) {
-            window.history.back();
-          }
+      const claimPayload = toClaimSavePayload(this.settingsData as ClaimProgramSettings);
+      this.programSettingsApi.saveSection('claim', claimPayload).pipe(
+        switchMap(() => this.programSettingsApi.getSection('claim'))
+      ).subscribe({
+        next: data => {
+          this.settingsData = hydrateClaimSettings(data);
+          this.finishSave(closeAfter, 'Claim settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          this.saveError = 'Failed to save settings.';
-          // eslint-disable-next-line no-console
-          console.error('Error saving claim program settings', err);
-        }
+        error: err => this.handleSaveError(err, 'claim')
       });
     } else if (this.selectedSection === 'patient-eligibility') {
-      if (!(this.settingsData.receiverId ?? '').toString().trim()) {
-        this.saveError = 'Receiver is required for eligibility.';
+      const eligibility = this.settingsData as PatientEligibilityProgramSettings;
+      const validationError = this.validatePatientEligibility(eligibility);
+      if (validationError) {
+        this.saveError = validationError;
         this.isSaving = false;
         return;
       }
-      if (!(this.settingsData.username ?? '').trim()) {
-        this.saveError = 'Username is required for eligibility.';
-        this.isSaving = false;
-        return;
-      }
-      if (!(this.settingsData.server ?? '').trim()) {
-        this.saveError = 'Server is required for eligibility.';
-        this.isSaving = false;
-        return;
-      }
-      this.saveError = null;
-      this.programSettingsApi.saveSection('patientEligibility', this.settingsData).subscribe({
-        next: () => {
-          this.isSaving = false;
-          if (closeAfter) {
-            window.history.back();
+
+      const payload = toPatientEligibilitySavePayload(eligibility);
+      this.programSettingsApi.saveSection('patientEligibility', payload).pipe(
+        switchMap(saved => of(hydratePatientEligibilitySettings(saved)))
+      ).subscribe({
+        next: data => {
+          const missingTransport = this.getMissingEligibilityTransportFields(data);
+          if (missingTransport.length > 0) {
+            this.isSaving = false;
+            this.saveError = `Save completed but persisted settings are missing: ${missingTransport.join(', ')}.`;
+            return;
           }
+          this.settingsData = data;
+          this.refreshEligibilityConfigStatus();
+          this.finishSave(closeAfter, 'Patient Eligibility settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          this.saveError = err?.error?.error ?? 'Failed to save settings.';
-          // eslint-disable-next-line no-console
-          console.error('Error saving patient eligibility program settings', err);
-        }
+        error: err => this.handleEligibilitySaveError(err)
       });
     } else if (this.selectedSection === 'company') {
       this.companyValidationErrors = {};
@@ -426,88 +425,158 @@ export class ProgramSetupPageComponent implements OnInit {
         this.isSaving = false;
         return;
       }
-      this.saveError = null;
-      this.programSettingsApi.saveSection('company', this.settingsData).subscribe({
-        next: () => {
-          this.isSaving = false;
-          if (closeAfter) {
-            window.history.back();
-          }
+      const payload = cloneSettings(this.settingsData as CompanyProgramSettings);
+      this.programSettingsApi.saveSection('company', payload).pipe(
+        switchMap(() => this.programSettingsApi.getSection('company'))
+      ).subscribe({
+        next: data => {
+          this.settingsData = hydrateCompanySettings(data);
+          this.finishSave(closeAfter, 'Company settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          this.saveError = 'Failed to save settings.';
-          // eslint-disable-next-line no-console
-          console.error('Error saving company program settings', err);
-        }
+        error: err => this.handleSaveError(err, 'company')
       });
     } else if (this.selectedSection === 'sending-claims') {
-      const nextNum = Number(this.settingsData.nextSubmissionNumber);
+      const state = this.settingsData as SendingClaimsProgramSettings;
+      const nextNum = Number(state.nextSubmissionNumber);
       if (!Number.isFinite(nextNum) || nextNum < 1) {
         this.saveError = 'Next Submission Number must be 1 or greater.';
         this.isSaving = false;
         return;
       }
 
-      const payload = {
-        showBillToPatientClaims: !!this.settingsData.showBillToPatientClaims,
-        patientControlNumberMode: this.settingsData.patientControlNumberMode === 'PatientAccount' ? 'PatientAccount' : 'ClaimId',
-        nextSubmissionNumber: Math.floor(nextNum)
-      };
-
-      this.programSettingsApi.saveSendingClaimsSettings(payload).subscribe({
-        next: () => {
-          this.isSaving = false;
-          if (closeAfter) {
-            window.history.back();
-          }
+      const corePayload = toSendingClaimsCorePayload(state);
+      const extendedPayload = toSendingClaimsExtendedPayload(state);
+      forkJoin([
+        this.programSettingsApi.saveSendingClaimsSettings(corePayload),
+        this.programSettingsApi.saveSection('sendingClaims', extendedPayload)
+      ]).pipe(
+        switchMap(() => forkJoin({
+          core: this.programSettingsApi.getSendingClaimsSettings(),
+          extended: this.programSettingsApi.getSection('sendingClaims')
+        }))
+      ).subscribe({
+        next: ({ core, extended }) => {
+          this.settingsData = hydrateSendingClaimsSettings(core, extended);
+          this.finishSave(closeAfter, 'Sending Claims settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          this.saveError = 'Failed to save settings.';
-          // eslint-disable-next-line no-console
-          console.error('Error saving sending claims program settings', err);
-        }
+        error: err => this.handleSaveError(err, 'sending claims')
       });
     } else if (this.selectedSection === 'interface') {
-      this.programSettingsApi.saveSection('interface', this.settingsData).subscribe({
-        next: () => {
-          this.isSaving = false;
-          if (closeAfter) {
-            window.history.back();
-          }
+      const payload = cloneSettings(this.settingsData as InterfaceProgramSettings);
+      this.programSettingsApi.saveSection('interface', payload).pipe(
+        switchMap(() => this.programSettingsApi.getSection('interface'))
+      ).subscribe({
+        next: data => {
+          this.settingsData = cloneSettings(hydrateInterfaceSettings(data));
+          this.finishSave(closeAfter, 'Interface settings saved.');
         },
-        error: err => {
-          this.isSaving = false;
-          this.saveError = 'Failed to save settings.';
-          // eslint-disable-next-line no-console
-          console.error('Error saving interface program settings', err);
-        }
+        error: err => this.handleSaveError(err, 'interface')
       });
+    } else if (this.selectedSection === 'general' || this.selectedSection === 'payment') {
+      this.saveError = 'This section has no editable settings yet.';
+      this.isSaving = false;
     } else {
       this.isSaving = false;
+      this.saveError = 'Nothing to save for this section.';
     }
+  }
+
+  private finishSave(closeAfter: boolean, successMessage: string): void {
+    this.isSaving = false;
+    this.saveSuccessMessage = successMessage;
+    if (closeAfter) {
+      this.onClose();
+    }
+  }
+
+  private handleSaveError(err: unknown, sectionLabel: string, useApiMessage = false): void {
+    this.isSaving = false;
+    const body = (err as { error?: { error?: string; message?: string; details?: string } })?.error;
+    this.saveError = useApiMessage
+      ? (body?.error ?? body?.message ?? body?.details ?? 'Failed to save settings.')
+      : 'Failed to save settings.';
+    // eslint-disable-next-line no-console
+    console.error(`Error saving ${sectionLabel} program settings`, err);
+  }
+
+  private handleEligibilitySaveError(err: unknown): void {
+    this.isSaving = false;
+    const httpErr = err as HttpErrorResponse;
+    const body = (httpErr?.error ?? {}) as { error?: string; message?: string; details?: string; errorCode?: string };
+    const apiMessage = body?.error ?? body?.message ?? body?.details ?? 'Failed to save settings.';
+
+    if (httpErr?.status === 409) {
+      this.saveError = `Save conflict: ${apiMessage} Reloaded latest server values. Re-apply changes and save again.`;
+      this.programSettingsApi.getSection('patientEligibility').subscribe({
+        next: data => {
+          this.settingsData = hydratePatientEligibilitySettings(data);
+          this.refreshEligibilityConfigStatus();
+        },
+        error: () => {
+          // Keep conflict message; no-op if reload fails.
+        }
+      });
+      return;
+    }
+
+    this.saveError = apiMessage;
+    // eslint-disable-next-line no-console
+    console.error('Error saving patient eligibility program settings', err);
+  }
+
+  private handlePatientSaveError(err: unknown): void {
+    this.isSaving = false;
+    const errorBody = (err as { error?: { errorCode?: string; patients?: unknown[] } })?.error;
+    if (errorBody?.errorCode === 'PATIENTS_MISSING_ACCOUNT_NUMBERS' && Array.isArray(errorBody.patients)) {
+      this.missingAccountPatients = errorBody.patients as {
+        patId: number;
+        name?: string | null;
+        accountNumber?: string | null;
+      }[];
+      this.showMissingAccountsModal = true;
+      return;
+    }
+    this.saveError = 'Failed to save settings.';
+    // eslint-disable-next-line no-console
+    console.error('Error saving patient program settings', err);
+  }
+
+  private validatePatientEligibility(state: PatientEligibilityProgramSettings): string | null {
+    if (!(state.receiverId ?? '').toString().trim()) {
+      return 'Receiver is required for eligibility.';
+    }
+    if (!(state.vendor ?? '').toString().trim()) {
+      return 'Eligibility vendor is required.';
+    }
+    if (!(state.username ?? '').trim()) {
+      return 'Username is required for eligibility.';
+    }
+    if (!(state.server ?? '').trim()) {
+      return 'Server is required for eligibility.';
+    }
+    const pwd = (state.password ?? '').toString();
+    if (!pwd.trim() && !state.passwordConfigured) {
+      return 'Password is required for eligibility (or configure a password to enable persistence).';
+    }
+    if (!(state.uploadDirectory ?? '').trim() ||
+      !(state.incomingDirectory ?? '').trim() ||
+      !(state.processedDirectory ?? '').trim()) {
+      return 'Upload, Incoming, and Processed directories are required.';
+    }
+    return null;
+  }
+
+  private getMissingEligibilityTransportFields(state: PatientEligibilityProgramSettings): string[] {
+    const missing: string[] = [];
+    if (!(state.server ?? '').trim()) missing.push('server');
+    if (!(state.uploadDirectory ?? '').trim()) missing.push('uploadDirectory');
+    if (!(state.incomingDirectory ?? '').trim()) missing.push('incomingDirectory');
+    if (!(state.processedDirectory ?? '').trim()) missing.push('processedDirectory');
+    return missing;
   }
 
   closeMissingAccountsModal(): void {
     this.showMissingAccountsModal = false;
-  }
-
-  private applyClaimDefaults(data: any): any {
-    const defaults = {
-      initialClaimStatus: 'OnHold',
-      initialPlaceOfService: '11',
-      initialICDIndicator: '0',
-      lockClaimsAfterPrint: false,
-      checkDuplicateServiceLines: true,
-      validateICDLogic: true
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
-    }
-
-    return { ...defaults, ...data };
   }
 
   private loadClaimLookups(): void {
@@ -524,76 +593,6 @@ export class ProgramSetupPageComponent implements OnInit {
     }
   }
 
-  private applyPatientEligibilityDefaults(data: any): any {
-    const defaults = {
-      receiverId: null as string | null,
-      providerMode: 'Billing',
-      specificProviderId: null as number | null,
-      username: '',
-      password: '',
-      server: '',
-      showEligibilityResponseViewer: true
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
-    }
-
-    const merged = { ...defaults, ...data };
-    delete merged.source;
-    if (merged.providerMode === 'PatientBillingProvider') {
-      merged.providerMode = 'Billing';
-    } else if (merged.providerMode === 'PatientRenderingProvider') {
-      merged.providerMode = 'Rendering';
-    } else if (merged.providerMode === 'SpecificProvider') {
-      merged.providerMode = 'Specific';
-    }
-
-    return merged;
-  }
-
-  private applyCompanyDefaults(data: any): any {
-    const defaults = {
-      companyName: '',
-      address1: '',
-      address2: '',
-      city: '',
-      state: '',
-      zip: '',
-      phone: '',
-      fax: '',
-      email: '',
-      website: '',
-      taxId: '',
-      npi: ''
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
-    }
-
-    return { ...defaults, ...data };
-  }
-
-  private applySendingClaimsDefaults(data: any): any {
-    const defaults = {
-      defaultSubmitterReceiverId: null as string | null,
-      exportFormat: 'ANSI837',
-      autoMarkClaimsSent: true,
-      lockClaimsAfterExport: false,
-      exportBatchSize: 100,
-      showBillToPatientClaims: false,
-      patientControlNumberMode: 'ClaimId',
-      nextSubmissionNumber: 1
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
-    }
-
-    return { ...defaults, ...data };
-  }
-
   private loadSendingClaimsLookups(): void {
     if (this.sendingClaimsReceivers.length === 0) {
       this.receiverLibraryApi.getAll().subscribe({
@@ -608,33 +607,10 @@ export class ProgramSetupPageComponent implements OnInit {
     }
   }
 
-  private applyInterfaceDefaults(data: any): any {
-    const defaultDuplicateCheckFields = {
-      serviceDate: true,
-      procedureCode: true,
-      productCode: true,
-      modifiers: true,
-      diagnosisPointer: true
-    };
-    const defaults = {
-      duplicateCheckFields: { ...defaultDuplicateCheckFields },
-      assignPatientDiagnosisCodes: true
-    };
-
-    if (!data || typeof data !== 'object') {
-      return { ...defaults };
-    }
-
-    return {
-      duplicateCheckFields: { ...defaultDuplicateCheckFields, ...(data.duplicateCheckFields || {}) },
-      assignPatientDiagnosisCodes: data.assignPatientDiagnosisCodes !== undefined ? data.assignPatientDiagnosisCodes : true
-    };
-  }
-
   /** Validate company settings. Returns error messages keyed by field (only set when invalid). */
   private validateCompanySettings(): { companyName?: string; taxId?: string; npi?: string } {
     const errs: { companyName?: string; taxId?: string; npi?: string } = {};
-    const d = this.settingsData;
+    const d = this.settingsData as CompanyProgramSettings | null;
     if (!d) return errs;
 
     const name = (d.companyName ?? '').trim();
@@ -662,7 +638,8 @@ export class ProgramSetupPageComponent implements OnInit {
   /** Look up city/state from City State Zip library by zip and auto-fill when section is company. */
   onCompanyZipBlur(): void {
     if (this.selectedSection !== 'company' || !this.settingsData) return;
-    const zip = (this.settingsData.zip ?? '').trim();
+    const company = this.settingsData as CompanyProgramSettings;
+    const zip = (company.zip ?? '').trim();
     if (!zip) return;
 
     this.cityStateZipApi.get(1, 10, { search: zip }).subscribe({
@@ -670,12 +647,102 @@ export class ProgramSetupPageComponent implements OnInit {
         const items = res?.items ?? [];
         const match = items.find((r: { zip: string }) => (r.zip || '').trim() === zip) ?? items[0];
         if (match) {
-          this.settingsData.city = match.city ?? this.settingsData.city;
-          this.settingsData.state = match.state ?? this.settingsData.state;
+          company.city = match.city ?? company.city;
+          company.state = match.state ?? company.state;
         }
       },
       error: () => { /* ignore */ }
     });
+  }
+
+  private refreshEligibilityConfigStatus(): void {
+    // Avoid spamming; configuration-status endpoint is cheap, but still only call when settings exist.
+    if (!this.settingsData) return;
+
+    this.eligibilityConfigStatus = null;
+    this.eligibilityTestResult = null;
+
+    this.eligibilityApi.configurationStatus({ patientId: null }).subscribe({
+      next: status => this.eligibilityConfigStatus = status,
+      error: () => {
+        this.eligibilityConfigStatus = null;
+      }
+    });
+  }
+
+  testEligibilityConnection(): void {
+    if (!this.settingsData) return;
+    this.isTestingEligibility = true;
+    this.eligibilityTestResult = null;
+
+    this.eligibilityApi.testConnection(this.buildEligibilityTestConnectionRequest()).subscribe({
+      next: res => {
+        this.eligibilityTestResult = this.normalizeEligibilityTestResult(res);
+        this.isTestingEligibility = false;
+      },
+      error: err => {
+        this.isTestingEligibility = false;
+        const raw = err?.error ?? {};
+        const message =
+          raw?.message ??
+          raw?.error ??
+          err?.message ??
+          'Eligibility test failed.';
+
+        // Always normalize so template never hits undefined arrays.
+        this.eligibilityTestResult = this.normalizeEligibilityTestResult({
+          ...(typeof raw === 'object' && raw !== null ? raw : {}),
+          success: Boolean(raw?.success),
+          message,
+        });
+      }
+    });
+  }
+
+  private buildEligibilityTestConnectionRequest(): EligibilityConnectionTestRequestDto {
+    const d = (this.settingsData ?? {}) as PatientEligibilityProgramSettings;
+    const pwd = (d.password ?? '').toString().trim();
+
+    return {
+      patientId: null,
+      settings: {
+        vendor: (d.vendor ?? 'GenericSftp').toString(),
+        receiverId: d.receiverId != null ? String(d.receiverId) : null,
+        server: (d.server ?? '').trim() || null,
+        username: (d.username ?? '').trim() || null,
+        password: pwd || (d.passwordConfigured ? '********' : null),
+        uploadDirectory: (d.uploadDirectory ?? '').trim() || null,
+        incomingDirectory: (d.incomingDirectory ?? '').trim() || null,
+        processedDirectory: (d.processedDirectory ?? '').trim() || null,
+        quarantineDirectory: null
+      }
+    };
+  }
+
+  private normalizeEligibilityTestResult(raw: any): EligibilityConnectionTestResultDto {
+    const message =
+      raw?.message ??
+      raw?.error ??
+      'Eligibility test failed.';
+
+    return {
+      success: Boolean(raw?.success),
+      message,
+      vendor: raw?.vendor ?? null,
+      receiverId: raw?.receiverId ?? null,
+      server: raw?.server ?? null,
+      receiverValid: Boolean(raw?.receiverValid),
+      credentialsValid: Boolean(raw?.credentialsValid),
+      directoriesValid: Boolean(raw?.directoriesValid),
+      errors: Array.isArray(raw?.errors)
+        ? raw.errors
+        : message
+          ? [message]
+          : [],
+      diagnostics: Array.isArray(raw?.diagnostics)
+        ? raw.diagnostics
+        : []
+    };
   }
 
   private loadEligibilityLookups(): void {

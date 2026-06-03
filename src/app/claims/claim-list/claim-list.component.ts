@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import { ClaimListItem, ClaimsApiResponse, PaginationMeta } from '../../core/services/claim.models';
@@ -6,10 +6,25 @@ import { Subject, of, switchMap, takeUntil, catchError } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from './claim-list-additional-columns';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import {
-  formatApiDateTimeDisplay,
-  isApiDateTimeColumnKey,
-  isApiPlaceholderDateTime
-} from '../../core/utils/api-datetime-display';
+  formatClaimListDateDisplay,
+  formatClaimListDateTimeDisplay,
+  formatClaimListDefaultCellValue,
+  getClaimAuditTimestamp,
+  getClaimCurrencyTone,
+  getClaimListCellValue,
+  getClaimStatusTone,
+  mapToBackendAdditionalColumnKeys
+} from '../shared/claim-column.utils';
+import {
+  buildColumnPreferencesPayload,
+  CLAIM_LIST_COLUMN_PREFS_VERSION,
+  clampColumnWidth,
+  migrateLegacyColumnKey,
+  orderVisibleColumns,
+  parseColumnPreferences,
+  reorderColumnKeys,
+  visibleKeysInDisplayOrder
+} from '../shared/claim-column-preferences';
 
 @Component({
   selector: 'app-claim-list',
@@ -17,10 +32,7 @@ import {
   styleUrls: ['./claim-list.component.css']
 })
 export class ClaimListComponent implements OnInit, OnDestroy {
-  /** Prefer top-level list DTO fields so additionalColumns cannot override audit timestamps. */
-  private static readonly CLAIM_ROOT_AUDIT_KEYS = new Set(['createdDate', 'modifiedDate']);
-
-  private readonly columnPreferenceVersion = 3;
+  private readonly columnPreferenceVersion = CLAIM_LIST_COLUMN_PREFS_VERSION;
   /** Keys shown when preferences are missing or migrated (must match intended product default grid). */
   private readonly defaultClaimColumns: Array<{ key: string; label: string }> = [
     { key: 'claID', label: 'Claim ID' },
@@ -31,29 +43,6 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'claTotalBalanceCC', label: 'Total Balance' },
     { key: 'patFullNameCC', label: 'Name' }
   ];
-  private static readonly CLAIM_API_KEY_MAP: Record<string, string> = {
-    claFirstDOS: 'claFirstDateTRIG',
-    claLastDOS: 'claLastDateTRIG',
-    claTotalCharge: 'claTotalChargeTRIG',
-    claTotalBalance: 'claTotalBalanceCC',
-    claTotalInsBalance: 'claTotalInsBalanceTRIG',
-    claTotalPatBalance: 'claTotalPatBalanceTRIG',
-    claTotalInsAmtPaid: 'claTotalInsAmtPaidTRIG',
-    claTotalPatAmtPaid: 'claTotalPatAmtPaidTRIG',
-    claPaidDate: 'claPaidDateTRIG',
-    claCreatedTimestamp: 'claDateTimeCreated',
-    claModifiedTimestamp: 'claDateTimeModified',
-    createdDate: 'createdDate',
-    modifiedDate: 'modifiedDate',
-    patID: 'claPatFID',
-    claDischargeDate: 'claDischargedDate',
-    claStatementFromOverride: 'claStatementCoversFromOverride',
-    claStatementToOverride: 'claStatementCoversThroughOverride',
-    claDischargeHour: 'claDischargedHour',
-    claPatientReason1: 'claPatientReasonDiagnosis1',
-    claPatientReason2: 'claPatientReasonDiagnosis2',
-    claPatientReason3: 'claPatientReasonDiagnosis3'
-  };
 
   claims: ClaimListItem[] = [];
   filteredClaims: ClaimListItem[] = [];
@@ -80,6 +69,13 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   // Curated additional columns from registry
   availableAdditionalColumns: AdditionalColumnDefinition[] = [];
   selectedAdditionalColumns: Set<string> = new Set<string>(); // Track which additional columns are selected
+  /** Saved display order for visible columns (from preferences.visibleColumns). */
+  columnDisplayOrder: string[] = [];
+  columnWidths: Record<string, number> = {};
+  private dragColumnKey: string | null = null;
+  private resizingColumnKey: string | null = null;
+  private resizeStartX = 0;
+  private resizeStartWidth = 0;
 
   // Base columns (always visible by default)
   columns: Array<{
@@ -422,10 +418,10 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     const visibleAdditionalKeys = this.columns
       .filter(c => c.visible && ClaimListAdditionalColumns.isValidColumn(c.key))
       .map(c => c.key);
-    const requestedAdditionalColumns = Array.from(new Set([
+    const requestedAdditionalColumns = mapToBackendAdditionalColumnKeys([
       ...Array.from(this.selectedAdditionalColumns),
       ...visibleAdditionalKeys
-    ])).map(key => this.toBackendColumnKey(key));
+    ]);
     if (requestedAdditionalColumns.length > 0) {
       filters.additionalColumns = requestedAdditionalColumns;
     }
@@ -467,7 +463,65 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   get visibleColumns() {
-    return this.columns.filter(c => c.visible);
+    return orderVisibleColumns(this.columns, this.columnDisplayOrder);
+  }
+
+  get selectedColumnKeysForDialog(): string[] {
+    return this.visibleColumns.map((c) => c.key);
+  }
+
+  getColumnWidthPx(key: string): number | null {
+    const w = this.columnWidths[key];
+    return w != null && w > 0 ? w : null;
+  }
+
+  onColumnDragStart(event: DragEvent, columnKey: string): void {
+    this.dragColumnKey = columnKey;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', columnKey);
+    }
+  }
+
+  onColumnDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  onColumnDrop(event: DragEvent, targetKey: string): void {
+    event.preventDefault();
+    const dragged = this.dragColumnKey ?? event.dataTransfer?.getData('text/plain');
+    this.dragColumnKey = null;
+    if (!dragged || dragged === targetKey) return;
+    const currentOrder = visibleKeysInDisplayOrder(this.columns, this.columnDisplayOrder);
+    this.columnDisplayOrder = reorderColumnKeys(currentOrder, dragged, targetKey);
+    this.saveColumnPreferences();
+  }
+
+  onColumnResizeStart(event: MouseEvent, columnKey: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingColumnKey = columnKey;
+    this.resizeStartX = event.clientX;
+    const th = (event.target as HTMLElement).closest('th');
+    this.resizeStartWidth = this.columnWidths[columnKey] ?? th?.clientWidth ?? 120;
+  }
+
+  onColumnResizeMove(event: MouseEvent): void {
+    if (!this.resizingColumnKey) return;
+    const delta = event.clientX - this.resizeStartX;
+    this.columnWidths = {
+      ...this.columnWidths,
+      [this.resizingColumnKey]: clampColumnWidth(this.resizeStartWidth + delta)
+    };
+  }
+
+  onColumnResizeEnd(): void {
+    if (!this.resizingColumnKey) return;
+    this.resizingColumnKey = null;
+    this.saveColumnPreferences();
   }
 
   hideColumn(columnKey: string): void {
@@ -503,165 +557,33 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   getCellValue(claim: ClaimListItem, key: string): any {
-    const claimRecord = claim as unknown as Record<string, unknown>;
-    const additionalColumns = (claim.additionalColumns ?? {}) as Record<string, unknown>;
-    const canonicalKey = this.toBackendColumnKey(key);
-
-    // Resolve created/modified from list DTO (or legacy alias keys) before additionalColumns.
-    if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(canonicalKey)) {
-      const rootOrder =
-        canonicalKey === 'createdDate'
-          ? (['createdDate', 'CreatedDate', 'claDateTimeCreated', 'claCreatedTimestamp'] as const)
-          : (['modifiedDate', 'ModifiedDate', 'claDateTimeModified', 'claModifiedTimestamp'] as const);
-      for (const k of rootOrder) {
-        const v = this.getRecordValue(claimRecord, k);
-        if (v !== null && v !== undefined && v !== '') {
-          return v;
-        }
-      }
-      for (const k of rootOrder) {
-        const v = this.getRecordValue(additionalColumns, k);
-        if (v !== null && v !== undefined && v !== '') {
-          return v;
-        }
-      }
-    }
-
-    const candidates = this.getColumnCandidates(key);
-    for (const candidate of candidates) {
-      if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(this.toBackendColumnKey(candidate))) {
-        continue;
-      }
-      const additionalValue = this.getRecordValue(additionalColumns, candidate);
-      if (additionalValue !== null && additionalValue !== undefined && additionalValue !== '') {
-        return additionalValue;
-      }
-
-      const claimValue = this.getRecordValue(claimRecord, candidate);
-      if (claimValue !== null && claimValue !== undefined && claimValue !== '') {
-        return claimValue;
-      }
-    }
-
-    for (const candidate of candidates) {
-      if (ClaimListComponent.CLAIM_ROOT_AUDIT_KEYS.has(this.toBackendColumnKey(candidate))) {
-        continue;
-      }
-      if (this.getRecordValue(additionalColumns, candidate) === '') {
-        return '';
-      }
-      if (this.getRecordValue(claimRecord, candidate) === '') {
-        return '';
-      }
-    }
-
-    return null;
+    return getClaimListCellValue(claim, key);
   }
 
   formatDateDisplay(value: unknown): string {
-    if (isApiPlaceholderDateTime(value)) return '';
-    const d = new Date(String(value));
-    return Number.isNaN(d.getTime()) ? String(value ?? '') : d.toLocaleDateString('en-US');
+    return formatClaimListDateDisplay(value);
   }
 
   formatDateTimeDisplay(value: unknown): string {
-    return formatApiDateTimeDisplay(value);
+    return formatClaimListDateTimeDisplay(value);
   }
 
-  /**
-   * Read created/modified audit timestamps from the list row (root + additionalColumns).
-   * Values always come from the API/SQL projection — the UI does not synthesize them.
-   */
   claimAuditTimestamp(claim: ClaimListItem, which: 'created' | 'modified'): string | number | Date | null {
-    const row = claim as unknown as Record<string, unknown>;
-    const add = (claim.additionalColumns ?? {}) as Record<string, unknown>;
-    const keys =
-      which === 'created'
-        ? (['createdDate', 'CreatedDate', 'claDateTimeCreated', 'ClaDateTimeCreated', 'claCreatedTimestamp', 'ClaCreatedTimestamp'] as const)
-        : (['modifiedDate', 'ModifiedDate', 'claDateTimeModified', 'ClaDateTimeModified', 'claModifiedTimestamp', 'ClaModifiedTimestamp'] as const);
-    for (const k of keys) {
-      const v = this.getRecordValue(row, k);
-      if (v !== null && v !== undefined && !(typeof v === 'string' && v.trim() === '')) {
-        return this.toDatePipeValue(v);
-      }
-    }
-    for (const k of keys) {
-      const v = this.getRecordValue(add, k);
-      if (v !== null && v !== undefined && !(typeof v === 'string' && v.trim() === '')) {
-        return this.toDatePipeValue(v);
-      }
-    }
-    return null;
+    return getClaimAuditTimestamp(claim, which);
   }
 
-  private toDatePipeValue(v: unknown): string | number | Date | null {
-    if (v == null) return null;
-    if (v instanceof Date) return v;
-    if (typeof v === 'string') {
-      const s = v.trim();
-      if (!s || s.startsWith('0001-01-01')) return null;
-      return s;
-    }
-    if (typeof v === 'number') return v;
-    if (typeof v === 'object' && '$date' in (v as Record<string, unknown>)) {
-      const inner = (v as { $date?: unknown }).$date;
-      if (inner instanceof Date) return inner;
-      if (typeof inner === 'string') {
-        const s = inner.trim();
-        if (!s || s.startsWith('0001-01-01')) return null;
-        return s;
-      }
-      if (typeof inner === 'number') return inner;
-    }
-    return String(v);
-  }
-
-  /** Values in the default table cell: format registry datetime columns and *DateTime* keys. */
   formatDefaultCellValue(claim: ClaimListItem, columnKey: string): string {
-    const raw = this.getCellValue(claim, columnKey);
-    const def = ClaimListAdditionalColumns.findByKey(columnKey);
-    if (def?.dataType === 'datetime') {
-      return formatApiDateTimeDisplay(raw);
-    }
-    if (isApiDateTimeColumnKey(columnKey)) {
-      return formatApiDateTimeDisplay(raw);
-    }
-    if (raw == null) return '';
-    return String(raw);
+    return formatClaimListDefaultCellValue(claim, columnKey, (key) =>
+      ClaimListAdditionalColumns.findByKey(key)?.dataType
+    );
   }
 
   getStatusTone(status: unknown): string {
-    const value = String(status ?? '').trim().toLowerCase();
-    if (!value) return 'status-chip-neutral';
-    if (value.includes('paid') || value.includes('closed') || value.includes('submitted')) return 'status-chip-success';
-    if (value.includes('onhold') || value.includes('hold') || value.includes('pending') || value.includes('rts')) return 'status-chip-warning';
-    if (value.includes('reject') || value.includes('denied') || value.includes('error') || value.includes('void')) return 'status-chip-danger';
-    return 'status-chip-neutral';
+    return getClaimStatusTone(status);
   }
 
   getCurrencyTone(amount: unknown): string {
-    const n = Number(amount);
-    if (!Number.isFinite(n)) return 'money-neutral';
-    if (n > 0) return 'money-positive';
-    if (n < 0) return 'money-negative';
-    return 'money-zero';
-  }
-
-  private toBackendColumnKey(key: string): string {
-    return ClaimListComponent.CLAIM_API_KEY_MAP[key] ?? key;
-  }
-
-  private getColumnCandidates(key: string): string[] {
-    const mapped = this.toBackendColumnKey(key);
-    if (mapped === key) return [key];
-    return [key, mapped];
-  }
-
-  private getRecordValue(record: Record<string, unknown>, key: string): unknown {
-    if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
-    const normalizedTarget = key.toLowerCase();
-    const actualKey = Object.keys(record).find(k => k.toLowerCase() === normalizedTarget);
-    return actualKey ? record[actualKey] : undefined;
+    return getClaimCurrencyTone(amount);
   }
 
   private deduplicateColumns(): void {
@@ -917,14 +839,9 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     return [];
   }
 
-  closeCustomizationDialog(event?: MouseEvent): void {
-    if (event && (event.target as HTMLElement).classList.contains('customization-overlay')) {
-      this.showCustomizationDialog = false;
-      this.columnSearchText = '';
-    } else if (!event) {
-      this.showCustomizationDialog = false;
-      this.columnSearchText = '';
-    }
+  onAddColumnDialogClosed(): void {
+    this.showCustomizationDialog = false;
+    this.columnSearchText = '';
   }
 
   /**
@@ -960,6 +877,9 @@ export class ClaimListComponent implements OnInit, OnDestroy {
         });
         this.selectedAdditionalColumns.add(columnKey);
       }
+      if (!this.columnDisplayOrder.includes(columnKey)) {
+        this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+      }
       
       // Persist to localStorage
       this.saveColumnPreferences();
@@ -976,72 +896,67 @@ export class ClaimListComponent implements OnInit, OnDestroy {
    * Save column preferences to localStorage
    */
   saveColumnPreferences(): void {
-    const preferences = {
-      version: this.columnPreferenceVersion,
-      visibleColumns: this.columns.filter(c => c.visible).map(c => c.key),
-      selectedAdditional: Array.from(this.selectedAdditionalColumns)
-    };
+    const preferences = buildColumnPreferencesPayload(
+      this.columnPreferenceVersion,
+      visibleKeysInDisplayOrder(this.columns, this.columnDisplayOrder),
+      this.selectedAdditionalColumns,
+      this.columnWidths
+    );
     localStorage.setItem('claimListColumnPreferences', JSON.stringify(preferences));
+    this.columnDisplayOrder = preferences.visibleColumns;
   }
 
   /**
    * Load column preferences from localStorage
    */
   loadColumnPreferences(): void {
-    const saved = localStorage.getItem('claimListColumnPreferences');
-    if (!saved) {
+    const preferences = parseColumnPreferences(localStorage.getItem('claimListColumnPreferences'));
+    if (!preferences) {
       this.applyDefaultColumnConfiguration();
       return;
     }
 
-    if (saved) {
-      try {
-        const preferences = JSON.parse(saved);
-        const savedVersion = typeof preferences?.version === 'number' ? preferences.version : 0;
-        if (savedVersion < this.columnPreferenceVersion) {
-          // One-time migration: reset older saved layouts to current product default.
-          this.applyDefaultColumnConfiguration();
-          this.saveColumnPreferences();
-          return;
-        }
-        
-        // Apply visibility to existing columns
-        this.columns.forEach(col => {
-          col.visible = preferences.visibleColumns.includes(col.key);
-        });
-        
-        // Add additional columns that were previously selected
-        if (preferences.selectedAdditional) {
-          preferences.selectedAdditional.forEach((key: string) => {
-            // Migrate legacy keys to current keys
-            const resolvedKey =
-              key === 'patFullName' ? 'patFullNameCC' :
-              key === 'claClassification' ? 'facilityName' :
-              key;
-            const additionalCol = ClaimListAdditionalColumns.findByKey(resolvedKey);
-            if (additionalCol && !this.columns.find(c => c.key === resolvedKey)) {
-              this.columns.push({
-                key: additionalCol.key,
-                label: additionalCol.label,
-                visible: true,
-                filterValue: '',
-                isAdditionalColumn: true
-              });
-              this.selectedAdditionalColumns.add(resolvedKey);
-            }
-          });
-        }
+    const savedVersion = preferences.version ?? 0;
+    if (savedVersion < 3) {
+      this.applyDefaultColumnConfiguration();
+      this.saveColumnPreferences();
+      return;
+    }
 
-        // Keep selection set in sync with currently visible curated additional columns.
-        this.columns.forEach(col => {
-          if (col.visible && ClaimListAdditionalColumns.isValidColumn(col.key)) {
-            this.selectedAdditionalColumns.add(col.key);
+    try {
+      const visibleKeys = new Set(preferences.visibleColumns.map(migrateLegacyColumnKey));
+      this.columnDisplayOrder = preferences.visibleColumns.map(migrateLegacyColumnKey);
+      this.columnWidths = { ...(preferences.columnWidths ?? {}) };
+
+      this.columns.forEach((col) => {
+        col.visible = visibleKeys.has(col.key);
+      });
+
+      if (preferences.selectedAdditional) {
+        preferences.selectedAdditional.forEach((key: string) => {
+          const resolvedKey = migrateLegacyColumnKey(key);
+          const additionalCol = ClaimListAdditionalColumns.findByKey(resolvedKey);
+          if (additionalCol && !this.columns.find((c) => c.key === resolvedKey)) {
+            this.columns.push({
+              key: additionalCol.key,
+              label: additionalCol.label,
+              visible: true,
+              filterValue: '',
+              isAdditionalColumn: true
+            });
+            this.selectedAdditionalColumns.add(resolvedKey);
           }
         });
-      } catch (e) {
-        console.error('Error loading column preferences:', e);
-        this.applyDefaultColumnConfiguration();
       }
+
+      this.columns.forEach((col) => {
+        if (col.visible && ClaimListAdditionalColumns.isValidColumn(col.key)) {
+          this.selectedAdditionalColumns.add(col.key);
+        }
+      });
+    } catch (e) {
+      console.error('Error loading column preferences:', e);
+      this.applyDefaultColumnConfiguration();
     }
   }
 
@@ -1068,56 +983,23 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     });
 
     this.selectedAdditionalColumns = new Set(['patFullNameCC']);
+    this.columnDisplayOrder = this.defaultClaimColumns.map((c) => c.key);
   }
 
   clearAllColumns(): void {
-    this.columns.forEach(col => col.visible = false);
+    this.columns.forEach((col) => (col.visible = false));
+    this.columnDisplayOrder = [];
+    this.saveColumnPreferences();
   }
 
-  /**
-   * Get categories in the defined order
-   */
-  getAdditionalColumnCategories(): string[] {
-    const categories = ClaimListAdditionalColumns.getCategoryOrder();
-    
-    // Filter by search text if provided
-    if (this.columnSearchText.trim()) {
-      const searchLower = this.columnSearchText.toLowerCase();
-      return categories.filter(category => {
-        const columnsInCategory = ClaimListAdditionalColumns.getAllColumns()
-          .filter(col => col.category === category)
-          .filter(col => col.label.toLowerCase().includes(searchLower));
-        return columnsInCategory.length > 0;
-      });
-    }
-    
-    return categories;
+  @HostListener('document:mousemove', ['$event'])
+  onDocumentMouseMove(event: MouseEvent): void {
+    this.onColumnResizeMove(event);
   }
 
-  /**
-   * Get additional columns for a specific category
-   */
-  getAdditionalColumnsByCategory(category: string): AdditionalColumnDefinition[] {
-    let columns = ClaimListAdditionalColumns.getAllColumns()
-      .filter(col => col.category === category);
-    
-    // Apply search filter if provided
-    if (this.columnSearchText.trim()) {
-      const searchLower = this.columnSearchText.toLowerCase();
-      columns = columns.filter(col => 
-        col.label.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    return columns;
-  }
-
-  /**
-   * Check if an additional column is currently selected/visible
-   */
-  isAdditionalColumnSelected(key: string): boolean {
-    const col = this.columns.find(c => c.key === key);
-    return col ? col.visible : false;
+  @HostListener('document:mouseup')
+  onDocumentMouseUp(): void {
+    this.onColumnResizeEnd();
   }
 
   get filteredColumnsForDialog() {

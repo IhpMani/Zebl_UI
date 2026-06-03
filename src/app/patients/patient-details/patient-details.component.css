@@ -1,4 +1,38 @@
 /* strict-theme-normalized */
+
+.unsaved-badge {
+  margin-right: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  color: #8a4b00;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+}
+
+.readiness-panel {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff8e6;
+  border: 1px solid #e6c200;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.readiness-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.readiness-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.readiness-warn,
+.readiness-issue {
+  margin-bottom: 0.25rem;
+}
 /* Light blue theme - patient details */
 .patient-details-wrapper {
   position: relative;
@@ -931,6 +965,54 @@
   gap: 8px;
 }
 
+.physician-section .provider-row {
+  display: grid;
+  grid-template-columns: 180px minmax(260px, 1fr) 34px 34px;
+  column-gap: 8px;
+  align-items: start;
+}
+
+.physician-section .provider-row-label {
+  min-width: 0;
+  line-height: 34px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.physician-section .provider-row-input-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.physician-section .provider-row-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.physician-section .provider-row-hint {
+  min-height: 16px;
+  font-size: 12px;
+  color: var(--ps-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.physician-section .provider-row-hint-empty {
+  visibility: hidden;
+}
+
+.physician-section .provider-row-action {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  align-self: start;
+}
+
 .physician-section .form-row-inline {
   display: grid;
   grid-template-columns: 160px 1fr 28px 28px;
@@ -960,11 +1042,11 @@
   line-height: 1;
 }
 
-/* Physician Library Modal (full page in popup) */
+/* Physician / Payer library modal — dim scrim, no full-screen blur */
 .physician-library-overlay {
   position: fixed;
   inset: 0;
-  background: var(--ps-card);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -981,6 +1063,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.2);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .physician-library-modal-header {
@@ -1026,6 +1111,29 @@
 
 .physician-library-modal-body ::ng-deep .library-panels {
   height: 100%;
+}
+
+/* Avoid glass blur stacking inside the modal */
+.physician-library-modal-body ::ng-deep .left-panel,
+.physician-library-modal-body ::ng-deep .right-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.physician-library-modal-body ::ng-deep .payer-library-embed-container {
+  height: 100%;
+  min-height: 0;
+}
+
+.physician-library-modal-body ::ng-deep .payer-library-embed-container .left-panel,
+.physician-library-modal-body ::ng-deep .payer-library-embed-container .right-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.physician-library-modal-body ::ng-deep .payer-library-form {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 label {
@@ -1435,13 +1543,13 @@ textarea::placeholder {
 }
 
 .physician-library-overlay {
-  background: var(--ps-card);
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .physician-library-modal {
   background: var(--ps-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--ps-border);
   border-radius: 2px;
 }
@@ -1617,6 +1725,10 @@ tr.selected {
   column-gap: 8px;
 }
 
+.physician-section .provider-row {
+  grid-template-columns: 180px minmax(260px, 1fr) 34px 34px;
+}
+
 .insurance-panel {
   padding: 14px;
 }
@@ -1682,6 +1794,24 @@ textarea {
   .physician-section .form-row-inline {
     grid-template-columns: 1fr;
   }
+
+  .physician-section .provider-row {
+    grid-template-columns: minmax(0, 1fr) 34px 34px;
+    row-gap: 6px;
+  }
+
+  .physician-section .provider-row-label {
+    grid-column: 1 / 4;
+    line-height: 1.2;
+  }
+
+  .physician-section .provider-row-input-wrap {
+    grid-column: 1 / 2;
+  }
+
+  .physician-section .provider-row-action {
+    align-self: start;
+  }
 }
 
 /* =========================
@@ -1702,6 +1832,12 @@ textarea {
   border: 1px solid #d9e2ec !important;
   border-radius: 12px !important;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.patient-details-wrapper .physician-library-overlay {
+  background: rgba(15, 23, 42, 0.45) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -1851,6 +1987,18 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.insurance-form-grid .eligibility-date-readonly {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--bb-text, #0f172a);
+  padding: 4px 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
 .insurance-form-grid .eligibility-status {
   display: inline-flex;
   align-items: center;
@@ -1861,6 +2009,31 @@ textarea:focus {
   font-weight: 600;
   background: #f8fbff;
   border: 1px solid #dbe5f2;
+  color: #5c6b7a;
+}
+
+.insurance-form-grid .eligibility-status--active {
+  color: #fff;
+  background: #16a34a;
+  border-color: #15803d;
+}
+
+.insurance-form-grid .eligibility-status--inactive {
+  color: #b45309;
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+
+.insurance-form-grid .eligibility-status--rejected {
+  color: #b02a37;
+  background: #f8d7da;
+  border-color: #f1aeb5;
+}
+
+.insurance-form-grid .eligibility-status--unknown {
+  color: #6c757d;
+  background: #f1f3f5;
+  border-color: #dee2e6;
 }
 
 .insurance-form-grid .eligibility-action {

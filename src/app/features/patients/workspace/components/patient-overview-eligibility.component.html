@@ -1,0 +1,60 @@
+<section class="pw-section pw-elig-section">
+  <header class="pw-section__head">
+    <h2 class="pw-section__title">Eligibility</h2>
+    <ng-container *ngIf="snapshot$ | async as snap">
+      <span *ngIf="snap.needsAttention" class="pw-elig-attn">Needs attention</span>
+    </ng-container>
+  </header>
+
+  <div class="pw-section__body">
+    <ng-container *ngIf="slice$ | async as slice">
+      <app-workspace-widget-skeleton *ngIf="slice.status === 'loading'" variant="card"></app-workspace-widget-skeleton>
+      <div *ngIf="slice.status === 'error'" class="bb-widget-error">{{ slice.error }}</div>
+
+      <ng-container *ngIf="slice.status === 'loaded' && (snapshot$ | async) as snap">
+        <div class="pw-elig-summary">
+          <div class="pw-elig-summary__status-row">
+            <span [class]="pillClass(snap)">{{ snap.displayStatusLabel }}</span>
+            <span class="pw-elig-summary__verified" *ngIf="verifiedLabel(snap) as v">{{ v }}</span>
+          </div>
+
+          <p class="pw-elig-summary__inflight" *ngIf="snap.displayStatus === 'InProgress'">
+            Waiting for payer 271 response…
+          </p>
+
+          <dl class="pw-kv pw-kv--compact pw-elig-kv">
+            <dt>Eligibility date</dt>
+            <dd>{{ eligibilityDateLabel(snap) || '—' }}</dd>
+            <dt>Payer</dt><dd>{{ snap.payerName || '—' }}</dd>
+            <dt>Member ID</dt><dd>{{ snap.memberId || '—' }}</dd>
+            <dt>Plan</dt><dd>{{ snap.planName || '—' }}</dd>
+            <dt>Provider</dt><dd>{{ providerLabel(snap) || '—' }}</dd>
+          </dl>
+
+          <div class="pw-elig-actions">
+            <button
+              type="button"
+              class="pw-elig-actions__btn pw-elig-actions__btn--primary"
+              [disabled]="!snap.canCheck || flow.actionInProgress"
+              (click)="check(snap)">
+              {{ flow.actionInProgress ? 'Checking…' : 'Check eligibility' }}
+            </button>
+            <button
+              type="button"
+              class="pw-elig-actions__btn"
+              [disabled]="!snap.canView"
+              (click)="view(snap)">
+              View response
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</section>
+
+<app-eligibility-response
+  *ngIf="modal$ | async as modal"
+  [response]="modal"
+  (closed)="closeModal()">
+</app-eligibility-response>

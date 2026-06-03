@@ -2,8 +2,8 @@
   <div class="header-row">
     <div class="title">Eligibility</div>
     <div class="actions">
-      <button class="btn btn-primary" (click)="checkEligibility()" [disabled]="checking || patientId <= 0">
-        {{ checking ? 'Checking...' : 'Check Eligibility' }}
+      <button class="btn btn-primary" (click)="checkEligibility()" [disabled]="checking || polling || patientId <= 0">
+        {{ checking || polling ? 'Checking...' : 'Check Eligibility' }}
       </button>
     </div>
   </div>
@@ -37,6 +37,15 @@
   <div class="status-row warning" *ngIf="currentStatus?.usedPayerOverride">
     <div class="status-label">Notice:</div>
     <div class="status-value">Using payer-specific provider override</div>
+  </div>
+
+  <div class="status-row" *ngIf="polling">
+    <div class="status-label">Progress:</div>
+    <div class="status-value">Waiting for clearinghouse 271 response…</div>
+  </div>
+
+  <div class="error-row" *ngIf="timedOut">
+    Eligibility check timed out. You can retry or view history after a response arrives.
   </div>
 
   <div class="error-row" *ngIf="error">

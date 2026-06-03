@@ -19,6 +19,8 @@ import { PatientInsuranceSummaryDto } from '../../models/patient-insurance-summa
 import { PatientAgingSummaryDto } from '../../models/patient-aging-summary.dto';
 
 import { PatientBalanceSummaryDto } from '../../models/patient-balance-summary.dto';
+import { PatientEligibilitySnapshotDto } from '../../models/patient-eligibility-snapshot.dto';
+import { EligibilityApiService, PatientEligibilitySnapshotDto as ApiEligibilitySnapshotDto } from '../../../../core/services/eligibility-api.service';
 
 
 
@@ -52,9 +54,12 @@ export class PatientWorkspaceQueryService {
 
   private readonly insuranceCache = new Map<number, SliceCacheEntry<PatientInsuranceSummaryDto>>();
 
+  private readonly eligibilityCache = new Map<number, SliceCacheEntry<PatientEligibilitySnapshotDto>>();
 
-
-  constructor(private readonly workspaceApi: PatientWorkspaceApiService) {}
+  constructor(
+    private readonly workspaceApi: PatientWorkspaceApiService,
+    private readonly eligibilityApi: EligibilityApiService
+  ) {}
 
 
 
@@ -214,14 +219,37 @@ export class PatientWorkspaceQueryService {
 
 
 
+  getEligibilitySnapshot(patId: number, force = false): Observable<PatientEligibilitySnapshotDto> {
+    return this.cached(this.eligibilityCache, patId, force, () =>
+      this.eligibilityApi.getPatientSnapshot(patId).pipe(
+        map((s) => this.normalizeEligibilitySnapshot(s)),
+        catchError((err) => {
+          throw err;
+        })
+      )
+    );
+  }
+
   invalidatePatient(patId: number): void {
-
     this.headerCache.delete(patId);
-
     this.financialCache.delete(patId);
+    this.invalidateInsurance(patId);
+    this.invalidateEligibility(patId);
+  }
 
+  invalidateInsurance(patId: number): void {
     this.insuranceCache.delete(patId);
+  }
 
+  invalidateEligibility(patId: number): void {
+    this.eligibilityCache.delete(patId);
+  }
+
+  invalidateAll(): void {
+    this.headerCache.clear();
+    this.financialCache.clear();
+    this.insuranceCache.clear();
+    this.eligibilityCache.clear();
   }
 
 
@@ -402,6 +430,29 @@ export class PatientWorkspaceQueryService {
 
     };
 
+  }
+
+  private normalizeEligibilitySnapshot(s: ApiEligibilitySnapshotDto): PatientEligibilitySnapshotDto {
+    return {
+      displayStatus: s.displayStatus ?? 'NeverChecked',
+      displayStatusLabel: s.displayStatusLabel ?? 'Never Checked',
+      needsAttention: !!s.needsAttention,
+      lastCheckAt: s.lastCheckAt ?? null,
+      eligibilityDate: s.eligibilityDate ?? null,
+      eligibilityEndDate: s.eligibilityEndDate ?? null,
+      payerName: s.payerName ?? null,
+      memberId: s.memberId ?? null,
+      planName: s.planName ?? null,
+      providerNpi: s.providerNpi ?? null,
+      providerMode: s.providerMode ?? null,
+      latestInquiryId: s.latestInquiryId ?? null,
+      inFlightInquiryId: s.inFlightInquiryId ?? null,
+      lifecycleStatus: s.lifecycleStatus ?? null,
+      patInsEligStatus: s.patInsEligStatus ?? null,
+      source: s.source ?? 'none',
+      canView: !!s.canView,
+      canCheck: s.canCheck !== false
+    };
   }
 
 }

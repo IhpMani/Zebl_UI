@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { EMPTY, Subject, merge, finalize, throwError } from 'rxjs';
+import { catchError, switchMap, tap, takeUntil } from 'rxjs/operators';
 import { PatientApiService } from '../../core/services/patient-api.service';
 import {
   PatientDetail,
   InsuranceInfo,
   InsuranceUpdate,
+  UpdatePatientRequest,
 } from '../../core/services/patient.models';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PayerApiService } from '../../core/services/payer-api.service';
@@ -14,23 +16,27 @@ import { ListApiService, ListValueDto } from '../../core/services/list-api.servi
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
 import { EligibilityApiService, EligibilityRequestResultDto, EligibilityStatusDto } from '../../core/services/eligibility-api.service';
+import { EligibilityPollingService } from '../../core/services/eligibility-polling.service';
+import { PatientEligibilityRefreshService } from '../../features/patients/services/patient-eligibility-refresh.service';
+import { EligibilityResponsePayload } from '../eligibility-response/eligibility-response.models';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { FacilityService } from '../../core/services/facility.service';
 import { FacilitiesApiService } from '../../core/services/facilities-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { toHtmlDateInputValue } from '../../core/utils/html-date-input';
+import {
+  PhysicianSlotOption,
+  filterPhysiciansForOperationalFacility,
+  freezePhysicianSlotOptions,
+  mapPhysicianApiRow
+} from '../../core/utils/physician-slot-options.util';
+import { ClaimTemplate, ClaimTemplateApiService } from '../../features/claim-template-library/claim-template-api.service';
 
-interface PhysicianOption {
-  phyID: number;
-  facilityId: number;
-  phyName: string;
-  phyEntityType: string | null;
-  phyType: string | null;
-  phyPrimaryCodeType?: string | null;
-  isFacility?: boolean;
-  isPerson?: boolean;
-  isSystemPlaceholder?: boolean;
-}
+type ProviderSlotRow = {
+  label: string;
+  controlName: string;
+  emptyHintLabel: string;
+};
 
 @Component({
   selector: 'app-patient-details',
@@ -38,7 +44,7 @@ interface PhysicianOption {
   styleUrls: ['./patient-details.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PatientDetailsComponent implements OnInit {
+export class PatientDetailsComponent implements OnInit, OnDestroy {
   patient: PatientDetail | null = null;
   isNewMode = false;
   patientForm!: FormGroup;
@@ -47,10 +53,29 @@ export class PatientDetailsComponent implements OnInit {
   patId: number | null = null;
   newNote = '';
   saving = false;
-  eligibilityResponse: any = null;
+  /** True when form/insurance differs from last successful load or save. */
+  formDirty = false;
+  private editorBaseline: string | null = null;
+
+  claimTemplates: ClaimTemplate[] = [];
+  eligibilityResponse: EligibilityResponsePayload | null = null;
   eligibilityRequest: EligibilityRequestResultDto | null = null;
   showEligibilityResponseViewer = true;
-  private eligibilityPollTimer: ReturnType<typeof setInterval> | null = null;
+  private destroy$ = new Subject<void>();
+  /** Stops eligibility modal polling when the user closes the modal. */
+  private eligibilityPollStop$ = new Subject<void>();
+
+  eligibilityActionInProgress = false;
+  eligibilityPollingInProgress = false;
+  /** Client polling window; backend may continue up to Awaiting271TimeoutMinutes. */
+  eligibilityTimeoutMs = 30 * 60 * 1000;
+  /** Poll GET /eligibility/{id} while modal is open. */
+  private readonly eligibilityPollIntervalMs = 1500;
+  /** Show "taking longer than expected" in modal without stopping server poll. */
+  private readonly eligibilitySoftTimeoutMs = 120_000;
+  private eligibilitySoftTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  eligibilityError: string | null = null;
+  eligibilityTimedOut = false;
 
   /**
    * @deprecated Single shared list — kept only for back-compat with callers
@@ -58,22 +83,31 @@ export class PatientDetailsComponent implements OnInit {
    * arrays below (`renderingProviders`, `facilityProviders`, …) which are
    * loaded with proper backend classification filters.
    */
-  physicians: PhysicianOption[] = [];
+  physicians: readonly PhysicianSlotOption[] = [];
 
   /** Service Facility (PhyPrimaryCodeType=FA, Non-Person). */
-  facilityProviders: PhysicianOption[] = [];
-  /** Billing Provider (PhyPrimaryCodeType=BI, Non-Person preferred). */
-  billingProviders: PhysicianOption[] = [];
-  /** Raw backend response for billing providers, before topbar facility scoping. */
-  private billingProvidersRaw: PhysicianOption[] = [];
+  facilityProviders: readonly PhysicianSlotOption[] = [];
+  /** Billing Provider (PhyPrimaryCodeType=BI, Non-Person). */
+  billingProviders: readonly PhysicianSlotOption[] = [];
   /** Rendering Provider (PhyPrimaryCodeType=RE, Person). */
-  renderingProviders: PhysicianOption[] = [];
+  renderingProviders: readonly PhysicianSlotOption[] = [];
   /** Referring Provider (PhyPrimaryCodeType=RF, Person). */
-  referringProviders: PhysicianOption[] = [];
+  referringProviders: readonly PhysicianSlotOption[] = [];
   /** Ordering Provider (PhyPrimaryCodeType=OP, Person). */
-  orderingProviders: PhysicianOption[] = [];
+  orderingProviders: readonly PhysicianSlotOption[] = [];
   /** Supervising Provider (PhyPrimaryCodeType=SU, Person). */
-  supervisingProviders: PhysicianOption[] = [];
+  supervisingProviders: readonly PhysicianSlotOption[] = [];
+  readonly providerSlotRows: readonly ProviderSlotRow[] = [
+    { label: 'Billing Provider', controlName: 'patBillingPhyFID', emptyHintLabel: 'billing providers' },
+    { label: 'Rendering Provider', controlName: 'patRenderingPhyFID', emptyHintLabel: 'rendering providers' },
+    { label: 'Service Facility', controlName: 'patFacilityPhyFID', emptyHintLabel: 'service facilities' },
+    { label: 'Referring Provider', controlName: 'patReferringPhyFID', emptyHintLabel: 'referring providers' },
+    { label: 'Ordering Provider', controlName: 'patOrderingPhyFID', emptyHintLabel: 'ordering providers' },
+    { label: 'Supervising Provider', controlName: 'patSupervisingPhyFID', emptyHintLabel: 'supervising providers' }
+  ];
+
+  /** Bumps when facility changes or physicians are reloaded — ignores stale HTTP responses. */
+  private physicianLoadGeneration = 0;
 
   selectedFacilityId: number | null = null;
   selectedFacilityName: string | null = null;
@@ -82,6 +116,8 @@ export class PatientDetailsComponent implements OnInit {
   physicianPickerOpen = false;
   /** When opening the physician library, which patient form field to set (e.g. patFacilityPhyFID). */
   physicianPickerFor: string | null = null;
+
+  payerLibraryOpen = false;
 
   classificationOptions: ListValueDto[] = [];
 
@@ -152,12 +188,24 @@ export class PatientDetailsComponent implements OnInit {
     private facilityService: FacilityService,
     private facilitiesApi: FacilitiesApiService,
     private workspace: WorkspaceService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private eligibilityPolling: EligibilityPollingService,
+    private eligibilityRefresh: PatientEligibilityRefreshService,
+    private claimTemplateApi: ClaimTemplateApiService
   ) {}
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.formDirty) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 
   ngOnInit(): void {
     this.buildPatientForm();
     this.loadEligibilityViewerSetting();
+    this.loadClaimTemplates();
     const idParam = this.route.snapshot.paramMap.get('patId');
     if (this.route.snapshot.routeConfig?.path === 'patients/new') {
       this.isNewMode = true;
@@ -189,6 +237,31 @@ export class PatientDetailsComponent implements OnInit {
       this.error = 'Invalid patient ID';
       this.cdr.markForCheck();
     }
+
+    let facilityWatchInitialized = false;
+    this.facilityService.facilityId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((facilityId) => {
+        const prev = this.selectedFacilityId;
+        this.selectedFacilityId = facilityId;
+        if (!facilityWatchInitialized) {
+          facilityWatchInitialized = true;
+          return;
+        }
+        if (prev === facilityId) {
+          return;
+        }
+        this.clearPhysicianSlotState();
+        this.loadSelectedFacilityName();
+        this.loadPhysicians();
+        this.cdr.markForCheck();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.clearEligibilitySoftTimeout();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private createEmptyPatient(): PatientDetail {
@@ -314,8 +387,8 @@ export class PatientDetailsComponent implements OnInit {
       patEmergencyContactName: [''],
       patEmergencyContactPhoneNo: [''],
       patEmergencyContactRelation: [''],
-      patBillingPhyFID: [0],
       patRenderingPhyFID: [0],
+      patBillingPhyFID: [0],
       patFacilityPhyFID: [0],
       patReferringPhyFID: [0],
       patOrderingPhyFID: [0],
@@ -351,6 +424,52 @@ export class PatientDetailsComponent implements OnInit {
       patActive: [true],
       patAuthTracking: [false]
     });
+
+    this.patientForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.refreshDirtyFlag());
+  }
+
+  private serializeEditorState(): string {
+    return JSON.stringify({
+      form: this.patientForm.getRawValue(),
+      insurance: this.insuranceList,
+      custom: this.customFieldValues
+    });
+  }
+
+  private markEditorClean(): void {
+    this.editorBaseline = this.serializeEditorState();
+    this.formDirty = false;
+    this.cdr.markForCheck();
+  }
+
+  private refreshDirtyFlag(): void {
+    if (!this.editorBaseline) {
+      return;
+    }
+    const dirty = this.serializeEditorState() !== this.editorBaseline;
+    if (dirty !== this.formDirty) {
+      this.formDirty = dirty;
+      this.cdr.markForCheck();
+    }
+  }
+
+  onInsuranceFieldChanged(): void {
+    this.refreshDirtyFlag();
+  }
+
+  private loadClaimTemplates(): void {
+    this.claimTemplateApi.getAll().subscribe({
+      next: (list) => {
+        this.claimTemplates = list ?? [];
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.claimTemplates = [];
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   loadClassificationOptions(): void {
@@ -373,7 +492,6 @@ export class PatientDetailsComponent implements OnInit {
    * memory. Placeholders are excluded server-side by default.
    *
    * Slot mapping (mirrors backend `PhysicianTaxonomy.Classification`):
-   *   * Billing       → BI, Non-Person preferred
    *   * Rendering     → RE, Person
    *   * Service Fac.  → FA, Non-Person
    *   * Referring     → RF, Person
@@ -381,83 +499,174 @@ export class PatientDetailsComponent implements OnInit {
    *   * Supervising   → SU, Person
    */
   loadPhysicians(): void {
-    const toOption = (p: any): PhysicianOption => ({
-      phyID: p.phyID,
-      facilityId: p.facilityId,
-      phyName: p.phyFullNameCC || p.phyName || 'Unknown',
-      phyEntityType: p.phyEntityType ?? p.phyType ?? null,
-      phyType: p.phyType ?? null,
-      phyPrimaryCodeType: p.phyPrimaryCodeType ?? null,
-      isFacility: !!p.isFacility,
-      isPerson: !!p.isPerson,
-      isSystemPlaceholder: !!p.isSystemPlaceholder
-    });
+    const generation = ++this.physicianLoadGeneration;
+    const facilityId = this.selectedFacilityId ?? this.facilityService.getFacilityIdOptional();
+    let slotsPending = 8;
+
+    const slotLoaded = (): void => {
+      slotsPending -= 1;
+      if (slotsPending <= 0) {
+        this.reconcileAssignedProvidersWithFacility();
+      }
+    };
 
     const loadSlot = (
       filters: Parameters<PhysicianApiService['getPhysicians']>[2],
-      assign: (rows: PhysicianOption[]) => void
+      assign: (rows: readonly PhysicianSlotOption[]) => void
     ) => {
-      this.physicianApi.getPhysicians(1, 500, filters).subscribe({
+      this.physicianApi.getPhysicians(1, 500, filters).pipe(takeUntil(this.destroy$)).subscribe({
         next: (r) => {
-          assign((r.data ?? []).map(toOption));
+          if (generation !== this.physicianLoadGeneration) return;
+          const mapped = (r.data ?? []).map(mapPhysicianApiRow);
+          assign(freezePhysicianSlotOptions(filterPhysiciansForOperationalFacility(mapped, facilityId)));
+          slotLoaded();
           this.cdr.markForCheck();
         },
         error: () => {
-          assign([]);
+          if (generation !== this.physicianLoadGeneration) return;
+          assign(freezePhysicianSlotOptions([]));
+          slotLoaded();
           this.cdr.markForCheck();
         }
       });
     };
 
-    // Service Facility — only organisations classified as FA.
-    loadSlot(
-      { inactive: false, classification: 'FA', isFacility: true, excludePlaceholders: true },
-      (rows) => { this.facilityProviders = rows; this.refreshBillingProviders(); }
-    );
-
-    // Billing Provider — BI classification, Non-Person preferred.
     loadSlot(
       { inactive: false, classification: 'BI', isFacility: true, excludePlaceholders: true },
-      (rows) => { this.billingProvidersRaw = rows; this.refreshBillingProviders(); }
+      (rows) => { this.billingProviders = rows; }
     );
 
-    // Rendering Provider — RE classification, Person only.
+    loadSlot(
+      { inactive: false, classification: 'FA', isFacility: true, excludePlaceholders: true },
+      (rows) => { this.facilityProviders = rows; }
+    );
+
     loadSlot(
       { inactive: false, classification: 'RE', isPerson: true, excludePlaceholders: true },
       (rows) => { this.renderingProviders = rows; }
     );
 
-    // Referring Provider — RF classification, Person only.
     loadSlot(
       { inactive: false, classification: 'RF', isPerson: true, excludePlaceholders: true },
       (rows) => { this.referringProviders = rows; }
     );
 
-    // Ordering Provider — OP classification, Person only.
     loadSlot(
       { inactive: false, classification: 'OP', isPerson: true, excludePlaceholders: true },
       (rows) => { this.orderingProviders = rows; }
     );
 
-    // Supervising Provider — SU classification, Person only.
     loadSlot(
       { inactive: false, classification: 'SU', isPerson: true, excludePlaceholders: true },
       (rows) => { this.supervisingProviders = rows; }
     );
 
-    // Legacy `physicians` array — keep populated for back-compat with any
-    // remaining call sites (search, picker dialog). Always exclude
-    // placeholders here too.
-    this.physicianApi.getPhysicians(1, 1000, { inactive: false, excludePlaceholders: true }).subscribe({
-      next: (r) => {
-        this.physicians = (r.data ?? []).map(toOption);
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.physicians = [];
-        this.cdr.markForCheck();
+    this.physicianApi.getPhysicians(1, 1000, { inactive: false, excludePlaceholders: true })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (r) => {
+          if (generation !== this.physicianLoadGeneration) return;
+          const mapped = (r.data ?? []).map(mapPhysicianApiRow);
+          this.physicians = freezePhysicianSlotOptions(
+            filterPhysiciansForOperationalFacility(mapped, facilityId)
+          );
+          slotLoaded();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          if (generation !== this.physicianLoadGeneration) return;
+          this.physicians = freezePhysicianSlotOptions([]);
+          slotLoaded();
+          this.cdr.markForCheck();
+        }
+      });
+  }
+
+  private clearPhysicianSlotState(): void {
+    this.physicians = freezePhysicianSlotOptions([]);
+    this.billingProviders = freezePhysicianSlotOptions([]);
+    this.facilityProviders = freezePhysicianSlotOptions([]);
+    this.renderingProviders = freezePhysicianSlotOptions([]);
+    this.referringProviders = freezePhysicianSlotOptions([]);
+    this.orderingProviders = freezePhysicianSlotOptions([]);
+    this.supervisingProviders = freezePhysicianSlotOptions([]);
+  }
+
+  /**
+   * Clears provider FK fields that point outside the active facility so stale
+   * cross-facility assignments (e.g. from another site) never appear as selected.
+   */
+  private reconcileAssignedProvidersWithFacility(): void {
+    const facilityId = this.selectedFacilityId ?? this.facilityService.getFacilityIdOptional();
+    if (!facilityId || facilityId <= 0 || !this.patientForm) return;
+
+    const slots: Array<{ control: string; pool: readonly PhysicianSlotOption[] }> = [
+      { control: 'patBillingPhyFID', pool: this.billingProviders },
+      { control: 'patFacilityPhyFID', pool: this.facilityProviders },
+      { control: 'patRenderingPhyFID', pool: this.renderingProviders },
+      { control: 'patReferringPhyFID', pool: this.referringProviders },
+      { control: 'patOrderingPhyFID', pool: this.orderingProviders },
+      { control: 'patSupervisingPhyFID', pool: this.supervisingProviders },
+    ];
+
+    const patch: Record<string, number> = {};
+    for (const { control, pool } of slots) {
+      const id = Number(this.patientForm.get(control)?.value) || 0;
+      if (id <= 0) continue;
+      const inPool = pool.some((p) => p.phyID === id);
+      if (!inPool) {
+        patch[control] = 0;
       }
-    });
+    }
+    if (Object.keys(patch).length > 0) {
+      this.patientForm.patchValue(patch);
+    }
+
+    const formBillingId = Number(this.patientForm.get('patBillingPhyFID')?.value) || 0;
+    if (formBillingId <= 0) {
+      const preferredBillingId =
+        Number(this.patient?.resolvedBillingProviderId ?? 0)
+        || (this.billingProviders.length === 1 ? this.billingProviders[0].phyID : 0);
+      if (preferredBillingId > 0 && this.billingProviders.some((p) => p.phyID === preferredBillingId)) {
+        this.patientForm.patchValue({ patBillingPhyFID: preferredBillingId });
+      }
+    }
+  }
+
+  private getSlotPool(controlName: string): readonly PhysicianSlotOption[] {
+    switch (controlName) {
+      case 'patBillingPhyFID': return this.billingProviders;
+      case 'patRenderingPhyFID': return this.renderingProviders;
+      case 'patFacilityPhyFID': return this.facilityProviders;
+      case 'patReferringPhyFID': return this.referringProviders;
+      case 'patOrderingPhyFID': return this.orderingProviders;
+      case 'patSupervisingPhyFID': return this.supervisingProviders;
+      default: return [];
+    }
+  }
+
+  getSlotOptions(controlName: string): readonly PhysicianSlotOption[] {
+    return this.getSlotPool(controlName);
+  }
+
+  isBillingSlot(controlName: string): boolean {
+    return controlName === 'patBillingPhyFID';
+  }
+
+  isSlotPoolEmpty(controlName: string): boolean {
+    return this.getSlotPool(controlName).length === 0;
+  }
+
+  /** Strict per-slot selection guard to prevent cross-slot ID leakage. */
+  onProviderSlotChange(controlName: string): void {
+    if (!this.patientForm.contains(controlName)) return;
+    const current = Number(this.patientForm.get(controlName)?.value) || 0;
+    if (current <= 0) return;
+    const pool = this.getSlotPool(controlName);
+    if (!pool.some((p) => p.phyID === current)) {
+      this.patientForm.patchValue({ [controlName]: 0 });
+      this.cdr.markForCheck();
+    }
   }
 
   private loadSelectedFacilityName(): void {
@@ -465,9 +674,9 @@ export class PatientDetailsComponent implements OnInit {
     this.selectedFacilityId = selectedId;
     if (selectedId == null || selectedId <= 0) {
       this.selectedFacilityName = null;
-      this.billingProviders = [];
+      this.clearPhysicianSlotState();
     }
-    this.facilitiesApi.getMyFacilities().subscribe({
+    this.facilitiesApi.getMyFacilities().pipe(takeUntil(this.destroy$)).subscribe({
       next: (rows) => {
         const list = rows ?? [];
         let effectiveId = this.selectedFacilityId;
@@ -477,52 +686,14 @@ export class PatientDetailsComponent implements OnInit {
         }
         const matched = list.find((f) => Number(f.facilityId) === Number(effectiveId));
         this.selectedFacilityName = matched?.name?.trim() || null;
-        this.refreshBillingProviders();
         this.cdr.markForCheck();
       },
       error: () => {
         this.selectedFacilityName = null;
         this.selectedFacilityId = null;
-        this.billingProvidersRaw = [];
-        this.billingProviders = [];
+        this.clearPhysicianSlotState();
       }
     });
-  }
-
-  /**
-   * Restricts the Billing Provider dropdown to the active facility context.
-   * The backend already filters by classification=BI / isFacility=true, so
-   * here we only need to apply the topbar facility scoping (facilityId match
-   * + optional name hint, e.g. "NJ") on top of the BI dataset.
-   */
-  /**
-   * Restricts the Billing Provider dropdown to the active facility context.
-   * The backend already filters by classification=BI / isFacility=true and
-   * caches the unfiltered result in `billingProvidersRaw`. Here we apply
-   * the topbar facility scoping (facilityId match + optional name hint,
-   * e.g. "NJ") on top of that base set.
-   */
-  private refreshBillingProviders(): void {
-    const selectedFacilityId = this.selectedFacilityId ?? this.facilityService.getFacilityIdOptional();
-    const selectedFacilityName = (this.selectedFacilityName ?? '').trim().toLowerCase();
-
-    let filtered = this.billingProvidersRaw;
-    if (selectedFacilityId && selectedFacilityId > 0) {
-      filtered = filtered.filter(p => p.facilityId === selectedFacilityId);
-    }
-
-    // Enforce topbar facility context by name (e.g., NJ) with no broad fallback.
-    if (selectedFacilityName) {
-      filtered = filtered.filter(p => (p.phyName || '').toLowerCase().includes(selectedFacilityName));
-    }
-
-    this.billingProviders = filtered;
-  }
-
-  get billingProviderFacilityHint(): string | null {
-    if (this.billingProviders.length > 0) return null;
-    const name = this.selectedFacilityName?.trim();
-    return name && name.length > 0 ? name : null;
   }
 
   loadPayers(): void {
@@ -555,6 +726,7 @@ export class PatientDetailsComponent implements OnInit {
       next: (p: PatientDetail) => {
         this.patient = p;
         this.patientForm.patchValue(this.patientToFormValue(p));
+        this.reconcileAssignedProvidersWithFacility();
         this.bindInsuranceFromApi(p);
         this.insuranceLoaded = true;
         this.loadPatientCustomFieldsAndValues(patId);
@@ -566,6 +738,7 @@ export class PatientDetailsComponent implements OnInit {
           patientName: title || null
         });
         if (title) this.workspace.updateActiveTabTitle(title);
+        this.markEditorClean();
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -625,8 +798,8 @@ export class PatientDetailsComponent implements OnInit {
       patEmergencyContactName: p.patEmergencyContactName ?? '',
       patEmergencyContactPhoneNo: p.patEmergencyContactPhoneNo ?? '',
       patEmergencyContactRelation: p.patEmergencyContactRelation ?? '',
-      patBillingPhyFID: p.patBillingPhyFID ?? 0,
       patRenderingPhyFID: p.patRenderingPhyFID ?? 0,
+      patBillingPhyFID: p.persistedBillingProviderId ?? p.patBillingPhyFID ?? 0,
       patFacilityPhyFID: p.patFacilityPhyFID ?? 0,
       patReferringPhyFID: p.patReferringPhyFID ?? 0,
       patOrderingPhyFID: p.patOrderingPhyFID ?? 0,
@@ -718,7 +891,8 @@ export class PatientDetailsComponent implements OnInit {
       insAcceptAssignment: ins.insAcceptAssignment ?? 0,
       patInsActive: ins.patInsActive ?? true,
       patInsLocked: ins.patInsLocked ?? false,
-      insBirthDate: toHtmlDateInputValue(ins.insBirthDate)
+      insBirthDate: toHtmlDateInputValue(ins.insBirthDate),
+      patInsEligDate: toHtmlDateInputValue(ins.patInsEligDate)
     };
   }
 
@@ -774,75 +948,142 @@ export class PatientDetailsComponent implements OnInit {
 
   checkEligibility(): void {
     if (!this.patient?.patID) return;
+    if (this.eligibilityActionInProgress) return;
+    if (this.formDirty) {
+      alert('Save patient changes before checking eligibility.');
+      return;
+    }
     if (!this.hasPrimaryInsurance) {
       alert('Patient has no primary insurance.');
       return;
     }
 
-    this.eligibilityApi.preflight(this.patient.patID).subscribe({
-      next: (pf) => {
-        if (!pf.valid) {
-          alert((pf.errors ?? []).join('\n') || 'Eligibility preflight failed.');
-          return;
-        }
-        this.eligibilityApi.request(this.patient!.patID).subscribe({
-          next: (request) => {
-            this.eligibilityRequest = request;
-            this.eligibilityResponse = null;
-            this.pollEligibilityStatus();
-          },
-          error: (err) => {
-            alert(err?.error?.error || err?.error?.message || 'Failed to request eligibility.');
+    const patientId = this.patient.patID;
+    this.eligibilityError = null;
+    this.eligibilityTimedOut = false;
+    this.eligibilityActionInProgress = true;
+    this.eligibilityPollingInProgress = true;
+    this.clearEligibilitySoftTimeout();
+    this.eligibilityPollStop$.next();
+
+    this.eligibilityApi
+      .preflight(patientId)
+      .pipe(
+        switchMap(pf => {
+          if (!pf.valid) {
+            return throwError(() => new Error((pf.errors ?? []).join('\n') || 'Eligibility preflight failed.'));
           }
-        });
-      },
-      error: () => {
-        alert('Eligibility preflight could not be completed.');
-      }
-    });
+          return this.eligibilityApi.request(patientId);
+        }),
+        tap(request => {
+          this.eligibilityRequest = request;
+          if (request?.id) {
+            this.saveLastEligibilityRequestId(patientId, request.id);
+          }
+          this.openEligibilityModalForRequest(request);
+        }),
+        switchMap(request => {
+          this.startEligibilitySoftTimeout();
+          return this.eligibilityPolling.pollWithUpdates(
+            request.id,
+            { intervalMs: this.eligibilityPollIntervalMs, timeoutMs: this.eligibilityTimeoutMs },
+            this.destroy$
+          );
+        }),
+        takeUntil(merge(this.destroy$, this.eligibilityPollStop$)),
+        catchError(err => {
+          this.clearEligibilitySoftTimeout();
+          if (err?.message === 'ELIGIBILITY_POLL_TIMEOUT') {
+            this.eligibilityTimedOut = true;
+            this.eligibilityError =
+              'No response in this session yet. The inquiry may still be processing on the server — use VIEW later or check Program Setup.';
+            this.patchEligibilityModal({ pollTimedOut: true, isLoading: false });
+          } else {
+            const message = err?.message ?? 'Eligibility check failed.';
+            this.eligibilityError = message;
+            if (this.eligibilityResponse) {
+              this.patchEligibilityModal({ isLoading: false, errorMessage: message });
+            }
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.clearEligibilitySoftTimeout();
+          this.eligibilityActionInProgress = false;
+          this.eligibilityPollingInProgress = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe(status => {
+        if (!status) return;
+        this.updateEligibilityModalFromStatus(status);
+        if (EligibilityPollingService.isTerminal(status)) {
+          this.applyEligibilityStatusFromDto(status);
+          if (this.patId) {
+            this.eligibilityRefresh.notify(this.patId);
+            this.loadPatient(this.patId);
+          }
+        }
+      });
+  }
+
+  closeEligibilityModal(): void {
+    this.eligibilityPollStop$.next();
+    this.clearEligibilitySoftTimeout();
+    this.eligibilityResponse = null;
+    this.eligibilityPollingInProgress = false;
+    this.cdr.markForCheck();
   }
 
   viewEligibility(): void {
-    if (!this.eligibilityRequest?.id) return;
+    if (!this.patient?.patID) return;
+    const patientId = this.patient.patID;
 
-    this.eligibilityApi.getById(this.eligibilityRequest.id, false).subscribe({
-      next: status => {
-        this.presentEligibilityResult(status, true);
-      },
-      error: (err) => {
-        alert(err?.error?.error || 'Failed to load eligibility response.');
-      }
-    });
+    this.eligibilityApi
+      .getPatientHistory(patientId)
+      .pipe(
+        switchMap(history => {
+          const preferredId =
+            this.eligibilityRequest?.id ??
+            this.getLastEligibilityRequestId(patientId) ??
+            history[0]?.inquiryId ??
+            null;
+
+          if (!preferredId) {
+            return throwError(() => new Error('No eligibility history found for this patient.'));
+          }
+
+          return this.eligibilityApi.getById(preferredId, false);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: status => this.presentEligibilityResult(status, true),
+        error: err => alert(err?.message || err?.error?.error || 'Failed to load eligibility response.')
+      });
   }
 
-  private pollEligibilityStatus(): void {
-    if (!this.eligibilityRequest?.id) return;
-    if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
+  private saveLastEligibilityRequestId(patientId: number, requestId: number): void {
+    try {
+      localStorage.setItem(this.lastEligibilityRequestKey(patientId), String(requestId));
+    } catch {
+      // ignore
+    }
+  }
 
-    const requestId = this.eligibilityRequest.id;
-    const poll = () => {
-      this.eligibilityApi.getById(requestId).subscribe({
-        next: status => {
-          if (this.currentInsurance) {
-            this.currentInsurance.patInsEligStatus = status.eligibilityStatus || this.currentInsurance.patInsEligStatus;
-          }
+  private getLastEligibilityRequestId(patientId: number): number | null {
+    try {
+      const raw = localStorage.getItem(this.lastEligibilityRequestKey(patientId));
+      if (!raw) return null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : null;
+    } catch {
+      return null;
+    }
+  }
 
-          if (status.status === 'Completed') {
-            this.presentEligibilityResult(status, false);
-            if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
-          } else if (status.status === 'Failed') {
-            alert(`Eligibility failed: ${status.errorMessage || 'Unknown error'}`);
-            if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
-          }
-        },
-        error: () => {
-          if (this.eligibilityPollTimer) clearInterval(this.eligibilityPollTimer);
-        }
-      });
-    };
-
-    poll();
-    this.eligibilityPollTimer = setInterval(poll, 5000);
+  private lastEligibilityRequestKey(patientId: number): string {
+    return `zebl:eligibility:lastRequestId:pat:${patientId}`;
   }
 
   private loadEligibilityViewerSetting(): void {
@@ -856,20 +1097,113 @@ export class PatientDetailsComponent implements OnInit {
     });
   }
 
+  private openEligibilityModalForRequest(request: EligibilityRequestResultDto): void {
+    const context = this.buildEligibilityPatientContext();
+    this.eligibilityResponse = {
+      ...context,
+      inquiryId: request.id,
+      isLoading: true,
+      pollTimedOut: false,
+      inquiryStatus: request.status ?? 'Queued',
+      status: 'Checking',
+      controlNumber: request.controlNumber,
+      batchFileName: request.batchFileName ?? null,
+      providerNpi: request.providerNpi ?? null,
+      providerMode: request.providerMode ?? null,
+      usedPayerOverride: request.usedPayerOverride ?? false,
+      createdAt: new Date().toISOString(),
+      benefits: [],
+      payerName: context.payerName ?? this.currentInsurance?.payerName ?? null
+    };
+    this.cdr.markForCheck();
+  }
+
+  private updateEligibilityModalFromStatus(status: EligibilityStatusDto): void {
+    const terminal = EligibilityPollingService.isTerminal(status);
+    this.eligibilityResponse = {
+      ...this.buildEligibilityPayloadFromStatus(status),
+      inquiryId: status.id,
+      isLoading: !terminal,
+      pollTimedOut: !terminal && (this.eligibilityResponse?.pollTimedOut ?? false)
+    };
+    this.cdr.markForCheck();
+  }
+
+  private patchEligibilityModal(patch: Partial<EligibilityResponsePayload>): void {
+    if (!this.eligibilityResponse) return;
+    this.eligibilityResponse = { ...this.eligibilityResponse, ...patch };
+    this.cdr.markForCheck();
+  }
+
+  private buildEligibilityPatientContext(): Partial<EligibilityResponsePayload> {
+    const ins = this.currentInsurance;
+    const subscriberName = ins
+      ? [ins.insLastName, ins.insFirstName].filter(Boolean).join(', ').toUpperCase() || null
+      : null;
+    const v = this.patientForm?.getRawValue?.() ?? {};
+    const addressParts = [v.patAddress, v.patAddress2, v.patCity, v.patState, v.patZip].filter(
+      (x: string) => !!x?.trim?.()
+    );
+
+    return {
+      patientName: this.getPatientName(),
+      patientDob: v.patBirthDate ?? this.patient?.patBirthDate ?? null,
+      patientGender: this.formatPatientGender(v.patSex ?? this.patient?.patSex),
+      memberId: ins?.insIDNumber ?? null,
+      subscriberName: subscriberName ?? this.getPatientName(),
+      patientAddress: addressParts.length ? addressParts.join(', ') : null,
+      payerName: ins?.payerName ?? null
+    };
+  }
+
+  private buildEligibilityPayloadFromStatus(status: EligibilityStatusDto): EligibilityResponsePayload {
+    const lifecycle = (status.lifecycleStatus ?? status.status ?? '').trim();
+    const inFlight = lifecycle && !EligibilityPollingService.isTerminal(status);
+    return {
+      ...this.buildEligibilityPatientContext(),
+      payerName: status.payerName ?? this.currentInsurance?.payerName ?? null,
+      status: inFlight ? 'Checking' : (status.eligibilityStatus || status.status),
+      inquiryStatus: lifecycle || status.status,
+      createdAt: status.createdAt,
+      controlNumber: status.controlNumber,
+      batchFileName: status.batchFileName ?? null,
+      raw271: status.raw271 ?? null,
+      planName: status.planName,
+      planDetails: status.planDetails,
+      eligibilityStartDate: status.eligibilityStartDate,
+      eligibilityEndDate: status.eligibilityEndDate,
+      benefits: status.benefits ?? [],
+      errorMessage: status.errorMessage,
+      providerNpi: status.providerNpi,
+      providerMode: status.providerMode,
+      usedPayerOverride: status.usedPayerOverride
+    };
+  }
+
+  private startEligibilitySoftTimeout(): void {
+    this.clearEligibilitySoftTimeout();
+    this.eligibilitySoftTimeoutHandle = setTimeout(() => {
+      if (this.eligibilityResponse?.isLoading) {
+        this.patchEligibilityModal({ pollTimedOut: true });
+      }
+    }, this.eligibilitySoftTimeoutMs);
+  }
+
+  private clearEligibilitySoftTimeout(): void {
+    if (this.eligibilitySoftTimeoutHandle != null) {
+      clearTimeout(this.eligibilitySoftTimeoutHandle);
+      this.eligibilitySoftTimeoutHandle = null;
+    }
+  }
+
   private presentEligibilityResult(status: EligibilityStatusDto, forceViewer: boolean): void {
     if (forceViewer || this.showEligibilityResponseViewer) {
+      const terminal = EligibilityPollingService.isTerminal(status);
       this.eligibilityResponse = {
-        payerName: status.payerName,
-        status: status.eligibilityStatus || status.status,
-        planName: status.planName,
-        planDetails: status.planDetails,
-        eligibilityStartDate: status.eligibilityStartDate,
-        eligibilityEndDate: status.eligibilityEndDate,
-        benefits: status.benefits ?? [],
-        errorMessage: status.errorMessage,
-        providerNpi: status.providerNpi,
-        providerMode: status.providerMode,
-        usedPayerOverride: status.usedPayerOverride
+        ...this.buildEligibilityPayloadFromStatus(status),
+        inquiryId: status.id,
+        isLoading: !terminal,
+        pollTimedOut: false
       };
       this.cdr.markForCheck();
       return;
@@ -903,6 +1237,13 @@ export class PatientDetailsComponent implements OnInit {
   }
 
   onPhysicianSelected(physician: { phyID: number }): void {
+    if (this.physicianPickerFor === 'patBillingPhyFID') {
+      const isValidBilling = this.billingProviders.some((p) => p.phyID === physician.phyID);
+      if (!isValidBilling) {
+        alert('Selected provider is not a valid Billing Provider for this facility.');
+        return;
+      }
+    }
     if (this.physicianPickerFor && this.patientForm.contains(this.physicianPickerFor)) {
       this.patientForm.patchValue({ [this.physicianPickerFor]: physician.phyID });
       this.cdr.markForCheck();
@@ -948,6 +1289,34 @@ export class PatientDetailsComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  openPayerLibrary(): void {
+    this.payerLibraryOpen = true;
+    this.cdr.markForCheck();
+  }
+
+  closePayerLibrary(): void {
+    this.payerLibraryOpen = false;
+    this.loadPayers();
+    this.cdr.markForCheck();
+  }
+
+  getPayerLibraryInitialId(): number {
+    return Number(this.currentInsurance?.payID ?? 0) || 0;
+  }
+
+  onPayerSelected(payer: { payID: number }): void {
+    if (this.currentInsurance && payer.payID) {
+      this.currentInsurance.payID = payer.payID;
+    }
+    this.closePayerLibrary();
+  }
+
+  onPayerSavedInPopup(payer: { payID: number; payName: string | null }): void {
+    if (this.currentInsurance && payer.payID) {
+      this.currentInsurance.payID = payer.payID;
+    }
+  }
+
   copyFromPatient(ins: InsuranceInfo): void {
     if (!this.patient) return;
     const v = this.patientForm.value;
@@ -990,8 +1359,9 @@ export class PatientDetailsComponent implements OnInit {
     }).sort((a, b) => a.patInsSequence - b.patInsSequence);
     this.insuranceList = newList;
     this.insuranceTab = 1;
+    this.refreshDirtyFlag();
     this.cdr.markForCheck();
-    this.saveAndReload();
+    this.persistPatient({ reload: true });
   }
 
   /** Promote current insurance to Primary */
@@ -1006,20 +1376,97 @@ export class PatientDetailsComponent implements OnInit {
     }).sort((a, b) => a.patInsSequence - b.patInsSequence);
     this.insuranceList = newList;
     this.insuranceTab = 1;
+    this.refreshDirtyFlag();
     this.cdr.markForCheck();
-    this.saveAndReload();
+    this.persistPatient({ reload: true });
   }
 
-  private saveAndReload(): void {
-    if (!this.patId) return;
+  /** Single authoritative save path for patient demographics, providers, and insurance. */
+  private persistPatient(options: {
+    reload?: boolean;
+    close?: boolean;
+    updateClaims?: boolean;
+    confirmInsuranceReplace?: boolean;
+  } = {}): void {
+    if (this.saving) return;
+
+    if (this.isNewMode) {
+      if (!this.patient || !this.assertSlotAssignmentsClientSide()) return;
+    } else {
+      if (!this.patient || !this.patId || !this.assertSlotAssignmentsClientSide()) return;
+    }
+
+    this.syncFormToPatient();
+    this.saving = true;
+    this.cdr.markForCheck();
+
     const body = this.buildUpdateBody();
-    body.insuranceList = this.buildInsuranceList();
-    this.patientApi.updatePatient(this.patId, body).subscribe({
-      next: () => this.loadPatient(this.patId!),
-      error: (err) => {
-        console.error('Failed to save insurance swap', err);
-        alert('Failed to save. Please try again.');
+    if (options.updateClaims) {
+      body.updateClaims = true;
+    }
+    if (options.confirmInsuranceReplace) {
+      body.confirmInsuranceReplace = true;
+    }
+
+    const finalizeSave = () => {
+      this.saving = false;
+      this.cdr.markForCheck();
+    };
+
+    const onSaveError = (err: unknown) => {
+      console.error('Failed to save patient', err);
+      alert(this.describeBackendError(err, 'Failed to save patient'));
+    };
+
+    const afterUpdateSuccess = () => {
+      this.newNote = '';
+      this.saveCustomFieldValues();
+      if (options.reload && this.patId) {
+        this.loadPatient(this.patId);
+      } else {
+        this.markEditorClean();
       }
+      if (options.updateClaims) {
+        alert('Claims updated with primary insurance.');
+      }
+      if (options.close) {
+        this.goBackToList();
+      }
+    };
+
+    if (this.isNewMode) {
+      this.patientApi.createPatient(body).pipe(
+        finalize(finalizeSave)
+      ).subscribe({
+        next: (res) => {
+          const newId = Number(res?.patID);
+          if (!Number.isFinite(newId) || newId <= 0) {
+            alert('Patient saved, but could not open details.');
+            if (options.close) {
+              this.goBackToList();
+            }
+            return;
+          }
+          this.isNewMode = false;
+          this.patId = newId;
+          this.ribbonContext.setContext({ patientId: newId, claimId: null });
+          this.workspace.updateActiveTabTitle('Loading...');
+          if (options.close) {
+            this.goBackToList();
+            return;
+          }
+          this.loadPatient(newId);
+        },
+        error: onSaveError
+      });
+      return;
+    }
+
+    this.patientApi.updatePatient(this.patId!, body).pipe(
+      finalize(finalizeSave)
+    ).subscribe({
+      next: () => afterUpdateSuccess(),
+      error: onSaveError
     });
   }
 
@@ -1049,17 +1496,24 @@ export class PatientDetailsComponent implements OnInit {
       insClaimFilingIndicator: null,
       insSSN: null,
       patInsEligStatus: null,
+      patInsEligDate: null,
       patInsActive: true
     };
     const shifted = this.insuranceList.map((i, idx) => ({ ...i, patInsSequence: idx + 2 })).filter(i => i.patInsSequence <= this.MAX_INSURANCES);
     this.insuranceList = [newIns, ...shifted];
     this.insuranceTab = 1;
+    this.refreshDirtyFlag();
     this.cdr.markForCheck();
   }
 
   removeCurrentInsurance(): void {
     const current = this.currentInsurance;
     if (!current) return;
+    if (this.insuranceList.length === 1) {
+      if (!confirm('Remove the last insurance record from this patient?')) {
+        return;
+      }
+    }
     const seq = current.patInsSequence;
     const newList = this.insuranceList
       .filter(i => i.patInsSequence !== seq)
@@ -1067,8 +1521,9 @@ export class PatientDetailsComponent implements OnInit {
       .sort((a, b) => a.patInsSequence - b.patInsSequence);
     this.insuranceList = newList;
     if (this.insuranceTab > newList.length) this.insuranceTab = Math.max(1, newList.length);
+    this.refreshDirtyFlag();
     this.cdr.markForCheck();
-    this.saveAndReload();
+    this.persistPatient({ reload: true, confirmInsuranceReplace: newList.length === 0 });
   }
 
   /** Update all claims' primary insurance from patient's primary (ResponsibilitySequence=1) */
@@ -1079,32 +1534,12 @@ export class PatientDetailsComponent implements OnInit {
       alert('No primary insurance to copy to claims.');
       return;
     }
-    const selectedPayerId = Number(primary.payID ?? 0) || null;
-    console.log('Update Claims clicked', {
-      patientId: this.patId,
-      selectedPayerId
-    });
-    this.saving = true;
-    this.cdr.markForCheck();
-
-    const body = { ...this.buildUpdateBody(), updateClaims: true };
-    console.log('Calling API with:', body);
-
-    this.patientApi.updatePatient(this.patId, body).pipe(
-      finalize(() => {
-        this.saving = false;
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: () => {
-        this.loadPatient(this.patId!);
-        alert('Claims updated with primary insurance.');
-      },
-      error: (err) => {
-        console.error('Failed to update claims', err);
-        alert('Failed to update claims.');
-      }
-    });
+    if (!confirm(
+      'Update Claims will copy this patient\'s primary insurance to all existing claims (primary sequence). Continue?'
+    )) {
+      return;
+    }
+    this.persistPatient({ reload: true, updateClaims: true });
   }
 
   buildInsuranceList(): InsuranceUpdate[] {
@@ -1128,7 +1563,8 @@ export class PatientDetailsComponent implements OnInit {
       insEmployer: ins.insEmployer,
       insAcceptAssignment: ins.insAcceptAssignment ?? 0,
       insClaimFilingIndicator: ins.insClaimFilingIndicator,
-      insSSN: ins.insSSN
+      insSSN: ins.insSSN,
+      patInsEligDate: toHtmlDateInputValue(ins.patInsEligDate)
     });
     return this.insuranceList.map(toUpdate);
   }
@@ -1152,62 +1588,7 @@ export class PatientDetailsComponent implements OnInit {
   }
 
   save(): void {
-    if (this.isNewMode) {
-      if (this.saving || !this.patient) return;
-      if (!this.assertSlotAssignmentsClientSide()) return;
-      this.syncFormToPatient();
-      this.saving = true;
-      this.cdr.markForCheck();
-      const body = this.buildUpdateBody();
-      this.patientApi.createPatient(body).pipe(
-        finalize(() => {
-          this.saving = false;
-          this.cdr.markForCheck();
-        })
-      ).subscribe({
-        next: (res) => {
-          const newId = Number(res?.patID);
-          if (!Number.isFinite(newId) || newId <= 0) {
-            alert('Patient saved, but could not open details.');
-            this.goBackToList();
-            return;
-          }
-          this.isNewMode = false;
-          this.patId = newId;
-          this.ribbonContext.setContext({ patientId: newId, claimId: null });
-          this.workspace.updateActiveTabTitle('Loading...');
-          this.loadPatient(newId);
-        },
-        error: (err) => {
-          console.error('Failed to create patient', err);
-          alert(this.describeBackendError(err, 'Failed to create patient'));
-        }
-      });
-      return;
-    }
-    if (!this.patient || !this.patId || this.saving) return;
-    if (!this.assertSlotAssignmentsClientSide()) return;
-    this.syncFormToPatient();
-    this.saving = true;
-    this.cdr.markForCheck();
-
-    const body = this.buildUpdateBody();
-    this.patientApi.updatePatient(this.patId, body).pipe(
-      finalize(() => {
-        this.saving = false;
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: () => {
-        this.newNote = '';
-        this.saveCustomFieldValues();
-        this.loadPatient(this.patId!);
-      },
-      error: (err) => {
-        console.error('Failed to save patient', err);
-        alert(this.describeBackendError(err, 'Failed to save patient'));
-      }
-    });
+    this.persistPatient({ reload: true });
   }
 
   /**
@@ -1217,9 +1598,9 @@ export class PatientDetailsComponent implements OnInit {
    */
   private assertSlotAssignmentsClientSide(): boolean {
     const v = this.patientForm.value;
-    const checks: Array<{ id: number; required: 'Person' | 'Non-Person'; slot: string; pool: PhysicianOption[] }> = [
+    const checks: Array<{ id: number; required: 'Person' | 'Non-Person'; slot: string; pool: readonly PhysicianSlotOption[] }> = [
       { id: Number(v.patRenderingPhyFID),   required: 'Person',     slot: 'Rendering',       pool: this.renderingProviders },
-      { id: Number(v.patBillingPhyFID),     required: 'Non-Person', slot: 'Billing',         pool: this.billingProvidersRaw },
+      { id: Number(v.patBillingPhyFID),     required: 'Non-Person', slot: 'Billing',         pool: this.billingProviders },
       { id: Number(v.patFacilityPhyFID),    required: 'Non-Person', slot: 'Service Facility', pool: this.facilityProviders },
       { id: Number(v.patReferringPhyFID),   required: 'Person',     slot: 'Referring',       pool: this.referringProviders },
       { id: Number(v.patOrderingPhyFID),    required: 'Person',     slot: 'Ordering',        pool: this.orderingProviders },
@@ -1228,8 +1609,11 @@ export class PatientDetailsComponent implements OnInit {
 
     for (const c of checks) {
       if (!Number.isFinite(c.id) || c.id <= 0) continue;
-      const found = c.pool.find(p => p.phyID === c.id)
-        ?? this.physicians.find(p => p.phyID === c.id);
+      const found = c.pool.find(p => p.phyID === c.id);
+      if (!found) {
+        alert(`${c.slot} provider selection is stale or invalid for this slot. Re-select and save again.`);
+        return false;
+      }
       if (found?.isSystemPlaceholder) {
         alert(`Cannot assign "${found.phyName}" to ${c.slot}: it is a system placeholder.`);
         return false;
@@ -1239,58 +1623,36 @@ export class PatientDetailsComponent implements OnInit {
         return false;
       }
     }
+    const billingId = Number(v.patBillingPhyFID) || 0;
+    if (billingId <= 0) {
+      alert('Billing Provider is required.');
+      return false;
+    }
     return true;
   }
 
   saveAndClose(): void {
-    if (this.isNewMode) {
-      if (this.saving || !this.patient) {
-        this.goBackToList();
-        return;
-      }
-      this.syncFormToPatient();
-      this.saving = true;
-      this.cdr.markForCheck();
-      const body = this.buildUpdateBody();
-      this.patientApi.createPatient(body).pipe(
-        finalize(() => { this.saving = false; this.cdr.markForCheck(); })
-      ).subscribe({
-        next: () => {
-          this.goBackToList();
-        },
-        error: (err) => {
-          console.error('Failed to create patient', err);
-          alert('Failed to create patient');
-        }
-      });
-      return;
-    }
-    if (!this.patient || !this.patId || this.saving) {
+    if (!this.isNewMode && (!this.patient || !this.patId)) {
       this.goBackToList();
       return;
     }
-    this.syncFormToPatient();
-    this.saving = true;
-    this.cdr.markForCheck();
-
-    const body = this.buildUpdateBody();
-    this.patientApi.updatePatient(this.patId, body).pipe(
-      finalize(() => { this.saving = false; this.cdr.markForCheck(); })
-    ).subscribe({
-      next: () => {
-        this.newNote = '';
-        this.saveCustomFieldValues();
-        this.goBackToList();
-      },
-      error: (err) => {
-        console.error('Failed to save patient', err);
-        alert('Failed to save patient');
-      }
-    });
+    if (this.isNewMode && !this.patient) {
+      this.goBackToList();
+      return;
+    }
+    this.persistPatient({ close: true });
   }
 
   close(): void {
+    if (this.formDirty && !confirm('You have unsaved changes. Close without saving?')) {
+      return;
+    }
     this.goBackToList();
+  }
+
+  private normalizeOptionalPhySlot(value: number | null | undefined): number | null {
+    const n = Number(value ?? 0);
+    return n > 0 ? n : null;
   }
 
   private syncFormToPatient(): void {
@@ -1299,9 +1661,11 @@ export class PatientDetailsComponent implements OnInit {
     Object.assign(this.patient, v);
   }
 
-  private buildUpdateBody() {
+  private buildUpdateBody(): UpdatePatientRequest {
+    this.reconcileAssignedProvidersWithFacility();
     this.syncFormToPatient();
     const p = this.patient!;
+    const billingFromForm = this.normalizeOptionalPhySlot(this.patientForm.get('patBillingPhyFID')?.value);
     return {
       patFirstName: p.patFirstName,
       patLastName: p.patLastName,
@@ -1332,12 +1696,12 @@ export class PatientDetailsComponent implements OnInit {
       patDiagnosis4: p.patDiagnosis4,
       patEmployed: p.patEmployed ?? undefined,
       patMarried: p.patMarried ?? undefined,
-      patRenderingPhyFID: p.patRenderingPhyFID,
-      patBillingPhyFID: p.patBillingPhyFID,
-      patFacilityPhyFID: p.patFacilityPhyFID,
-      patReferringPhyFID: p.patReferringPhyFID,
-      patOrderingPhyFID: p.patOrderingPhyFID,
-      patSupervisingPhyFID: p.patSupervisingPhyFID,
+      patRenderingPhyFID: this.normalizeOptionalPhySlot(p.patRenderingPhyFID),
+      patBillingPhyFID: billingFromForm,
+      patFacilityPhyFID: this.normalizeOptionalPhySlot(p.patFacilityPhyFID),
+      patReferringPhyFID: this.normalizeOptionalPhySlot(p.patReferringPhyFID),
+      patOrderingPhyFID: this.normalizeOptionalPhySlot(p.patOrderingPhyFID),
+      patSupervisingPhyFID: this.normalizeOptionalPhySlot(p.patSupervisingPhyFID),
       patStatementName: p.patStatementName,
       patStatementAddressLine1: p.patStatementAddressLine1,
       patStatementAddressLine2: p.patStatementAddressLine2,
@@ -1376,12 +1740,100 @@ export class PatientDetailsComponent implements OnInit {
     };
   }
 
+  formatEligibilityStatus(code: string | null | undefined): string {
+    if (!code?.trim()) return 'Unknown';
+    const c = code.trim().toUpperCase();
+    if (c === 'A' || c === 'ACTIVE' || c === '1') return 'Active';
+    if (c === 'I' || c === 'INACTIVE' || c === '6') return 'Inactive';
+    if (c === 'R' || c === 'REJECTED' || c === 'DENIED' || c === 'FAIL' || c === 'FAILED') return 'Rejected';
+    if (c === 'U' || c === 'UNKNOWN') return 'Unknown';
+    return code.trim();
+  }
+
+  isActiveEligibilityStatus(code: string | null | undefined): boolean {
+    return this.normalizeEligibilityCode(code) === 'ACTIVE';
+  }
+
+  isInactiveEligibilityStatus(code: string | null | undefined): boolean {
+    return this.normalizeEligibilityCode(code) === 'INACTIVE';
+  }
+
+  isRejectedEligibilityStatus(code: string | null | undefined): boolean {
+    return this.normalizeEligibilityCode(code) === 'REJECTED';
+  }
+
+  isUnknownEligibilityStatus(code: string | null | undefined): boolean {
+    const bucket = this.normalizeEligibilityCode(code);
+    return bucket === 'UNKNOWN' || bucket === 'OTHER';
+  }
+
+  private normalizeEligibilityCode(code: string | null | undefined): 'ACTIVE' | 'INACTIVE' | 'REJECTED' | 'UNKNOWN' | 'OTHER' {
+    if (!code?.trim()) return 'UNKNOWN';
+    const c = code.trim().toUpperCase();
+    if (c === 'A' || c === 'ACTIVE' || c === '1') return 'ACTIVE';
+    if (c === 'I' || c === 'INACTIVE' || c === '6') return 'INACTIVE';
+    if (c === 'R' || c === 'REJECTED' || c === 'DENIED' || c === 'FAIL' || c === 'FAILED') return 'REJECTED';
+    if (c === 'U' || c === 'UNKNOWN') return 'UNKNOWN';
+    return 'OTHER';
+  }
+
+  private applyEligibilityStatusFromDto(status: EligibilityStatusDto): void {
+    const ins = this.currentInsurance;
+    if (!ins) return;
+    let raw = status.eligibilityStatus;
+    if ((!raw || /^unknown$/i.test(raw)) && this.inquiryIndicatesActive(status)) {
+      raw = 'Active';
+    }
+    ins.patInsEligStatus = this.toStoredEligibilityStatus(raw);
+    if (EligibilityPollingService.isTerminal(status)) {
+      ins.patInsEligDate = this.todayIsoDate();
+      this.onInsuranceFieldChanged();
+    }
+    this.cdr.markForCheck();
+  }
+
+  private todayIsoDate(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private inquiryIndicatesActive(status: EligibilityStatusDto): boolean {
+    return (status.benefits ?? []).some(
+      b =>
+        b.benefit === '1' ||
+        /active\s+coverage/i.test(b.description ?? '') ||
+        b.serviceType === '30'
+    );
+  }
+
+  private toStoredEligibilityStatus(raw: string | null | undefined): string | null {
+    if (!raw?.trim()) return null;
+    const s = raw.trim();
+    if (/^active$/i.test(s) || s === '1') return 'A';
+    if (/^inactive$/i.test(s) || s === '6') return 'I';
+    if (/^rejected$/i.test(s) || /^denied$/i.test(s) || /^fail/i.test(s)) return 'R';
+    if (/^unknown$/i.test(s) || s === 'U') return 'U';
+    return s.length > 15 ? s.slice(0, 15) : s;
+  }
+
   getPatientName(): string {
     if (!this.patient) return 'Unknown';
     const fn = this.patient.patFirstName || '';
     const ln = this.patient.patLastName || '';
     if (ln || fn) return `${ln.toUpperCase()}, ${fn}`.trim();
     return this.patient.patFullNameCC || 'Unknown';
+  }
+
+  private formatPatientGender(value: string | null | undefined): string | null {
+    if (!value) return null;
+    const v = String(value).trim().toUpperCase();
+    if (v === 'M' || v === 'MALE') return 'Male';
+    if (v === 'F' || v === 'FEMALE') return 'Female';
+    if (v === 'U' || v === 'UNKNOWN') return 'Unknown';
+    return value;
   }
 
   formatDateOnly(value: string | null | undefined): string {

@@ -1,0 +1,782 @@
+import {
+  CoverageBadgeKind,
+  EligibilityBenefitGridRow,
+  EligibilityBenefitRowPayload,
+  EligibilityResponsePayload,
+  EligibilityResponseViewModel
+} from './eligibility-response.models';
+
+/** X12 service type codes (common EB03 values). */
+const SERVICE_TYPE_NAMES: Record<string, string> = {
+  '1': 'Medical Care',
+  '2': 'Surgical',
+  '3': 'Consultation',
+  '4': 'Diagnostic X-Ray',
+  '5': 'Diagnostic Lab',
+  '6': 'Radiation Therapy',
+  '7': 'Anesthesia',
+  '8': 'Surgical Assistance',
+  '12': 'Durable Medical Equipment',
+  '14': 'Renal Supplies',
+  '23': 'Diagnostic Dental',
+  '30': 'Health Benefit Plan Coverage',
+  '33': 'Chiropractic',
+  '35': 'Dental Care',
+  '36': 'Dental Crowns',
+  '37': 'Dental Accident',
+  '38': 'Orthodontics',
+  '39': 'Prosthodontics',
+  '40': 'Oral Surgery',
+  '41': 'Routine Preventive Dental',
+  '42': 'Home Health Care',
+  '45': 'Hospice',
+  '47': 'Hospital',
+  '48': 'Hospital — Inpatient',
+  '50': 'Hospital — Outpatient',
+  '51': 'Hospital — Emergency Accident',
+  '52': 'Hospital — Emergency Medical',
+  '53': 'Hospital — Ambulatory Surgical',
+  '54': 'Long Term Care',
+  '56': 'Medically Related Transportation',
+  '57': 'Air Transportation',
+  '58': 'Cabulance',
+  '59': 'Licensed Ambulance',
+  '60': 'General Benefits',
+  '61': 'In-vitro Fertilization',
+  '62': 'MRI / CT Scan',
+  '65': 'Newborn Care',
+  '66': 'Pathology',
+  '67': 'Smoking Cessation',
+  '68': 'Well Baby Care',
+  '69': 'Maternity',
+  '70': 'Transplants',
+  '71': 'Audiology',
+  '72': 'Inhalation Therapy',
+  '73': 'Diagnostic Medical',
+  '74': 'Private Duty Nursing',
+  '75': 'Prosthetics',
+  '76': 'Dialysis',
+  '77': 'Otological',
+  '78': 'Chemotherapy',
+  '79': 'Allergy Testing',
+  '80': 'Immunizations',
+  '81': 'Routine Physical',
+  '82': 'Family Planning',
+  '83': 'Infertility',
+  '84': 'Abortion',
+  '85': 'AIDS',
+  '86': 'Emergency Services',
+  '87': 'Cancer',
+  '88': 'Pharmacy',
+  '89': 'Free Standing Prescription Drug',
+  '90': 'Mail Order Prescription Drug',
+  '91': 'Brand Name Prescription Drug',
+  '92': 'Generic Prescription Drug',
+  '93': 'Podiatry',
+  '94': 'Dental / Orthodontia',
+  '95': 'Periodontics',
+  '96': 'Endodontics',
+  '97': 'Anesthesiologist',
+  '98': 'Professional (Physician) Visit — Office',
+  '99': 'Professional (Physician) Visit — Inpatient',
+  A0: 'Professional (Physician) Visit — Outpatient',
+  A1: 'Professional (Physician) Visit — Nursing Home',
+  A2: 'Professional (Physician) Visit — Skilled Nursing',
+  A3: 'Professional (Physician) Visit — Home',
+  A4: 'Psychiatric',
+  A5: 'Psychiatric — Room and Board',
+  A6: 'Psychotherapy',
+  A7: 'Psychiatric — Inpatient',
+  A8: 'Psychiatric — Outpatient',
+  A9: 'Rehabilitation',
+  AA: 'Rehabilitation — Room and Board',
+  AB: 'Rehabilitation — Inpatient',
+  AC: 'Rehabilitation — Outpatient',
+  AD: 'Occupational Therapy',
+  AE: 'Physical Therapy',
+  AF: 'Speech Therapy',
+  AG: 'Skilled Nursing Care',
+  AH: 'Skilled Nursing Care — Room and Board',
+  AI: 'Substance Abuse',
+  AJ: 'Alcoholism',
+  AK: 'Drug Addiction',
+  AL: 'Vision (Optometry)',
+  AM: 'Frames',
+  AN: 'Routine Exam',
+  AO: 'Lenses',
+  AP: 'Nonmedically Necessary Physical',
+  AQ: 'Experimental Drug Therapy',
+  AR: 'Burn Care',
+  B1: 'Burn Care',
+  B2: 'Brand Name Prescription Drug — Formulary',
+  B3: 'Brand Name Prescription Drug — Non-Formulary',
+  BA: 'Independent Medical Evaluation',
+  BB: 'Partial Hospitalization (Psychiatric)',
+  BC: 'Day Care (Psychiatric)',
+  BD: 'Cognitive Therapy',
+  BE: 'Massage Therapy',
+  BF: 'Pulmonary Rehabilitation',
+  BG: 'Cardiac Rehabilitation',
+  BH: 'Pediatric',
+  BI: 'Nursery',
+  BJ: 'Skin',
+  BK: 'Orthopedic',
+  BL: 'Cardiac',
+  BM: 'Lymphatic',
+  BN: 'Gastrointestinal',
+  BP: 'Endocrine',
+  BQ: 'Neurology',
+  BR: 'Eye',
+  BS: 'Invasive Procedures',
+  BT: 'Gynecological',
+  BU: 'Obstetrical',
+  BV: 'Obstetrical / Gynecological',
+  BW: 'Mail Order Prescription Drug — Brand Name',
+  BX: 'Mail Order Prescription Drug — Generic',
+  BY: 'Physician Visit — Office: Sick',
+  BZ: 'Physician Visit — Office: Well',
+  C1: 'Coronary Care',
+  CA: 'Private Duty Nursing — Inpatient',
+  CB: 'Private Duty Nursing — Home',
+  CC: 'Surgical Benefits — Professional (Physician)',
+  CD: 'Surgical Benefits — Facility',
+  CE: 'Mental Health Provider — Inpatient',
+  CF: 'Mental Health Provider — Outpatient',
+  CG: 'Mental Health Facility — Inpatient',
+  CH: 'Mental Health Facility — Outpatient',
+  CI: 'Substance Abuse Facility — Inpatient',
+  CJ: 'Substance Abuse Facility — Outpatient',
+  CK: 'Screening X-Ray',
+  CL: 'Screening Laboratory',
+  CM: 'Mammogram (High Risk)',
+  CN: 'Mammogram (Low Risk)',
+  CO: 'Flu Vaccination',
+  CP: 'Eyewear and Accessories',
+  CQ: 'Case Management',
+  DG: 'Dermatology',
+  DM: 'Durable Medical Equipment Purchase',
+  DS: 'Diabetic Supplies',
+  GF: 'Generic Prescription Drug — Formulary',
+  GN: 'Generic Prescription Drug — Non-Formulary',
+  GY: 'Allergy',
+  IC: 'Intensive Care',
+  MH: 'Mental Health',
+  NI: 'Neonatal Intensive Care',
+  ON: 'Oncology',
+  PT: 'Physical Therapy',
+  PU: 'Pulmonary',
+  RN: 'Renal',
+  RT: 'Residential Psychiatric Treatment',
+  TC: 'Transitional Care',
+  TN: 'Transitional Nursery Care',
+  UC: 'Urgent Care'
+};
+
+/** EB01 eligibility / benefit information codes. */
+const BENEFIT_CODE_LABELS: Record<string, string> = {
+  '1': 'Active Coverage',
+  '2': 'Active — Full Risk',
+  '3': 'Active — Capitated',
+  '4': 'Active — Capitated (PCP)',
+  '5': 'Active — Pending Investigation',
+  '6': 'Inactive',
+  '7': 'Inactive — Pending Update',
+  '8': 'Inactive — Pending Investigation',
+  A: 'Co-Insurance',
+  B: 'Co-Payment',
+  C: 'Deductible',
+  D: 'Coverage Basis',
+  E: 'Exclusions',
+  F: 'Limitations',
+  G: 'Out of Pocket (Stop Loss)',
+  H: 'Unlimited',
+  I: 'Non-Covered',
+  J: 'Cost Containment',
+  K: 'Reserve',
+  L: 'Primary Care Provider',
+  M: 'Pre-existing Condition',
+  N: 'Services Restricted to Following Provider',
+  O: 'Not Deemed a Medical Necessity',
+  P: 'Benefit Disclaimer',
+  Q: 'Second Surgical Opinion Required',
+  R: 'Other or Additional Payor',
+  S: 'Prior Year(s) History',
+  T: 'Card(s) Reported Lost/Stolen',
+  U: 'Contact Following Entity for Eligibility or Benefit Info',
+  V: 'Cannot Process',
+  W: 'Other Source of Data',
+  X: 'Health Care Facility',
+  Y: 'Spend Down',
+  CB: 'Coverage Basis',
+  MC: 'Managed Care Coordinator'
+};
+
+const PROCESSING_LIFECYCLE = new Set([
+  'queued',
+  'pending',
+  'generating270',
+  'uploading',
+  'sent',
+  'awaiting271',
+  'processing271'
+]);
+
+const ERROR_LIFECYCLE = new Set(['failed', 'deadlettered', 'timedout', 'dead lettered', 'timed out']);
+
+export function buildEligibilityResponseViewModel(
+  payload: EligibilityResponsePayload | null | undefined,
+  formatDate: (value: unknown) => string
+): EligibilityResponseViewModel | null {
+  if (!payload) return null;
+
+  const isLoading = !!payload.isLoading;
+  const pollTimedOut = !!payload.pollTimedOut;
+  const lifecycle = normalize(payload.inquiryStatus);
+  const lifecycleLabel = formatLifecycleLabel(payload.inquiryStatus);
+
+  let coverageRaw = normalize(payload.status);
+  let coverageKind = resolveCoverageKind(coverageRaw, lifecycle);
+  let coverageLabel = resolveHeaderCoverageLabel(coverageKind, coverageRaw, lifecycle);
+
+  if (isLoading) {
+    coverageKind = 'processing';
+    coverageLabel = lifecycleLabel || 'Checking';
+    coverageRaw = 'checking';
+  }
+
+  const benefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapBenefitRows(payload.benefits ?? []);
+
+  if (!isLoading && !isInFlightLifecycle(lifecycle) && lifecycle === 'completed') {
+    const derived = deriveCoverageFromBenefitRows(benefitRows, coverageRaw);
+    coverageKind = derived.kind;
+    coverageLabel = derived.label;
+    coverageRaw = derived.raw;
+  }
+
+  const benefitsEmpty = resolveBenefitsEmptyState(isLoading, lifecycle, lifecycleLabel, benefitRows.length > 0);
+  let operationalSummary = buildOperationalSummary(
+    coverageKind,
+    coverageLabel,
+    payload,
+    lifecycle,
+    benefitRows,
+    formatDate
+  );
+
+  if (isLoading || isInFlightLifecycle(lifecycle)) {
+    operationalSummary = buildInFlightSummary(lifecycle, lifecycleLabel, pollTimedOut);
+  } else if (pollTimedOut && !isTerminalLifecycle(lifecycle)) {
+    operationalSummary =
+      'Eligibility response is taking longer than expected. This session stopped waiting, but the inquiry may still complete on the server — close and use VIEW later, or wait and refresh.';
+  }
+
+  const providerDisplay = formatProvider(payload.providerNpi, payload.providerMode);
+  const eligibilityDateRange = formatDateRange(
+    formatDate(payload.eligibilityStartDate),
+    formatDate(payload.eligibilityEndDate)
+  );
+  const insuredLine = buildInsuredLine(
+    displayOrDash(payload.patientName),
+    displayOrDash(payload.patientAddress)
+  );
+  const waitingMessage = resolveWaitingMessage(isLoading, lifecycle, pollTimedOut);
+
+  return {
+    isLoading,
+    pollTimedOut,
+    waitingMessage,
+    lifecycleLabel,
+    coverageLabel,
+    coverageKind,
+    operationalSummary,
+    insuredLine,
+    payerName: displayOrDash(payload.payerName),
+    planType: displayOrDash(sanitizePlanName(payload.planName)),
+    planDetails: displayOrDash(payload.planDetails),
+    subscriberName: displayOrDash(payload.subscriberName),
+    patientName: displayOrDash(payload.patientName),
+    patientDob: displayOrDash(formatDate(payload.patientDob)),
+    patientGender: displayOrDash(payload.patientGender),
+    memberId: displayOrDash(payload.memberId),
+    patientAddress: displayOrDash(payload.patientAddress),
+    eligibilityDateRange,
+    inquiryDate: displayOrDash(formatDate(payload.createdAt)),
+    providerDisplay,
+    controlNumber: displayOrDash(payload.controlNumber),
+    benefitRows,
+    hasBenefits: benefitRows.length > 0,
+    benefitsEmptyTitle: benefitsEmpty.title,
+    benefitsEmptyHint: benefitsEmpty.hint,
+    showPayerOverrideWarning: !!payload.usedPayerOverride,
+    diagnostics: {
+      lifecycleStatus: displayOrDash(payload.inquiryStatus),
+      batchFileName: displayOrDash(payload.batchFileName),
+      rawStatusMessage: displayOrDash(payload.errorMessage),
+      technicalError: classifyTechnicalError(payload.errorMessage),
+      providerNpi: displayOrDash(payload.providerNpi),
+      providerMode: displayOrDash(payload.providerMode),
+      raw271Preview: truncateRaw271(payload.raw271)
+    }
+  };
+}
+
+export function mapBenefitRows(benefits: EligibilityBenefitRowPayload[]): EligibilityBenefitGridRow[] {
+  const rows: EligibilityBenefitGridRow[] = [];
+  const seen = new Set<string>();
+
+  for (const b of benefits) {
+    const row = mapSingleBenefitRow(b);
+    if (!row) continue;
+    const key = `${row.serviceType}|${row.coverage}|${row.amount}|${row.description}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
+
+  return rows.sort((a, b) => a.serviceType.localeCompare(b.serviceType));
+}
+
+function mapSingleBenefitRow(b: EligibilityBenefitRowPayload): EligibilityBenefitGridRow | null {
+  const benefitCode = (b.benefit ?? '').trim();
+  const rawService = (b.serviceType ?? '').trim();
+  const description = (b.description ?? '').trim();
+
+  if (isMisplacedEb01Row(benefitCode, rawService, description)) {
+    return null;
+  }
+
+  const serviceType = resolveServiceTypeLabel(rawService, benefitCode, description);
+  const coverage = resolveBenefitCoverageLabel(benefitCode, rawService);
+  const coverageKind = resolveCoverageKindFromBenefit(benefitCode, rawService);
+  const amount = formatBenefitAmount(b.amount);
+  const friendlyDescription = resolveBenefitDescription(benefitCode, description);
+
+  if (!serviceType && !coverage && !amount && !friendlyDescription) {
+    return null;
+  }
+
+  return {
+    serviceType: serviceType || 'General',
+    coverage: coverage || '—',
+    amount: amount || '—',
+    description: friendlyDescription || '—',
+    coverageKind
+  };
+}
+
+function resolveServiceTypeLabel(
+  rawService: string,
+  benefitCode: string,
+  description: string
+): string {
+  const code = rawService.toUpperCase();
+  if (SERVICE_TYPE_NAMES[code]) return SERVICE_TYPE_NAMES[code];
+  if (SERVICE_TYPE_NAMES[benefitCode.toUpperCase()]) return SERVICE_TYPE_NAMES[benefitCode.toUpperCase()];
+
+  if (rawService && !/^[16]$/.test(rawService) && rawService.length > 2) {
+    return titleCaseWords(rawService);
+  }
+
+  if (description) {
+    const fromDesc = inferServiceFromDescription(description);
+    if (fromDesc) return fromDesc;
+  }
+
+  if (benefitCode && !/^[16ABCG]$/.test(benefitCode)) {
+    const mapped = SERVICE_TYPE_NAMES[benefitCode.toUpperCase()];
+    if (mapped) return mapped;
+  }
+
+  return rawService ? titleCaseWords(rawService) : 'General Coverage';
+}
+
+function inferServiceFromDescription(description: string): string | null {
+  const d = description.toLowerCase();
+  if (d.includes('physical therapy') || d === 'pt') return 'Physical Therapy';
+  if (d.includes('mental health') || d.includes('psychiatric')) return 'Mental Health';
+  if (d.includes('vision') || d.includes('optometry')) return 'Vision (Optometry)';
+  if (d.includes('emergency') || d.includes(' er ')) return 'Emergency Services';
+  if (d.includes('deductible')) return 'Health Benefit Plan Coverage';
+  if (d.includes('copay') || d.includes('co-pay')) return 'Professional (Physician) Visit — Office';
+  if (d.includes('specialist')) return 'Professional (Physician) Visit — Office';
+  return null;
+}
+
+function resolveBenefitCoverageLabel(benefitCode: string, rawService: string): string {
+  const code = (benefitCode || rawService).trim().toUpperCase();
+  if (code === '1' || code === 'A' || code === 'ACTIVE') return 'Active';
+  if (code === '6' || code === 'I' || code === 'INACTIVE') return 'Inactive';
+  if (code === '2' || code === '3' || code === '4' || code === '5') return 'Active';
+  if (code === '7' || code === '8') return 'Inactive';
+  if (BENEFIT_CODE_LABELS[code] && /^[ABC]$/i.test(code)) {
+    return 'Applies';
+  }
+  if (BENEFIT_CODE_LABELS[code]) return titleCaseWords(BENEFIT_CODE_LABELS[code]);
+  return benefitCode ? titleCaseWords(benefitCode) : '—';
+}
+
+function resolveBenefitDescription(benefitCode: string, description: string): string {
+  if (description) return titleCaseWords(description);
+  const code = benefitCode.trim().toUpperCase();
+  return BENEFIT_CODE_LABELS[code] ?? (benefitCode ? titleCaseWords(benefitCode) : '');
+}
+
+function resolveCoverageKind(
+  coverageRaw: string,
+  lifecycle: string
+): CoverageBadgeKind {
+  if (ERROR_LIFECYCLE.has(lifecycle)) return 'error';
+  if (PROCESSING_LIFECYCLE.has(lifecycle)) return 'processing';
+
+  const c = coverageRaw.toLowerCase();
+  if (c.includes('active') && !c.includes('inactive')) return 'active';
+  if (c.includes('inactive') || c.includes('terminated')) return 'inactive';
+  if (c.includes('partial') || c.includes('limited') || c.includes('unknown')) return 'partial';
+  if (c.includes('error') || c.includes('fail')) return 'error';
+  if (lifecycle === 'completed' && !c) return 'partial';
+  return 'partial';
+}
+
+function resolveCoverageKindFromBenefit(benefitCode: string, rawService: string): CoverageBadgeKind {
+  const code = (benefitCode || rawService).trim();
+  if (code === '1' || code === '2' || code === '3' || code === '4' || code === '5') return 'active';
+  if (code === '6' || code === '7' || code === '8') return 'inactive';
+  if (/^[ABC]$/i.test(code)) return 'partial';
+  return 'partial';
+}
+
+function deriveCoverageFromBenefitRows(
+  rows: EligibilityBenefitGridRow[],
+  coverageRaw: string
+): { kind: CoverageBadgeKind; label: string; raw: string } {
+  const raw = coverageRaw.toLowerCase();
+  if (raw.includes('active') && !raw.includes('inactive')) {
+    return { kind: 'active', label: 'Active', raw: 'active' };
+  }
+  if (raw.includes('inactive')) {
+    return { kind: 'inactive', label: 'Inactive', raw: 'inactive' };
+  }
+
+  const hasActiveCoverage = rows.some(
+    r =>
+      r.coverageKind === 'active' ||
+      r.serviceType.toLowerCase().includes('health benefit') ||
+      (r.description?.toLowerCase().includes('active') ?? false)
+  );
+  if (hasActiveCoverage) {
+    return { kind: 'active', label: 'Active', raw: 'active' };
+  }
+
+  const hasInactive = rows.some(r => r.coverageKind === 'inactive');
+  if (hasInactive) {
+    return { kind: 'inactive', label: 'Inactive', raw: 'inactive' };
+  }
+
+  return { kind: 'partial', label: 'Unknown', raw: 'unknown' };
+}
+
+function resolveHeaderCoverageLabel(
+  kind: CoverageBadgeKind,
+  coverageRaw: string,
+  lifecycle: string
+): string {
+  if (kind === 'processing') {
+    return lifecycle ? titleCaseWords(lifecycle) : 'Processing';
+  }
+  if (kind === 'error') {
+    if (ERROR_LIFECYCLE.has(lifecycle)) return titleCaseWords(lifecycle);
+    return coverageRaw ? titleCaseWords(coverageRaw) : 'Error';
+  }
+  if (coverageRaw) return titleCaseWords(coverageRaw);
+  if (kind === 'active') return 'Active';
+  if (kind === 'inactive') return 'Inactive';
+  return 'Unknown';
+}
+
+function isTerminalLifecycle(lifecycle: string): boolean {
+  return (
+    lifecycle === 'completed' ||
+    lifecycle === 'failed' ||
+    lifecycle === 'timedout' ||
+    lifecycle === 'deadlettered'
+  );
+}
+
+function formatLifecycleLabel(raw: string | null | undefined): string {
+  if (!raw?.trim()) return 'Queued';
+  const normalized = raw.trim();
+  const explicit: Record<string, string> = {
+    Queued: 'Queued',
+    Generating270: 'Generating 270',
+    Uploading: 'Uploading',
+    Sent: 'Sent',
+    Awaiting271: 'Awaiting 271',
+    Processing271: 'Processing Response',
+    Completed: 'Completed',
+    Failed: 'Failed',
+    TimedOut: 'Timed Out',
+    DeadLettered: 'Failed'
+  };
+  if (explicit[normalized]) return explicit[normalized];
+  return titleCaseWords(normalized.replace(/([a-z])([A-Z])/g, '$1 $2'));
+}
+
+function isInFlightLifecycle(lifecycle: string): boolean {
+  return PROCESSING_LIFECYCLE.has(lifecycle);
+}
+
+function resolveBenefitsEmptyState(
+  isLoading: boolean,
+  lifecycle: string,
+  lifecycleLabel: string,
+  hasBenefitRows: boolean
+): { title: string; hint: string | null } {
+  if (hasBenefitRows) {
+    return { title: '', hint: null };
+  }
+
+  if (isLoading || isInFlightLifecycle(lifecycle)) {
+    return { title: '', hint: null };
+  }
+
+  if (lifecycle === 'completed') {
+    return {
+      title: 'No benefit details returned.',
+      hint: null
+    };
+  }
+
+  return {
+    title: 'Benefit details not available.',
+    hint: null
+  };
+}
+
+function resolveWaitingMessage(
+  isLoading: boolean,
+  lifecycle: string,
+  pollTimedOut: boolean
+): string | null {
+  if (!isLoading && !isInFlightLifecycle(lifecycle)) {
+    return null;
+  }
+  if (pollTimedOut && (lifecycle === 'awaiting271' || lifecycle === 'sent')) {
+    return 'Waiting for payer response...';
+  }
+  if (lifecycle === 'processing271') {
+    return 'Processing payer response...';
+  }
+  if (lifecycle === 'awaiting271' || lifecycle === 'sent') {
+    return 'Waiting for payer response...';
+  }
+  if (isLoading || isInFlightLifecycle(lifecycle)) {
+    return 'Checking eligibility...';
+  }
+  return null;
+}
+
+function buildInsuredLine(patientName: string, patientAddress: string): string {
+  if (patientName === '—') {
+    return patientAddress !== '—' ? patientAddress : '—';
+  }
+  if (patientAddress === '—') {
+    return patientName;
+  }
+  return `${patientName}, ${patientAddress}`;
+}
+
+function buildInFlightSummary(
+  lifecycle: string,
+  lifecycleLabel: string,
+  pollTimedOut: boolean
+): string {
+  if (pollTimedOut) {
+    return 'Eligibility response is taking longer than expected. The inquiry may still complete on the server — close and use VIEW later, or wait for the next update.';
+  }
+
+  if (lifecycle === 'awaiting271' || lifecycle === 'sent') {
+    return 'Waiting for eligibility response from the payer. The 270 request was sent successfully; benefit details will appear when the 271 is received.';
+  }
+
+  if (lifecycle === 'processing271') {
+    return 'Processing eligibility response from the payer…';
+  }
+
+  const step = lifecycleLoadingMessage(lifecycle, lifecycleLabel);
+  return step
+    ? `Eligibility inquiry in progress. ${step}`
+    : `Eligibility inquiry in progress (${lifecycleLabel}).`;
+}
+
+function lifecycleLoadingMessage(lifecycle: string, lifecycleLabel: string): string {
+  switch (lifecycle) {
+    case 'queued':
+      return 'Inquiry queued.';
+    case 'generating270':
+      return 'Building 270 request.';
+    case 'uploading':
+      return 'Uploading to clearinghouse.';
+    case 'sent':
+    case 'awaiting271':
+      return 'Waiting for 271 response.';
+    case 'processing271':
+      return 'Processing payer response.';
+    default:
+      return lifecycleLabel ? `Status: ${lifecycleLabel}.` : '';
+  }
+}
+
+function buildOperationalSummary(
+  kind: CoverageBadgeKind,
+  label: string,
+  payload: EligibilityResponsePayload,
+  lifecycle: string,
+  rows: EligibilityBenefitGridRow[],
+  formatDate: (value: unknown) => string
+): string {
+  const payer = payload.payerName?.trim();
+  const asOf = formatDate(payload.eligibilityStartDate) || formatDate(payload.createdAt);
+
+  if (kind === 'processing') {
+    if (lifecycle === 'awaiting271' || lifecycle === 'sent') {
+      return 'Waiting for eligibility response from the payer. No coverage determination has been received yet.';
+    }
+    if (lifecycle === 'processing271') {
+      return 'Processing eligibility response from the payer…';
+    }
+    return `Eligibility inquiry is in progress (${titleCaseWords(payload.inquiryStatus ?? 'processing')}). Results will update when the payer response is received.`;
+  }
+
+  if (kind === 'error' || isTechnicalFailure(payload.errorMessage, lifecycle)) {
+    return 'Eligibility could not be completed. Review the summary below or open Advanced Diagnostics for technical details.';
+  }
+
+  if (kind === 'active') {
+    const plan = payload.planName?.trim();
+    const parts = [
+      payer ? `Member appears to have active coverage with ${payer}.` : 'Member appears to have active coverage.',
+      plan && !/^active coverage$/i.test(plan) ? `Plan: ${plan}.` : null,
+      asOf ? `Eligibility effective ${asOf}.` : null,
+      rows.length ? `${rows.length} benefit detail row(s) returned.` : 'No detailed benefit rows were returned by the payer.'
+    ].filter(Boolean);
+    return parts.join(' ');
+  }
+
+  if (kind === 'inactive') {
+    return payer
+      ? `Coverage with ${payer} is reported as inactive or terminated${asOf ? ` as of ${asOf}` : ''}.`
+      : `Coverage is reported as inactive or terminated${asOf ? ` as of ${asOf}` : ''}.`;
+  }
+
+  return `${label} coverage${payer ? ` for ${payer}` : ''}${asOf ? ` (as of ${asOf})` : ''}.`;
+}
+
+function isTechnicalFailure(errorMessage: string | null | undefined, lifecycle: string): boolean {
+  if (ERROR_LIFECYCLE.has(lifecycle)) return true;
+  const msg = (errorMessage ?? '').toLowerCase();
+  return msg.includes('http context') ||
+    msg.includes('exception') ||
+    msg.includes('failed') ||
+    msg.includes('timeout') ||
+    msg.includes('sftp');
+}
+
+function classifyTechnicalError(errorMessage: string | null | undefined): string {
+  if (!errorMessage?.trim()) return '—';
+  return errorMessage.trim();
+}
+
+function formatBenefitAmount(amount: string | null | undefined): string {
+  if (amount == null || amount === '') return '';
+  const trimmed = String(amount).trim();
+  const numeric = Number(trimmed.replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(numeric)) return trimmed;
+  if (trimmed.includes('%')) return `${numeric}%`;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numeric);
+}
+
+function formatProvider(npi: string | null | undefined, mode: string | null | undefined): string {
+  if (!npi?.trim()) return '—';
+  const modeLabel = mode?.trim() ? ` (${titleCaseWords(mode)})` : '';
+  return `${npi.trim()}${modeLabel}`;
+}
+
+function formatDateRange(start: string, end: string): string {
+  if (start && end) return `${start} – ${end}`;
+  return start || end || '—';
+}
+
+function truncateRaw271(raw: string | null | undefined): string {
+  if (!raw?.trim()) return '—';
+  const t = raw.trim();
+  return t.length > 2000 ? `${t.slice(0, 2000)}…` : t;
+}
+
+function displayOrDash(value: string | null | undefined): string {
+  const v = value?.trim();
+  return v ? v : '—';
+}
+
+function isMisplacedEb01Row(benefitCode: string, rawService: string, description: string): boolean {
+  const code = benefitCode.toUpperCase();
+  const svc = rawService.toUpperCase();
+  if (!code && /^[ABCG16]$/i.test(rawService)) {
+    return true;
+  }
+  if (/^[ABCG]$/i.test(code) && (!svc || svc === code) && !description) {
+    return true;
+  }
+  return false;
+}
+
+function sanitizePlanName(planName: string | null | undefined): string | null {
+  const name = (planName ?? '').trim();
+  if (!name) return null;
+  if (/^active\s+coverage$/i.test(name)) return null;
+  return name;
+}
+
+function normalize(value: string | null | undefined): string {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function titleCaseWords(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/** Sample BCBS active response for unit tests / manual QA. */
+export function buildBcbsNjActiveSamplePayload(): EligibilityResponsePayload {
+  return {
+    payerName: 'BCBS NEW JERSEY',
+    status: 'Active',
+    inquiryStatus: 'Completed',
+    planName: 'PPO',
+    planDetails: 'Employer group coverage',
+    eligibilityStartDate: '20260529',
+    eligibilityEndDate: null,
+    createdAt: '2026-05-29T10:00:00Z',
+    controlNumber: '000000002',
+    batchFileName: 'eligibility-1.270',
+    patientName: 'BORGES, JULIO',
+    patientDob: '1934-01-28',
+    patientGender: 'Male',
+    memberId: '123',
+    subscriberName: 'BORGES, JULIO',
+    providerNpi: '1234567899',
+    providerMode: 'Billing',
+    benefits: [
+      { serviceType: '30', benefit: 'C', amount: '500', description: 'Annual Deductible' },
+      { serviceType: '98', benefit: 'B', amount: '25', description: 'Office Copay' },
+      { serviceType: 'AL', benefit: 'B', amount: '15', description: 'Vision Copay' },
+      { serviceType: 'MH', benefit: 'B', amount: '40', description: 'Mental Health' },
+      { serviceType: 'AE', benefit: 'B', amount: '30', description: 'Physical Therapy' },
+      { serviceType: '86', benefit: 'B', amount: '150', description: 'ER Copay' },
+      { serviceType: '1', benefit: '1', amount: '', description: 'Active Coverage' }
+    ]
+  };
+}

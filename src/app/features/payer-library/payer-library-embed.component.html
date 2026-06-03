@@ -1,0 +1,47 @@
+<div class="payer-library-embed-container">
+  <div class="left-panel">
+    <div class="panel-header">
+      <h3>Payer Name</h3>
+      <label class="show-inactive">
+        <input type="checkbox" [(ngModel)]="showInactive" (ngModelChange)="onShowInactiveChange()" />
+        Show Inactive
+      </label>
+    </div>
+
+    <div *ngIf="loading" class="loading">Loading...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <div class="payer-list">
+      <div class="payer-item add-entry" (click)="onAddNew()" *ngIf="!pickerMode">
+        Add new entry...
+      </div>
+      <div
+        *ngFor="let payer of payers"
+        class="payer-item"
+        [class.selected]="isSelected(payer.payID)"
+        [class.inactive]="payer.payInactive"
+        (click)="selectPayer(payer.payID)"
+      >
+        {{ displayName(payer) }}
+      </div>
+      <div *ngIf="payers.length === 0 && !loading" class="empty-state">
+        No payers. Click "Add new entry..." to create one.
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <app-payer-library-form
+      *ngIf="selectedId != null || showNew"
+      [popupMode]="true"
+      [embedPayerId]="selectedId"
+      [embedNew]="showNew"
+      (closed)="onFormClosed()"
+      (payerSaved)="onFormPayerSaved($event)"
+      (payerDeleted)="onFormDeleted()"
+    ></app-payer-library-form>
+    <div *ngIf="selectedId == null && !showNew" class="empty-detail">
+      <p>Select a payer from the list or click "Add new entry..." to create one.</p>
+    </div>
+  </div>
+</div>

@@ -13,6 +13,8 @@ import { PatientOverviewTabComponent } from './workspace/tabs/patient-overview-t
 import { PatientClaimsTabComponent } from './workspace/tabs/patient-claims-tab.component';
 import { PatientPaymentsTabComponent } from './workspace/tabs/patient-payments-tab.component';
 import { PatientLookupPageComponent } from './lookup/patient-lookup-page.component';
+import { PatientOverviewEligibilityComponent } from './workspace/components/patient-overview-eligibility.component';
+import { EligibilityUiModule } from '../../patients/eligibility-ui/eligibility-ui.module';
 
 @NgModule({
   declarations: [
@@ -21,6 +23,7 @@ import { PatientLookupPageComponent } from './lookup/patient-lookup-page.compone
     PatientContextualActionsComponent,
     WorkspaceSliceStatusComponent,
     WorkspaceWidgetSkeletonComponent,
+    PatientOverviewEligibilityComponent,
     PatientOverviewTabComponent,
     PatientClaimsTabComponent,
     PatientPaymentsTabComponent,
@@ -31,6 +34,7 @@ import { PatientLookupPageComponent } from './lookup/patient-lookup-page.compone
     RouterModule,
     WorkspaceLayoutModule,
     OperationalUxModule,
+    EligibilityUiModule,
     PatientsFeatureRoutingModule
   ]
 })

@@ -98,12 +98,15 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   renderingProviders: PhysicianListItem[] = [];
   /** Service facilities only (phyType === "Non-Person") */
   serviceFacilities: PhysicianListItem[] = [];
+  /** Billing organizations (Non-Person / BI) */
+  billingProviders: PhysicianListItem[] = [];
 
   /** Form for Claim Information and Physician fields */
   claimForm = new FormGroup({
     ClaStatus: new FormControl<string | null>(''),
     ClaClassification: new FormControl<string | null>(''),
     ClaSubmissionMethod: new FormControl<string | null>(''),
+    ClaBillingPhyFID: new FormControl<number | null>(null),
     ClaRenderingPhyFID: new FormControl<number | null>(null),
     ClaFacilityPhyFID: new FormControl<number | null>(null)
   });
@@ -352,6 +355,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.physicians = r.data ?? [];
         this.renderingProviders = this.physicians.filter(p => p.phyType === 'Person');
         this.serviceFacilities = this.physicians.filter(p => p.phyType === 'Non-Person');
+        this.billingProviders = this.physicians.filter(p =>
+          p.phyType === 'Non-Person'
+          && (!p.phyPrimaryCodeType || p.phyPrimaryCodeType === 'BI')
+          && !p.isSystemPlaceholder);
         this.ensureCurrentPhysiciansInOptions();
         this.cdr.markForCheck();
       },
@@ -359,6 +366,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.physicians = [];
         this.renderingProviders = [];
         this.serviceFacilities = [];
+        this.billingProviders = [];
         this.cdr.markForCheck();
       }
     });
@@ -376,8 +384,13 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   /** Ensure claim's current rendering/facility physicians appear in dropdowns (for legacy/edge cases) */
   private ensureCurrentPhysiciansInOptions(): void {
+    const bid = this.claim?.billingPhysician?.phyID;
     const rid = this.claim?.renderingPhysician?.phyID;
     const fid = this.claim?.facilityPhysician?.phyID;
+    if (bid && bid > 0 && !this.billingProviders.some(p => p.phyID === bid)) {
+      const p = this.physicians.find(x => x.phyID === bid);
+      if (p) this.billingProviders = [...this.billingProviders, p];
+    }
     if (rid && rid > 0 && !this.renderingProviders.some(p => p.phyID === rid)) {
       const p = this.physicians.find(x => x.phyID === rid);
       if (p) this.renderingProviders = [...this.renderingProviders, p];
@@ -401,13 +414,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   /** Update claim nested physician refs from physicians list after save */
-  private updateClaimPhysicianRefs(renderingId: number | null, facilityId: number | null): void {
+  private updateClaimPhysicianRefs(
+    billingId: number | null,
+    renderingId: number | null,
+    facilityId: number | null
+  ): void {
     const toPhy = (id: number | null) => {
       if (id == null || id === 0) return null;
       const p = this.physicians.find(x => x.phyID === id);
       return p ? { phyID: p.phyID, phyName: p.phyFullNameCC || p.phyName || null, phyNPI: p.phyNPI || null } : null;
     };
     if (this.claim) {
+      this.claim.billingPhysician = toPhy(billingId);
       this.claim.renderingPhysician = toPhy(renderingId);
       this.claim.facilityPhysician = toPhy(facilityId);
     }
@@ -419,6 +437,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       ClaStatus: this.claim?.claStatus ?? null,
       ClaClassification: this.claim?.claClassification ?? null,
       ClaSubmissionMethod: this.claim?.claSubmissionMethod ?? null,
+      ClaBillingPhyFID: this.claim?.billingPhysician?.phyID ?? 0,
       ClaRenderingPhyFID: this.claim?.renderingPhysician?.phyID ?? 0,
       ClaFacilityPhyFID: this.claim?.facilityPhysician?.phyID ?? 0
     });
@@ -1320,6 +1339,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
+    const claBillingPhyFID = this.claimForm.get('ClaBillingPhyFID')?.value ?? null;
     const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
     const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
     const noteText = this.newNote?.trim() || null;
@@ -1327,6 +1347,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claStatus: claStatus || null,
       claClassification: claClassification || null,
       claSubmissionMethod: claSubmissionMethod ?? null,
+      claBillingPhyFID,
       claRenderingPhyFID,
       claFacilityPhyFID,
       noteText
@@ -1348,7 +1369,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
           this.claim.claSubmissionMethod = claSubmissionMethod;
-          this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
+          this.updateClaimPhysicianRefs(claBillingPhyFID, claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
         this.saveClaimCustomFieldValues();
@@ -1371,6 +1392,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
+    const claBillingPhyFID = this.claimForm.get('ClaBillingPhyFID')?.value ?? null;
     const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
     const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
     const noteText = this.newNote?.trim() || null;
@@ -1378,6 +1400,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claStatus: claStatus || null,
       claClassification: claClassification || null,
       claSubmissionMethod: claSubmissionMethod ?? null,
+      claBillingPhyFID,
       claRenderingPhyFID,
       claFacilityPhyFID,
       noteText
@@ -1399,7 +1422,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
           this.claim.claSubmissionMethod = claSubmissionMethod;
-          this.updateClaimPhysicianRefs(claRenderingPhyFID, claFacilityPhyFID);
+          this.updateClaimPhysicianRefs(claBillingPhyFID, claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
         this.saveClaimCustomFieldValues();
@@ -1620,6 +1643,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     claStatus: string | null;
     claClassification: string | null;
     claSubmissionMethod: string | null;
+    claBillingPhyFID: number | null;
     claRenderingPhyFID: number | null;
     claFacilityPhyFID: number | null;
     noteText: string | null;
@@ -1634,6 +1658,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claSubmissionMethod: partial.claSubmissionMethod ?? this.claim.claSubmissionMethod ?? null,
       claBillTo: this.claim.claBillTo ?? null,
       primaryPayerId,
+      claBillingPhyFID: partial.claBillingPhyFID ?? this.claim.billingPhysician?.phyID ?? 0,
       claRenderingPhyFID: partial.claRenderingPhyFID ?? this.claim.renderingPhysician?.phyID ?? 0,
       claFacilityPhyFID: partial.claFacilityPhyFID ?? this.claim.facilityPhysician?.phyID ?? 0,
       claInvoiceNumber: this.claim.claInvoiceNumber ?? null,

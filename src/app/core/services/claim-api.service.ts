@@ -296,6 +296,7 @@ export class ClaimApiService {
     claSubmissionMethod?: string | null;
     claBillTo?: number | null;
     primaryPayerId?: number | null;
+    claBillingPhyFID?: number | null;
     claRenderingPhyFID?: number | null;
     claFacilityPhyFID?: number | null;
     claInvoiceNumber?: string | null;
@@ -325,6 +326,7 @@ export class ClaimApiService {
     if (body.claSubmissionMethod !== undefined) payload.claSubmissionMethod = body.claSubmissionMethod;
     if (body.claBillTo !== undefined) payload.claBillTo = body.claBillTo;
     if (body.primaryPayerId !== undefined) payload.primaryPayerId = body.primaryPayerId;
+    if (body.claBillingPhyFID !== undefined) payload.claBillingPhyFID = body.claBillingPhyFID;
     if (body.claRenderingPhyFID !== undefined) payload.claRenderingPhyFID = body.claRenderingPhyFID;
     if (body.claFacilityPhyFID !== undefined) payload.claFacilityPhyFID = body.claFacilityPhyFID;
     if (body.claInvoiceNumber !== undefined) payload.claInvoiceNumber = body.claInvoiceNumber;
@@ -348,10 +350,18 @@ export class ClaimApiService {
     return this.http.put<any>(`${environment.apiUrl}/api/claims/${claId}`, payload);
   }
 
-  getSendableClaims(page: number = 1, pageSize: number = 100): Observable<ClaimsApiResponse> {
-    const params = new HttpParams()
+  getSendableClaims(
+    page: number = 1,
+    pageSize: number = 100,
+    additionalColumns?: string[]
+  ): Observable<ClaimsApiResponse> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
+
+    if (additionalColumns && additionalColumns.length > 0) {
+      params = params.set('additionalColumns', additionalColumns.join(','));
+    }
 
     return this.http
       .get<unknown>(`${this.baseUrl}/sendable`, { params })

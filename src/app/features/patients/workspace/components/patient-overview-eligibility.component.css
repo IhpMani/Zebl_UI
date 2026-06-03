@@ -1,0 +1,126 @@
+.pw-elig-section .pw-section__head {
+  align-items: center;
+}
+
+.pw-elig-attn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.pw-elig-summary__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pw-elig-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.pw-elig-pill--active {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+}
+
+.pw-elig-pill--inactive {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.pw-elig-pill--pending {
+  background: #fefce8;
+  color: #a16207;
+  border-color: #fde047;
+}
+
+.pw-elig-pill--rejected {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fdba74;
+}
+
+.pw-elig-pill--unknown,
+.pw-elig-pill--neverchecked {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.pw-elig-pill--inprogress {
+  background: #fefce8;
+  color: #a16207;
+  border-color: #fde047;
+}
+
+.pw-elig-summary__verified {
+  font-size: 11px;
+  color: var(--bb-muted, #64748b);
+}
+
+.pw-elig-summary__inflight {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #a16207;
+}
+
+.pw-elig-kv {
+  margin-bottom: 10px;
+}
+
+.pw-kv--compact dt {
+  font-size: 11px;
+}
+
+.pw-kv--compact dd {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.pw-elig-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pw-elig-actions__btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--pw-border, #e2e8f0);
+  background: #fff;
+  color: var(--bb-text, #0f172a);
+  cursor: pointer;
+}
+
+.pw-elig-actions__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pw-elig-actions__btn--primary {
+  background: var(--bb-primary, #2563eb);
+  border-color: var(--bb-primary, #2563eb);
+  color: #fff;
+}
+
+.pw-elig-actions__btn--primary:hover:not(:disabled) {
+  filter: brightness(0.95);
+}

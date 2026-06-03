@@ -1,0 +1,37 @@
+<div class="customization-overlay" *ngIf="open" (click)="close($event)">
+  <div class="customization-dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Add Column</h3>
+      <button type="button" class="close-btn" (click)="close()" aria-label="Close">×</button>
+    </div>
+    <div class="dialog-search">
+      <input
+        type="text"
+        [ngModel]="columnSearchText"
+        (ngModelChange)="onSearchInput($event)"
+        placeholder="Search columns..."
+        class="search-input"
+      />
+    </div>
+    <div class="dialog-content">
+      <div *ngFor="let category of getAdditionalColumnCategories()" class="column-section">
+        <h4>{{ category }}</h4>
+        <div class="column-list">
+          <label *ngFor="let col of getAdditionalColumnsByCategory(category)" class="column-item">
+            <input
+              type="checkbox"
+              [checked]="isColumnSelected(col.key)"
+              (change)="onToggle(col.key)"
+            />
+            <span>{{ col.label }}</span>
+            <span *ngIf="col.isForeignKey" class="fk-badge" title="Foreign Key Reference">FK</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="clear-all-btn" (click)="onClearAll()">Clear All</button>
+      <button type="button" class="btn-primary" (click)="close()">OK</button>
+    </div>
+  </div>
+</div>

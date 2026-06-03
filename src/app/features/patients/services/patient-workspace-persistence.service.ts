@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { PatientWorkspaceTabId, isPatientWorkspaceTabId } from '../models/patient-workspace-tab-id';
+import { FacilityService } from '../../../core/services/facility.service';
 
 const TAB_KEY = 'bb.patientWorkspace.tab';
 const RECENT_KEY = 'bb.patientWorkspace.recent';
@@ -9,9 +10,11 @@ const MAX_RECENT_SEARCH = 8;
 
 @Injectable({ providedIn: 'root' })
 export class PatientWorkspacePersistenceService {
+  constructor(private readonly facilityService: FacilityService) {}
+
   getLastTab(patId: number): PatientWorkspaceTabId | null {
     try {
-      const raw = localStorage.getItem(`${TAB_KEY}.${patId}`);
+      const raw = localStorage.getItem(`${this.scopePrefix()}:${TAB_KEY}.${patId}`);
       return isPatientWorkspaceTabId(raw) ? raw : null;
     } catch {
       return null;
@@ -20,7 +23,7 @@ export class PatientWorkspacePersistenceService {
 
   saveLastTab(patId: number, tabId: PatientWorkspaceTabId): void {
     try {
-      localStorage.setItem(`${TAB_KEY}.${patId}`, tabId);
+      localStorage.setItem(`${this.scopePrefix()}:${TAB_KEY}.${patId}`, tabId);
     } catch {
       /* ignore quota */
     }
@@ -30,7 +33,7 @@ export class PatientWorkspacePersistenceService {
     try {
       const list = this.getRecentPatients().filter((r) => r.patId !== patId);
       list.unshift({ patId, label, visitedAt: Date.now() });
-      localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
+      localStorage.setItem(`${this.scopePrefix()}:${RECENT_KEY}`, JSON.stringify(list.slice(0, MAX_RECENT)));
     } catch {
       /* ignore */
     }
@@ -42,7 +45,7 @@ export class PatientWorkspacePersistenceService {
     try {
       const list = this.getRecentSearches().filter((s) => s.toLowerCase() !== t.toLowerCase());
       list.unshift(t);
-      localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(list.slice(0, MAX_RECENT_SEARCH)));
+      localStorage.setItem(`${this.scopePrefix()}:${RECENT_SEARCH_KEY}`, JSON.stringify(list.slice(0, MAX_RECENT_SEARCH)));
     } catch {
       /* ignore */
     }
@@ -50,7 +53,7 @@ export class PatientWorkspacePersistenceService {
 
   getRecentSearches(): string[] {
     try {
-      const raw = localStorage.getItem(RECENT_SEARCH_KEY);
+      const raw = localStorage.getItem(`${this.scopePrefix()}:${RECENT_SEARCH_KEY}`);
       if (!raw) return [];
       const parsed = JSON.parse(raw) as string[];
       return Array.isArray(parsed) ? parsed : [];
@@ -61,12 +64,18 @@ export class PatientWorkspacePersistenceService {
 
   getRecentPatients(): Array<{ patId: number; label: string; visitedAt: number }> {
     try {
-      const raw = localStorage.getItem(RECENT_KEY);
+      const raw = localStorage.getItem(`${this.scopePrefix()}:${RECENT_KEY}`);
       if (!raw) return [];
       const parsed = JSON.parse(raw) as Array<{ patId: number; label: string; visitedAt: number }>;
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
+  }
+
+  private scopePrefix(): string {
+    const tenant = this.facilityService.getTenantKeyOptional() ?? 'tenant-unknown';
+    const facility = this.facilityService.getFacilityIdOptional() ?? 0;
+    return `${tenant}:${facility}`;
   }
 }

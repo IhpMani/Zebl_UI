@@ -21,6 +21,8 @@ export interface InsuranceInfo {
   insClaimFilingIndicator: string | null;
   insSSN: string | null;
   patInsEligStatus: string | null;
+  /** Last eligibility verification date (PatInsEligDate); editable, saved with patient. */
+  patInsEligDate: string | null;
   /** UI-only: no DB column. Defaults true when record exists. */
   patInsActive?: boolean;
   /** UI-only: no DB column. */
@@ -38,6 +40,25 @@ export interface PatientNote {
   user: string | null;
   noteText: string | null;
   claID: number;
+}
+
+export interface PatientReadinessIssue {
+  code: string;
+  message: string;
+  field?: string | null;
+}
+
+export interface PatientClaimReadiness {
+  isReady: boolean;
+  issues: PatientReadinessIssue[];
+}
+
+export interface PatientProviderSlotWarning {
+  slot: string;
+  phyID?: number | null;
+  phyName?: string | null;
+  issueCode?: string | null;
+  message?: string | null;
 }
 
 export interface PatientDetail {
@@ -124,6 +145,13 @@ export interface PatientDetail {
   orderingPhysician: PhysicianAssignment | null;
   supervisingPhysician: PhysicianAssignment | null;
   patientNotes: PatientNote[];
+  claimReadiness?: PatientClaimReadiness | null;
+  providerSlotWarnings?: PatientProviderSlotWarning[];
+  resolvedBillingProviderId?: number | null;
+  resolvedBillingProviderName?: string | null;
+  /** Raw DB PatBillingPhyFID (not facility-resolved). */
+  persistedBillingProviderId?: number | null;
+  persistedBillingProviderName?: string | null;
 }
 
 export interface InsuranceUpdate {
@@ -147,6 +175,7 @@ export interface InsuranceUpdate {
   insAcceptAssignment?: number | null;
   insClaimFilingIndicator?: string | null;
   insSSN?: string | null;
+  patInsEligDate?: string | null;
 }
 
 export interface UpdatePatientRequest {
@@ -221,6 +250,7 @@ export interface UpdatePatientRequest {
   insuranceList?: InsuranceUpdate[] | null;
   noteText?: string | null;
   updateClaims?: boolean | null;
+  confirmInsuranceReplace?: boolean | null;
 }
 
 export interface PatientListItem {

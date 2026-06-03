@@ -188,6 +188,13 @@
               <div class="section-body">
                 <div class="form-grid" [formGroup]="claimForm">
                   <div class="form-group">
+                    <label>Billing Provider</label>
+                    <select formControlName="ClaBillingPhyFID">
+                      <option [ngValue]="0">--</option>
+                      <option *ngFor="let phy of billingProviders" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
                     <label>Rendering Provider</label>
                     <select formControlName="ClaRenderingPhyFID">
                       <option [ngValue]="0">--</option>

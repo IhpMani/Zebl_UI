@@ -10,7 +10,7 @@ type PersistedWorkspace = {
 
 @Injectable()
 export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
-  private readonly storageKey = 'workspace.tabs';
+  private readonly storageKeyBase = 'workspace.tabs';
 
   saveTabs(state: { tabs: WorkspaceTab[]; activeTabId: string | null }): void {
     const payload: PersistedWorkspace = {
@@ -20,7 +20,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     };
 
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(payload));
+      localStorage.setItem(this.storageKey(), JSON.stringify(payload));
     } catch {
       // ignore storage failures (quota/private mode)
     }
@@ -28,7 +28,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
 
   restoreTabs(): { tabs: WorkspaceTab[]; activeTabId: string | null } | null {
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = localStorage.getItem(this.storageKey());
       if (!raw) return null;
       const parsed = JSON.parse(raw) as Partial<PersistedWorkspace>;
       if (parsed.v !== 1 || !Array.isArray(parsed.tabs)) return null;
@@ -55,6 +55,16 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
       return { tabs, activeTabId };
     } catch {
       return null;
+    }
+  }
+
+  private storageKey(): string {
+    try {
+      const tenant = localStorage.getItem('zebl.tenantKey') ?? 'tenant-unknown';
+      const facility = localStorage.getItem('zebl.facilityId') ?? 'facility-unknown';
+      return `${this.storageKeyBase}:${tenant}:${facility}`;
+    } catch {
+      return `${this.storageKeyBase}:fallback`;
     }
   }
 }

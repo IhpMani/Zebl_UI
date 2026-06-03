@@ -56,35 +56,88 @@
     <table class="claims-table">
       <thead>
         <tr>
-          <th>
-            <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll($any($event.target).checked)" />
+          <th class="select-col add-column-header">
+            <div class="header-cell">
+              <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll($any($event.target).checked)" />
+              <button class="add-column-btn" type="button" (click)="toggleCustomizationDialog()" title="Add Column">
+                Add Column <span class="arrow">▼</span>
+              </button>
+            </div>
           </th>
-          <th>Claim ID</th>
-          <th>Status</th>
-          <th>Submission Method</th>
+          <th
+            *ngFor="let col of visibleColumns"
+            class="draggable-col-header sortable-col-header"
+            draggable="true"
+            [style.minWidth.px]="getColumnWidthPx(col.key)"
+            (dragstart)="onColumnDragStart($event, col.key)"
+            (dragover)="onColumnDragOver($event)"
+            (drop)="onColumnDrop($event, col.key)"
+          >
+            <div class="header-cell">
+              <button type="button" class="sortable-col-label" (click)="toggleSort(col.key)">
+                {{ col.label }}{{ getSortIndicator(col.key) }}
+              </button>
+              <button class="hide-col-btn" type="button" (click)="hideColumn(col.key)" title="Hide column">×</button>
+            </div>
+            <span
+              class="col-resize-handle"
+              title="Resize column"
+              (mousedown)="onColumnResizeStart($event, col.key)"
+            ></span>
+          </th>
           <th *ngIf="gridSource === 'batch'">Batch item</th>
-          <th>Total Charge</th>
-          <th>Total Balance</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let claim of claims">
-          <td>
+        <tr *ngFor="let claim of displayClaims">
+          <td class="select-col">
             <input
               type="checkbox"
               [checked]="isSelected(claim.claID)"
               (change)="toggleClaim(claim.claID, $any($event.target).checked)"
             />
           </td>
-          <td>{{ claim.claID }}</td>
-          <td>{{ claim.claStatus }}</td>
-          <td>{{ claim.claSubmissionMethod || 'N/A' }}</td>
+          <td *ngFor="let col of visibleColumns" [style.minWidth.px]="getColumnWidthPx(col.key)">
+            <ng-container [ngSwitch]="col.key">
+              <span *ngSwitchCase="'claStatus'" class="status-chip" [ngClass]="getStatusTone(getCellValue(claim, col.key))">
+                {{ formatDefaultCellValue(claim, col.key) }}
+              </span>
+              <span *ngSwitchCase="'claTotalChargeTRIG'" class="money-amount" [ngClass]="getCurrencyTone(claim.claTotalChargeTRIG)">
+                {{ claim.claTotalChargeTRIG | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claTotalInsBalanceTRIG'" class="money-amount" [ngClass]="getCurrencyTone(getCellValue(claim, col.key))">
+                {{ getCellValue(claim, col.key) | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claTotalPatBalanceTRIG'" class="money-amount" [ngClass]="getCurrencyTone(getCellValue(claim, col.key))">
+                {{ getCellValue(claim, col.key) | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claTotalBalanceCC'" class="money-amount" [ngClass]="getCurrencyTone(claim.claTotalBalanceCC)">
+                {{ claim.claTotalBalanceCC | currency:'USD':'symbol':'1.2-2' }}
+              </span>
+              <span *ngSwitchCase="'claSubmissionMethod'">
+                {{ claim.claSubmissionMethod || 'N/A' }}
+              </span>
+              <button *ngSwitchCase="'claID'" type="button" class="btn-link-like" (click)="openClaimDetails(claim.claID)">
+                {{ claim.claID }}
+              </button>
+              <span *ngSwitchCase="'claDateTotalFrom'" class="cell-muted">
+                {{ formatDateDisplay(getCellValue(claim, col.key)) }}
+              </span>
+              <span *ngSwitchCase="'claLastDateTRIG'" class="cell-muted">
+                {{ formatDateDisplay(getCellValue(claim, col.key)) }}
+              </span>
+              <span *ngSwitchCase="'claFirstDateTRIG'" class="cell-muted">
+                {{ formatDateDisplay(getCellValue(claim, col.key)) }}
+              </span>
+              <span *ngSwitchDefault>
+                {{ formatDefaultCellValue(claim, col.key) }}
+              </span>
+            </ng-container>
+          </td>
           <td *ngIf="gridSource === 'batch'">{{ claim.additionalColumns?.['batchItemError'] || '—' }}</td>
-          <td>{{ claim.claTotalChargeTRIG }}</td>
-          <td>{{ claim.claTotalBalanceCC }}</td>
         </tr>
         <tr *ngIf="claims.length === 0">
-          <td [attr.colspan]="gridSource === 'batch' ? 7 : 6" class="no-data">No claims in this view.</td>
+          <td [attr.colspan]="tableColspan" class="no-data">No claims in this view.</td>
         </tr>
       </tbody>
     </table>
@@ -172,3 +225,13 @@
     <button type="button" class="btn-primary" (click)="close837Modal()">Close</button>
   </div>
 </div>
+
+<app-claim-add-column-dialog
+  [open]="showCustomizationDialog"
+  [columnSearchText]="columnSearchText"
+  [selectedColumnKeys]="selectedColumnKeysForDialog"
+  (columnSearchTextChange)="columnSearchText = $event"
+  (closed)="onAddColumnDialogClosed()"
+  (columnToggled)="toggleColumnVisibility($event)"
+  (clearAllRequested)="clearAllColumns()"
+></app-claim-add-column-dialog>

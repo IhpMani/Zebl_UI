@@ -16,16 +16,29 @@
                 </button>
               </div>
             </th>
-            <th *ngFor="let col of visibleColumns">
+            <th
+              *ngFor="let col of visibleColumns"
+              class="draggable-col-header"
+              draggable="true"
+              [style.minWidth.px]="getColumnWidthPx(col.key)"
+              (dragstart)="onColumnDragStart($event, col.key)"
+              (dragover)="onColumnDragOver($event)"
+              (drop)="onColumnDrop($event, col.key)"
+            >
               <div class="header-cell">
-                <span>{{ col.label }}</span>
-                <button class="hide-col-btn" (click)="hideColumn(col.key)" title="Hide column">×</button>
+                <span class="col-drag-label">{{ col.label }}</span>
+                <button class="hide-col-btn" type="button" (click)="hideColumn(col.key)" title="Hide column">×</button>
               </div>
+              <span
+                class="col-resize-handle"
+                title="Resize column"
+                (mousedown)="onColumnResizeStart($event, col.key)"
+              ></span>
             </th>
           </tr>
           <tr>
             <th class="action-col"><div class="filter-placeholder"></div></th>
-            <th *ngFor="let col of visibleColumns">
+            <th *ngFor="let col of visibleColumns" [style.minWidth.px]="getColumnWidthPx(col.key)">
               <div class="filter-row">
                 <button class="filter-popup-btn" (click)="openFilterPopup(col.key, $event)" title="Filter">
                   Filter <span class="arrow">▼</span>
@@ -49,7 +62,7 @@
               Open
             </button>
           </td>
-          <td *ngFor="let col of visibleColumns">
+          <td *ngFor="let col of visibleColumns" [style.minWidth.px]="getColumnWidthPx(col.key)">
             <ng-container [ngSwitch]="col.key">
               <span *ngSwitchCase="'createdDate'" class="cell-muted">
                 {{ claimAuditTimestamp(claim, 'created') | date:'dd/MM/yyyy HH:mm' }}
@@ -207,42 +220,13 @@
     </div>
   </div>
 
-  <!-- Customization Dialog -->
-  <div class="customization-overlay" *ngIf="showCustomizationDialog" (click)="closeCustomizationDialog($event)">
-    <div class="customization-dialog" (click)="$event.stopPropagation()">
-      <div class="dialog-header">
-        <h3>Add Column</h3>
-        <button class="close-btn" (click)="closeCustomizationDialog()">×</button>
-      </div>
-      <div class="dialog-search">
-        <input
-          type="text"
-          [(ngModel)]="columnSearchText"
-          placeholder="Search columns..."
-          class="search-input"
-        />
-      </div>
-      <div class="dialog-content">
-        <!-- Curated Additional Columns (Categorized) -->
-        <div *ngFor="let category of getAdditionalColumnCategories()" class="column-section">
-          <h4>{{ category }}</h4>
-          <div class="column-list">
-            <label *ngFor="let col of getAdditionalColumnsByCategory(category)" class="column-item">
-              <input
-                type="checkbox"
-                [checked]="isAdditionalColumnSelected(col.key)"
-                (change)="toggleColumnVisibility(col.key)"
-              />
-              <span>{{ col.label }}</span>
-              <span *ngIf="col.isForeignKey" class="fk-badge" title="Foreign Key Reference">FK</span>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
-        <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
-      </div>
-    </div>
-  </div>
+  <app-claim-add-column-dialog
+    [open]="showCustomizationDialog"
+    [columnSearchText]="columnSearchText"
+    [selectedColumnKeys]="selectedColumnKeysForDialog"
+    (columnSearchTextChange)="columnSearchText = $event"
+    (closed)="onAddColumnDialogClosed()"
+    (columnToggled)="toggleColumnVisibility($event)"
+    (clearAllRequested)="clearAllColumns()"
+  ></app-claim-add-column-dialog>
 </app-page-shell>

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -12,7 +12,15 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
   templateUrl: './payer-library-form.component.html',
   styleUrls: ['./payer-library-form.component.scss']
 })
-export class PayerLibraryFormComponent implements OnInit, OnDestroy {
+export class PayerLibraryFormComponent implements OnInit, OnChanges, OnDestroy {
+  /** When true, loads embedPayerId and emits closed instead of routing (e.g. patient-details popup). */
+  @Input() popupMode = false;
+  @Input() embedPayerId: number | null = null;
+  @Input() embedNew = false;
+  @Output() closed = new EventEmitter<void>();
+  @Output() payerSaved = new EventEmitter<{ payID: number; payName: string | null }>();
+  @Output() payerDeleted = new EventEmitter<void>();
+
   form!: FormGroup;
   loading = false;
   saving = false;
@@ -28,12 +36,18 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private payerApi: PayerApiService,
     private listApi: ListApiService,
-    private workspace: WorkspaceService
+    private workspace: WorkspaceService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
     this.loadClassificationOptions();
+
+    if (this.popupMode) {
+      this.applyEmbedState();
+      return;
+    }
 
     this.paramSub = this.route.paramMap.subscribe(paramMap => {
       const idParam = paramMap.get('id');
@@ -41,7 +55,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       if (idParam === 'new') {
         this.isNew = true;
         this.currentId = null;
-        this.workspace.updateActiveTabTitle('Payer Library — New');
+        if (!this.popupMode) this.workspace.updateActiveTabTitle('Payer Library — New');
         this.form.reset({
           paySubmissionMethod: 'Paper',
           payClaimType: 'Professional',
@@ -67,23 +81,54 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
       } else {
         this.isNew = true;
         this.currentId = null;
-        this.workspace.updateActiveTabTitle('Payer Library — New');
+        if (!this.popupMode) this.workspace.updateActiveTabTitle('Payer Library — New');
         this.setPayerIdValidator();
       }
     });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.popupMode || !this.form) return;
+    if (changes['embedPayerId'] || changes['embedNew']) {
+      this.applyEmbedState();
+    }
   }
 
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
   }
 
+  private applyEmbedState(): void {
+    this.error = null;
+    if (this.embedNew) {
+      this.isNew = true;
+      this.currentId = null;
+      this.loading = false;
+      this.resetForNewEntry();
+      this.setPayerIdValidator();
+      this.cdr.markForCheck();
+      return;
+    }
+    const id = Number(this.embedPayerId ?? 0);
+    if (id > 0) {
+      this.isNew = false;
+      this.currentId = id;
+      this.loadPayer(id);
+    } else {
+      this.loading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
   private loadClassificationOptions(): void {
     this.listApi.getListValues('Payer Classification').subscribe({
       next: (r) => {
         this.classificationOptions = (r.data || []).slice().sort((a, b) => (a.value || '').localeCompare(b.value || ''));
+        this.cdr.markForCheck();
       },
       error: () => {
         this.classificationOptions = [];
+        this.cdr.markForCheck();
       }
     });
   }
@@ -167,12 +212,14 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
   loadPayer(id: number): void {
     this.loading = true;
     this.error = null;
+    this.cdr.markForCheck();
     this.payerApi.getById(id).subscribe({
       next: (p) => {
         if (!p) {
           this.error = 'Payer not found.';
           this.loading = false;
-          this.workspace.updateActiveTabTitle('Payer Library');
+          if (!this.popupMode) this.workspace.updateActiveTabTitle('Payer Library');
+          this.cdr.markForCheck();
           return;
         }
         this.form.patchValue({
@@ -211,9 +258,12 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
         this.setPayerIdValidator();
         this.loading = false;
         const displayName = (p.payName ?? '').trim();
-        this.workspace.updateActiveTabTitle(
-          displayName.length > 0 ? displayName : 'Payer Library'
-        );
+        if (!this.popupMode) {
+          this.workspace.updateActiveTabTitle(
+            displayName.length > 0 ? displayName : 'Payer Library'
+          );
+        }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         const status = err?.status;
@@ -227,9 +277,21 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
           this.error = err?.error?.message || err?.message || 'Failed to load payer';
         }
         this.loading = false;
-        this.workspace.updateActiveTabTitle('Payer Library');
+        if (!this.popupMode) this.workspace.updateActiveTabTitle('Payer Library');
+        this.cdr.markForCheck();
       }
     });
+  }
+
+  private closePopup(): void {
+    this.closed.emit();
+  }
+
+  private emitPayerSaved(): void {
+    const payName = (this.form.get('payName')?.value ?? '').trim() || null;
+    if (this.currentId) {
+      this.payerSaved.emit({ payID: this.currentId, payName });
+    }
   }
 
   getPayload(): Partial<PayerDetailDto> {
@@ -279,29 +341,47 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     }
     this.saving = true;
     this.error = null;
+    this.cdr.markForCheck();
     const payload = this.getPayload();
     if (this.isNew) {
       this.payerApi.create(payload).subscribe({
-        next: () => {
+        next: (created) => {
           this.saving = false;
-          this.resetForNewEntry();
-          this.router.navigate(['../new'], { relativeTo: this.route });
+          if (this.popupMode) {
+            this.emitPayerSaved();
+            this.isNew = true;
+            this.currentId = null;
+            this.resetForNewEntry();
+            this.setPayerIdValidator();
+          } else {
+            this.resetForNewEntry();
+            this.router.navigate(['../new'], { relativeTo: this.route });
+          }
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to create payer';
           this.saving = false;
+          this.cdr.markForCheck();
         }
       });
     } else {
       this.payerApi.update(this.currentId!, { ...payload, payID: this.currentId! }).subscribe({
         next: () => {
           this.saving = false;
-          this.resetForNewEntry();
-          this.router.navigate(['../new'], { relativeTo: this.route });
+          if (this.popupMode) {
+            this.emitPayerSaved();
+            this.resetForNewEntry();
+          } else {
+            this.resetForNewEntry();
+            this.router.navigate(['../new'], { relativeTo: this.route });
+          }
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to update payer';
           this.saving = false;
+          this.cdr.markForCheck();
         }
       });
     }
@@ -317,33 +397,52 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     }
     this.saving = true;
     this.error = null;
+    this.cdr.markForCheck();
     const payload = this.getPayload();
     if (this.isNew) {
       this.payerApi.create(payload).subscribe({
         next: (created) => {
           this.saving = false;
-          this.router.navigate(['../', created.payID], { relativeTo: this.route });
+          if (this.popupMode) {
+            this.currentId = created.payID;
+            this.isNew = false;
+            this.emitPayerSaved();
+          } else {
+            this.router.navigate(['../', created.payID], { relativeTo: this.route });
+          }
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to create payer';
           this.saving = false;
+          this.cdr.markForCheck();
         }
       });
     } else {
       this.payerApi.update(this.currentId!, { ...payload, payID: this.currentId! }).subscribe({
         next: () => {
           this.saving = false;
-          this.router.navigate(['../'], { relativeTo: this.route });
+          if (this.popupMode) {
+            this.emitPayerSaved();
+          } else {
+            this.router.navigate(['../'], { relativeTo: this.route });
+          }
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.error = err?.error?.message || err?.message || 'Failed to update payer';
           this.saving = false;
+          this.cdr.markForCheck();
         }
       });
     }
   }
 
   onClose(): void {
+    if (this.popupMode) {
+      this.closePopup();
+      return;
+    }
     this.router.navigate(['../'], { relativeTo: this.route });
   }
 
@@ -355,7 +454,13 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
     this.payerApi.delete(this.currentId).subscribe({
       next: () => {
         this.saving = false;
-        this.router.navigate(['../'], { relativeTo: this.route });
+        if (this.popupMode) {
+          this.payerDeleted.emit();
+          this.closePopup();
+        } else {
+          this.router.navigate(['../'], { relativeTo: this.route });
+        }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.saving = false;
@@ -363,6 +468,7 @@ export class PayerLibraryFormComponent implements OnInit, OnDestroy {
         this.error = msg && msg.includes('in use')
           ? 'Payer cannot be deleted because it is in use. Use Inactive instead.'
           : (msg || 'Failed to delete payer');
+        this.cdr.markForCheck();
       }
     });
   }

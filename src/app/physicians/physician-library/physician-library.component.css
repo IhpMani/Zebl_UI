@@ -17,6 +17,7 @@
   grid-template-rows: auto auto 1fr;
   border-right: 1px solid var(--ps-border);
   min-width: 0;
+  min-height: 0;
 }
 
 .panel-header {
@@ -34,6 +35,7 @@
 .list-section {
   display: grid;
   grid-template-rows: auto 1fr;
+  min-height: 0;
 }
 
 .add-new-entry {
@@ -45,6 +47,8 @@
 
 .physician-list {
   overflow-y: auto;
+  min-height: 0;
+  height: 100%;
 }
 
 .physician-list-header {

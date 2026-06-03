@@ -3,6 +3,7 @@ export type WorkspaceSliceKey =
   | 'financial'
   | 'claimsPreview'
   | 'insuranceSummary'
+  | 'eligibilitySnapshot'
   | 'recentPayments'
   | 'aging'
   | 'overview'

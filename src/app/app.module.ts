@@ -40,15 +40,17 @@ import { PatientEligibilityComponent } from './patients/patient-eligibility/pati
 import { ClaimRejectionsComponent } from './features/claim-rejections/claim-rejections.component';
 import { SuperAdminComponent } from './super-admin/super-admin.component';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
-import { EligibilityResponseComponent } from './patients/eligibility-response/eligibility-response.component';
+import { EligibilityUiModule } from './patients/eligibility-ui/eligibility-ui.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { WorkspaceRouteReuseStrategy } from './workspace/infrastructure/workspace-route-reuse-strategy';
 import { SendClaimsComponent } from './claims/send-claims/send-claims.component';
+import { ClaimAddColumnDialogComponent } from './claims/shared/claim-add-column-dialog.component';
 import { SharedUiModule } from './shared/ui/shared-ui.module';
 import { LayoutModule } from './shared/layout/layout.module';
 import { WorkspaceLayoutModule } from './shared/layout/workspace/workspace-layout.module';
 import { OperationalUxModule } from './shared/operational/operational-ux.module';
 import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-preview/patient-workspace-preview.component';
+import { PayerLibraryModule } from './features/payer-library/payer-library.module';
 
 @NgModule({
   declarations: [
@@ -57,6 +59,7 @@ import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-p
     SidebarFloatingPanelComponent,
     ClaimListComponent,
     SendClaimsComponent,
+    ClaimAddColumnDialogComponent,
     ClaimDetailsComponent,
     HomeComponent,
     PatientListComponent,
@@ -83,7 +86,6 @@ import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-p
     ColumnChooserDialogComponent,
     AddColumnHeaderComponent,
     PatientEligibilityComponent,
-    EligibilityResponseComponent,
     ClaimRejectionsComponent,
     SuperAdminComponent,
     UnauthorizedComponent,
@@ -100,6 +102,8 @@ import { PatientWorkspacePreviewComponent } from './patients/patient-workspace-p
     LayoutModule,
     WorkspaceLayoutModule,
     OperationalUxModule,
+    PayerLibraryModule,
+    EligibilityUiModule,
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

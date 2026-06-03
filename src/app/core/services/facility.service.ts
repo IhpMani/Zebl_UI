@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 
 
@@ -15,6 +16,11 @@ const FACILITY_LEGACY_KEY = 'facility';
 @Injectable({ providedIn: 'root' })
 
 export class FacilityService {
+
+  /** Emits whenever the operational facility id changes (topbar selection). */
+  private readonly facilityIdSubject = new BehaviorSubject<number | null>(this.readFacilityIdFromStorage());
+
+  readonly facilityId$ = this.facilityIdSubject.asObservable();
 
   /** Lower-case tenant key from storage, or null if unset (do not send `X-Tenant-Key`). */
 
@@ -87,35 +93,24 @@ export class FacilityService {
 
 
   getFacilityIdOptional(): number | null {
+    return this.readFacilityIdFromStorage();
+  }
 
+  private readFacilityIdFromStorage(): number | null {
     try {
-
       const raw = localStorage.getItem(STORAGE_KEY);
-
       if (raw == null || raw === '') {
-
         return null;
-
       }
-
       const n = Number(raw);
-
       if (!Number.isFinite(n)) {
-
         return null;
-
       }
-
       const id = Math.floor(n);
-
       return id > 0 ? id : null;
-
     } catch {
-
       return null;
-
     }
-
   }
 
 
@@ -131,7 +126,6 @@ export class FacilityService {
   getFacilityIdStrict(): number {
 
     const id = this.getFacilityIdOptional();
-    console.log('FacilityId:', id);
 
     if (id == null || id <= 0) {
 
@@ -158,6 +152,8 @@ export class FacilityService {
       // ignore
 
     }
+
+    this.facilityIdSubject.next(null);
 
   }
 
@@ -186,6 +182,8 @@ export class FacilityService {
       // ignore
 
     }
+
+    this.facilityIdSubject.next(store);
 
   }
 

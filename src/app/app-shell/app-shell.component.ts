@@ -22,6 +22,8 @@ import { SidebarStateService } from '../core/services/sidebar-state.service';
 
 import { SuperAdminService } from '../super-admin/super-admin.service';
 import { PatientNavigationService } from '../features/patients/services/patient-navigation.service';
+import { ClaimApiService } from '../core/services/claim-api.service';
+import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
 
 
 
@@ -86,6 +88,56 @@ import { PatientNavigationService } from '../features/patients/services/patient-
         </div>
 
         <div class="topbar-right" *ngIf="auth.isLoggedIn()">
+
+          <button
+            type="button"
+            class="topbar-patient-lookup"
+            *ngIf="!auth.isSuperAdmin()"
+            (click)="openPatientLookup()"
+            title="Patient Lookup (Ctrl+P)"
+            aria-label="Patient Lookup"
+          >
+            <span class="topbar-patient-lookup__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"></path>
+                <circle cx="8.5" cy="7.5" r="3"></circle>
+                <circle cx="17.5" cy="16.5" r="4"></circle>
+                <path d="m20.6 19.6 2.4 2.4"></path>
+              </svg>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="topbar-patient-lookup"
+            *ngIf="!auth.isSuperAdmin()"
+            (click)="openPatientHome()"
+            title="Patient"
+            aria-label="Patient"
+          >
+            <span class="topbar-patient-lookup__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="topbar-patient-lookup"
+            *ngIf="!auth.isSuperAdmin()"
+            (click)="openClaimLookup()"
+            title="Claim"
+            aria-label="Claim"
+          >
+            <span class="topbar-patient-lookup__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+              </svg>
+            </span>
+          </button>
 
           <div class="topbar-facility" *ngIf="!auth.isSuperAdmin()">
 
@@ -182,22 +234,6 @@ import { PatientNavigationService } from '../features/patients/services/patient-
             </span>
 
           </div>
-
-          <button
-            type="button"
-            class="topbar-patient-lookup"
-            *ngIf="!auth.isSuperAdmin()"
-            (click)="openPatientLookup()"
-            title="Patient Lookup (Ctrl+P)"
-            aria-label="Patient Lookup"
-          >
-            <span class="topbar-patient-lookup__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.3-4.3"></path>
-              </svg>
-            </span>
-          </button>
 
           <div class="topbar-profile">
 
@@ -356,7 +392,8 @@ export class AppShellComponent implements OnDestroy, OnInit {
     private httpErrors: HttpErrorMessageService,
 
     private superAdminApi: SuperAdminService,
-    private readonly patientNavigation: PatientNavigationService
+    private readonly patientNavigation: PatientNavigationService,
+    private readonly claimApi: ClaimApiService
 
   ) {
 
@@ -489,8 +526,87 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
 
   /** Patient Lookup = modern directory at /patients. */
+  openPatientHome(): void {
+    const patientId = this.activePatientIdFromRoute();
+    if (patientId != null) {
+      this.patientNavigation.navigateToPatientDetails(patientId);
+      return;
+    }
+
+    const claimId = this.activeClaimIdFromRoute() ?? this.queryClaimIdFromRoute();
+    if (claimId != null) {
+      this.claimApi.getClaimById(claimId).subscribe({
+        next: (claim) => {
+          const resolvedPatientId = resolveClaimPatientId(claim);
+          if (resolvedPatientId != null && resolvedPatientId > 0) {
+            this.patientNavigation.navigateToPatientDetails(resolvedPatientId, { claimId });
+          } else {
+            void this.router.navigate(['/patients/new']);
+          }
+        },
+        error: () => void this.router.navigate(['/patients/new'])
+      });
+      return;
+    }
+
+    void this.router.navigate(['/patients/new']);
+  }
+
+  /** Patient Lookup = modern directory at /patients. */
   openPatientLookup(): void {
     this.patientNavigation.navigateToPatientLookup();
+  }
+
+  /** Claim quick action from top bar. */
+  openClaimLookup(): void {
+    const claimId = this.activeClaimIdFromRoute() ?? this.queryClaimIdFromRoute();
+    if (claimId != null) {
+      void this.router.navigate(['/claims', claimId]);
+      return;
+    }
+
+    const patientId = this.activePatientIdFromRoute();
+    if (patientId != null) {
+      this.claimApi.getClaims(1, 1, { patientId }).subscribe({
+        next: (response) => {
+          const first = response.data?.[0];
+          if (first?.claID) {
+            void this.router.navigate(['/claims', first.claID]);
+          } else {
+            void this.router.navigate(['/claims/new']);
+          }
+        },
+        error: () => void this.router.navigate(['/claims/new'])
+      });
+      return;
+    }
+
+    void this.router.navigate(['/claims/new']);
+  }
+
+  private activePatientIdFromRoute(): number | null {
+    const path = this.router.url.split('?')[0];
+    const match = path.match(/^\/patients\/(\d+)(?:\/|$)/);
+    if (!match?.[1]) return null;
+    const id = Number(match[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private activeClaimIdFromRoute(): number | null {
+    const path = this.router.url.split('?')[0];
+    const match = path.match(/^\/claims\/(\d+)(?:\/|$)/);
+    if (!match?.[1]) return null;
+    const id = Number(match[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private queryClaimIdFromRoute(): number | null {
+    const idx = this.router.url.indexOf('?');
+    if (idx < 0) return null;
+    const raw = new URLSearchParams(this.router.url.slice(idx)).get('claimId');
+    if (!raw) return null;
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0 ? id : null;
   }
 
   toggleMenu(): void {

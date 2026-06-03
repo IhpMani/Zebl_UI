@@ -34,4 +34,8 @@ export class ClaimShellCacheService {
   invalidate(claimId: number): void {
     this.cache.delete(claimId);
   }
+
+  invalidateAll(): void {
+    this.cache.clear();
+  }
 }

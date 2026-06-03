@@ -21,6 +21,7 @@
         </h1>
       </div>
       <div class="header-actions">
+        <span class="unsaved-badge" *ngIf="formDirty">Unsaved changes</span>
         <button class="btn-primary" (click)="saveAndClose()" [disabled]="saving">Save & Close</button>
         <button class="btn-primary ghost btn-save" (click)="save()" [disabled]="saving">Save</button>
         <button class="btn-secondary" (click)="close()">Close</button>
@@ -101,6 +102,7 @@
               <label>Claim Template</label>
               <select formControlName="patClaLibFID">
                 <option [ngValue]="0">&lt;No Template&gt;</option>
+                <option *ngFor="let t of claimTemplates" [ngValue]="t.id ?? 0">{{ t.templateName }}</option>
               </select>
             </div>
             <div class="form-row">
@@ -169,65 +171,45 @@
             <span (click)="toggleSection('physicianFacility')">Physician / Facility Library Entries</span>
             <div class="physician-header-btns">
               <button type="button" class="btn-physician-icon" (click)="refreshPhysicians()" title="Refresh">↻</button>
-              <button type="button" class="btn-physician-icon" (click)="openPhysicianPicker('patBillingPhyFID')" title="Pick Physician">…</button>
             </div>
           </div>
           <form [formGroup]="patientForm">
             <div class="physician-list" [hidden]="!sectionsState.physicianFacility">
-              <div class="form-row-inline">
-                <label>Billing Provider</label>
-                <select formControlName="patBillingPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngIf="billingProviderFacilityHint" [ngValue]="0">{{ billingProviderFacilityHint }} (current facility)</option>
-                  <option *ngFor="let phy of billingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patBillingPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patBillingPhyFID')" title="Clear">×</button>
+              <div class="provider-row" *ngFor="let slot of providerSlotRows">
+                <label class="provider-row-label" [attr.for]="slot.controlName">{{ slot.label }}</label>
+                <div class="provider-row-input-wrap">
+                  <select
+                    class="provider-row-input"
+                    [id]="slot.controlName"
+                    [formControlName]="slot.controlName"
+                    (change)="onProviderSlotChange(slot.controlName)">
+                    <option [ngValue]="0">None</option>
+                    <option *ngFor="let phy of getSlotOptions(slot.controlName)" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
+                  </select>
+                  <div class="provider-row-hint" [class.provider-row-hint-empty]="!isBillingSlot(slot.controlName) && !isSlotPoolEmpty(slot.controlName)">
+                    <span *ngIf="isBillingSlot(slot.controlName)">
+                      Facility Default: {{ patient.resolvedBillingProviderName || 'Not Configured' }}
+                    </span>
+                    <span *ngIf="isSlotPoolEmpty(slot.controlName)">
+                      No active {{ slot.emptyHintLabel }} in this facility.
+                    </span>
+                  </div>
+                </div>
+                <button type="button" class="btn-physician-sm provider-row-action" (click)="openPhysicianPicker(slot.controlName)" title="Pick Physician">…</button>
+                <button type="button" class="btn-physician-sm provider-row-action" (click)="clearPhysician(slot.controlName)" title="Clear">×</button>
               </div>
-              <div class="form-row-inline">
-                <label>Rendering Provider</label>
-                <select formControlName="patRenderingPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of renderingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patRenderingPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patRenderingPhyFID')" title="Clear">×</button>
-              </div>
-              <div class="form-row-inline">
-                <label>Service Facility</label>
-                <select formControlName="patFacilityPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of facilityProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patFacilityPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patFacilityPhyFID')" title="Clear">×</button>
-              </div>
-              <div class="form-row-inline">
-                <label>Referring Provider</label>
-                <select formControlName="patReferringPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of referringProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patReferringPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patReferringPhyFID')" title="Clear">×</button>
-              </div>
-              <div class="form-row-inline">
-                <label>Ordering Provider</label>
-                <select formControlName="patOrderingPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of orderingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patOrderingPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patOrderingPhyFID')" title="Clear">×</button>
-              </div>
-              <div class="form-row-inline">
-                <label>Supervising Provider</label>
-                <select formControlName="patSupervisingPhyFID">
-                  <option [ngValue]="0">None</option>
-                  <option *ngFor="let phy of supervisingProviders" [ngValue]="phy.phyID">{{ phy.phyName }}</option>
-                </select>
-                <button type="button" class="btn-physician-sm" (click)="openPhysicianPicker('patSupervisingPhyFID')" title="Pick Physician">…</button>
-                <button type="button" class="btn-physician-sm" (click)="clearPhysician('patSupervisingPhyFID')" title="Clear">×</button>
+              <div class="readiness-panel" *ngIf="patient as p">
+                <ng-container *ngIf="(p.providerSlotWarnings?.length || 0) > 0 || (p.claimReadiness?.issues?.length || 0) > 0">
+                <div class="readiness-title">Claim / provider readiness</div>
+                <ul class="readiness-list">
+                  <li *ngFor="let w of p.providerSlotWarnings" class="readiness-warn">
+                    <strong>{{ w.slot }}</strong>: {{ w.message }}
+                  </li>
+                  <li *ngFor="let i of p.claimReadiness?.issues" class="readiness-issue">
+                    {{ i.message }}
+                  </li>
+                </ul>
+                </ng-container>
               </div>
             </div>
           </form>
@@ -267,7 +249,7 @@
                         <option [ngValue]="0">-- Select --</option>
                         <option *ngFor="let pay of payers" [ngValue]="pay.payID">{{ pay.payName }}</option>
                       </select>
-                      <button type="button" class="btn-sm-icon" title="Library">…</button>
+                      <button type="button" class="btn-sm-icon" title="Library" (click)="openPayerLibrary()">…</button>
                       <button type="button" class="btn-sm-icon" (click)="clearPayer(currentInsurance)" title="Clear">×</button>
                     </div>
                     <label class="ins-lbl">Date of Birth</label>
@@ -276,22 +258,53 @@
                     <div class="ins-cell-with-btns eligibility-cell">
                       <span
                         class="eligibility-status"
-                        [ngClass]="{
-                          'text-success': currentInsurance.patInsEligStatus === 'Active' || currentInsurance.patInsEligStatus === 'A',
-                          'text-danger': currentInsurance.patInsEligStatus === 'Inactive' || currentInsurance.patInsEligStatus === 'I',
-                          'text-muted': !currentInsurance.patInsEligStatus || (
-                            currentInsurance.patInsEligStatus !== 'Active' &&
-                            currentInsurance.patInsEligStatus !== 'A' &&
-                            currentInsurance.patInsEligStatus !== 'Inactive' &&
-                            currentInsurance.patInsEligStatus !== 'I'
-                          )
-                        }"
+                        [class.eligibility-status--active]="isActiveEligibilityStatus(currentInsurance.patInsEligStatus)"
+                        [class.eligibility-status--inactive]="isInactiveEligibilityStatus(currentInsurance.patInsEligStatus)"
+                        [class.eligibility-status--rejected]="isRejectedEligibilityStatus(currentInsurance.patInsEligStatus)"
+                        [class.eligibility-status--unknown]="isUnknownEligibilityStatus(currentInsurance.patInsEligStatus)"
                       >
-                        {{ currentInsurance.patInsEligStatus || 'Unknown' }}
+                        {{ formatEligibilityStatus(currentInsurance.patInsEligStatus) }}
                       </span>
-                      <button type="button" class="btn-sm-icon eligibility-action" (click)="checkEligibility()">CHECK</button>
-                      <button type="button" class="btn-sm-icon eligibility-action" (click)="viewEligibility()">VIEW</button>
+                      <span *ngIf="eligibilityPollingInProgress" class="eligibility-waiting">
+                        Waiting for clearinghouse response...
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-sm-icon eligibility-action"
+                        (click)="checkEligibility()"
+                        [disabled]="eligibilityActionInProgress || eligibilityPollingInProgress"
+                      >
+                        CHECK
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-sm-icon eligibility-action"
+                        (click)="viewEligibility()"
+                        [disabled]="eligibilityActionInProgress || eligibilityPollingInProgress"
+                      >
+                        VIEW
+                      </button>
+                      <div *ngIf="eligibilityError" class="eligibility-error">
+                        {{ eligibilityError }}
+                        <button
+                          *ngIf="eligibilityTimedOut"
+                          type="button"
+                          class="btn-secondary eligibility-retry"
+                          (click)="checkEligibility()"
+                        >
+                          Retry
+                        </button>
+                      </div>
                     </div>
+                    <label class="ins-lbl">Eligibility Date</label>
+                    <input
+                      type="date"
+                      class="ins-inp"
+                      [(ngModel)]="currentInsurance.patInsEligDate"
+                      [ngModelOptions]="ngModelStandalone"
+                      [disabled]="eligibilityPollingInProgress"
+                      (ngModelChange)="onInsuranceFieldChanged()"
+                    />
                     <label class="ins-lbl">Address</label>
                     <input type="text" class="ins-inp ins-inp-full" [(ngModel)]="currentInsurance.insAddress" [ngModelOptions]="ngModelStandalone" />
                     <label class="ins-lbl">City / State / Zip</label>
@@ -554,8 +567,27 @@
     <app-eligibility-response
       *ngIf="eligibilityResponse"
       [response]="eligibilityResponse"
-      (closed)="eligibilityResponse = null"
+      (closed)="closeEligibilityModal()"
     ></app-eligibility-response>
+
+    <!-- Payer Library Modal (same pattern as Physician Library) -->
+    <div class="physician-library-overlay" *ngIf="payerLibraryOpen" (click)="closePayerLibrary()">
+      <div class="physician-library-modal" (click)="$event.stopPropagation()">
+        <div class="physician-library-modal-header">
+          <h3>Payer Library</h3>
+          <button type="button" class="physician-library-close" (click)="closePayerLibrary()" title="Close">×</button>
+        </div>
+        <div class="physician-library-modal-body">
+          <app-payer-library-embed
+            [pickerMode]="true"
+            [initialPayId]="getPayerLibraryInitialId()"
+            (payerSelected)="onPayerSelected($event)"
+            (payerSaved)="onPayerSavedInPopup($event)"
+            (closed)="closePayerLibrary()"
+          ></app-payer-library-embed>
+        </div>
+      </div>
+    </div>
 
     <!-- Physician Library Modal (full page in popup) -->
     <div class="physician-library-overlay" *ngIf="physicianPickerOpen" (click)="closePhysicianPicker()">

@@ -321,6 +321,25 @@
   color: #475569;
 }
 
+.draggable-col-header {
+  position: relative;
+  vertical-align: top;
+}
+
+.col-drag-label {
+  cursor: grab;
+}
+
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+}
+
 .filter-row {
   display: flex;
   align-items: center;

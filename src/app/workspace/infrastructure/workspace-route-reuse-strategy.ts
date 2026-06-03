@@ -62,7 +62,17 @@ export class WorkspaceRouteReuseStrategy implements RouteReuseStrategy {
     const path = '/' + segments.join('/');
 
     const params = { ...(route.queryParams ?? {}), ...(route.params ?? {}) };
-    return `${path}?${this.stableStringify(params)}`;
+    return `${path}?${this.stableStringify(params)}#${this.currentContextFingerprint()}`;
+  }
+
+  private currentContextFingerprint(): string {
+    try {
+      const tenant = localStorage.getItem('zebl.tenantKey') ?? 'tenant-unknown';
+      const facility = localStorage.getItem('zebl.facilityId') ?? 'facility-unknown';
+      return `${tenant}:${facility}`;
+    } catch {
+      return 'context-unavailable';
+    }
   }
 
   private stableStringify(v: unknown): string {

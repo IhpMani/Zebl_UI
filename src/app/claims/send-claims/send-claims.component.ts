@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { ClaimApiService } from '../../core/services/claim-api.service';
 import {
   ClaimBatchDetail,
@@ -7,6 +7,36 @@ import {
 } from '../../core/services/claim.models';
 import { ReceiverLibraryApiService, ReceiverLibraryDto } from '../../core/services/receiver-library-api.service';
 import { ConnectionLibraryApiService, ConnectionLibraryDto, ConnectionType } from '../../core/services/connection-library-api.service';
+import { ClaimListAdditionalColumns } from '../claim-list/claim-list-additional-columns';
+import {
+  ClaimListSortDirection,
+  formatClaimListDateDisplay,
+  formatClaimListDefaultCellValue,
+  getClaimCurrencyTone,
+  getClaimListCellValue,
+  getClaimStatusTone,
+  mapToBackendAdditionalColumnKeys,
+  mergeClaimListRowsForBatch,
+  sortClaimListItems
+} from '../shared/claim-column.utils';
+import {
+  buildColumnPreferencesPayload,
+  clampColumnWidth,
+  migrateLegacyColumnKey,
+  orderVisibleColumns,
+  parseColumnPreferences,
+  reorderColumnKeys,
+  SEND_CLAIMS_COLUMN_PREFS_VERSION,
+  visibleKeysInDisplayOrder
+} from '../shared/claim-column-preferences';
+import { Router } from '@angular/router';
+
+export type SendClaimsGridColumn = {
+  key: string;
+  label: string;
+  visible: boolean;
+  isAdditionalColumn?: boolean;
+};
 
 export type SendClaimsClaimFilter = 'RTS' | 'Electronic' | 'All';
 
@@ -128,6 +158,16 @@ function formatSendBatchBody(body: Record<string, unknown>): string {
   styleUrls: ['./send-claims.component.css']
 })
 export class SendClaimsComponent implements OnInit {
+  private readonly columnPreferenceVersion = SEND_CLAIMS_COLUMN_PREFS_VERSION;
+  private readonly sendClaimsColumnPrefsKey = 'sendClaimsColumnPreferences';
+  private readonly defaultSendClaimsColumns: Array<{ key: string; label: string }> = [
+    { key: 'claID', label: 'Claim ID' },
+    { key: 'claStatus', label: 'Status' },
+    { key: 'claSubmissionMethod', label: 'Submission Method' },
+    { key: 'claTotalChargeTRIG', label: 'Total Charge' },
+    { key: 'claTotalBalanceCC', label: 'Total Balance' }
+  ];
+
   claims: ClaimListItem[] = [];
   submitterReceivers: ReceiverLibraryDto[] = [];
   connections: ConnectionLibraryDto[] = [];
@@ -163,16 +203,67 @@ export class SendClaimsComponent implements OnInit {
 
   lastBatchDetail: ClaimBatchDetail | null = null;
 
+  columns: SendClaimsGridColumn[] = [
+    { key: 'claID', label: 'Claim ID', visible: true },
+    { key: 'claStatus', label: 'Status', visible: true },
+    { key: 'claSubmissionMethod', label: 'Submission Method', visible: true },
+    { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: true },
+    { key: 'claTotalBalanceCC', label: 'Total Balance', visible: true }
+  ];
+  selectedAdditionalColumns = new Set<string>();
+  showCustomizationDialog = false;
+  columnSearchText = '';
+  columnDisplayOrder: string[] = [];
+  columnWidths: Record<string, number> = {};
+  sortColumnKey: string | null = null;
+  sortDirection: ClaimListSortDirection = 'asc';
+  private dragColumnKey: string | null = null;
+  private resizingColumnKey: string | null = null;
+  private resizeStartX = 0;
+  private resizeStartWidth = 0;
+
   constructor(
     private claimApi: ClaimApiService,
     private receiverLibraryApi: ReceiverLibraryApiService,
-    private connectionLibraryApi: ConnectionLibraryApiService
+    private connectionLibraryApi: ConnectionLibraryApiService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.loadColumnPreferences();
     this.loadConnections();
     this.loadSubmitterReceivers();
     this.reloadGrid();
+  }
+
+  get visibleColumns(): SendClaimsGridColumn[] {
+    return orderVisibleColumns(this.columns, this.columnDisplayOrder);
+  }
+
+  get selectedColumnKeysForDialog(): string[] {
+    return this.visibleColumns.map((c) => c.key);
+  }
+
+  get displayClaims(): ClaimListItem[] {
+    if (!this.sortColumnKey) {
+      return this.claims;
+    }
+    return sortClaimListItems(this.claims, this.sortColumnKey, this.sortDirection);
+  }
+
+  get tableColspan(): number {
+    return 1 + this.visibleColumns.length + (this.gridSource === 'batch' ? 1 : 0);
+  }
+
+  private buildAdditionalColumnsRequest(): string[] | undefined {
+    const visibleAdditionalKeys = this.columns
+      .filter((c) => c.visible && ClaimListAdditionalColumns.isValidColumn(c.key))
+      .map((c) => c.key);
+    const keys = mapToBackendAdditionalColumnKeys([
+      ...Array.from(this.selectedAdditionalColumns),
+      ...visibleAdditionalKeys
+    ]);
+    return keys.length > 0 ? keys : undefined;
   }
 
   loadSubmitterReceivers(): void {
@@ -271,7 +362,7 @@ export class SendClaimsComponent implements OnInit {
     this.selected.clear();
     this.gridSource = 'filter';
 
-    this.claimApi.getSendableClaims(1, 500).subscribe({
+    this.claimApi.getSendableClaims(1, 500, this.buildAdditionalColumnsRequest()).subscribe({
       next: (response) => {
         this.claims = response.data ?? [];
         this.loading = false;
@@ -297,8 +388,11 @@ export class SendClaimsComponent implements OnInit {
     const acc: ClaimListItem[] = [];
     let page = 1;
 
+    const additionalColumns = this.buildAdditionalColumnsRequest();
+    const listFilters = additionalColumns ? { additionalColumns } : undefined;
+
     const loadPage = (): void => {
-      this.claimApi.getClaims(page, pageSize).subscribe({
+      this.claimApi.getClaims(page, pageSize, listFilters).subscribe({
         next: (res) => {
           const rows = res.data ?? [];
           for (const r of rows) {
@@ -331,6 +425,290 @@ export class SendClaimsComponent implements OnInit {
 
   private isElectronicClaim(r: ClaimListItem): boolean {
     return (r.claSubmissionMethod || '').trim().toLowerCase() === 'electronic';
+  }
+
+  openClaimDetails(claimId: number): void {
+    if (!claimId || claimId <= 0) {
+      return;
+    }
+    this.router.navigate(['/claims', claimId]);
+  }
+
+  getCellValue(claim: ClaimListItem, key: string): any {
+    return getClaimListCellValue(claim, key);
+  }
+
+  formatDefaultCellValue(claim: ClaimListItem, columnKey: string): string {
+    return formatClaimListDefaultCellValue(claim, columnKey, (key) =>
+      ClaimListAdditionalColumns.findByKey(key)?.dataType
+    );
+  }
+
+  formatDateDisplay(value: unknown): string {
+    return formatClaimListDateDisplay(value);
+  }
+
+  getStatusTone(status: unknown): string {
+    return getClaimStatusTone(status);
+  }
+
+  getCurrencyTone(amount: unknown): string {
+    return getClaimCurrencyTone(amount);
+  }
+
+  toggleCustomizationDialog(): void {
+    this.showCustomizationDialog = !this.showCustomizationDialog;
+    if (!this.showCustomizationDialog) {
+      this.columnSearchText = '';
+    }
+  }
+
+  onAddColumnDialogClosed(): void {
+    this.showCustomizationDialog = false;
+    this.columnSearchText = '';
+  }
+
+  toggleSort(columnKey: string): void {
+    if (this.sortColumnKey === columnKey) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumnKey = columnKey;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  getSortIndicator(columnKey: string): string {
+    if (this.sortColumnKey !== columnKey) return '';
+    return this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  getColumnWidthPx(key: string): number | null {
+    const w = this.columnWidths[key];
+    return w != null && w > 0 ? w : null;
+  }
+
+  onColumnDragStart(event: DragEvent, columnKey: string): void {
+    this.dragColumnKey = columnKey;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', columnKey);
+    }
+  }
+
+  onColumnDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  onColumnDrop(event: DragEvent, targetKey: string): void {
+    event.preventDefault();
+    const dragged = this.dragColumnKey ?? event.dataTransfer?.getData('text/plain');
+    this.dragColumnKey = null;
+    if (!dragged || dragged === targetKey) return;
+    const currentOrder = visibleKeysInDisplayOrder(this.columns, this.columnDisplayOrder);
+    this.columnDisplayOrder = reorderColumnKeys(currentOrder, dragged, targetKey);
+    this.saveColumnPreferences();
+  }
+
+  onColumnResizeStart(event: MouseEvent, columnKey: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingColumnKey = columnKey;
+    this.resizeStartX = event.clientX;
+    const th = (event.target as HTMLElement).closest('th');
+    this.resizeStartWidth = this.columnWidths[columnKey] ?? th?.clientWidth ?? 120;
+  }
+
+  onColumnResizeMove(event: MouseEvent): void {
+    if (!this.resizingColumnKey) return;
+    const delta = event.clientX - this.resizeStartX;
+    this.columnWidths = {
+      ...this.columnWidths,
+      [this.resizingColumnKey]: clampColumnWidth(this.resizeStartWidth + delta)
+    };
+  }
+
+  onColumnResizeEnd(): void {
+    if (!this.resizingColumnKey) return;
+    this.resizingColumnKey = null;
+    this.saveColumnPreferences();
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDocumentMouseMove(event: MouseEvent): void {
+    this.onColumnResizeMove(event);
+  }
+
+  @HostListener('document:mouseup')
+  onDocumentMouseUp(): void {
+    this.onColumnResizeEnd();
+  }
+
+  toggleColumnVisibility(columnKey: string): void {
+    const additionalCol = ClaimListAdditionalColumns.findByKey(columnKey);
+    if (additionalCol) {
+      const existingCol = this.columns.find((c) => c.key === columnKey);
+      if (existingCol) {
+        existingCol.visible = !existingCol.visible;
+        if (existingCol.visible) {
+          this.selectedAdditionalColumns.add(columnKey);
+        } else {
+          this.selectedAdditionalColumns.delete(columnKey);
+        }
+      } else {
+        this.columns.push({
+          key: additionalCol.key,
+          label: additionalCol.label,
+          visible: true,
+          isAdditionalColumn: true
+        });
+        this.selectedAdditionalColumns.add(columnKey);
+      }
+      if (!this.columnDisplayOrder.includes(columnKey)) {
+        this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+      }
+      this.saveColumnPreferences();
+      this.onColumnsChanged();
+      return;
+    }
+
+    const col = this.columns.find((c) => c.key === columnKey);
+    if (col) {
+      col.visible = !col.visible;
+      if (col.visible && !this.columnDisplayOrder.includes(columnKey)) {
+        this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+      }
+      this.saveColumnPreferences();
+      this.onColumnsChanged();
+    }
+  }
+
+  hideColumn(columnKey: string): void {
+    const col = this.columns.find((c) => c.key === columnKey);
+    if (!col) return;
+    col.visible = false;
+    if (ClaimListAdditionalColumns.isValidColumn(columnKey)) {
+      this.selectedAdditionalColumns.delete(columnKey);
+    }
+    this.saveColumnPreferences();
+    this.onColumnsChanged();
+  }
+
+  private onColumnsChanged(): void {
+    if (this.gridSource === 'filter') {
+      this.reloadGrid();
+    }
+  }
+
+  saveColumnPreferences(): void {
+    const preferences = buildColumnPreferencesPayload(
+      this.columnPreferenceVersion,
+      visibleKeysInDisplayOrder(this.columns, this.columnDisplayOrder),
+      this.selectedAdditionalColumns,
+      this.columnWidths
+    );
+    localStorage.setItem(this.sendClaimsColumnPrefsKey, JSON.stringify(preferences));
+    this.columnDisplayOrder = preferences.visibleColumns;
+  }
+
+  loadColumnPreferences(): void {
+    const preferences = parseColumnPreferences(localStorage.getItem(this.sendClaimsColumnPrefsKey));
+    if (!preferences) {
+      this.applyDefaultColumnConfiguration();
+      return;
+    }
+
+    try {
+      const visibleKeys = new Set(preferences.visibleColumns.map(migrateLegacyColumnKey));
+      this.columnDisplayOrder = preferences.visibleColumns.map(migrateLegacyColumnKey);
+      this.columnWidths = { ...(preferences.columnWidths ?? {}) };
+
+      this.columns.forEach((col) => {
+        col.visible = visibleKeys.has(col.key);
+      });
+
+      if (preferences.selectedAdditional) {
+        preferences.selectedAdditional.forEach((key: string) => {
+          const resolvedKey = migrateLegacyColumnKey(key);
+          const additionalCol = ClaimListAdditionalColumns.findByKey(resolvedKey);
+          if (additionalCol && !this.columns.some((c) => c.key === resolvedKey)) {
+            this.columns.push({
+              key: additionalCol.key,
+              label: additionalCol.label,
+              visible: true,
+              isAdditionalColumn: true
+            });
+            this.selectedAdditionalColumns.add(resolvedKey);
+          }
+        });
+      }
+
+      this.columns.forEach((col) => {
+        if (col.visible && ClaimListAdditionalColumns.isValidColumn(col.key)) {
+          this.selectedAdditionalColumns.add(col.key);
+        }
+      });
+    } catch {
+      this.applyDefaultColumnConfiguration();
+    }
+  }
+
+  private applyDefaultColumnConfiguration(): void {
+    const defaultKeys = new Set(this.defaultSendClaimsColumns.map((c) => c.key));
+    this.columns.forEach((col) => {
+      col.visible = defaultKeys.has(col.key);
+      const configured = this.defaultSendClaimsColumns.find((c) => c.key === col.key);
+      if (configured) col.label = configured.label;
+    });
+    this.defaultSendClaimsColumns.forEach((def) => {
+      if (!this.columns.some((c) => c.key === def.key)) {
+        this.columns.push({
+          key: def.key,
+          label: def.label,
+          visible: true,
+          isAdditionalColumn: ClaimListAdditionalColumns.isValidColumn(def.key)
+        });
+      }
+    });
+    this.selectedAdditionalColumns = new Set();
+    this.columnDisplayOrder = this.defaultSendClaimsColumns.map((c) => c.key);
+  }
+
+  clearAllColumns(): void {
+    this.columns.forEach((col) => (col.visible = false));
+    this.selectedAdditionalColumns.clear();
+    this.columnDisplayOrder = [];
+    this.saveColumnPreferences();
+    this.onColumnsChanged();
+  }
+
+  private enrichBatchClaimsGrid(stubRows: ClaimListItem[], onDone: (rows: ClaimListItem[]) => void): void {
+    const claimIds = stubRows.map((r) => r.claID).filter((id) => id > 0);
+    if (claimIds.length === 0) {
+      onDone(stubRows);
+      return;
+    }
+
+    const idSet = new Set(claimIds);
+    const minId = Math.min(...claimIds);
+    const maxId = Math.max(...claimIds);
+    const additionalColumns = this.buildAdditionalColumnsRequest();
+
+    this.claimApi
+      .getClaims(1, 500, {
+        additionalColumns,
+        minClaimId: minId,
+        maxClaimId: maxId
+      })
+      .subscribe({
+        next: (res) => {
+          const apiRows = (res.data ?? []).filter((c) => idSet.has(c.claID));
+          onDone(mergeClaimListRowsForBatch(stubRows, apiRows));
+        },
+        error: () => onDone(stubRows)
+      });
   }
 
   toggleClaim(claId: number, checked: boolean): void {
@@ -396,13 +774,16 @@ export class SendClaimsComponent implements OnInit {
     this.loading = true;
     this.claimApi.getBatchById(this.selectedBatchIdForPicker).subscribe({
       next: (detail) => {
-        this.claims = this.mapBatchItemsToClaimRows(detail);
+        const stubs = this.mapBatchItemsToClaimRows(detail);
         this.gridSource = 'batch';
         this.lastBatchDetail = detail;
         this.selected.clear();
-        this.loading = false;
-        this.showBatchPickerModal = false;
-        this.success = `Loaded ${detail.items.length} claim(s) from batch ${detail.id}.`;
+        this.enrichBatchClaimsGrid(stubs, (rows) => {
+          this.claims = rows;
+          this.loading = false;
+          this.showBatchPickerModal = false;
+          this.success = `Loaded ${detail.items.length} claim(s) from batch ${detail.id}.`;
+        });
       },
       error: () => {
         this.error = 'Failed to load batch claims.';
@@ -512,8 +893,10 @@ export class SendClaimsComponent implements OnInit {
             if (this.gridSource === 'batch') {
               this.claimApi.getBatchById(res.batchId).subscribe({
                 next: (detail) => {
-                  this.claims = this.mapBatchItemsToClaimRows(detail);
-                  this.lastBatchDetail = detail;
+                  this.enrichBatchClaimsGrid(this.mapBatchItemsToClaimRows(detail), (rows) => {
+                    this.claims = rows;
+                    this.lastBatchDetail = detail;
+                  });
                 },
                 error: () => {
                   this.reloadGrid();
@@ -558,8 +941,10 @@ export class SendClaimsComponent implements OnInit {
           if (this.gridSource === 'batch' && this.lastBatchDetail) {
             this.claimApi.getBatchById(this.lastBatchDetail.id).subscribe({
               next: (detail) => {
-                this.claims = this.mapBatchItemsToClaimRows(detail);
-                this.lastBatchDetail = detail;
+                this.enrichBatchClaimsGrid(this.mapBatchItemsToClaimRows(detail), (rows) => {
+                  this.claims = rows;
+                  this.lastBatchDetail = detail;
+                });
               },
               error: () => {
                 this.reloadGrid();
