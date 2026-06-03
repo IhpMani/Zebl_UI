@@ -20,6 +20,11 @@ import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/pro
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { resolveClaimPatientId, resolveClaimPatientName } from '../../core/utils/claim-patient-id.util';
 import { isBillingClassificationCode } from '../../core/utils/physician-classification.util';
+import {
+  formatServiceLineDiagnosisPointerDisplay,
+  formatServiceLineEmgDisplay,
+  formatServiceLineModifierDisplay
+} from '../shared/service-line-display.util';
 
 @Component({
   selector: 'app-claim-details',
@@ -149,6 +154,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   };
 
   serviceLines: any[] = [];
+  /** Client-side sort for service lines grid (display only). */
+  serviceLineSortKey: string | null = null;
+  serviceLineSortDir: 'asc' | 'desc' = 'asc';
   serviceLoading: boolean = false;
   serviceLoaded: boolean = false;
   selectedServiceLineId: number | null = null;
@@ -935,6 +943,89 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return Array.isArray(this.serviceLines) ? this.serviceLines : [];
   }
 
+  /** Service lines for grid, optionally sorted by column header click. */
+  get displayServiceLinesArray(): any[] {
+    const lines = [...this.serviceLinesArray];
+    const key = this.serviceLineSortKey;
+    if (!key) {
+      return lines;
+    }
+    const dir = this.serviceLineSortDir === 'asc' ? 1 : -1;
+    lines.sort((a, b) => {
+      const av = this.serviceLineSortValue(a, key);
+      const bv = this.serviceLineSortValue(b, key);
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return (av - bv) * dir;
+      }
+      return String(av).localeCompare(String(bv), undefined, { numeric: true }) * dir;
+    });
+    return lines;
+  }
+
+  toggleServiceLineSort(key: string): void {
+    if (this.serviceLineSortKey === key) {
+      this.serviceLineSortDir = this.serviceLineSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.serviceLineSortKey = key;
+      this.serviceLineSortDir = 'asc';
+    }
+    this.cdr.markForCheck();
+  }
+
+  serviceLineSortIndicator(key: string): string {
+    if (this.serviceLineSortKey !== key) {
+      return '';
+    }
+    return this.serviceLineSortDir === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  formatLineDiagnosisPointer(line: any): string {
+    return formatServiceLineDiagnosisPointerDisplay(
+      line?.srvDiagnosisPointer ?? line?.SrvDiagnosisPointer
+    );
+  }
+
+  formatLineEmg(line: any): string {
+    return formatServiceLineEmgDisplay(line?.srvEMG ?? line?.SrvEMG);
+  }
+
+  formatLineModifier(line: any, index: 1 | 2 | 3 | 4): string {
+    const key = `srvModifier${index}` as const;
+    const pascal = `SrvModifier${index}` as const;
+    return formatServiceLineModifierDisplay(line?.[key] ?? line?.[pascal]);
+  }
+
+  private serviceLineSortValue(line: any, key: string): string | number {
+    switch (key) {
+      case 'diagnosis':
+        return this.formatLineDiagnosisPointer(line);
+      case 'm1':
+        return this.formatLineModifier(line, 1);
+      case 'm2':
+        return this.formatLineModifier(line, 2);
+      case 'm3':
+        return this.formatLineModifier(line, 3);
+      case 'm4':
+        return this.formatLineModifier(line, 4);
+      case 'emg':
+        return this.formatLineEmg(line);
+      case 'procedure':
+        return (line?.srvProcedureCode ?? '').trim();
+      case 'from':
+        return line?.srvFromDate ?? '';
+      case 'to':
+        return line?.srvToDate ?? '';
+      case 'units':
+        return Number(line?.srvUnits ?? 0);
+      case 'charge':
+        return Number(line?.srvCharges ?? 0);
+      case 'balance':
+        return Number(line?.srvTotalBalanceCC ?? 0);
+      default:
+        return '';
+    }
+  }
+
   trackByPayment(index: number, item: any): number {
     return item.pmtID || index;
   }
@@ -1059,6 +1150,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       srvModifier2: '',
       srvModifier3: '',
       srvModifier4: '',
+      srvDiagnosisPointer: '1',
+      srvEMG: '',
       srvUnits: 1,
       srvCharges: 0,
       srvAllowedAmt: 0,
@@ -1372,6 +1465,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       srvModifier2: line?.srvModifier2 ?? '',
       srvModifier3: line?.srvModifier3 ?? '',
       srvModifier4: line?.srvModifier4 ?? '',
+      srvDiagnosisPointer:
+        line?.srvDiagnosisPointer ?? line?.SrvDiagnosisPointer ?? '1',
+      srvEMG: line?.srvEMG ?? line?.SrvEMG ?? '',
       srvNationalDrugCode: line?.srvNationalDrugCode ?? '',
       srvDrugUnitCount: line?.srvDrugUnitCount ?? null,
       srvDrugUnitMeasurement: line?.srvDrugUnitMeasurement ?? '',

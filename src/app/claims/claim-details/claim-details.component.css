@@ -504,7 +504,46 @@ button:disabled {
 .notes-history-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 900px;
+  min-width: 1100px;
+}
+
+.service-lines-table th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.service-lines-table th.col-dx,
+.service-lines-table td.col-dx {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  max-width: 4.5rem;
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.service-lines-table th.col-mod,
+.service-lines-table td.col-mod {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  max-width: 2.75rem;
+  text-align: center;
+  padding: 6px 2px;
+  font-size: 12px;
+}
+
+.service-lines-table th.col-emg,
+.service-lines-table td.col-emg {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  text-align: center;
+  padding: 6px 2px;
+  font-size: 12px;
+}
+
+.service-lines-table td.cell-readonly {
+  color: #334155;
+  font-variant-numeric: tabular-nums;
 }
 
 .service-lines-table th,

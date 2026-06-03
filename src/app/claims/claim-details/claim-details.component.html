@@ -226,23 +226,35 @@
               <table class="service-lines-table">
                 <thead>
                   <tr>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Procedure</th>
-                    <th>Units</th>
-                    <th>Charge</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('from')">From{{ serviceLineSortIndicator('from') }}</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('to')">To{{ serviceLineSortIndicator('to') }}</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('procedure')">Procedure{{ serviceLineSortIndicator('procedure') }}</th>
+                    <th class="sortable-th col-dx" (click)="toggleServiceLineSort('diagnosis')">Dx{{ serviceLineSortIndicator('diagnosis') }}</th>
+                    <th class="sortable-th col-mod" (click)="toggleServiceLineSort('m1')">M1{{ serviceLineSortIndicator('m1') }}</th>
+                    <th class="sortable-th col-mod" (click)="toggleServiceLineSort('m2')">M2{{ serviceLineSortIndicator('m2') }}</th>
+                    <th class="sortable-th col-mod" (click)="toggleServiceLineSort('m3')">M3{{ serviceLineSortIndicator('m3') }}</th>
+                    <th class="sortable-th col-mod" (click)="toggleServiceLineSort('m4')">M4{{ serviceLineSortIndicator('m4') }}</th>
+                    <th class="sortable-th col-emg" (click)="toggleServiceLineSort('emg')">EMG{{ serviceLineSortIndicator('emg') }}</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('units')">Units{{ serviceLineSortIndicator('units') }}</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('charge')">Charge{{ serviceLineSortIndicator('charge') }}</th>
                     <th>Allowed</th>
                     <th>Paid</th>
                     <th>Adjustments</th>
-                    <th>Balance</th>
+                    <th class="sortable-th" (click)="toggleServiceLineSort('balance')">Balance{{ serviceLineSortIndicator('balance') }}</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let line of serviceLinesArray; trackBy: trackByServiceLine" [class.active]="line.srvID === selectedServiceLineId">
+                  <tr *ngFor="let line of displayServiceLinesArray; trackBy: trackByServiceLine" [class.active]="line.srvID === selectedServiceLineId">
                     <td><input type="date" [(ngModel)]="line.srvFromDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td><input type="date" [(ngModel)]="line.srvToDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td><input type="text" [(ngModel)]="line.srvProcedureCode" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td class="col-dx cell-readonly">{{ formatLineDiagnosisPointer(line) }}</td>
+                    <td class="col-mod cell-readonly">{{ formatLineModifier(line, 1) }}</td>
+                    <td class="col-mod cell-readonly">{{ formatLineModifier(line, 2) }}</td>
+                    <td class="col-mod cell-readonly">{{ formatLineModifier(line, 3) }}</td>
+                    <td class="col-mod cell-readonly">{{ formatLineModifier(line, 4) }}</td>
+                    <td class="col-emg cell-readonly">{{ formatLineEmg(line) }}</td>
                     <td><input type="number" [(ngModel)]="line.srvUnits" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td>{{ formatCurrency(line.srvCharges) }}</td>
                     <td>{{ formatCurrency(line.srvAllowedAmt) }}</td>
@@ -257,7 +269,7 @@
                     </td>
                   </tr>
                   <tr *ngIf="serviceLinesArray.length === 0">
-                    <td colspan="10">No service lines.</td>
+                    <td colspan="16">No service lines.</td>
                   </tr>
                 </tbody>
               </table>

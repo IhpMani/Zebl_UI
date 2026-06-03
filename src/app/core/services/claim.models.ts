@@ -235,6 +235,12 @@ export interface Claim {
     srvUnits: number | null;
     srvPlace: string | null;
     srvDiagnosisPointer: string | null;
+    srvModifier1?: string | null;
+    srvModifier2?: string | null;
+    srvModifier3?: string | null;
+    srvModifier4?: string | null;
+    srvEMG?: string | null;
+    srvAllowedAmt?: number | null;
     /** Insurance payments applied to the line (DB: SrvTotalInsAmtPaidTRIG) */
     srvTotalInsAmtPaidTRIG?: number | null;
     /** Patient payments applied to the line (DB: SrvTotalPatAmtPaidTRIG) */

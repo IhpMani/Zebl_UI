@@ -482,6 +482,17 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
     }
     this.saving = true;
     const command = this.buildCommand();
+    console.log('[PaymentEntry] save command (ResponsibleParty not in payload; backend may advance SrvResponsibleParty)', {
+      paymentSource: command.paymentSource,
+      payerId: command.payerId,
+      claimId: command.claimId,
+      patientId: command.patientId,
+      serviceLineApplications: command.serviceLineApplications,
+      gridResponsible: this.serviceLineRows.map((r) => ({
+        serviceLineId: r.serviceLineId,
+        responsibleLabel: r.responsible
+      }))
+    });
     if (this.isEditMode && this.currentPaymentId != null) {
       this.paymentApi.modifyPayment(this.currentPaymentId, command).subscribe({
         next: (res) => {
@@ -589,6 +600,17 @@ export class PaymentEntryComponent implements OnInit, OnDestroy {
     }
     this.saving = true;
     const command = this.buildCommand();
+    console.log('[PaymentEntry] save command (ResponsibleParty not in payload; backend may advance SrvResponsibleParty)', {
+      paymentSource: command.paymentSource,
+      payerId: command.payerId,
+      claimId: command.claimId,
+      patientId: command.patientId,
+      serviceLineApplications: command.serviceLineApplications,
+      gridResponsible: this.serviceLineRows.map((r) => ({
+        serviceLineId: r.serviceLineId,
+        responsibleLabel: r.responsible
+      }))
+    });
     if (this.isEditMode && this.currentPaymentId != null) {
       this.paymentApi.modifyPayment(this.currentPaymentId, command).subscribe({
         next: () => {
