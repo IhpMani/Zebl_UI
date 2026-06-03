@@ -1,8 +1,9 @@
 /**
  * Curated registry of additional columns available for Claim List Add Column feature.
- * This is the ONLY source of truth for what columns users can add.
- * NO dynamic schema discovery. NO reflection. NO auto-exposure.
+ * Entity scalar fields are merged from claim-list-entity-column-fields.ts (base grid columns).
  */
+
+import { CLAIM_ENTITY_FIELD_COLUMNS } from './claim-list-entity-column-fields';
 
 export interface AdditionalColumnDefinition {
   key: string;           // Property name in ClaimListItemDto
@@ -139,7 +140,7 @@ export class ClaimListAdditionalColumns {
     // Facility name from Claim -> Facility Physician (related table join)
     { key: 'facilityName', label: 'Facility', category: 'Facility', dataType: 'string', width: '180px' },
     // Claim classification from Libraries -> List -> Claim Classification
-    { key: 'claClassification', label: 'Facility Classification', category: 'Facility', dataType: 'string', width: '180px' },
+    { key: 'claClassification', label: 'Claim Classification', category: 'Facility', dataType: 'string', width: '180px' },
     
     // Admission
     { key: 'claAdmissionType', label: 'Admission Type', category: 'Admission', dataType: 'string', width: '140px' },
@@ -168,11 +169,30 @@ export class ClaimListAdditionalColumns {
     { key: 'claCustomTrueFalseValue', label: 'Custom True / False Value', category: 'Custom', dataType: 'boolean', width: '180px' }
   ];
 
+  private static mergedColumnsCache: AdditionalColumnDefinition[] | null = null;
+
+  private static mergeAllColumns(): AdditionalColumnDefinition[] {
+    if (this.mergedColumnsCache) {
+      return this.mergedColumnsCache;
+    }
+    const byKey = new Map<string, AdditionalColumnDefinition>();
+    for (const col of this.AVAILABLE_COLUMNS) {
+      byKey.set(col.key, col);
+    }
+    for (const raw of CLAIM_ENTITY_FIELD_COLUMNS) {
+      if (!byKey.has(raw.key)) {
+        byKey.set(raw.key, { ...raw, width: '120px' });
+      }
+    }
+    this.mergedColumnsCache = Array.from(byKey.values());
+    return this.mergedColumnsCache;
+  }
+
   /**
-   * Get all available columns
+   * Get all available columns (curated + entity fields)
    */
   static getAllColumns(): AdditionalColumnDefinition[] {
-    return this.AVAILABLE_COLUMNS;
+    return this.mergeAllColumns();
   }
 
   /**
@@ -181,7 +201,7 @@ export class ClaimListAdditionalColumns {
   static getColumnsByCategory(): Map<string, AdditionalColumnDefinition[]> {
     const grouped = new Map<string, AdditionalColumnDefinition[]>();
     
-    this.AVAILABLE_COLUMNS.forEach(col => {
+    this.getAllColumns().forEach(col => {
       if (!grouped.has(col.category)) {
         grouped.set(col.category, []);
       }
@@ -200,6 +220,7 @@ export class ClaimListAdditionalColumns {
       'Status',
       'Financial',
       'Dates',
+      'Audit',
       'Patient',
       'Clinical',
       'Billing',
@@ -218,13 +239,13 @@ export class ClaimListAdditionalColumns {
    * Find column definition by key
    */
   static findByKey(key: string): AdditionalColumnDefinition | undefined {
-    return this.AVAILABLE_COLUMNS.find(col => col.key === key);
+    return this.getAllColumns().find(col => col.key === key);
   }
 
   /**
    * Check if a column key is valid
    */
   static isValidColumn(key: string): boolean {
-    return this.AVAILABLE_COLUMNS.some(col => col.key === key);
+    return this.getAllColumns().some(col => col.key === key);
   }
 }

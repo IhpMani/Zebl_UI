@@ -27,6 +27,10 @@ export interface PaymentListItem {
   pmtAuthCode?: string | null;
   pmtDisbursedTRIG?: number;
   pmtResponseCode?: string | null;
+  pmtOtherReference2?: string | null;
+  pmtBatchOperationReference?: string | null;
+  pmtIssuerResponseCode?: string | null;
+  pmtPayFID?: number | null;
   additionalColumns?: { [key: string]: any };
 }
 

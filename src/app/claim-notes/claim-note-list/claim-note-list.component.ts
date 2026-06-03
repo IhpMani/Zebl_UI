@@ -50,12 +50,14 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
 
   private buildInitialColumns(): Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> {
     const noteCols: Array<{ key: string; label: string; visible: boolean; filterValue: string; dataType: string }> = [
+      { key: 'auditID', label: 'Audit ID', visible: false, filterValue: '', dataType: 'number' },
+      { key: 'activityDate', label: 'Activity Date', visible: false, filterValue: '', dataType: 'datetime' },
       { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '', dataType: 'datetime' },
       { key: 'modifiedDate', label: 'Date Modified', visible: true, filterValue: '', dataType: 'datetime' },
       { key: 'userName', label: 'User', visible: true, filterValue: '', dataType: 'string' },
       { key: 'noteText', label: 'Note Text', visible: true, filterValue: '', dataType: 'string' }
     ];
-    const claimCols = ClaimListAdditionalColumns.AVAILABLE_COLUMNS.map(c => {
+    const claimCols = ClaimListAdditionalColumns.getAllColumns().map(c => {
       const apiKey = ClaimNoteListComponent.NOTES_API_KEY_MAP[c.key] ?? c.key;
       return {
         key: apiKey,
@@ -218,9 +220,10 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
 
   /** Map a column's API key (e.g. claCreatedUserName) back to registry key (claCreatedUser) for additionalColumns. */
   private getRegistryKeyForNoteColumnApiKey(apiKey: string): string | null {
-    const direct = ClaimListAdditionalColumns.AVAILABLE_COLUMNS.find(ac => ac.key === apiKey);
+    const all = ClaimListAdditionalColumns.getAllColumns();
+    const direct = all.find(ac => ac.key === apiKey);
     if (direct) return direct.key;
-    return ClaimListAdditionalColumns.AVAILABLE_COLUMNS.find(
+    return all.find(
       ac => (ClaimNoteListComponent.NOTES_API_KEY_MAP[ac.key] ?? ac.key) === apiKey
     )?.key ?? null;
   }

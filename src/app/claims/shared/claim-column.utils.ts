@@ -32,7 +32,9 @@ export const CLAIM_API_KEY_MAP: Record<string, string> = {
   claPatientReason2: 'claPatientReasonDiagnosis2',
   claPatientReason3: 'claPatientReasonDiagnosis3',
   claLastExported: 'claLastExportedDate',
-  claVisitNumber: 'claMedicalRecordNumber'
+  claVisitNumber: 'claMedicalRecordNumber',
+  billToDisplay: 'billToDisplay',
+  primaryPayerName: 'primaryPayerName'
 };
 
 export type ClaimColumnDataTypeResolver = (columnKey: string) => string | undefined;

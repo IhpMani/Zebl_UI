@@ -58,6 +58,13 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'pmtPatFID', label: 'Patient ID', visible: true, filterValue: '' },
     { key: 'pmt835Ref', label: 'Ref #', visible: true, filterValue: '' },
     { key: 'pmtResponseCode', label: 'Response Code', visible: false, filterValue: '' },
+    { key: 'pmtOtherReference2', label: 'Other Ref 2', visible: false, filterValue: '' },
+    { key: 'pmtPayFID', label: 'Payer ID', visible: false, filterValue: '' },
+    { key: 'pmtAuthCode', label: 'Auth Code', visible: false, filterValue: '' },
+    { key: 'pmtBatchOperationReference', label: 'Batch Ref', visible: false, filterValue: '' },
+    { key: 'pmtIssuerResponseCode', label: 'Issuer Response', visible: false, filterValue: '' },
+    { key: 'pmtCreatedComputerName', label: 'Created Computer', visible: false, filterValue: '' },
+    { key: 'pmtLastComputerName', label: 'Last Computer', visible: false, filterValue: '' },
   ];
 
   constructor(private paymentApiService: PaymentApiService, private router: Router, private workspace: WorkspaceService) { }

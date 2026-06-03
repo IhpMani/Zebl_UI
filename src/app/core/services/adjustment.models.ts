@@ -15,6 +15,12 @@ export interface AdjustmentListItem {
   adj835Ref: string | null;
   adjRemarkCode?: string | null;
   adjTrackOnly?: boolean;
+  adjOtherReference1?: string | null;
+  adjReasonAmount?: number;
+  adjBatchOperationReference?: string | null;
+  adjTaskFID?: number;
+  adjCreatedUserName?: string | null;
+  adjLastUserName?: string | null;
   additionalColumns?: { [key: string]: any };
 }
 

@@ -74,6 +74,9 @@ export class PhysicianListComponent implements OnInit, OnDestroy {
     { key: 'phyPrimaryIDCode', label: 'Primary ID Code', visible: false, filterValue: '' },
     { key: 'phySignatureOnFile', label: 'Signature On File', visible: false, filterValue: '' },
     { key: 'phySuffix', label: 'Suffix', visible: false, filterValue: '' },
+    { key: 'isFacility', label: 'Is Facility', visible: false, filterValue: '' },
+    { key: 'isPerson', label: 'Is Person', visible: false, filterValue: '' },
+    { key: 'isSystemPlaceholder', label: 'System Placeholder', visible: false, filterValue: '' },
     { key: 'phyFirstMiddleLastNameCC', label: 'First Middle Last Name CC', visible: false, filterValue: '' },
     { key: 'phyNameWithInactiveCC', label: 'Name With Inactive CC', visible: false, filterValue: '' },
     { key: 'phyCityStateZipCC', label: 'City State Zip CC', visible: false, filterValue: '' }

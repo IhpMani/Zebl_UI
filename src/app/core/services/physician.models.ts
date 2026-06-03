@@ -14,10 +14,16 @@ export interface PhysicianListItem {
   phySpecialtyCode: string | null;
   phyPrimaryCodeType?: string | null;
   phyAddress1: string | null;
+  phyAddress2?: string | null;
   phyCity: string | null;
   phyState: string | null;
   phyZip: string | null;
   phyTelephone: string | null;
+  phyEMail?: string | null;
+  phyFax?: string | null;
+  phyFirstMiddleLastNameCC?: string | null;
+  phyNameWithInactiveCC?: string | null;
+  phyCityStateZipCC?: string | null;
   phyInactive: boolean;
   /** True when the row was synthesised by an automated import (HL7/EDI fallback). */
   isSystemPlaceholder?: boolean;
@@ -25,6 +31,13 @@ export interface PhysicianListItem {
   isFacility?: boolean;
   /** Convenience flag derived from PhyType. True when the row represents a human provider. */
   isPerson?: boolean;
+  phyMiddleName?: string | null;
+  phyNotes?: string | null;
+  phyPrimaryIDCode?: string | null;
+  phySuffix?: string | null;
+  phySignatureOnFile?: boolean;
+  phyCreatedUserName?: string | null;
+  phyLastUserName?: string | null;
   additionalColumns?: { [key: string]: any };
 }
 

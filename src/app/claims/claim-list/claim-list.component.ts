@@ -91,7 +91,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'claTotalChargeTRIG', label: 'Total Charge', visible: true, filterValue: '' },
     { key: 'claTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
     { key: 'facilityName', label: 'Facility', visible: false, filterValue: '' },
-    { key: 'claClassification', label: 'Facility Classification', visible: false, filterValue: '' },
+    { key: 'claClassification', label: 'Claim Classification', visible: false, filterValue: '' },
     { key: 'claFirstDateTRIG', label: '1st DOS', visible: false, filterValue: '' },
     { key: 'claLastDateTRIG', label: 'Last DOS', visible: false, filterValue: '' },
     { key: 'claBillTo', label: 'Bill To', visible: false, filterValue: '' },

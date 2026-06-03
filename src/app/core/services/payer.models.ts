@@ -4,6 +4,8 @@ export interface PayerListItem {
   payDateTimeModified?: string | null;
   createdDate?: string | null;
   modifiedDate?: string | null;
+  payCreatedUserGUID?: string | null;
+  payLastUserGUID?: string | null;
   payCreatedUserName?: string | null;
   payLastUserName?: string | null;
   payCreatedComputerName?: string | null;

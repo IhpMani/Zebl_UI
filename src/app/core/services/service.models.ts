@@ -14,6 +14,7 @@ export interface ServiceListItem {
   srvTotalBalanceCC: number | null;
   srvTotalAmtPaidCC: number | null;
   srvTotalAdjCC?: number | null;
+  srvTotalOtherAdjCC?: number | null;
   srvTotalInsBalanceCC?: number | null;
   srvTotalPatBalanceCC?: number | null;
   srvTotalAmtAppliedCC?: number | null;
