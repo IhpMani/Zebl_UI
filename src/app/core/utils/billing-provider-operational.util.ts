@@ -1,7 +1,7 @@
 import { PhysicianListItem } from '../services/physician.models';
+import { isBillingClassificationCode, resolveProviderClassificationCode } from './physician-classification.util';
 
 const ENTITY_NON_PERSON = 'Non-Person';
-const CLASSIFICATION_BILLING = 'BI';
 
 /** Mirrors backend BillingProviderOperationalRules for pre-save UX. */
 export function getOperationalBillingProviderFailures(
@@ -22,9 +22,11 @@ export function getOperationalBillingProviderFailures(
     failures.push(`EntityType = ${formatVal(provider.phyType)} (expected ${ENTITY_NON_PERSON})`);
   }
 
-  const code = (provider.phyPrimaryCodeType || '').trim();
-  if (code && code.toUpperCase() !== CLASSIFICATION_BILLING) {
-    failures.push(`PhyPrimaryCodeType = ${formatVal(provider.phyPrimaryCodeType)} (expected ${CLASSIFICATION_BILLING} or blank)`);
+  if (!isBillingClassificationCode(provider.phyPrimaryCodeType)) {
+    const resolved = resolveProviderClassificationCode(provider.phyPrimaryCodeType);
+    failures.push(
+      `PhyPrimaryCodeType = ${formatVal(provider.phyPrimaryCodeType)} (resolved: ${formatVal(resolved)}) (expected BI or label "Billing")`
+    );
   }
 
   if (!provider.phyAddress1?.trim()) failures.push('Missing Address1 (PhyAddress1)');

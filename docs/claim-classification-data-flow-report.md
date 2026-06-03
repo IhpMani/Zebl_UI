@@ -68,6 +68,22 @@ The dropdown only filters `Non-Person` + `BI`/blank — it does **not** require 
 
 **UX fixes:** detailed API `Details` + server log; inline readiness panel on Claim Details; pre-save client check; link to `/physicians?phyId={id}`.
 
+### Classification code mapping bug (fixed)
+
+Claim save validator used **literal** `PhyPrimaryCodeType == "BI"` only. Legacy/import rows and a prior save path could store:
+
+| Stored value | Validator before fix | After fix |
+|--------------|----------------------|-----------|
+| `BI` | pass | pass |
+| blank + Non-Person | pass | pass |
+| `Billing` (UI label) | **fail** | pass (resolved → BI) |
+| `Bi` (2-char truncate of "Billing") | **fail** | pass (normalized → BI) |
+| `RE` / `FA` | fail | fail |
+
+`PhysiciansController` now uses `PhysicianTaxonomy.NormalizeStoredClassification()` instead of `NormalizeString(..., 2)` so new saves persist `BI`.
+
+**Not a claClassification bug:** failed claim save rolls back the transaction; classification is not wiped by normalization — the PUT never commits.
+
 ## Save pipeline bug (fixed)
 
 `saveAndClose()` / `save()` correctly read the form:

@@ -23,6 +23,7 @@ import {
   formatBillingProviderValidationAlert,
   getOperationalBillingProviderFailures
 } from '../../core/utils/billing-provider-operational.util';
+import { isBillingClassificationCode } from '../../core/utils/physician-classification.util';
 
 @Component({
   selector: 'app-claim-details',
@@ -367,10 +368,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.physicians = r.data ?? [];
         this.renderingProviders = this.physicians.filter(p => p.phyType === 'Person');
         this.serviceFacilities = this.physicians.filter(p => p.phyType === 'Non-Person');
-        this.billingProviders = this.physicians.filter(p =>
-          p.phyType === 'Non-Person'
-          && (!p.phyPrimaryCodeType || p.phyPrimaryCodeType === 'BI')
-          && !p.isSystemPlaceholder);
+        this.billingProviders = this.physicians.filter(
+          (p) =>
+            p.phyType === 'Non-Person'
+            && isBillingClassificationCode(p.phyPrimaryCodeType)
+            && !p.isSystemPlaceholder
+        );
         this.ensureCurrentPhysiciansInOptions();
         this.refreshBillingProviderValidation();
         this.cdr.markForCheck();
