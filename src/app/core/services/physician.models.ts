@@ -2,6 +2,7 @@ export interface PhysicianListItem {
   phyID: number;
   facilityId: number;
   phyDateTimeCreated: string;
+  phyDateTimeModified?: string | null;
   phyFirstName: string | null;
   phyLastName: string | null;
   phyFullNameCC: string | null;
@@ -9,6 +10,7 @@ export interface PhysicianListItem {
   phyType: string;
   phyRateClass: string | null;
   phyNPI: string | null;
+  phyEntityType?: string | null;
   phySpecialtyCode: string | null;
   phyPrimaryCodeType?: string | null;
   phyAddress1: string | null;

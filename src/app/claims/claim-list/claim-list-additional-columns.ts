@@ -25,6 +25,7 @@ export class ClaimListAdditionalColumns {
     { key: 'claStatus', label: 'Claim Status', category: 'Status', dataType: 'string', width: '120px' },
     { key: 'claLocked', label: 'Claim Locked', category: 'Status', dataType: 'boolean', width: '100px' },
     { key: 'claActive', label: 'Active', category: 'Status', dataType: 'boolean', width: '80px' },
+    { key: 'claArchived', label: 'Archived', category: 'Status', dataType: 'boolean', width: '90px' },
     
     // Financial
     { key: 'claTotalCharge', label: 'Total Charge', category: 'Financial', dataType: 'currency', width: '120px' },
@@ -36,6 +37,8 @@ export class ClaimListAdditionalColumns {
     { key: 'claSelfpayAfterInsurance', label: 'Selfpay After Insurance', category: 'Financial', dataType: 'currency', width: '150px' },
     { key: 'claPayerClassAllowed', label: 'Payer Class/Allowed', category: 'Financial', dataType: 'currency', width: '150px' },
     { key: 'claBankDeposits', label: 'Bank Deposits', category: 'Financial', dataType: 'currency', width: '120px' },
+    { key: 'claTotalAdjCC', label: 'Total Adj CC', category: 'Financial', dataType: 'currency', width: '120px' },
+    { key: 'claTotalAmtPaidCC', label: 'Total Amt Paid CC', category: 'Financial', dataType: 'currency', width: '130px' },
     
     // Dates
     { key: 'claBillDate', label: 'Bill Date', category: 'Dates', dataType: 'date', width: '110px' },
@@ -44,6 +47,7 @@ export class ClaimListAdditionalColumns {
     { key: 'claPaidDate', label: 'Paid Date', category: 'Dates', dataType: 'date', width: '110px' },
     { key: 'claDischargeDate', label: 'Discharge Date', category: 'Dates', dataType: 'date', width: '120px' },
     { key: 'claLastExported', label: 'Last Exported', category: 'Dates', dataType: 'datetime', width: '150px' },
+    { key: 'claLastExportedDate', label: 'Last Exported Date', category: 'Dates', dataType: 'date', width: '140px' },
     { key: 'claLastPrinted', label: 'Last Printed', category: 'Dates', dataType: 'datetime', width: '150px' },
     { key: 'claCreatedTimestamp', label: 'Created Timestamp', category: 'Dates', dataType: 'datetime', width: '150px' },
     { key: 'claModifiedTimestamp', label: 'Modified Timestamp', category: 'Dates', dataType: 'datetime', width: '150px' },
@@ -73,6 +77,23 @@ export class ClaimListAdditionalColumns {
     { key: 'claDiagnosis10', label: 'Diag 10', category: 'Clinical', dataType: 'string', width: '100px' },
     { key: 'claDiagnosis11', label: 'Diag 11', category: 'Clinical', dataType: 'string', width: '100px' },
     { key: 'claDiagnosis12', label: 'Diag 12', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis13', label: 'Diag 13', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis14', label: 'Diag 14', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis15', label: 'Diag 15', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis16', label: 'Diag 16', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis17', label: 'Diag 17', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis18', label: 'Diag 18', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis19', label: 'Diag 19', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis20', label: 'Diag 20', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis21', label: 'Diag 21', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis22', label: 'Diag 22', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis23', label: 'Diag 23', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis24', label: 'Diag 24', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claDiagnosis25', label: 'Diag 25', category: 'Clinical', dataType: 'string', width: '100px' },
+    { key: 'claConditionCode1', label: 'Condition Code 1', category: 'Clinical', dataType: 'string', width: '130px' },
+    { key: 'claConditionCode2', label: 'Condition Code 2', category: 'Clinical', dataType: 'string', width: '130px' },
+    { key: 'claConditionCode3', label: 'Condition Code 3', category: 'Clinical', dataType: 'string', width: '130px' },
+    { key: 'claConditionCode4', label: 'Condition Code 4', category: 'Clinical', dataType: 'string', width: '130px' },
     { key: 'claPrincipalProcedureCode', label: 'Principal Procedure Code', category: 'Clinical', dataType: 'string', width: '180px' },
     { key: 'claAdmittingDiagnosis', label: 'Admitting Diagnosis', category: 'Clinical', dataType: 'string', width: '180px' },
     { key: 'claPatientReason1', label: 'Patient Reason 1', category: 'Clinical', dataType: 'string', width: '150px' },
@@ -126,6 +147,11 @@ export class ClaimListAdditionalColumns {
     { key: 'claAdmissionHour', label: 'Admission Hour', category: 'Admission', dataType: 'string', width: '130px' },
     { key: 'claDischargeHour', label: 'Discharge Hour', category: 'Admission', dataType: 'string', width: '130px' },
     { key: 'claVisitNumber', label: 'Visit#', category: 'Admission', dataType: 'string', width: '120px' },
+    { key: 'claMedicalRecordNumber', label: 'Medical Record #', category: 'Admission', dataType: 'string', width: '150px' },
+    
+    // EDI
+    { key: 'claEDINotes', label: 'EDI Notes', category: 'EDI', dataType: 'string', width: '200px' },
+    { key: 'claEdiClaimId', label: 'EDI Claim ID', category: 'EDI', dataType: 'string', width: '140px' },
     
     // Other
     { key: 'claRemarks', label: 'Remarks', category: 'Other', dataType: 'string', width: '200px' },
@@ -177,6 +203,7 @@ export class ClaimListAdditionalColumns {
       'Patient',
       'Clinical',
       'Billing',
+      'EDI',
       'Physicians',
       'Payers',
       'Primary Insured',

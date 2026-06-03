@@ -13,6 +13,10 @@ export interface ServiceListItem {
   srvUnits: number | null;
   srvTotalBalanceCC: number | null;
   srvTotalAmtPaidCC: number | null;
+  srvTotalAdjCC?: number | null;
+  srvTotalInsBalanceCC?: number | null;
+  srvTotalPatBalanceCC?: number | null;
+  srvTotalAmtAppliedCC?: number | null;
   additionalColumns?: { [key: string]: any };
 }
 

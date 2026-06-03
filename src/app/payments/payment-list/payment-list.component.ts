@@ -43,7 +43,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'pmtCreatedUserName', label: 'Created User', visible: true, filterValue: '' },
     { key: 'pmtLastUserName', label: 'Modified User', visible: true, filterValue: '' },
     { key: 'pmtRemainingCC', label: 'Remaining Bal', visible: true, filterValue: '' },
-    { key: 'pmtSource', label: 'Source', visible: true, filterValue: '' },
+    { key: 'pmtDisbursedTRIG', label: 'Disbursed', visible: true, filterValue: '' },
     { key: 'patLastName', label: 'Last Name', visible: true, filterValue: '' },
     { key: 'patFirstName', label: 'First Name', visible: true, filterValue: '' },
     { key: 'pmtMethod', label: 'Method', visible: true, filterValue: '' },
@@ -57,6 +57,7 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     { key: 'patClassification', label: 'Pat Classification', visible: true, filterValue: '' },
     { key: 'pmtPatFID', label: 'Patient ID', visible: true, filterValue: '' },
     { key: 'pmt835Ref', label: 'Ref #', visible: true, filterValue: '' },
+    { key: 'pmtResponseCode', label: 'Response Code', visible: false, filterValue: '' },
   ];
 
   constructor(private paymentApiService: PaymentApiService, private router: Router, private workspace: WorkspaceService) { }
@@ -215,7 +216,6 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     if (col) { col.filterValue = ''; delete this.columnValueFilters[columnKey]; this.loadPayments(1, this.pageSize); }
   }
   getCellValue(payment: PaymentListItem, key: string): any {
-    if (key === 'pmtSource') return '';
     return getListCellValue(payment, key);
   }
 

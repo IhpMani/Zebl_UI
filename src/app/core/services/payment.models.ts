@@ -26,6 +26,7 @@ export interface PaymentListItem {
   pmtBFEPFID?: number;
   pmtAuthCode?: string | null;
   pmtDisbursedTRIG?: number;
+  pmtResponseCode?: string | null;
   additionalColumns?: { [key: string]: any };
 }
 

@@ -13,6 +13,8 @@ export interface AdjustmentListItem {
   adjPmtFID: number;
   adjPayFID: number;
   adj835Ref: string | null;
+  adjRemarkCode?: string | null;
+  adjTrackOnly?: boolean;
   additionalColumns?: { [key: string]: any };
 }
 
