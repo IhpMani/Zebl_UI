@@ -49,6 +49,25 @@ When classification was unset, the API returned the **facility physician name** 
 5. Column filter → select `Billers WL` → request includes `classificationList=Billers WL`.
 6. Header search with `Billers` → `searchText` matches classification.
 
+## Claim save blocked by billing provider validation
+
+Claim `PUT` validates `ClaBillingPhyFID` with `BillingProviderOperationalRules` **after** mapping `ClaClassification` in the same request. If validation fails, the transaction rolls back — **classification is not persisted** even when the client payload is correct.
+
+Requirements for billing provider:
+
+| Check | Field |
+|-------|--------|
+| Non-Person entity | `PhyType` = `Non-Person` |
+| Billing classification | `PhyPrimaryCodeType` = `BI` or blank |
+| Address | `PhyAddress1`, `PhyCity`, `PhyState`, `PhyZip` |
+| NPI | `PhyNPI` |
+| Tax ID | `PhyPrimaryIDCode` |
+| Not placeholder | `IsSystemPlaceholder` = false |
+
+The dropdown only filters `Non-Person` + `BI`/blank — it does **not** require address/NPI/tax ID, so orgs like **IHP MI EMERGENCY MEDICINE PLLC** can appear but fail server validation (commonly missing **Tax ID** or **address**).
+
+**UX fixes:** detailed API `Details` + server log; inline readiness panel on Claim Details; pre-save client check; link to `/physicians?phyId={id}`.
+
 ## Save pipeline bug (fixed)
 
 `saveAndClose()` / `save()` correctly read the form:

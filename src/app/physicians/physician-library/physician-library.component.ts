@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnDestroy, Output } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
@@ -85,11 +86,16 @@ export class PhysicianLibraryComponent implements OnInit, OnDestroy {
   constructor(
     private physicianApiService: PhysicianApiService,
     private workspace: WorkspaceService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.workspace.updateActiveTabTitle('Physician Library');
+    const qpPhyId = Number(this.route.snapshot.queryParamMap.get('phyId') ?? 0);
+    if (qpPhyId > 0) {
+      this.initialPhyId = qpPhyId;
+    }
     this.loadPhysicians();
   }
 

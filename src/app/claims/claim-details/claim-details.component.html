@@ -193,6 +193,15 @@
                       <option [ngValue]="0">--</option>
                       <option *ngFor="let phy of billingProviders" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
                     </select>
+                    <div class="billing-readiness-panel" *ngIf="billingProviderValidationIssues.length > 0">
+                      <div class="billing-readiness-title">Billing provider setup required</div>
+                      <ul class="billing-readiness-list">
+                        <li *ngFor="let issue of billingProviderValidationIssues">{{ issue }}</li>
+                      </ul>
+                      <button type="button" class="btn-link" (click)="openBillingProviderInLibrary()">
+                        Open Physician Library to fix
+                      </button>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label>Rendering Provider</label>

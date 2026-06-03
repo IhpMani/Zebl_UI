@@ -19,6 +19,10 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
 import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { resolveClaimPatientId, resolveClaimPatientName } from '../../core/utils/claim-patient-id.util';
+import {
+  formatBillingProviderValidationAlert,
+  getOperationalBillingProviderFailures
+} from '../../core/utils/billing-provider-operational.util';
 
 @Component({
   selector: 'app-claim-details',
@@ -162,6 +166,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   savingClaim = false;
   scrubbingClaim = false;
+  /** Pre-save billing provider readiness (mirrors server BillingProviderOperationalRules). */
+  billingProviderValidationIssues: string[] = [];
 
   /** Responsible party payer options (from claim insureds). */
   primaryPayerId: number | null = null;
@@ -197,6 +203,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadClassificationOptions();
     this.loadPhysicians();
+    this.claimForm.get('ClaBillingPhyFID')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.refreshBillingProviderValidation();
+        this.cdr.markForCheck();
+      });
     if (this.route.snapshot.routeConfig?.path === 'claims/new') {
       this.initNewClaim();
       return;
@@ -360,6 +372,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           && (!p.phyPrimaryCodeType || p.phyPrimaryCodeType === 'BI')
           && !p.isSystemPlaceholder);
         this.ensureCurrentPhysiciansInOptions();
+        this.refreshBillingProviderValidation();
         this.cdr.markForCheck();
       },
       error: () => {
@@ -367,6 +380,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.renderingProviders = [];
         this.serviceFacilities = [];
         this.billingProviders = [];
+        this.billingProviderValidationIssues = [];
         this.cdr.markForCheck();
       }
     });
@@ -441,6 +455,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       ClaRenderingPhyFID: this.claim?.renderingPhysician?.phyID ?? 0,
       ClaFacilityPhyFID: this.claim?.facilityPhysician?.phyID ?? 0
     });
+    this.refreshBillingProviderValidation();
   }
 
   ngOnDestroy(): void {
@@ -1336,6 +1351,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.validateBillToSelection()) return;
+    if (!this.validateBillingProviderForSave()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1370,10 +1386,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.saveClaimCustomFieldValues();
         this.goBackToList();
       },
-      error: (err) => {
-        console.error('Failed to save claim', err);
-        alert('Failed to save claim');
-      }
+      error: (err) => this.handleClaimSaveError(err)
     });
   }
 
@@ -1384,6 +1397,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
     if (!this.claim || !this.claId || this.savingClaim) return;
     if (!this.validateBillToSelection()) return;
+    if (!this.validateBillingProviderForSave()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1418,11 +1432,62 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.saveClaimCustomFieldValues();
         this.cdr.markForCheck();
       },
-      error: (err) => {
-        console.error('Failed to save claim', err);
-        alert('Failed to save claim');
-      }
+      error: (err) => this.handleClaimSaveError(err)
     });
+  }
+
+  private refreshBillingProviderValidation(): void {
+    const billingId = Number(this.claimForm.get('ClaBillingPhyFID')?.value ?? 0);
+    if (!Number.isFinite(billingId) || billingId <= 0) {
+      this.billingProviderValidationIssues = ['Billing provider is required.'];
+      return;
+    }
+    const provider =
+      this.physicians.find((p) => p.phyID === billingId)
+      ?? this.billingProviders.find((p) => p.phyID === billingId)
+      ?? null;
+    this.billingProviderValidationIssues = getOperationalBillingProviderFailures(provider);
+  }
+
+  private validateBillingProviderForSave(): boolean {
+    this.refreshBillingProviderValidation();
+    if (this.billingProviderValidationIssues.length === 0) {
+      return true;
+    }
+    const openLibrary = confirm(
+      `${formatBillingProviderValidationAlert(this.billingProviderValidationIssues)}\n\nOpen Physician Library now to fix this provider?`
+    );
+    if (openLibrary) {
+      this.openBillingProviderInLibrary();
+    }
+    this.cdr.markForCheck();
+    return false;
+  }
+
+  openBillingProviderInLibrary(): void {
+    const billingId = Number(this.claimForm.get('ClaBillingPhyFID')?.value ?? 0);
+    this.router.navigate(
+      ['/physicians'],
+      billingId > 0 ? { queryParams: { phyId: billingId } } : {}
+    );
+  }
+
+  private handleClaimSaveError(err: unknown): void {
+    console.error('Failed to save claim', err);
+    const body = (err as { error?: { message?: string; details?: string; Message?: string; Details?: string; errorCode?: string } })
+      ?.error;
+    const message = body?.message ?? body?.Message ?? 'Failed to save claim.';
+    const details = body?.details ?? body?.Details;
+    const text = details ? `${message}\n\n${details}` : message;
+    if (body?.errorCode === 'BILLING_PROVIDER_INVALID' || text.includes('Billing provider')) {
+      const openLibrary = confirm(`${text}\n\nOpen Physician Library to complete provider setup?`);
+      if (openLibrary) {
+        this.openBillingProviderInLibrary();
+      }
+    } else {
+      alert(text);
+    }
+    this.cdr.markForCheck();
   }
 
   close(): void {
