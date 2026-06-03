@@ -13,7 +13,7 @@ export const SEND_CLAIMS_COLUMN_PREFS_VERSION = 2;
 
 export function migrateLegacyColumnKey(key: string): string {
   if (key === 'patFullName') return 'patFullNameCC';
-  if (key === 'claClassification') return 'facilityName';
+  // claClassification and facilityName are distinct list columns — do not conflate.
   return key;
 }
 

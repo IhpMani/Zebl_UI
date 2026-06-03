@@ -173,22 +173,23 @@
         <input
           type="text"
           [(ngModel)]="columnSearchText"
-          placeholder="Search columns..."
+          placeholder="Search by name, key, or category..."
           class="search-input"
         />
       </div>
       <div class="dialog-content">
-        <!-- Standard Disbursement Columns -->
-        <div class="column-section">
-          <h4>Standard Disbursement Columns</h4>
+        <p *ngIf="columnPickerSections.length === 0" class="filter-popup-empty">No columns match your search.</p>
+        <div class="column-section" *ngFor="let section of columnPickerSections">
+          <h4>{{ section.title }}</h4>
           <div class="column-list">
-            <label *ngFor="let col of getStandardColumns()" class="column-item">
+            <label *ngFor="let col of section.columns" class="column-item">
               <input
                 type="checkbox"
                 [checked]="col.visible"
                 (change)="toggleColumnVisibility(col.key)"
               />
               <span>{{ col.label }}</span>
+              <span class="column-item-key" *ngIf="columnSearchText.trim()">{{ col.key }}</span>
             </label>
           </div>
         </div>

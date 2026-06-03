@@ -6,6 +6,10 @@ import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { getListCellValue } from '../../core/utils/list-cell-value';
 import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 
 @Component({
   selector: 'app-payment-list',
@@ -339,7 +343,12 @@ export class PaymentListComponent implements OnInit, OnDestroy {
     all.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
     return all;
   }
-  toggleCustomizationDialog(): void { this.showCustomizationDialog = !this.showCustomizationDialog; if (!this.showCustomizationDialog) { this.columnSearchText = ''; } }
+  toggleCustomizationDialog(): void {
+    this.showCustomizationDialog = !this.showCustomizationDialog;
+    if (!this.showCustomizationDialog) {
+      this.columnSearchText = '';
+    }
+  }
   closeCustomizationDialog(event?: MouseEvent): void {
     if (event && (event.target as HTMLElement).classList.contains('customization-overlay')) {
       this.showCustomizationDialog = false; this.columnSearchText = '';
@@ -348,9 +357,11 @@ export class PaymentListComponent implements OnInit, OnDestroy {
   toggleColumnVisibility(columnKey: string): void { const col = this.columns.find(c => c.key === columnKey); if (col) col.visible = !col.visible; }
   clearAllColumns(): void { this.columns.forEach(col => col.visible = false); }
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) return this.columns;
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => col.label.toLowerCase().includes(searchLower) || col.key.toLowerCase().includes(searchLower));
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {

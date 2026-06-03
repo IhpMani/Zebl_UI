@@ -139,8 +139,8 @@ export class ClaimListAdditionalColumns {
     
     // Facility name from Claim -> Facility Physician (related table join)
     { key: 'facilityName', label: 'Facility', category: 'Facility', dataType: 'string', width: '180px' },
-    // Claim classification from Libraries -> List -> Claim Classification
-    { key: 'claClassification', label: 'Claim Classification', category: 'Facility', dataType: 'string', width: '180px' },
+    // Claim classification from Libraries -> List -> Claim Classification (e.g. Biller WL)
+    { key: 'claClassification', label: 'Claim Classification', category: 'Classification', dataType: 'string', width: '180px' },
     
     // Admission
     { key: 'claAdmissionType', label: 'Admission Type', category: 'Admission', dataType: 'string', width: '140px' },
@@ -169,11 +169,13 @@ export class ClaimListAdditionalColumns {
     { key: 'claCustomTrueFalseValue', label: 'Custom True / False Value', category: 'Custom', dataType: 'boolean', width: '180px' }
   ];
 
-  private static mergedColumnsCache: AdditionalColumnDefinition[] | null = null;
+  /** Bump when merge rules change so HMR/dev sessions do not keep a stale picker cache. */
+  private static readonly PICKER_MERGE_VERSION = 2;
+  private static mergedColumnsCache: { version: number; columns: AdditionalColumnDefinition[] } | null = null;
 
   private static mergeAllColumns(): AdditionalColumnDefinition[] {
-    if (this.mergedColumnsCache) {
-      return this.mergedColumnsCache;
+    if (this.mergedColumnsCache?.version === this.PICKER_MERGE_VERSION) {
+      return this.mergedColumnsCache.columns;
     }
     const byKey = new Map<string, AdditionalColumnDefinition>();
     for (const col of this.AVAILABLE_COLUMNS) {
@@ -184,8 +186,9 @@ export class ClaimListAdditionalColumns {
         byKey.set(raw.key, { ...raw, width: '120px' });
       }
     }
-    this.mergedColumnsCache = Array.from(byKey.values());
-    return this.mergedColumnsCache;
+    const columns = Array.from(byKey.values());
+    this.mergedColumnsCache = { version: this.PICKER_MERGE_VERSION, columns };
+    return columns;
   }
 
   /**
@@ -218,6 +221,7 @@ export class ClaimListAdditionalColumns {
     return [
       'Identity',
       'Status',
+      'Classification',
       'Financial',
       'Dates',
       'Audit',

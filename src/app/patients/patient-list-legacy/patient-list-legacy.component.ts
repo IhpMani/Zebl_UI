@@ -6,6 +6,10 @@ import { PatientListItem, PatientsApiResponse, PaginationMeta } from '../../core
 import { ListApiService } from '../../core/services/list-api.service';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 import { getListCellValue } from '../../core/utils/list-cell-value';
 import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 
@@ -54,7 +58,7 @@ export class PatientListLegacyComponent implements OnInit, OnDestroy {
     { key: 'patActive', label: 'Active', visible: true, filterValue: '' },
     { key: 'patPhoneNo', label: 'Phone', visible: true, filterValue: '' },
     { key: 'patTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
-    { key: 'patClassification', label: 'Facility', visible: true, filterValue: '' },
+    { key: 'patClassification', label: 'Patient Classification', visible: true, filterValue: '' },
     { key: 'patFirstName', label: 'First Name', visible: false, filterValue: '' },
     { key: 'patLastName', label: 'Last Name', visible: false, filterValue: '' },
     { key: 'patBirthDate', label: 'Birth Date', visible: false, filterValue: '' },
@@ -592,14 +596,11 @@ export class PatientListLegacyComponent implements OnInit, OnDestroy {
   }
 
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) {
-      return this.columns;
-    }
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => 
-      col.label.toLowerCase().includes(searchLower) || 
-      col.key.toLowerCase().includes(searchLower)
-    );
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {

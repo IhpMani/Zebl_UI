@@ -6,6 +6,10 @@ import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { getListCellValue } from '../../core/utils/list-cell-value';
 import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 
 @Component({
   selector: 'app-adjustment-list',
@@ -446,14 +450,11 @@ export class AdjustmentListComponent implements OnInit, OnDestroy {
   }
 
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) {
-      return this.columns;
-    }
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => 
-      col.label.toLowerCase().includes(searchLower) || 
-      col.key.toLowerCase().includes(searchLower)
-    );
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {

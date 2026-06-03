@@ -712,3 +712,12 @@ table thead th {
 table tr:hover {
   background: #f1f5f9;
 }
+
+/* Find * list Add Column dialogs (shared overlay pattern) */
+.customization-dialog .column-item-key {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-top: 2px;
+}

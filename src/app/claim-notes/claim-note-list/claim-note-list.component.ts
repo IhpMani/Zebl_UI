@@ -6,6 +6,10 @@ import { Subject, takeUntil } from 'rxjs';
 import { ClaimListAdditionalColumns, AdditionalColumnDefinition } from '../../claims/claim-list/claim-list-additional-columns';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { formatApiDateTimeDisplay } from '../../core/utils/api-datetime-display';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 
 @Component({
   selector: 'app-claim-note-list',
@@ -33,7 +37,7 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   selectedAdditionalColumns: Set<string> = new Set<string>();
 
   /** Note columns + all Claim List columns (same as Claim List) */
-  columns: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string }> = this.buildInitialColumns();
+  columns: Array<{ key: string; label: string; visible: boolean; filterValue: string; isRelatedColumn?: boolean; table?: string; dataType?: string; category?: string }> = this.buildInitialColumns();
 
   /** Map ClaimListAdditionalColumns keys to notes API response keys */
   private static readonly NOTES_API_KEY_MAP: Record<string, string> = {
@@ -62,6 +66,7 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       return {
         key: apiKey,
         label: c.label,
+        category: c.category,
         visible: [
           'claID',
           'claStatus',
@@ -321,7 +326,12 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
       return true;
     });
   }
-  toggleCustomizationDialog(): void { this.showCustomizationDialog = !this.showCustomizationDialog; if (!this.showCustomizationDialog) { this.columnSearchText = ''; } }
+  toggleCustomizationDialog(): void {
+    this.showCustomizationDialog = !this.showCustomizationDialog;
+    if (!this.showCustomizationDialog) {
+      this.columnSearchText = '';
+    }
+  }
   closeCustomizationDialog(event?: MouseEvent): void {
     if (event && (event.target as HTMLElement).classList.contains('customization-overlay')) {
       this.showCustomizationDialog = false; this.columnSearchText = '';
@@ -335,9 +345,11 @@ export class ClaimNoteListComponent implements OnInit, OnDestroy {
   }
   clearAllColumns(): void { this.columns.forEach(col => col.visible = false); }
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) return this.columns;
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => col.label.toLowerCase().includes(searchLower) || col.key.toLowerCase().includes(searchLower));
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {

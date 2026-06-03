@@ -4,6 +4,10 @@ import { PhysicianApiService } from '../../core/services/physician-api.service';
 import { PhysicianListItem, PhysiciansApiResponse, PaginationMeta } from '../../core/services/physician.models';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 
 @Component({
   selector: 'app-physician-list',
@@ -375,14 +379,11 @@ export class PhysicianListComponent implements OnInit, OnDestroy {
   }
 
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) {
-      return this.columns;
-    }
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => 
-      col.label.toLowerCase().includes(searchLower) || 
-      col.key.toLowerCase().includes(searchLower)
-    );
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {

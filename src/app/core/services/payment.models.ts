@@ -30,7 +30,8 @@ export interface PaymentListItem {
   pmtOtherReference2?: string | null;
   pmtBatchOperationReference?: string | null;
   pmtIssuerResponseCode?: string | null;
-  pmtPayFID?: number | null;
+  pmtCreatedComputerName?: string | null;
+  pmtLastComputerName?: string | null;
   additionalColumns?: { [key: string]: any };
 }
 

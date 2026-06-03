@@ -7,6 +7,10 @@ import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
 import { getListCellValue } from '../../core/utils/list-cell-value';
 import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
+import {
+  buildFlatListPickerSections,
+  filterListPickerColumns
+} from '../../core/utils/list-column-picker.utils';
 
 @Component({
   selector: 'app-payer-list',
@@ -53,7 +57,7 @@ export class PayerListComponent implements OnInit, OnDestroy {
     { key: 'payInactive', label: 'Inactive', visible: true, filterValue: '' },
     { key: 'payClaimType', label: 'Claim Type', visible: true, filterValue: '' },
     { key: 'paySubmissionMethod', label: 'Submission Method', visible: false, filterValue: '' },
-    { key: 'payClassification', label: 'Classification', visible: false, filterValue: '' },
+    { key: 'payClassification', label: 'Payer Classification', visible: false, filterValue: '' },
     { key: 'payAddr1', label: 'Address', visible: false, filterValue: '' },
     { key: 'payZip', label: 'ZIP', visible: false, filterValue: '' },
     { key: 'payEmail', label: 'Email', visible: false, filterValue: '' },
@@ -425,14 +429,11 @@ export class PayerListComponent implements OnInit, OnDestroy {
   }
 
   get filteredColumnsForDialog() {
-    if (!this.columnSearchText.trim()) {
-      return this.columns;
-    }
-    const searchLower = this.columnSearchText.toLowerCase();
-    return this.columns.filter(col => 
-      col.label.toLowerCase().includes(searchLower) || 
-      col.key.toLowerCase().includes(searchLower)
-    );
+    return filterListPickerColumns(this.columns, this.columnSearchText);
+  }
+
+  get columnPickerSections() {
+    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {
