@@ -49,9 +49,22 @@ When classification was unset, the API returned the **facility physician name** 
 5. Column filter → select `Billers WL` → request includes `classificationList=Billers WL`.
 6. Header search with `Billers` → `searchText` matches classification.
 
+## Save pipeline bug (fixed)
+
+`saveAndClose()` / `save()` correctly read the form:
+
+```ts
+const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
+```
+
+But `buildClaimUpdatePayload()` **ignored** `partial.claClassification` and sent stale `this.claim.claClassification` (usually `null` until after reload). Same for `claStatus`.
+
+**Fix:** use `partial.claStatus` and `partial.claClassification` in the returned PUT body.
+
 ## Files changed
 
 - `Zebl.Api/Controllers/ClaimsController.cs` — DTO projection, `PopulateAdditionalColumns`, `classificationList`, `searchText`
+- `src/app/claims/claim-details/claim-details.component.ts` — `buildClaimUpdatePayload` uses form values from `partial`
 - `src/app/claims/shared/claim-column.utils.ts` — `CLAIM_ROOT_SCALAR_KEYS`
 - `src/app/claims/claim-list/claim-list.component.ts` — `classificationList` filter
 - `src/app/core/services/claim-api.service.ts` — query param

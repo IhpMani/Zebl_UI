@@ -1352,11 +1352,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
-    const selectedPayerId = this.getSelectedPrimaryPayerId();
-    console.log('Selected payerId:', selectedPayerId);
-    console.log('Form value:', this.form.value);
-    console.log('CLAIM UPDATE PAYLOAD:', { selectedPayerId, formValue: this.form.value, payload });
-    console.log('[ClaimDetails] PUT payload', payload);
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -1405,11 +1400,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
-    const selectedPayerId = this.getSelectedPrimaryPayerId();
-    console.log('Selected payerId:', selectedPayerId);
-    console.log('Form value:', this.form.value);
-    console.log('CLAIM UPDATE PAYLOAD:', { selectedPayerId, formValue: this.form.value, payload });
-    console.log('[ClaimDetails] PUT payload', payload);
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -1652,9 +1642,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const primaryPayerId = this.getSelectedPrimaryPayerId();
 
     // Always send the full claim update DTO so backend gets consistent shape.
+    // Form-driven fields must come from partial (save handlers), not stale this.claim.
     return {
-      claStatus: this.claim.claStatus ?? null,
-      claClassification: this.claim.claClassification ?? null,
+      claStatus: partial.claStatus,
+      claClassification: partial.claClassification,
       claSubmissionMethod: partial.claSubmissionMethod ?? this.claim.claSubmissionMethod ?? null,
       claBillTo: this.claim.claBillTo ?? null,
       primaryPayerId,
