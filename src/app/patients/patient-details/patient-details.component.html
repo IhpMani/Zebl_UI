@@ -198,19 +198,6 @@
                 <button type="button" class="btn-physician-sm provider-row-action" (click)="openPhysicianPicker(slot.controlName)" title="Pick Physician">…</button>
                 <button type="button" class="btn-physician-sm provider-row-action" (click)="clearPhysician(slot.controlName)" title="Clear">×</button>
               </div>
-              <div class="readiness-panel" *ngIf="patient as p">
-                <ng-container *ngIf="(p.providerSlotWarnings?.length || 0) > 0 || (p.claimReadiness?.issues?.length || 0) > 0">
-                <div class="readiness-title">Claim / provider readiness</div>
-                <ul class="readiness-list">
-                  <li *ngFor="let w of p.providerSlotWarnings" class="readiness-warn">
-                    <strong>{{ w.slot }}</strong>: {{ w.message }}
-                  </li>
-                  <li *ngFor="let i of p.claimReadiness?.issues" class="readiness-issue">
-                    {{ i.message }}
-                  </li>
-                </ul>
-                </ng-container>
-              </div>
             </div>
           </form>
         </div>

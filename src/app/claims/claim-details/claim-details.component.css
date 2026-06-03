@@ -4,35 +4,6 @@
   color: var(--text-muted, #475569);
 }
 
-.billing-readiness-panel {
-  margin-top: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: #fff8e6;
-  border: 1px solid #e6c200;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.billing-readiness-title {
-  font-weight: 600;
-  margin-bottom: 0.35rem;
-}
-
-.billing-readiness-list {
-  margin: 0 0 0.5rem;
-  padding-left: 1.2rem;
-}
-
-.billing-readiness-panel .btn-link {
-  background: none;
-  border: none;
-  color: #2563eb;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  font-size: inherit;
-}
-
 :root {
   --bg-page: #eef2f7;
   --bg-card: #ffffff;

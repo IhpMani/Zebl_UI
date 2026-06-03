@@ -19,10 +19,6 @@ import { WorkspaceService } from '../../workspace/application/workspace.service'
 import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { resolveClaimPatientId, resolveClaimPatientName } from '../../core/utils/claim-patient-id.util';
-import {
-  formatBillingProviderValidationAlert,
-  getOperationalBillingProviderFailures
-} from '../../core/utils/billing-provider-operational.util';
 import { isBillingClassificationCode } from '../../core/utils/physician-classification.util';
 
 @Component({
@@ -167,8 +163,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   savingClaim = false;
   scrubbingClaim = false;
-  /** Pre-save billing provider readiness (mirrors server BillingProviderOperationalRules). */
-  billingProviderValidationIssues: string[] = [];
 
   /** Responsible party payer options (from claim insureds). */
   primaryPayerId: number | null = null;
@@ -204,12 +198,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadClassificationOptions();
     this.loadPhysicians();
-    this.claimForm.get('ClaBillingPhyFID')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.refreshBillingProviderValidation();
-        this.cdr.markForCheck();
-      });
     if (this.route.snapshot.routeConfig?.path === 'claims/new') {
       this.initNewClaim();
       return;
@@ -376,7 +364,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         );
         this.syncPhysicianFormFromClaim();
         this.ensureCurrentPhysiciansInOptions();
-        this.refreshBillingProviderValidation();
         this.cdr.markForCheck();
       },
       error: () => {
@@ -384,7 +371,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
         this.renderingProviders = [];
         this.serviceFacilities = [];
         this.billingProviders = [];
-        this.billingProviderValidationIssues = [];
         this.cdr.markForCheck();
       }
     });
@@ -496,21 +482,82 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       ClaStatus: this.claim?.claStatus ?? null,
       ClaClassification: this.claim?.claClassification ?? null,
       ClaSubmissionMethod: this.claim?.claSubmissionMethod ?? null,
-      ClaBillingPhyFID: this.getClaimBillingPhyFid(),
-      ClaRenderingPhyFID: this.getClaimRenderingPhyFid(),
-      ClaFacilityPhyFID: this.getClaimFacilityPhyFid()
+      ClaBillingPhyFID: this.getClaimBillingPhyFid() || null,
+      ClaRenderingPhyFID: this.getClaimRenderingPhyFid() || null,
+      ClaFacilityPhyFID: this.getClaimFacilityPhyFid() || null
     });
-    this.refreshBillingProviderValidation();
+    this.resetPhysicianFkEditState();
   }
 
-  /** Re-apply physician FKs after physicians list loads (dropdown options now available). */
+  /**
+   * After physician lists load, fill empty physician FKs from the claim.
+   * Does not overwrite user edits (dirty/touched) or values already set by patchClaimForm.
+   */
   private syncPhysicianFormFromClaim(): void {
     if (!this.claim) return;
-    this.claimForm.patchValue({
-      ClaBillingPhyFID: this.getClaimBillingPhyFid(),
-      ClaRenderingPhyFID: this.getClaimRenderingPhyFid(),
-      ClaFacilityPhyFID: this.getClaimFacilityPhyFid()
-    });
+    const patch = this.buildPhysicianFkPatchForClaimSync();
+    if (Object.keys(patch).length === 0) {
+      const formBilling = this.getFormPhyFid('ClaBillingPhyFID');
+      const claimBilling = this.getClaimBillingPhyFid();
+      if (formBilling > 0 && claimBilling > 0 && formBilling !== claimBilling) {
+        const billingCtrl = this.claimForm.get('ClaBillingPhyFID');
+        console.debug('[ClaimDetails] physician FK sync preserved user billing selection', {
+          formBillingPhyFID: formBilling,
+          claimBillingPhyFID: claimBilling,
+          formBillingDirty: billingCtrl?.dirty ?? false,
+          formBillingTouched: billingCtrl?.touched ?? false
+        });
+      }
+      return;
+    }
+    this.claimForm.patchValue(patch);
+  }
+
+  /** Authoritative claim hydration — clears prior user-edit guards on physician FK controls. */
+  private resetPhysicianFkEditState(): void {
+    for (const name of ['ClaBillingPhyFID', 'ClaRenderingPhyFID', 'ClaFacilityPhyFID'] as const) {
+      const ctrl = this.claimForm.get(name);
+      ctrl?.markAsPristine();
+      ctrl?.markAsUntouched();
+    }
+  }
+
+  private buildPhysicianFkPatchForClaimSync(): Partial<{
+    ClaBillingPhyFID: number | null;
+    ClaRenderingPhyFID: number | null;
+    ClaFacilityPhyFID: number | null;
+  }> {
+    const patch: Partial<{
+      ClaBillingPhyFID: number | null;
+      ClaRenderingPhyFID: number | null;
+      ClaFacilityPhyFID: number | null;
+    }> = {};
+    if (this.shouldSyncPhysicianFkFromClaim('ClaBillingPhyFID')) {
+      const id = this.getClaimBillingPhyFid();
+      patch.ClaBillingPhyFID = id > 0 ? id : null;
+    }
+    if (this.shouldSyncPhysicianFkFromClaim('ClaRenderingPhyFID')) {
+      const id = this.getClaimRenderingPhyFid();
+      patch.ClaRenderingPhyFID = id > 0 ? id : null;
+    }
+    if (this.shouldSyncPhysicianFkFromClaim('ClaFacilityPhyFID')) {
+      const id = this.getClaimFacilityPhyFid();
+      patch.ClaFacilityPhyFID = id > 0 ? id : null;
+    }
+    return patch;
+  }
+
+  /**
+   * True only for initial/async fill: control not user-edited and still empty.
+   * Prevents loadPhysicians() from resetting Billing Provider after the user picks IHP.
+   */
+  private shouldSyncPhysicianFkFromClaim(
+    controlName: 'ClaBillingPhyFID' | 'ClaRenderingPhyFID' | 'ClaFacilityPhyFID'
+  ): boolean {
+    const ctrl = this.claimForm.get(controlName);
+    if (!ctrl) return false;
+    if (ctrl.dirty || ctrl.touched) return false;
+    return this.coercePhyFid(ctrl.value) <= 0;
   }
 
   ngOnDestroy(): void {
@@ -1406,7 +1453,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.validateBillToSelection()) return;
-    if (!this.validateBillingProviderForSave()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1456,7 +1502,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
     if (!this.claim || !this.claId || this.savingClaim) return;
     if (!this.validateBillToSelection()) return;
-    if (!this.validateBillingProviderForSave()) return;
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
@@ -1499,27 +1544,14 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private refreshBillingProviderValidation(): void {
-    const billingId = this.getFormPhyFid('ClaBillingPhyFID');
-    if (billingId <= 0) {
-      const stored = this.getClaimBillingPhyFid();
-      this.billingProviderValidationIssues = stored > 0
-        ? [`Billing provider is required (form unset; claim still has PhyID ${stored}). Select billing provider again.`]
-        : ['Billing provider is required.'];
-      return;
-    }
-    const provider =
-      this.physicians.find((p) => p.phyID === billingId)
-      ?? this.billingProviders.find((p) => p.phyID === billingId)
-      ?? null;
-    this.billingProviderValidationIssues = getOperationalBillingProviderFailures(provider);
-  }
-
   private logClaimSaveProviderTrace(action: string, payload: Record<string, unknown>): void {
+    const billingCtrl = this.claimForm.get('ClaBillingPhyFID');
     console.debug('[ClaimDetails] provider save trace', {
       action,
       formBillingPhyFID: this.getFormPhyFid('ClaBillingPhyFID'),
       formBillingLabel: this.getSelectedBillingProviderLabel(),
+      formBillingDirty: billingCtrl?.dirty ?? false,
+      formBillingTouched: billingCtrl?.touched ?? false,
       claimStoredBillingPhyFID: this.getClaimBillingPhyFid(),
       claimStoredBillingName: this.claim?.billingPhysician?.phyName ?? null,
       payloadClaBillingPhyFID: payload['claBillingPhyFID'],
@@ -1528,44 +1560,14 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private validateBillingProviderForSave(): boolean {
-    this.refreshBillingProviderValidation();
-    if (this.billingProviderValidationIssues.length === 0) {
-      return true;
-    }
-    const openLibrary = confirm(
-      `${formatBillingProviderValidationAlert(this.billingProviderValidationIssues)}\n\nOpen Physician Library now to fix this provider?`
-    );
-    if (openLibrary) {
-      this.openBillingProviderInLibrary();
-    }
-    this.cdr.markForCheck();
-    return false;
-  }
-
-  openBillingProviderInLibrary(): void {
-    const billingId = Number(this.claimForm.get('ClaBillingPhyFID')?.value ?? 0);
-    this.router.navigate(
-      ['/physicians'],
-      billingId > 0 ? { queryParams: { phyId: billingId } } : {}
-    );
-  }
-
   private handleClaimSaveError(err: unknown): void {
     console.error('Failed to save claim', err);
-    const body = (err as { error?: { message?: string; details?: string; Message?: string; Details?: string; errorCode?: string } })
+    const body = (err as { error?: { message?: string; details?: string; Message?: string; Details?: string } })
       ?.error;
     const message = body?.message ?? body?.Message ?? 'Failed to save claim.';
     const details = body?.details ?? body?.Details;
     const text = details ? `${message}\n\n${details}` : message;
-    if (body?.errorCode === 'BILLING_PROVIDER_INVALID' || text.includes('Billing provider')) {
-      const openLibrary = confirm(`${text}\n\nOpen Physician Library to complete provider setup?`);
-      if (openLibrary) {
-        this.openBillingProviderInLibrary();
-      }
-    } else {
-      alert(text);
-    }
+    alert(text);
     this.cdr.markForCheck();
   }
 

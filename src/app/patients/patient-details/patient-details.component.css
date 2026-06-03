@@ -10,29 +10,6 @@
   border-radius: 4px;
 }
 
-.readiness-panel {
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: #fff8e6;
-  border: 1px solid #e6c200;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.readiness-title {
-  font-weight: 600;
-  margin-bottom: 0.35rem;
-}
-
-.readiness-list {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.readiness-warn,
-.readiness-issue {
-  margin-bottom: 0.25rem;
-}
 /* Light blue theme - patient details */
 .patient-details-wrapper {
   position: relative;
