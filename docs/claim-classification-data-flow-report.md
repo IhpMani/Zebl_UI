@@ -1,0 +1,58 @@
+# Claim Classification (`ClaClassification`) — data flow report
+
+## Summary
+
+List Library entries (`Awaiting ins`, `Billers WL`, `Selfpay`, etc.) are stored on **`Claim.ClaClassification`** (varchar 30). The primary runtime bug was **not** Add Columns metadata — it was the claims list API **replacing null classification with the facility physician name**, which made the Claim Classification column look like Facility data and hid real list values.
+
+## Data flow (verified)
+
+| Stage | Behavior |
+|-------|----------|
+| List Library | `GET /api/lists/values?type=Claim Classification` → claim details dropdown (`claim-details.component.ts`) |
+| Claim edit/save | Form `ClaClassification` → `PUT /api/claims/{id}` with `claClassification` → `claim.ClaClassification` truncated to 30 chars (`ClaimsController` ~2435) |
+| DB | `Claim.ClaClassification` column (migration `InitialClean`) |
+| List API | `ClaimListItemDto.ClaClassification` on every row; **no longer** coalesced with `facilityName` |
+| `additionalColumns` | `claClassification` from entity; `facilityName` from `ClaFacilityPhyFID` physician name (separate keys) |
+| Frontend normalize | `normalizeClaimListRow` passes API camelCase through |
+| Grid cell | `getCellValue` → `getClaimListCellValue(claim, 'claClassification')` — root DTO preferred over `additionalColumns` |
+| Prefs | `migrateLegacyColumnKey` does **not** map `claClassification` → `facilityName` |
+
+## Root cause fixed
+
+**Before** (`ClaimsController.cs`):
+
+```csharp
+ClaClassification = c.ClaClassification ?? facilityName,
+```
+
+When classification was unset, the API returned the **facility physician name** as `claClassification`. Users could not distinguish Facility vs Claim Classification, and filters/search on classification were misleading.
+
+**After:**
+
+- `ClaClassification` is only the DB value (trimmed; null if blank).
+- `facilityName` remains only under `additionalColumns` / Facility column.
+- `searchText` also matches `ClaClassification` (e.g. `Billers WL`).
+- Column filter sends `classificationList` (comma-separated, same pattern as `statusList`).
+
+## Frontend binding
+
+- Column key: **`claClassification`** (not `classification`, `facilityClassification`, or `facilityName`).
+- `CLAIM_API_KEY_MAP` has no alias for `claClassification`.
+- `CLAIM_ROOT_SCALAR_KEYS` ensures list DTO wins over stale `additionalColumns` values.
+
+## Manual verification (test claim)
+
+1. Open a claim → set **Claim Classification** = `Billers WL` → Save.
+2. DB: `SELECT ClaClassification FROM Claim WHERE ClaID = ?` → `Billers WL`.
+3. API: `GET /api/claims?page=1&pageSize=25` → row `claClassification: "Billers WL"`.
+4. Find Claims → Add/show **Claim Classification** column → cell shows `Billers WL`.
+5. Column filter → select `Billers WL` → request includes `classificationList=Billers WL`.
+6. Header search with `Billers` → `searchText` matches classification.
+
+## Files changed
+
+- `Zebl.Api/Controllers/ClaimsController.cs` — DTO projection, `PopulateAdditionalColumns`, `classificationList`, `searchText`
+- `src/app/claims/shared/claim-column.utils.ts` — `CLAIM_ROOT_SCALAR_KEYS`
+- `src/app/claims/claim-list/claim-list.component.ts` — `classificationList` filter
+- `src/app/core/services/claim-api.service.ts` — query param
+- `src/app/claims/shared/claim-column.utils.spec.ts` — binding tests

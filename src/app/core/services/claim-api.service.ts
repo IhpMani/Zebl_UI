@@ -215,6 +215,7 @@ export class ClaimApiService {
       maxTotalBalance?: number;
       patientId?: number; // Filter by patient (ClaPatFID)
       patAccountNo?: string; // Filter by patient account number (exact match; Account # column)
+      classificationList?: string[]; // Claim.ClaClassification values (column filter)
       additionalColumns?: string[]; // Additional columns from related tables
     }
   ): Observable<ClaimsApiResponse> {
@@ -261,6 +262,9 @@ export class ClaimApiService {
       }
       if (filters.patAccountNo != null && filters.patAccountNo.trim() !== '') {
         params = params.append('patAccountNo', filters.patAccountNo.trim());
+      }
+      if (filters.classificationList && filters.classificationList.length > 0) {
+        params = params.append('classificationList', filters.classificationList.join(','));
       }
       if (filters.additionalColumns && filters.additionalColumns.length > 0) {
         params = params.append('additionalColumns', filters.additionalColumns.join(','));

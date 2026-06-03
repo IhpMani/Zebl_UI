@@ -8,6 +8,9 @@ import {
 /** Prefer top-level list DTO fields so additionalColumns cannot override audit timestamps. */
 export const CLAIM_ROOT_AUDIT_KEYS = new Set(['createdDate', 'modifiedDate']);
 
+/** Scalar list DTO fields — read from row before additionalColumns (avoids legacy coalesce in extras). */
+export const CLAIM_ROOT_SCALAR_KEYS = new Set(['claClassification']);
+
 /** Map UI / registry column keys to API request and DTO property names. */
 export const CLAIM_API_KEY_MAP: Record<string, string> = {
   claFirstDOS: 'claFirstDateTRIG',
@@ -88,9 +91,27 @@ export function getClaimListCellValue(claim: ClaimListItem, key: string): unknow
     }
   }
 
+  if (CLAIM_ROOT_SCALAR_KEYS.has(canonicalKey)) {
+    const scalarOrder = ['claClassification', 'ClaClassification'] as const;
+    for (const k of scalarOrder) {
+      const v = getRecordValue(claimRecord, k);
+      if (v !== null && v !== undefined && v !== '') {
+        return v;
+      }
+    }
+    for (const k of scalarOrder) {
+      if (getRecordValue(claimRecord, k) === '') {
+        return '';
+      }
+    }
+  }
+
   const candidates = getColumnCandidates(key);
   for (const candidate of candidates) {
     if (CLAIM_ROOT_AUDIT_KEYS.has(toBackendColumnKey(candidate))) {
+      continue;
+    }
+    if (CLAIM_ROOT_SCALAR_KEYS.has(toBackendColumnKey(candidate))) {
       continue;
     }
     const additionalValue = getRecordValue(additionalColumns, candidate);

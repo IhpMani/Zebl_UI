@@ -394,6 +394,14 @@ export class ClaimListComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Claim Classification column filter (List Library values on Claim.ClaClassification)
+    if (this.columnValueFilters['claClassification'] && this.columnValueFilters['claClassification'].size > 0) {
+      const classificationValues = Array.from(this.columnValueFilters['claClassification']).filter(v => v !== '(Blank)');
+      if (classificationValues.length > 0) {
+        filters.classificationList = classificationValues;
+      }
+    }
+
     // Text search across columns (for non-numeric, non-status columns)
     const textFilterColumns = this.columns.filter(c => 
       c.filterValue && 
