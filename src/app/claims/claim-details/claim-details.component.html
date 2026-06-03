@@ -245,7 +245,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let line of displayServiceLinesArray; trackBy: trackByServiceLine" [class.active]="line.srvID === selectedServiceLineId">
+                  <tr
+                    *ngFor="let line of displayServiceLinesArray; trackBy: trackByServiceLine"
+                    class="service-line-row"
+                    [class.active]="line.srvID === selectedServiceLineId"
+                    (click)="selectServiceLine(line)">
                     <td><input type="date" [(ngModel)]="line.srvFromDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td><input type="date" [(ngModel)]="line.srvToDate" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td><input type="text" [(ngModel)]="line.srvProcedureCode" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
@@ -254,14 +258,16 @@
                     <td class="col-mod cell-readonly">{{ formatLineModifier(line, 2) }}</td>
                     <td class="col-mod cell-readonly">{{ formatLineModifier(line, 3) }}</td>
                     <td class="col-mod cell-readonly">{{ formatLineModifier(line, 4) }}</td>
-                    <td class="col-emg cell-readonly">{{ formatLineEmg(line) }}</td>
+                    <td class="col-emg cell-readonly">
+                      <span class="emg-pill" [class.emg-pill--yes]="isServiceLineEmg(line)">{{ formatLineEmg(line) }}</span>
+                    </td>
                     <td><input type="number" [(ngModel)]="line.srvUnits" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td>{{ formatCurrency(line.srvCharges) }}</td>
                     <td>{{ formatCurrency(line.srvAllowedAmt) }}</td>
                     <td>{{ formatCurrency(line.srvTotalAmtPaidCC) }}</td>
                     <td>{{ formatCurrency(line.srvTotalAdjCC) }}</td>
                     <td>{{ formatCurrency(line.srvTotalBalanceCC) }}</td>
-                    <td>
+                    <td class="service-line-actions" (click)="$event.stopPropagation()">
                       <button class="btn-secondary" type="button" *ngIf="!isEditingServiceLine(line)" (click)="startEditServiceLine(line)" [disabled]="isNewMode">Edit</button>
                       <button class="btn-primary" type="button" *ngIf="isEditingServiceLine(line)" (click)="saveServiceLine(line)" [disabled]="isNewMode">Save</button>
                       <button class="btn-secondary" type="button" *ngIf="isEditingServiceLine(line)" (click)="cancelEditServiceLine(line)">Cancel</button>

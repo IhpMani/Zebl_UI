@@ -6,9 +6,9 @@ import {
 
 describe('service-line-display.util', () => {
   describe('formatServiceLineDiagnosisPointerDisplay', () => {
-    it('defaults empty to 1', () => {
-      expect(formatServiceLineDiagnosisPointerDisplay(null)).toBe('1');
-      expect(formatServiceLineDiagnosisPointerDisplay('')).toBe('1');
+    it('renders blank when pointer unset', () => {
+      expect(formatServiceLineDiagnosisPointerDisplay(null)).toBe('');
+      expect(formatServiceLineDiagnosisPointerDisplay('')).toBe('');
     });
 
     it('normalizes colon and comma separators', () => {
@@ -23,14 +23,14 @@ describe('service-line-display.util', () => {
   });
 
   describe('formatServiceLineEmgDisplay', () => {
-    it('shows Y for emergency flags', () => {
-      expect(formatServiceLineEmgDisplay('Y')).toBe('Y');
-      expect(formatServiceLineEmgDisplay('yes')).toBe('Y');
+    it('shows Yes for emergency flags', () => {
+      expect(formatServiceLineEmgDisplay('Y')).toBe('Yes');
+      expect(formatServiceLineEmgDisplay('yes')).toBe('Yes');
     });
 
-    it('blank for non-emergency', () => {
-      expect(formatServiceLineEmgDisplay(null)).toBe('');
-      expect(formatServiceLineEmgDisplay('N')).toBe('');
+    it('shows No for non-emergency', () => {
+      expect(formatServiceLineEmgDisplay(null)).toBe('No');
+      expect(formatServiceLineEmgDisplay('N')).toBe('No');
     });
   });
 

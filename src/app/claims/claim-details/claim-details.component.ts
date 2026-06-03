@@ -23,7 +23,8 @@ import { isBillingClassificationCode } from '../../core/utils/physician-classifi
 import {
   formatServiceLineDiagnosisPointerDisplay,
   formatServiceLineEmgDisplay,
-  formatServiceLineModifierDisplay
+  formatServiceLineModifierDisplay,
+  isServiceLineEmgActive
 } from '../shared/service-line-display.util';
 
 @Component({
@@ -989,6 +990,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return formatServiceLineEmgDisplay(line?.srvEMG ?? line?.SrvEMG);
   }
 
+  isServiceLineEmg(line: any): boolean {
+    return isServiceLineEmgActive(line?.srvEMG ?? line?.SrvEMG);
+  }
+
   formatLineModifier(line: any, index: 1 | 2 | 3 | 4): string {
     const key = `srvModifier${index}` as const;
     const pascal = `SrvModifier${index}` as const;
@@ -1466,7 +1471,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       srvModifier3: line?.srvModifier3 ?? '',
       srvModifier4: line?.srvModifier4 ?? '',
       srvDiagnosisPointer:
-        line?.srvDiagnosisPointer ?? line?.SrvDiagnosisPointer ?? '1',
+        line?.srvDiagnosisPointer ?? line?.SrvDiagnosisPointer ?? '',
       srvEMG: line?.srvEMG ?? line?.SrvEMG ?? '',
       srvNationalDrugCode: line?.srvNationalDrugCode ?? '',
       srvDrugUnitCount: line?.srvDrugUnitCount ?? null,

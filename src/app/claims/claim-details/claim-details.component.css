@@ -534,11 +534,35 @@ button:disabled {
 
 .service-lines-table th.col-emg,
 .service-lines-table td.col-emg {
-  width: 2.25rem;
-  min-width: 2.25rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
   text-align: center;
   padding: 6px 2px;
   font-size: 12px;
+}
+
+.service-lines-table tr.service-line-row {
+  cursor: pointer;
+}
+
+.service-lines-table tr.service-line-row.active {
+  background: #e0f2fe;
+}
+
+.service-lines-table td.service-line-actions {
+  cursor: default;
+  white-space: nowrap;
+}
+
+.emg-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.emg-pill--yes {
+  color: #b45309;
 }
 
 .service-lines-table td.cell-readonly {
