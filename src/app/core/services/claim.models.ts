@@ -151,6 +151,12 @@ export interface Claim {
   /** Facility - values from Libraries → List → Claim Classification */
   claClassification: string | null;
 
+  /** Physician FKs on Claim row (authoritative for save; nested *Physician objects are display). */
+  claBillingPhyFID?: number;
+  claRenderingPhyFID?: number;
+  claFacilityPhyFID?: number;
+  claReferringPhyFID?: number;
+
   // Diagnosis codes
   claDiagnosis1: string | null;
   claDiagnosis2: string | null;

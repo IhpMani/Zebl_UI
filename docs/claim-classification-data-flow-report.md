@@ -84,6 +84,20 @@ Claim save validator used **literal** `PhyPrimaryCodeType == "BI"` only. Legacy/
 
 **Not a claClassification bug:** failed claim save rolls back the transaction; classification is not wiped by normalization — the PUT never commits.
 
+### Stale ClaBillingPhyFID on save (fixed)
+
+`buildClaimUpdatePayload` used:
+
+```ts
+claBillingPhyFID: partial.claBillingPhyFID ?? this.claim.billingPhysician?.phyID ?? 0
+```
+
+When the form control was unset (`null`/`undefined`) after a dropdown change, the payload **reverted to the stale HL7 placeholder** on `claim.billingPhysician` even if the user had picked IHP in the UI.
+
+Also `patchClaimForm` only read `billingPhysician.phyID`, not root `claBillingPhyFID` from the API.
+
+**Fix:** form-only physician FKs in payload; `normalizeClaimDetail` on GET; `compareWith` on selects; FK hint under billing dropdown; `console.debug` save trace.
+
 ## Save pipeline bug (fixed)
 
 `saveAndClose()` / `save()` correctly read the form:

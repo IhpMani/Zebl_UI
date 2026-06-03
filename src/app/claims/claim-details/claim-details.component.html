@@ -189,10 +189,11 @@
                 <div class="form-grid" [formGroup]="claimForm">
                   <div class="form-group">
                     <label>Billing Provider</label>
-                    <select formControlName="ClaBillingPhyFID">
+                    <select formControlName="ClaBillingPhyFID" [compareWith]="comparePhyFid">
                       <option [ngValue]="0">--</option>
                       <option *ngFor="let phy of billingProviders" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
                     </select>
+                    <div class="billing-fk-hint">Selected: {{ getSelectedBillingProviderLabel() }} (PhyID {{ getFormPhyFid('ClaBillingPhyFID') || '—' }})</div>
                     <div class="billing-readiness-panel" *ngIf="billingProviderValidationIssues.length > 0">
                       <div class="billing-readiness-title">Billing provider setup required</div>
                       <ul class="billing-readiness-list">
@@ -205,14 +206,14 @@
                   </div>
                   <div class="form-group">
                     <label>Rendering Provider</label>
-                    <select formControlName="ClaRenderingPhyFID">
+                    <select formControlName="ClaRenderingPhyFID" [compareWith]="comparePhyFid">
                       <option [ngValue]="0">--</option>
                       <option *ngFor="let phy of renderingProviders" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label>Service Facility</label>
-                    <select formControlName="ClaFacilityPhyFID">
+                    <select formControlName="ClaFacilityPhyFID" [compareWith]="comparePhyFid">
                       <option [ngValue]="0">--</option>
                       <option *ngFor="let phy of serviceFacilities" [ngValue]="phy.phyID">{{ phy.phyFullNameCC || phy.phyName }}</option>
                     </select>

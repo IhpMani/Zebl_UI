@@ -43,6 +43,60 @@ function coerceClaimListDateField(value: unknown): string | null {
   return null;
 }
 
+function normalizePhysicianSlot(raw: unknown): Claim['billingPhysician'] {
+  if (raw == null || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const phyID = Number(o['phyID'] ?? o['PhyID'] ?? 0);
+  if (!Number.isFinite(phyID) || phyID <= 0) return null;
+  const name = pickFirstDefined(o['phyName'], o['PhyName'], o['phyFullNameCC'], o['PhyFullNameCC']);
+  return {
+    phyID,
+    phyName: typeof name === 'string' ? name : null,
+    phyNPI: (pickFirstDefined(o['phyNPI'], o['PhyNPI']) as string | null) ?? null
+  };
+}
+
+function coercePhyFid(raw: unknown): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Normalize GET /api/claims/{id} — physician FKs + nested slots (camelCase/PascalCase). */
+function normalizeClaimDetail(raw: unknown): Claim {
+  if (raw == null || typeof raw !== 'object') {
+    return raw as Claim;
+  }
+  const o = { ...(raw as Record<string, unknown>) } as Record<string, unknown>;
+  const get = (camel: string, pascal: string): unknown =>
+    pickFirstDefined(o[camel], o[pascal]);
+
+  o['billingPhysician'] =
+    normalizePhysicianSlot(get('billingPhysician', 'BillingPhysician')) ?? o['billingPhysician'];
+  o['renderingPhysician'] =
+    normalizePhysicianSlot(get('renderingPhysician', 'RenderingPhysician')) ?? o['renderingPhysician'];
+  o['facilityPhysician'] =
+    normalizePhysicianSlot(get('facilityPhysician', 'FacilityPhysician')) ?? o['facilityPhysician'];
+  o['referringPhysician'] =
+    normalizePhysicianSlot(get('referringPhysician', 'ReferringPhysician')) ?? o['referringPhysician'];
+
+  const billingSlot = o['billingPhysician'] as Claim['billingPhysician'];
+  const renderingSlot = o['renderingPhysician'] as Claim['renderingPhysician'];
+  const facilitySlot = o['facilityPhysician'] as Claim['facilityPhysician'];
+
+  o['claBillingPhyFID'] = coercePhyFid(get('claBillingPhyFID', 'ClaBillingPhyFID'))
+    || (billingSlot?.phyID ?? 0);
+  o['claRenderingPhyFID'] = coercePhyFid(get('claRenderingPhyFID', 'ClaRenderingPhyFID'))
+    || (renderingSlot?.phyID ?? 0);
+  o['claFacilityPhyFID'] = coercePhyFid(get('claFacilityPhyFID', 'ClaFacilityPhyFID'))
+    || (facilitySlot?.phyID ?? 0);
+  o['claReferringPhyFID'] = coercePhyFid(get('claReferringPhyFID', 'ClaReferringPhyFID'));
+
+  const claClass = pickFirstDefined(o['claClassification'], o['ClaClassification']);
+  if (claClass !== undefined) o['claClassification'] = claClass as string | null;
+
+  return o as unknown as Claim;
+}
+
 function normalizeClaimListRow(row: unknown): ClaimListItem {
   if (row == null || typeof row !== 'object') {
     return row as ClaimListItem;
@@ -281,7 +335,9 @@ export class ClaimApiService {
   }
 
   getClaimById(claId: number): Observable<Claim> {
-    return this.http.get<Claim>(`${environment.apiUrl}/api/claims/${claId}`);
+    return this.http
+      .get<unknown>(`${environment.apiUrl}/api/claims/${claId}`)
+      .pipe(map((body) => normalizeClaimDetail(body)));
   }
 
   getUserKpis(trendDays: number = 30): Observable<UserKpiDashboard> {

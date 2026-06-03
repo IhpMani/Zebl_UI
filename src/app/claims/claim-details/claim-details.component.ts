@@ -374,6 +374,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
             && isBillingClassificationCode(p.phyPrimaryCodeType)
             && !p.isSystemPlaceholder
         );
+        this.syncPhysicianFormFromClaim();
         this.ensureCurrentPhysiciansInOptions();
         this.refreshBillingProviderValidation();
         this.cdr.markForCheck();
@@ -399,11 +400,52 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Authoritative billing FK: Claim.ClaBillingPhyFID, then nested billingPhysician. */
+  private getClaimBillingPhyFid(): number {
+    return this.coercePhyFid(
+      this.claim?.claBillingPhyFID ?? this.claim?.billingPhysician?.phyID
+    );
+  }
+
+  private getClaimRenderingPhyFid(): number {
+    return this.coercePhyFid(
+      this.claim?.claRenderingPhyFID ?? this.claim?.renderingPhysician?.phyID
+    );
+  }
+
+  private getClaimFacilityPhyFid(): number {
+    return this.coercePhyFid(
+      this.claim?.claFacilityPhyFID ?? this.claim?.facilityPhysician?.phyID
+    );
+  }
+
+  private coercePhyFid(value: unknown): number {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  getFormPhyFid(controlName: string): number {
+    return this.coercePhyFid(this.claimForm.get(controlName)?.value);
+  }
+
+  comparePhyFid(a: unknown, b: unknown): boolean {
+    return this.coercePhyFid(a) === this.coercePhyFid(b);
+  }
+
+  getSelectedBillingProviderLabel(): string {
+    const id = this.getFormPhyFid('ClaBillingPhyFID');
+    if (id <= 0) return '(none)';
+    const p =
+      this.physicians.find((x) => x.phyID === id)
+      ?? this.billingProviders.find((x) => x.phyID === id);
+    return (p?.phyFullNameCC || p?.phyName || `PhyID ${id}`).trim();
+  }
+
   /** Ensure claim's current rendering/facility physicians appear in dropdowns (for legacy/edge cases) */
   private ensureCurrentPhysiciansInOptions(): void {
-    const bid = this.claim?.billingPhysician?.phyID;
-    const rid = this.claim?.renderingPhysician?.phyID;
-    const fid = this.claim?.facilityPhysician?.phyID;
+    const bid = this.getClaimBillingPhyFid();
+    const rid = this.getClaimRenderingPhyFid();
+    const fid = this.getClaimFacilityPhyFid();
     if (bid && bid > 0 && !this.billingProviders.some(p => p.phyID === bid)) {
       const p = this.physicians.find(x => x.phyID === bid);
       if (p) this.billingProviders = [...this.billingProviders, p];
@@ -448,17 +490,27 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Patch form with claim data from API */
+  /** Patch form with claim data from API (FK fields on Claim row, not only nested physician DTOs). */
   private patchClaimForm(): void {
     this.claimForm.patchValue({
       ClaStatus: this.claim?.claStatus ?? null,
       ClaClassification: this.claim?.claClassification ?? null,
       ClaSubmissionMethod: this.claim?.claSubmissionMethod ?? null,
-      ClaBillingPhyFID: this.claim?.billingPhysician?.phyID ?? 0,
-      ClaRenderingPhyFID: this.claim?.renderingPhysician?.phyID ?? 0,
-      ClaFacilityPhyFID: this.claim?.facilityPhysician?.phyID ?? 0
+      ClaBillingPhyFID: this.getClaimBillingPhyFid(),
+      ClaRenderingPhyFID: this.getClaimRenderingPhyFid(),
+      ClaFacilityPhyFID: this.getClaimFacilityPhyFid()
     });
     this.refreshBillingProviderValidation();
+  }
+
+  /** Re-apply physician FKs after physicians list loads (dropdown options now available). */
+  private syncPhysicianFormFromClaim(): void {
+    if (!this.claim) return;
+    this.claimForm.patchValue({
+      ClaBillingPhyFID: this.getClaimBillingPhyFid(),
+      ClaRenderingPhyFID: this.getClaimRenderingPhyFid(),
+      ClaFacilityPhyFID: this.getClaimFacilityPhyFid()
+    });
   }
 
   ngOnDestroy(): void {
@@ -1358,9 +1410,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
-    const claBillingPhyFID = this.claimForm.get('ClaBillingPhyFID')?.value ?? null;
-    const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
-    const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
+    const claBillingPhyFID = this.getFormPhyFid('ClaBillingPhyFID');
+    const claRenderingPhyFID = this.getFormPhyFid('ClaRenderingPhyFID');
+    const claFacilityPhyFID = this.getFormPhyFid('ClaFacilityPhyFID');
     const noteText = this.newNote?.trim() || null;
     const payload = this.buildClaimUpdatePayload({
       claStatus: claStatus || null,
@@ -1371,6 +1423,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
+    this.logClaimSaveProviderTrace('saveAndClose', payload);
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -1383,6 +1436,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
           this.claim.claSubmissionMethod = claSubmissionMethod;
+          this.claim.claBillingPhyFID = claBillingPhyFID;
+          this.claim.claRenderingPhyFID = claRenderingPhyFID;
+          this.claim.claFacilityPhyFID = claFacilityPhyFID;
           this.updateClaimPhysicianRefs(claBillingPhyFID, claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
@@ -1404,9 +1460,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     const claStatus = this.claimForm.get('ClaStatus')?.value ?? null;
     const claClassification = this.claimForm.get('ClaClassification')?.value ?? null;
     const claSubmissionMethod = this.claimForm.get('ClaSubmissionMethod')?.value ?? null;
-    const claBillingPhyFID = this.claimForm.get('ClaBillingPhyFID')?.value ?? null;
-    const claRenderingPhyFID = this.claimForm.get('ClaRenderingPhyFID')?.value ?? null;
-    const claFacilityPhyFID = this.claimForm.get('ClaFacilityPhyFID')?.value ?? null;
+    const claBillingPhyFID = this.getFormPhyFid('ClaBillingPhyFID');
+    const claRenderingPhyFID = this.getFormPhyFid('ClaRenderingPhyFID');
+    const claFacilityPhyFID = this.getFormPhyFid('ClaFacilityPhyFID');
     const noteText = this.newNote?.trim() || null;
     const payload = this.buildClaimUpdatePayload({
       claStatus: claStatus || null,
@@ -1417,6 +1473,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claFacilityPhyFID,
       noteText
     });
+    this.logClaimSaveProviderTrace('save', payload);
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -1429,6 +1486,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           this.claim.claStatus = claStatus;
           this.claim.claClassification = claClassification;
           this.claim.claSubmissionMethod = claSubmissionMethod;
+          this.claim.claBillingPhyFID = claBillingPhyFID;
+          this.claim.claRenderingPhyFID = claRenderingPhyFID;
+          this.claim.claFacilityPhyFID = claFacilityPhyFID;
           this.updateClaimPhysicianRefs(claBillingPhyFID, claRenderingPhyFID, claFacilityPhyFID);
         }
         this.newNote = '';
@@ -1440,9 +1500,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   private refreshBillingProviderValidation(): void {
-    const billingId = Number(this.claimForm.get('ClaBillingPhyFID')?.value ?? 0);
-    if (!Number.isFinite(billingId) || billingId <= 0) {
-      this.billingProviderValidationIssues = ['Billing provider is required.'];
+    const billingId = this.getFormPhyFid('ClaBillingPhyFID');
+    if (billingId <= 0) {
+      const stored = this.getClaimBillingPhyFid();
+      this.billingProviderValidationIssues = stored > 0
+        ? [`Billing provider is required (form unset; claim still has PhyID ${stored}). Select billing provider again.`]
+        : ['Billing provider is required.'];
       return;
     }
     const provider =
@@ -1450,6 +1513,19 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       ?? this.billingProviders.find((p) => p.phyID === billingId)
       ?? null;
     this.billingProviderValidationIssues = getOperationalBillingProviderFailures(provider);
+  }
+
+  private logClaimSaveProviderTrace(action: string, payload: Record<string, unknown>): void {
+    console.debug('[ClaimDetails] provider save trace', {
+      action,
+      formBillingPhyFID: this.getFormPhyFid('ClaBillingPhyFID'),
+      formBillingLabel: this.getSelectedBillingProviderLabel(),
+      claimStoredBillingPhyFID: this.getClaimBillingPhyFid(),
+      claimStoredBillingName: this.claim?.billingPhysician?.phyName ?? null,
+      payloadClaBillingPhyFID: payload['claBillingPhyFID'],
+      payloadClaFacilityPhyFID: payload['claFacilityPhyFID'],
+      payloadClaRenderingPhyFID: payload['claRenderingPhyFID']
+    });
   }
 
   private validateBillingProviderForSave(): boolean {
@@ -1701,9 +1777,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     claStatus: string | null;
     claClassification: string | null;
     claSubmissionMethod: string | null;
-    claBillingPhyFID: number | null;
-    claRenderingPhyFID: number | null;
-    claFacilityPhyFID: number | null;
+    claBillingPhyFID: number;
+    claRenderingPhyFID: number;
+    claFacilityPhyFID: number;
     noteText: string | null;
   }): any {
     if (!this.claim) return partial;
@@ -1717,9 +1793,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       claSubmissionMethod: partial.claSubmissionMethod ?? this.claim.claSubmissionMethod ?? null,
       claBillTo: this.claim.claBillTo ?? null,
       primaryPayerId,
-      claBillingPhyFID: partial.claBillingPhyFID ?? this.claim.billingPhysician?.phyID ?? 0,
-      claRenderingPhyFID: partial.claRenderingPhyFID ?? this.claim.renderingPhysician?.phyID ?? 0,
-      claFacilityPhyFID: partial.claFacilityPhyFID ?? this.claim.facilityPhysician?.phyID ?? 0,
+      // Physician FKs: form selection only — never fall back to stale claim.billingPhysician (HL7 placeholder).
+      claBillingPhyFID: partial.claBillingPhyFID,
+      claRenderingPhyFID: partial.claRenderingPhyFID,
+      claFacilityPhyFID: partial.claFacilityPhyFID,
       claInvoiceNumber: this.claim.claInvoiceNumber ?? null,
       claAdmittedDate: this.claim.claAdmittedDate ?? null,
       claDischargedDate: this.claim.claDischargedDate ?? null,

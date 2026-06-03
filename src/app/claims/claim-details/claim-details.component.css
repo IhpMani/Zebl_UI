@@ -1,3 +1,9 @@
+.billing-fk-hint {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted, #475569);
+}
+
 .billing-readiness-panel {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
