@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { forkJoin, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
@@ -73,6 +74,8 @@ export class ProgramSetupPageComponent implements OnInit {
   ];
 
   selectedSection: string = 'general';
+  /** Off by default: saves apply company-wide. When on, saves apply to the current facility only. */
+  facilityCustomizeMode = false;
   /** Section-specific shape; hydrated via program-setup-hydration.ts before bind. */
   settingsData: any = null;
   isLoading = false;
@@ -143,11 +146,51 @@ export class ProgramSetupPageComponent implements OnInit {
     private cityStateZipApi: CityStateZipApiService,
     private customFieldsApi: CustomFieldsApiService,
     private eligibilityApi: EligibilityApiService,
-    private router: Router
+    private router: Router,
+    private auth: AuthService
   ) { }
 
   ngOnInit(): void {
     this.loadSection(this.selectedSection);
+  }
+
+  get canCustomizeForFacility(): boolean {
+    return (
+      this.auth.canManageTenantProgramSettings() &&
+      this.sectionUsesProgramTier(this.selectedSection)
+    );
+  }
+
+  startFacilityCustomize(): void {
+    this.facilityCustomizeMode = true;
+  }
+
+  revertToSharedSettings(): void {
+    const apiSection = this.toApiSectionName(this.selectedSection);
+    if (this.selectedSection === 'sending-claims') {
+      this.facilityCustomizeMode = false;
+      this.loadSection(this.selectedSection);
+      return;
+    }
+    this.isSaving = true;
+    this.saveError = null;
+    this.programSettingsApi.clearFacilityOverride(apiSection).subscribe({
+      next: () => {
+        this.facilityCustomizeMode = false;
+        this.isSaving = false;
+        this.loadSection(this.selectedSection);
+      },
+      error: err => {
+        this.isSaving = false;
+        this.handleSaveError(err, apiSection, true);
+      }
+    });
+  }
+
+  private sectionUsesProgramTier(sectionId: string): boolean {
+    return sectionId !== 'patient'
+      && sectionId !== 'patient-custom-fields'
+      && sectionId !== 'claim-custom-fields';
   }
 
   onSelectSection(sectionId: string): void {
@@ -156,6 +199,9 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     this.selectedSection = sectionId;
+    if (!this.sectionUsesProgramTier(sectionId)) {
+      this.facilityCustomizeMode = false;
+    }
     this.loadSection(sectionId);
   }
 
@@ -219,7 +265,7 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     if (sectionId === 'patient-eligibility') {
-      this.programSettingsApi.getSection('patientEligibility').subscribe({
+      this.programSettingsApi.getSection('patientEligibility', this.apiScopeForSection('patient-eligibility')).subscribe({
         next: data => {
           this.settingsData = hydratePatientEligibilitySettings(data);
           this.loadEligibilityLookups();
@@ -284,7 +330,7 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     const apiSection = this.toApiSectionName(sectionId);
-    this.programSettingsApi.getSection(apiSection).subscribe({
+    this.programSettingsApi.getSection(apiSection, this.apiScopeForSection(sectionId)).subscribe({
       next: data => {
         if (sectionId === 'patient') {
           this.settingsData = hydratePatientSettings(data);
@@ -316,6 +362,19 @@ export class ProgramSetupPageComponent implements OnInit {
       return 'patientEligibility';
     }
     return sectionId;
+  }
+
+  /** Always load merged effective settings for display. */
+  private apiScopeForSection(_sectionId: string): undefined {
+    return undefined;
+  }
+
+  /** Save to company settings by default; facility when advanced override is on. */
+  private saveScopeForSection(sectionId: string): 'tenant' | undefined {
+    if (!this.sectionUsesProgramTier(sectionId)) {
+      return undefined;
+    }
+    return this.facilityCustomizeMode ? undefined : 'tenant';
   }
 
   onSave(): void {
@@ -381,8 +440,8 @@ export class ProgramSetupPageComponent implements OnInit {
       });
     } else if (this.selectedSection === 'claim') {
       const claimPayload = toClaimSavePayload(this.settingsData as ClaimProgramSettings);
-      this.programSettingsApi.saveSection('claim', claimPayload).pipe(
-        switchMap(() => this.programSettingsApi.getSection('claim'))
+      this.programSettingsApi.saveSection('claim', claimPayload, this.saveScopeForSection('claim')).pipe(
+        switchMap(() => this.programSettingsApi.getSection('claim', this.apiScopeForSection('claim')))
       ).subscribe({
         next: data => {
           this.settingsData = hydrateClaimSettings(data);
@@ -400,7 +459,7 @@ export class ProgramSetupPageComponent implements OnInit {
       }
 
       const payload = toPatientEligibilitySavePayload(eligibility);
-      this.programSettingsApi.saveSection('patientEligibility', payload).pipe(
+      this.programSettingsApi.saveSection('patientEligibility', payload, this.saveScopeForSection('patient-eligibility')).pipe(
         switchMap(saved => of(hydratePatientEligibilitySettings(saved)))
       ).subscribe({
         next: data => {
@@ -426,8 +485,8 @@ export class ProgramSetupPageComponent implements OnInit {
         return;
       }
       const payload = cloneSettings(this.settingsData as CompanyProgramSettings);
-      this.programSettingsApi.saveSection('company', payload).pipe(
-        switchMap(() => this.programSettingsApi.getSection('company'))
+      this.programSettingsApi.saveSection('company', payload, this.saveScopeForSection('company')).pipe(
+        switchMap(() => this.programSettingsApi.getSection('company', this.apiScopeForSection('company')))
       ).subscribe({
         next: data => {
           this.settingsData = hydrateCompanySettings(data);
@@ -448,7 +507,7 @@ export class ProgramSetupPageComponent implements OnInit {
       const extendedPayload = toSendingClaimsExtendedPayload(state);
       forkJoin([
         this.programSettingsApi.saveSendingClaimsSettings(corePayload),
-        this.programSettingsApi.saveSection('sendingClaims', extendedPayload)
+        this.programSettingsApi.saveSection('sendingClaims', extendedPayload, this.saveScopeForSection('sending-claims'))
       ]).pipe(
         switchMap(() => forkJoin({
           core: this.programSettingsApi.getSendingClaimsSettings(),
@@ -463,8 +522,8 @@ export class ProgramSetupPageComponent implements OnInit {
       });
     } else if (this.selectedSection === 'interface') {
       const payload = cloneSettings(this.settingsData as InterfaceProgramSettings);
-      this.programSettingsApi.saveSection('interface', payload).pipe(
-        switchMap(() => this.programSettingsApi.getSection('interface'))
+      this.programSettingsApi.saveSection('interface', payload, this.saveScopeForSection('interface')).pipe(
+        switchMap(() => this.programSettingsApi.getSection('interface', this.apiScopeForSection('interface')))
       ).subscribe({
         next: data => {
           this.settingsData = cloneSettings(hydrateInterfaceSettings(data));

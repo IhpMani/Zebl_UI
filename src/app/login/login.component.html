@@ -12,6 +12,16 @@
       <input name="password" [(ngModel)]="password" type="password" required />
     </label>
 
+    <label>
+      Sign-in key
+      <input
+        name="tenantKey"
+        [(ngModel)]="tenantKey"
+        autocomplete="organization"
+        placeholder="Optional — use if your practice gave you one"
+      />
+    </label>
+
     <div class="error" *ngIf="error">{{ error }}</div>
 
     <button type="submit" [disabled]="loading || !f.valid">

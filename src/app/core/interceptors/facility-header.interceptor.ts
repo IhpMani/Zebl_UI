@@ -110,7 +110,7 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
 
 
 
-    if (this.operationalBootstrapNoFacility(req.method, url)) {
+    if (this.operationalBootstrapNoFacility(req.method, url, req)) {
 
       const headers = req.headers
 
@@ -180,8 +180,16 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
    * every connection-library request now sends `X-Facility-Id` like every other
    * tenant-scoped resource.
    */
-  private operationalBootstrapNoFacility(method: string, url: string): boolean {
+  private operationalBootstrapNoFacility(method: string, url: string, req?: HttpRequest<unknown>): boolean {
     if (this.isGloballyScopedRoute(url)) {
+      return true;
+    }
+
+    if (this.isPracticeAdminTenantManagementRoute(url)) {
+      return true;
+    }
+
+    if (url.includes('/api/program-settings') && this.programSettingsTenantScope(req, url)) {
       return true;
     }
 
@@ -193,6 +201,22 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
       url.includes('/api/facilities') ||
       url.includes('/api/integrations/by-facility')
     );
+  }
+
+  /** Users/Facilities admin screens are tenant-scoped; must work before a facility is selected in the top bar. */
+  private isPracticeAdminTenantManagementRoute(url: string): boolean {
+    return (
+      url.includes('/api/admin/facilities') ||
+      url.includes('/api/users') ||
+      url.includes('/api/user-facilities')
+    );
+  }
+
+  private programSettingsTenantScope(req: HttpRequest<unknown> | undefined, url: string): boolean {
+    if (req?.headers.get('X-Program-Settings-Scope') === 'tenant') {
+      return true;
+    }
+    return url.includes('scope=tenant');
   }
 
   private isGloballyScopedRoute(url: string): boolean {

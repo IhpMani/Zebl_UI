@@ -416,7 +416,8 @@ export class WorkspaceService {
     '/code-library': 'Code Library',
     '/claim-template-library': 'Claim Template Library',
     '/tools/program-setup': 'Program Setup',
-    '/admin/users': 'User Management',
+    '/admin/users': 'Users',
+    '/admin/facilities': 'Facilities',
     '/lists': 'Lists'
   };
 

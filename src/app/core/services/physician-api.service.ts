@@ -33,6 +33,8 @@ export class PhysicianApiService {
       isPerson?: boolean;
       /** Override automatic placeholder exclusion. Defaults to true when any slot filter is used. */
       excludePlaceholders?: boolean;
+      /** Comma-separated PhyID list — hydrate claim FK selections without loading the full library. */
+      phyIds?: string;
     }
   ): Observable<PhysiciansApiResponse> {
     let params = new HttpParams();
@@ -80,6 +82,9 @@ export class PhysicianApiService {
       }
       if (filters.excludePlaceholders !== undefined) {
         params = params.append('excludePlaceholders', filters.excludePlaceholders.toString());
+      }
+      if (filters.phyIds) {
+        params = params.append('phyIds', filters.phyIds);
       }
     }
 

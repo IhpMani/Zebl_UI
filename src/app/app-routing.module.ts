@@ -19,6 +19,7 @@ import { DisbursementListComponent } from './disbursements/disbursement-list/dis
 import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note-list.component';
 import { LoginComponent } from './login/login.component';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
+import { FacilityManagementComponent } from './admin/facility-management/facility-management.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 import { EdiReportsComponent } from './edi-reports/edi-reports.component';
@@ -37,6 +38,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'unauthorized', component: UnauthorizedComponent },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AdminGuard] },
+  { path: 'admin/facilities', component: FacilityManagementComponent, canActivate: [AdminGuard] },
   { path: 'super-admin', component: SuperAdminComponent, canActivate: [SuperAdminGuard] },
 
   { path: '', component: HomeComponent, canActivate: [AuthGuard] },

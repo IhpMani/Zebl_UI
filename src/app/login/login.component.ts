@@ -12,6 +12,8 @@ import { environment } from 'src/environments/environment';
 export class LoginComponent {
   userName = '';
   password = '';
+  /** Optional practice sign-in key when the same username exists in more than one practice. */
+  tenantKey = '';
   error: string | null = null;
   loading = false;
 
@@ -20,7 +22,7 @@ export class LoginComponent {
   submit(): void {
     this.error = null;
     this.loading = true;
-    this.auth.login(this.userName, this.password).subscribe({
+    this.auth.login(this.userName, this.password, this.tenantKey).subscribe({
       next: () => {
         this.loading = false;
         if (this.auth.isSuperAdmin()) {
@@ -39,9 +41,9 @@ export class LoginComponent {
             /failed to fetch|networkerror|load failed|net::/i.test(http.message));
         if (isNetworkError) {
           this.error =
-            `Cannot reach the API at ${environment.apiUrl}. Start Zebl.Api (HTTPS profile, port 7183), ` +
-            'then in a terminal run: dotnet dev-certs https --trust (Windows/macOS). ' +
-            'If you use HTTP only, set apiUrl in environment.ts to http://localhost:5226 and restart ng serve.';
+            `Cannot reach the API at ${environment.apiUrl}. Start Zebl.Api: ` +
+            'dotnet run --launch-profile http (listens on http://localhost:5226). ' +
+            'Restart ng serve after changing environment.ts or proxy.conf.json.';
           return;
         }
         const body = http?.error as { error?: string; message?: string } | string | null | undefined;

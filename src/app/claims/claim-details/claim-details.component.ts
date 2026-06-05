@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit
+} from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
@@ -33,7 +41,7 @@ import {
   styleUrls: ['./claim-details.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ClaimDetailsComponent implements OnInit, OnDestroy {
+export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   claim: Claim | null = null;
   isNewMode = false;
   loading: boolean = false;
@@ -155,6 +163,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   };
 
   serviceLines: any[] = [];
+  /** Cached sorted rows for service-line grid (avoids re-sorting on every CD cycle). */
+  displayServiceLines: any[] = [];
   /** Client-side sort for service lines grid (display only). */
   serviceLineSortKey: string | null = null;
   serviceLineSortDir: 'asc' | 'desc' = 'asc';
@@ -185,6 +195,15 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   private paymentRequestInFlight = false;
   private adjustmentRequestInFlight = false;
   private disbursementRequestInFlight = false;
+  private physicianCatalogLoadInFlight = false;
+  private claimActivityLoaded = false;
+  private claimActivityRequestInFlight = false;
+  private customFieldsDefinitionsLoaded = false;
+
+  /** Temporary perf investigation (dev only). Remove after bottleneck fix. */
+  private readonly perfLog = !environment.production;
+  private perfOrigin = 0;
+  private perfRenderPending = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -205,8 +224,9 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    this.perfReset('ngOnInit');
+    this.perfMark('ngOnInit start');
     this.loadClassificationOptions();
-    this.loadPhysicians();
     if (this.route.snapshot.routeConfig?.path === 'claims/new') {
       this.initNewClaim();
       return;
@@ -230,6 +250,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       }
       this.claId = nextId;
       this.applyInitialTabTitleFromContext();
+      this.perfMark('route paramMap → loadClaim', { claId: nextId });
       this.loadClaim(this.claId);
     });
 
@@ -264,6 +285,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.patchClaimForm();
     this.workspace.updateActiveTabTitle('New Claim');
     this.loadClaimInitialSettings();
+    this.schedulePhysicianDropdownCatalog();
     this.cdr.markForCheck();
   }
 
@@ -347,42 +369,128 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   loadClassificationOptions(): void {
+    this.perfTime('loadClassificationOptions (API)');
     this.listApiService.getListValues('Claim Classification').subscribe({
       next: (r) => {
+        this.perfTimeEnd('loadClassificationOptions (API)');
         const items = (r.data || []).slice().sort((a, b) => (a.value || '').localeCompare(b.value || ''));
         this.classificationOptions = items;
         this.ensureCurrentClassificationInOptions();
-        this.cdr.markForCheck();
-      },
-      error: () => { this.classificationOptions = []; this.cdr.markForCheck(); }
-    });
-  }
-
-  /** Load physicians once from existing Physician API; derive filtered lists for dropdowns */
-  loadPhysicians(): void {
-    this.physicianApiService.getPhysicians(1, 10000).subscribe({
-      next: (r) => {
-        this.physicians = r.data ?? [];
-        this.renderingProviders = this.physicians.filter(p => p.phyType === 'Person');
-        this.serviceFacilities = this.physicians.filter(p => p.phyType === 'Non-Person');
-        this.billingProviders = this.physicians.filter(
-          (p) =>
-            p.phyType === 'Non-Person'
-            && isBillingClassificationCode(p.phyPrimaryCodeType)
-            && !p.isSystemPlaceholder
-        );
-        this.syncPhysicianFormFromClaim();
-        this.ensureCurrentPhysiciansInOptions();
+        this.perfMark('loadClassificationOptions applied', { count: items.length });
         this.cdr.markForCheck();
       },
       error: () => {
-        this.physicians = [];
-        this.renderingProviders = [];
-        this.serviceFacilities = [];
-        this.billingProviders = [];
+        this.perfTimeEnd('loadClassificationOptions (API)');
+        this.classificationOptions = [];
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Hydrate claim FK physicians, then load filtered dropdown catalogs after paint. */
+  private loadClaimProvidersAfterClaim(claim: Claim): void {
+    const ids = this.getClaimPhysicianIds(claim);
+    if (ids.length > 0) {
+      this.perfTime('loadClaimProviders phyIds');
+      this.physicianApiService
+        .getPhysicians(1, Math.max(ids.length + 5, 25), { phyIds: ids.join(',') })
+        .subscribe({
+          next: (r) => {
+            this.perfTimeEnd('loadClaimProviders phyIds');
+            this.mergePhysicianRows(r.data ?? []);
+            this.filterPhysicianDropdownLists();
+            this.syncPhysicianFormFromClaim();
+            this.ensureCurrentPhysiciansInOptions();
+            this.perfMark('loadClaimProviders phyIds done', { count: r.data?.length ?? 0 });
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.perfTimeEnd('loadClaimProviders phyIds');
+            this.cdr.markForCheck();
+          }
+        });
+    } else {
+      this.syncPhysicianFormFromClaim();
+    }
+    this.schedulePhysicianDropdownCatalog();
+  }
+
+  private getClaimPhysicianIds(claim?: Claim | null): number[] {
+    const c = claim ?? this.claim;
+    if (!c) return [];
+    const ids = [
+      this.coercePhyFid(c.claBillingPhyFID ?? c.billingPhysician?.phyID),
+      this.coercePhyFid(c.claRenderingPhyFID ?? c.renderingPhysician?.phyID),
+      this.coercePhyFid(c.claFacilityPhyFID ?? c.facilityPhysician?.phyID)
+    ].filter((id) => id > 0);
+    return [...new Set(ids)];
+  }
+
+  private mergePhysicianRows(rows: PhysicianListItem[]): void {
+    const byId = new Map(this.physicians.map((p) => [p.phyID, p]));
+    for (const p of rows) {
+      byId.set(p.phyID, p);
+    }
+    this.physicians = [...byId.values()];
+    this.filterPhysicianDropdownLists();
+  }
+
+  private filterPhysicianDropdownLists(): void {
+    this.renderingProviders = this.physicians.filter((p) => p.phyType === 'Person');
+    this.serviceFacilities = this.physicians.filter((p) => p.phyType === 'Non-Person');
+    this.billingProviders = this.physicians.filter(
+      (p) =>
+        p.phyType === 'Non-Person'
+        && isBillingClassificationCode(p.phyPrimaryCodeType)
+        && !p.isSystemPlaceholder
+    );
+  }
+
+  private schedulePhysicianDropdownCatalog(): void {
+    setTimeout(() => this.loadPhysicianDropdownCatalog(), 0);
+  }
+
+  /** Filtered physician subsets for dropdowns (deferred; not full 10k library). */
+  private loadPhysicianDropdownCatalog(): void {
+    if (this.physicianCatalogLoadInFlight) return;
+    this.physicianCatalogLoadInFlight = true;
+    this.perfTime('loadPhysicianDropdownCatalog (3 filtered API calls)');
+    forkJoin({
+      rendering: this.physicianApiService.getPhysicians(1, 500, { isPerson: true, inactive: false }),
+      facility: this.physicianApiService.getPhysicians(1, 500, { isFacility: true, inactive: false }),
+      billing: this.physicianApiService.getPhysicians(1, 500, {
+        classification: 'BI',
+        isFacility: true,
+        inactive: false
+      })
+    })
+      .pipe(
+        finalize(() => {
+          this.physicianCatalogLoadInFlight = false;
+          this.perfTimeEnd('loadPhysicianDropdownCatalog (3 filtered API calls)');
+        })
+      )
+      .subscribe({
+        next: ({ rendering, facility, billing }) => {
+          const rows = [
+            ...(rendering.data ?? []),
+            ...(facility.data ?? []),
+            ...(billing.data ?? [])
+          ];
+          this.mergePhysicianRows(rows);
+          this.ensureCurrentPhysiciansInOptions();
+          this.perfMark('loadPhysicianDropdownCatalog done', {
+            total: this.physicians.length,
+            rendering: this.renderingProviders.length,
+            facilities: this.serviceFacilities.length,
+            billing: this.billingProviders.length
+          });
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   /** Ensure the claim's current ClaClassification appears in dropdown (for legacy values not in list) */
@@ -487,6 +595,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   /** Patch form with claim data from API (FK fields on Claim row, not only nested physician DTOs). */
   private patchClaimForm(): void {
+    this.perfTime('patchClaimForm');
     this.claimForm.patchValue({
       ClaStatus: this.claim?.claStatus ?? null,
       ClaClassification: this.claim?.claClassification ?? null,
@@ -496,6 +605,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       ClaFacilityPhyFID: this.getClaimFacilityPhyFid() || null
     });
     this.resetPhysicianFkEditState();
+    this.perfTimeEnd('patchClaimForm');
   }
 
   /**
@@ -504,6 +614,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
    */
   private syncPhysicianFormFromClaim(): void {
     if (!this.claim) return;
+    this.perfTime('syncPhysicianFormFromClaim');
     const patch = this.buildPhysicianFkPatchForClaimSync();
     if (Object.keys(patch).length === 0) {
       const formBilling = this.getFormPhyFid('ClaBillingPhyFID');
@@ -517,9 +628,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           formBillingTouched: billingCtrl?.touched ?? false
         });
       }
+      this.perfTimeEnd('syncPhysicianFormFromClaim');
       return;
     }
     this.claimForm.patchValue(patch);
+    this.perfTimeEnd('syncPhysicianFormFromClaim');
+    this.perfMark('syncPhysicianFormFromClaim patched', patch);
   }
 
   /** Authoritative claim hydration — clears prior user-edit guards on physician FK controls. */
@@ -569,9 +683,56 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return this.coercePhyFid(ctrl.value) <= 0;
   }
 
+  ngAfterViewInit(): void {
+    this.schedulePerfRenderComplete('ngAfterViewInit');
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private perfReset(origin: string): void {
+    if (!this.perfLog) return;
+    this.perfOrigin = performance.now();
+    console.log(`[ClaimDetailsPerf] ── session: ${origin} ──`);
+  }
+
+  private perfMark(label: string, detail?: Record<string, unknown>): void {
+    if (!this.perfLog) return;
+    const ms = Math.round(performance.now() - this.perfOrigin);
+    if (detail && Object.keys(detail).length > 0) {
+      console.log(`[ClaimDetailsPerf] +${ms}ms ${label}`, detail);
+    } else {
+      console.log(`[ClaimDetailsPerf] +${ms}ms ${label}`);
+    }
+  }
+
+  private perfTime(label: string): void {
+    if (!this.perfLog) return;
+    console.time(`[ClaimDetailsPerf] ${label}`);
+  }
+
+  private perfTimeEnd(label: string): void {
+    if (!this.perfLog) return;
+    console.timeEnd(`[ClaimDetailsPerf] ${label}`);
+  }
+
+  /** Log first paint after claim data binds (rAF × 2). */
+  private schedulePerfRenderComplete(trigger: string): void {
+    if (!this.perfLog || !this.claim) return;
+    this.perfRenderPending = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!this.perfRenderPending) return;
+        this.perfRenderPending = false;
+        this.perfMark(`render complete (${trigger})`, {
+          serviceLineCount: this.serviceLinesArray.length,
+          physicianCount: this.physicians.length,
+          billingProviderOptions: this.billingProviders.length
+        });
+      });
+    });
   }
 
   private isUrlForThisClaim(url: string): boolean {
@@ -624,6 +785,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
    * while preserving fields not returned by the services endpoint (e.g. responsiblePartyName, place).
    */
   private applyFreshServiceLines(fresh: any[], embedded: any[]): void {
+    this.perfTime('applyFreshServiceLines');
     const embeddedById = new Map<number, any>();
     for (const row of embedded ?? []) {
       const id = row?.srvID ?? row?.srvId;
@@ -651,7 +813,59 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     if (this.selectedServiceLineId != null) {
       this.loadServiceLineCustomValuesFor(this.selectedServiceLineId);
     }
+    this.perfTimeEnd('applyFreshServiceLines');
+    this.rebuildDisplayServiceLines();
+    this.perfMark('applyFreshServiceLines done', {
+      lineCount: this.serviceLines.length,
+      freshCount: fresh?.length ?? 0,
+      embeddedCount: embedded?.length ?? 0
+    });
     this.cdr.markForCheck();
+    this.schedulePerfRenderComplete('after service lines');
+  }
+
+  private scheduleDeferredServiceLineTotalsRefresh(): void {
+    if (!this.claId) return;
+    setTimeout(() => {
+      if (!this.claId) return;
+      this.perfMark('deferred refreshServiceLinesFromApi');
+      this.refreshServiceLinesFromApi();
+    }, 0);
+  }
+
+  private scheduleDeferredClaimActivity(): void {
+    const claId = this.claId;
+    if (!claId) return;
+    setTimeout(() => this.loadClaimActivity(claId), 0);
+  }
+
+  private loadClaimActivity(claId: number, force = false): void {
+    if (this.claimActivityRequestInFlight || (this.claimActivityLoaded && !force)) return;
+    this.claimActivityRequestInFlight = true;
+    this.perfTime('loadClaimActivity');
+    this.claimApiService
+      .getClaimActivity(claId)
+      .pipe(
+        finalize(() => {
+          this.claimActivityRequestInFlight = false;
+          this.perfTimeEnd('loadClaimActivity');
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (activity) => {
+          if (this.claim) {
+            this.claim.claimActivity = activity ?? [];
+          }
+          this.claimActivityLoaded = true;
+          this.perfMark('loadClaimActivity applied', { count: activity?.length ?? 0 });
+        },
+        error: () => {
+          if (this.claim && !this.claim.claimActivity) {
+            this.claim.claimActivity = [];
+          }
+        }
+      });
   }
 
   private refreshServiceLinesFromApi(): void {
@@ -768,36 +982,52 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
 
   toggleSection(section: keyof typeof this.sectionsState): void {
     this.sectionsState[section] = !this.sectionsState[section];
+    if (
+      section === 'customFields'
+      && this.sectionsState.customFields
+      && this.claId
+      && !this.customFieldsDefinitionsLoaded
+    ) {
+      this.customFieldsDefinitionsLoaded = true;
+      this.loadClaimCustomFieldsAndValues(this.claId);
+    }
     this.cdr.markForCheck();
   }
 
   loadClaim(claId: number): void {
     if (this.claimRequestInFlight) return;
+    this.perfReset(`loadClaim claId=${claId}`);
     this.loading = true;
     this.error = null;
+    this.claim = null;
+    this.claimActivityLoaded = false;
+    this.customFieldsDefinitionsLoaded = false;
     this.claimRequestInFlight = true;
     this.applyInitialTabTitleFromContext();
+    this.perfMark('loadClaim start (getClaimById?detail=summary)');
 
-    forkJoin({
-      claim: this.claimApiService.getClaimById(claId),
-      services: this.serviceApi.getServicesByClaim(claId).pipe(
-        catchError((e) => {
-          console.warn('GET /api/services/claims failed; falling back to claim payload for service lines', e);
-          return of(undefined);
-        })
-      )
-    })
+    this.perfTime('loadClaim getClaimById (summary)');
+    this.claimApiService
+      .getClaimById(claId, { detail: 'summary' })
       .pipe(
+        tap((c) => {
+          this.perfMark('getClaimById summary response', {
+            embeddedServiceLines: (c as Claim)?.serviceLines?.length ?? 0
+          });
+        }),
         finalize(() => {
-          this.loading = false;
+          this.perfTimeEnd('loadClaim getClaimById (summary)');
           this.claimRequestInFlight = false;
           this.cdr.markForCheck();
         })
       )
       .subscribe({
-        next: ({ claim, services }) => {
+        next: (claim) => {
+          this.perfTime('loadClaim post-processing');
           this.claimStatuses = [...CLAIM_STATUS_OPTIONS];
           this.claim = claim;
+          this.loading = false;
+          this.perfMark('loadClaim shell ready (overlay dismissed)');
           if (!this.claim.additionalData) {
             this.claim.additionalData = this.getEmptyAdditionalData();
           }
@@ -807,17 +1037,21 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
           }
           this.ensureCurrentStatusInOptions();
           this.ensureCurrentClassificationInOptions();
-          this.ensureCurrentPhysiciansInOptions();
           this.loadResponsiblePayerOptionsFromClaim(claim);
           this.claim.claBillTo = this.normalizeBillToForUi(this.claim.claBillTo);
           this.normalizeClaimHeaderDatesForDateInputs(this.claim);
           this.patchClaimForm();
           const embedded = claim.serviceLines ?? [];
-          const fresh = services !== undefined ? (services ?? []) : embedded;
-          this.applyFreshServiceLines(fresh, embedded);
-          this.loadClaimCustomFieldsAndValues(claId);
+          this.applyFreshServiceLines(embedded, embedded);
+          this.loadClaimProvidersAfterClaim(claim);
+          this.scheduleDeferredServiceLineTotalsRefresh();
+          this.scheduleDeferredClaimActivity();
+          this.perfTimeEnd('loadClaim post-processing');
+          this.perfMark('loadClaim subscribe complete');
+          this.cdr.markForCheck();
         },
         error: (err) => {
+          this.loading = false;
           if (err.status === 404) {
             this.error = `Claim ${claId} not found.`;
           } else if (err.status === 503) {
@@ -828,6 +1062,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
             this.error = 'Failed to load claim details.';
           }
           console.error('Error loading claim:', err);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -850,23 +1085,45 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
   }
 
   private loadClaimCustomFieldsAndValues(claId: number): void {
+    this.perfMark('loadClaimCustomFields start (3 API calls, non-blocking)');
+    this.perfTime('customFields Claim definitions');
     this.customFieldsApi.getByEntityType('Claim').subscribe({
       next: defs => {
+        this.perfTimeEnd('customFields Claim definitions');
         this.claimCustomFieldDefinitions = defs ?? [];
+        this.perfTime('customFields Claim values');
         this.customFieldsApi.getValues('Claim', claId).subscribe({
-          next: values => { this.claimCustomFieldValues = { ...values }; this.cdr.markForCheck(); },
-          error: () => { this.claimCustomFieldValues = {}; this.cdr.markForCheck(); }
+          next: values => {
+            this.perfTimeEnd('customFields Claim values');
+            this.claimCustomFieldValues = { ...values };
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.perfTimeEnd('customFields Claim values');
+            this.claimCustomFieldValues = {};
+            this.cdr.markForCheck();
+          }
         });
         this.cdr.markForCheck();
       },
-      error: () => { this.claimCustomFieldDefinitions = []; this.cdr.markForCheck(); }
+      error: () => {
+        this.perfTimeEnd('customFields Claim definitions');
+        this.claimCustomFieldDefinitions = [];
+        this.cdr.markForCheck();
+      }
     });
+    this.perfTime('customFields ServiceLine definitions');
     this.customFieldsApi.getByEntityType('ServiceLine').subscribe({
       next: defs => {
+        this.perfTimeEnd('customFields ServiceLine definitions');
         this.serviceLineCustomFieldDefinitions = defs ?? [];
         this.cdr.markForCheck();
       },
-      error: () => { this.serviceLineCustomFieldDefinitions = []; this.cdr.markForCheck(); }
+      error: () => {
+        this.perfTimeEnd('customFields ServiceLine definitions');
+        this.serviceLineCustomFieldDefinitions = [];
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -944,23 +1201,21 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     return Array.isArray(this.serviceLines) ? this.serviceLines : [];
   }
 
-  /** Service lines for grid, optionally sorted by column header click. */
-  get displayServiceLinesArray(): any[] {
+  private rebuildDisplayServiceLines(): void {
     const lines = [...this.serviceLinesArray];
     const key = this.serviceLineSortKey;
-    if (!key) {
-      return lines;
+    if (key) {
+      const dir = this.serviceLineSortDir === 'asc' ? 1 : -1;
+      lines.sort((a, b) => {
+        const av = this.serviceLineSortValue(a, key);
+        const bv = this.serviceLineSortValue(b, key);
+        if (typeof av === 'number' && typeof bv === 'number') {
+          return (av - bv) * dir;
+        }
+        return String(av).localeCompare(String(bv), undefined, { numeric: true }) * dir;
+      });
     }
-    const dir = this.serviceLineSortDir === 'asc' ? 1 : -1;
-    lines.sort((a, b) => {
-      const av = this.serviceLineSortValue(a, key);
-      const bv = this.serviceLineSortValue(b, key);
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return (av - bv) * dir;
-      }
-      return String(av).localeCompare(String(bv), undefined, { numeric: true }) * dir;
-    });
-    return lines;
+    this.displayServiceLines = lines;
   }
 
   toggleServiceLineSort(key: string): void {
@@ -970,6 +1225,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
       this.serviceLineSortKey = key;
       this.serviceLineSortDir = 'asc';
     }
+    this.rebuildDisplayServiceLines();
     this.cdr.markForCheck();
   }
 
@@ -1862,9 +2118,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** Reload claim (and notes/activity) so that edits made elsewhere (e.g. Payment Entry) appear. */
+  /** Reload service-line totals and audit notes without a full claim reload. */
   refreshClaimAndNotes(): void {
-    if (this.claId) this.loadClaim(this.claId);
+    if (!this.claId) return;
+    this.refreshServiceLinesFromApi();
+    this.loadClaimActivity(this.claId, true);
   }
 
   addNote(event: Event): void {

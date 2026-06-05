@@ -1,261 +1,113 @@
 <div class="sa-page">
   <header class="sa-page-header">
-    <h1>Super Admin</h1>
+    <h1>Platform administration</h1>
     <p class="sa-subtitle">
-      Choose a tenant with <strong>Select</strong> in the table below to manage facilities and users.
+      Create client practices and hand off credentials to the practice administrator. Clients sign in separately to the billing application.
     </p>
   </header>
 
   <p class="sa-error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
-  <div class="sa-grid">
-    <!-- TENANTS -->
-    <section class="sa-card">
-      <h2>Tenants</h2>
-      <div class="sa-form">
-        <label>New tenant name<input [(ngModel)]="tenantName" name="tn" /></label>
-        <label>Tenant key<input [(ngModel)]="tenantKey" name="tk" /></label>
-        <button
-          type="button"
-          class="sa-btn sa-btn-action"
-          [class.sa-btn-action--pending]="tenantCreatePending"
-          (click)="createTenant()"
-        >
-          Create tenant
-        </button>
-      </div>
-      <div class="sa-table-wrap">
-        <table class="sa-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>TenantKey</th>
-              <th>Created</th>
-              <th class="sa-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let t of tenants"
-              [class.sa-row-selected]="isTenantSelected(t)"
-            >
-              <td>{{ t.name }}</td>
-              <td>{{ t.tenantKey }}</td>
-              <td>{{ formatDate(t.createdDate) }}</td>
-              <td class="sa-actions">
-                <button
-                  type="button"
-                  class="sa-btn sa-btn-ghost"
-                  (click)="selectTenantRow(t)"
-                >
-                  Select
-                </button>
-                <button
-                  type="button"
-                  class="sa-btn sa-btn-danger btn-delete"
-                  (click)="deleteTenant(t)"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p *ngIf="tenants.length === 0" class="sa-muted">No tenants.</p>
-    </section>
+  <div class="sa-toolbar">
+    <button type="button" class="sa-btn sa-btn-action" (click)="openCreateModal()">Create practice</button>
+    <button type="button" class="sa-btn sa-btn-ghost" (click)="reloadTenantRows()" [disabled]="loading">
+      Refresh
+    </button>
+  </div>
 
-    <!-- FACILITIES -->
-    <section class="sa-card">
-      <h2>Facilities</h2>
-      <p class="sa-muted" *ngIf="!contextTenantId">Select a tenant to list facilities.</p>
-      <div class="sa-form" *ngIf="contextTenantId">
-        <label>New facility name<input [(ngModel)]="facilityName" name="fn" /></label>
-        <button
-          type="button"
-          class="sa-btn sa-btn-action"
-          [class.sa-btn-action--pending]="facilityCreatePending"
-          (click)="createFacility()"
-          [disabled]="!contextTenantId"
-        >
-          Create facility
-        </button>
-      </div>
-      <div class="sa-table-wrap" *ngIf="contextTenantId">
-        <table class="sa-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Tenant</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let f of facilities">
-              <td>{{ f.name }}</td>
-              <td>{{ f.tenantName }}</td>
-              <td>{{ formatDate(f.createdDate) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p *ngIf="contextTenantId && facilities.length === 0" class="sa-muted">
-        No facilities for this tenant.
-      </p>
-    </section>
+  <section class="sa-card">
+    <h2>Client practices</h2>
+    <p class="sa-muted" *ngIf="loading">Loading…</p>
+    <div class="sa-table-wrap" *ngIf="!loading">
+      <table class="sa-table">
+        <thead>
+          <tr>
+            <th>Practice name</th>
+            <th>Administrator</th>
+            <th>Facilities</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="sa-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of tenantRows">
+            <td>
+              <div class="sa-tenant-name">{{ row.name }}</div>
+              <div class="sa-tenant-key">Sign-in key: {{ row.tenantKey }}</div>
+            </td>
+            <td>{{ row.adminUserName }}</td>
+            <td>{{ row.facilityCount }}</td>
+            <td>{{ row.status }}</td>
+            <td>{{ formatDate(row.createdDate) }}</td>
+            <td class="sa-actions sa-actions-stack">
+              <button type="button" class="sa-btn sa-btn-ghost" (click)="openEditModal(row)">View</button>
+              <button type="button" class="sa-btn sa-btn-ghost" (click)="openResetPasswordModal(row)">
+                Reset administrator password
+              </button>
+              <button type="button" class="sa-btn sa-btn-danger btn-delete" (click)="disableTenant(row)">
+                Disable practice
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p *ngIf="!loading && tenantRows.length === 0" class="sa-muted">No client practices yet.</p>
+  </section>
+</div>
 
-    <!-- USERS -->
-    <section class="sa-card">
-      <h2>Users</h2>
-      <p class="sa-muted" *ngIf="!contextTenantId">Select a tenant to list users.</p>
-      <form
-        *ngIf="contextTenantId"
-        class="sa-form"
-        autocomplete="off"
-        (submit)="$event.preventDefault()"
-      >
-        <label>
-          Username
-          <input
-            [(ngModel)]="userName"
-            name="saCreateUserLogin"
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-            data-lpignore="true"
-            data-1p-ignore
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            [(ngModel)]="userPassword"
-            name="saCreateUserSecret"
-            autocomplete="new-password"
-            data-lpignore="true"
-            data-1p-ignore
-          />
-        </label>
-        <label>
-          Assign facility
-          <div class="sa-custom-select">
-            <button
-              type="button"
-              class="sa-select-trigger"
-              [class.sa-select-trigger--open]="newUserFacilityMenuOpen"
-              (click)="toggleNewUserFacilityMenu($event)"
-            >
-              <span class="sa-select-label">{{ getSelectedNewUserFacilityLabel() }}</span>
-              <span class="sa-select-chevron" aria-hidden="true"></span>
-            </button>
-            <div class="sa-select-panel" *ngIf="newUserFacilityMenuOpen">
-              <button type="button" class="sa-select-option" [class.sa-select-option--active]="newUserFacilityId == null" (click)="pickNewUserFacility(null)">
-                — select facility —
-              </button>
-              <button
-                type="button"
-                class="sa-select-option"
-                *ngFor="let f of facilities"
-                [class.sa-select-option--active]="newUserFacilityId === f.facilityId"
-                (click)="pickNewUserFacility(f.facilityId)"
-              >
-                {{ f.name }} ({{ f.facilityId }})
-              </button>
-            </div>
-          </div>
-        </label>
-        <button
-          type="button"
-          class="sa-btn sa-btn-action"
-          [class.sa-btn-action--pending]="userCreatePending"
-          (click)="createUser()"
-          [disabled]="!contextTenantId"
-        >
-          Create user
-        </button>
-      </form>
-      <div class="sa-table-wrap" *ngIf="contextTenantId">
-        <table class="sa-table">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Tenant</th>
-              <th>Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let u of users">
-              <td>{{ u.userName }}</td>
-              <td>{{ u.tenantName }}</td>
-              <td>{{ u.role }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p *ngIf="contextTenantId && users.length === 0" class="sa-muted">No users.</p>
+<div class="sa-modal-backdrop" *ngIf="showCreateModal">
+  <div class="sa-modal" role="dialog" aria-labelledby="create-practice-title">
+    <h2 id="create-practice-title">Create practice</h2>
+    <p class="sa-muted">Creates the practice, practice administrator login, and first facility.</p>
+    <div class="sa-form">
+      <label>Practice name<input [(ngModel)]="wizardTenantName" name="wtn" /></label>
+      <label>Sign-in key<input [(ngModel)]="wizardTenantKey" name="wtk" /></label>
+      <label>Administrator username<input [(ngModel)]="wizardAdminUsername" name="wau" autocomplete="off" /></label>
+      <label>Administrator password<input type="password" [(ngModel)]="wizardAdminPassword" name="wap" autocomplete="new-password" /></label>
+      <label>Administrator email (optional)<input type="email" [(ngModel)]="wizardAdminEmail" name="wae" /></label>
+      <label>First facility name<input [(ngModel)]="wizardFacilityName" name="wfn" /></label>
+    </div>
+    <div class="sa-modal-actions">
+      <button type="button" class="sa-btn sa-btn-action" (click)="saveNewTenant()" [disabled]="wizardSaving">
+        {{ wizardSaving ? 'Saving…' : 'Save' }}
+      </button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeCreateModal()" [disabled]="wizardSaving">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
 
-      <div class="sa-form" *ngIf="contextTenantId && users.length > 0">
-        <label>
-          Select user
-          <div class="sa-custom-select">
-            <button
-              type="button"
-              class="sa-select-trigger"
-              [class.sa-select-trigger--open]="selectedUserMenuOpen"
-              (click)="toggleSelectedUserMenu($event)"
-            >
-              <span class="sa-select-label">{{ getSelectedUserLabel() }}</span>
-              <span class="sa-select-chevron" aria-hidden="true"></span>
-            </button>
-            <div class="sa-select-panel" *ngIf="selectedUserMenuOpen">
-              <button type="button" class="sa-select-option" [class.sa-select-option--active]="selectedUserId == null" (click)="pickSelectedUser(null)">
-                — select user —
-              </button>
-              <button
-                type="button"
-                class="sa-select-option"
-                *ngFor="let u of users"
-                [class.sa-select-option--active]="selectedUserId === u.userGuid"
-                (click)="pickSelectedUser(u.userGuid)"
-              >
-                {{ u.userName }}
-              </button>
-            </div>
-          </div>
-        </label>
-      </div>
+<div class="sa-modal-backdrop" *ngIf="showEditModal && editRow">
+  <div class="sa-modal" role="dialog">
+    <h2>Practice details</h2>
+    <div class="sa-form">
+      <label>Practice name<input [value]="editRow.name" readonly class="sa-readonly" /></label>
+      <label>Sign-in key<input [value]="editRow.tenantKey" readonly class="sa-readonly" /></label>
+      <label>Administrator<input [value]="editRow.adminUserName" readonly class="sa-readonly" /></label>
+      <label>Facilities<input [value]="editRow.facilityCount" readonly class="sa-readonly" /></label>
+    </div>
+    <div class="sa-modal-actions">
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeEditModal()">Close</button>
+    </div>
+  </div>
+</div>
 
-      <div class="sa-table-wrap" *ngIf="selectedUserId && selectedUserAccess.length > 0">
-        <table class="sa-table">
-          <thead>
-            <tr>
-              <th>Facility</th>
-              <th>Access</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let a of selectedUserAccess">
-              <td>{{ a.name }} ({{ a.facilityId }})</td>
-              <td>
-                <input
-                  type="checkbox"
-                  [checked]="a.hasAccess"
-                  (change)="toggleFacilityAccess(a.facilityId, $any($event.target).checked)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button
-          type="button"
-          class="sa-btn sa-btn-action sa-btn-below-table"
-          [class.sa-btn-action--pending]="facilityAccessSavePending"
-          (click)="saveSelectedUserAccess()"
-        >
-          Save facility access
-        </button>
-      </div>
-    </section>
+<div class="sa-modal-backdrop" *ngIf="showResetPasswordModal && resetRow">
+  <div class="sa-modal" role="dialog">
+    <h2>Reset administrator password</h2>
+    <p class="sa-muted">
+      User: <strong>{{ resetRow.adminUserName }}</strong> ({{ resetRow.name }})
+    </p>
+    <div class="sa-form">
+      <label>New password<input type="password" [(ngModel)]="resetPassword" autocomplete="new-password" /></label>
+    </div>
+    <p class="sa-muted" *ngIf="isDev">Development mode: uses the local set-password helper.</p>
+    <div class="sa-modal-actions">
+      <button type="button" class="sa-btn sa-btn-action" (click)="saveResetPassword()">Save password</button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeResetPasswordModal()">Cancel</button>
+    </div>
   </div>
 </div>

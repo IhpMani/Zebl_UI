@@ -1,12 +1,12 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   SuperAdminService,
   SuperAdminTenant,
-  SuperAdminFacility,
-  SuperAdminUserRow,
-  UserFacilityAccessRow,
+  TenantSummaryRow,
 } from './super-admin.service';
 import { SuperAdminContextService } from './super-admin-context.service';
 import { AuthService } from '../core/services/auth.service';
@@ -18,31 +18,28 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./super-admin.component.css'],
 })
 export class SuperAdminComponent implements OnInit, OnDestroy {
-  tenants: SuperAdminTenant[] = [];
-  facilities: SuperAdminFacility[] = [];
-  users: SuperAdminUserRow[] = [];
+  readonly isDev = !environment.production;
 
+  tenantRows: TenantSummaryRow[] = [];
+  loading = false;
   errorMessage = '';
 
-  tenantName = '';
-  tenantKey = '';
+  showCreateModal = false;
+  showEditModal = false;
+  showResetPasswordModal = false;
 
-  facilityName = '';
+  /** Create tenant wizard */
+  wizardTenantName = '';
+  wizardTenantKey = '';
+  wizardAdminUsername = '';
+  wizardAdminPassword = '';
+  wizardAdminEmail = '';
+  wizardFacilityName = '';
+  wizardSaving = false;
 
-  userName = '';
-  userPassword = '';
-  /** Required: initial facility access for a newly created user */
-  newUserFacilityId: number | null = null;
-  selectedUserId: string | null = null;
-  selectedUserAccess: UserFacilityAccessRow[] = [];
-  selectedUserMenuOpen = false;
-  newUserFacilityMenuOpen = false;
-
-  /** Context tenant from table <strong>Select</strong> */
-  contextTenantId: number | null = null;
-
-  /** Server snapshot for facility-access checkboxes (detect unsaved toggles). */
-  private facilityAccessBaseline: string | null = null;
+  editRow: TenantSummaryRow | null = null;
+  resetRow: TenantSummaryRow | null = null;
+  resetPassword = '';
 
   constructor(
     private api: SuperAdminService,
@@ -56,322 +53,191 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       return;
     }
     this.ctx.enterSuperAdminOperationalContext();
-    this.reloadTenants(undefined);
+    this.reloadTenantRows();
   }
 
   ngOnDestroy(): void {
     this.auth.syncOperationalContextFromJwt();
   }
 
-  selectTenantRow(t: SuperAdminTenant): void {
-    this.applyTenantContext(t);
-  }
-
-  private applyTenantContext(t: SuperAdminTenant): void {
-    this.contextTenantId = t.tenantId;
-    this.ctx.setSelectedTenant(t.tenantId);
-    this.userName = '';
-    this.userPassword = '';
-    this.newUserFacilityId = null;
-    this.reloadFacilitiesAndUsers();
-  }
-
-  private setTenantContext(t: SuperAdminTenant | null): void {
-    if (t == null) {
-      this.contextTenantId = null;
-      this.facilities = [];
-      this.users = [];
-      this.ctx.setSelectedTenant(null);
-      return;
-    }
-    this.applyTenantContext(t);
-  }
-
-  isTenantSelected(t: SuperAdminTenant): boolean {
-    return this.contextTenantId === t.tenantId;
-  }
-
-  /** Glow Create tenant when name or key has any input. */
-  get tenantCreatePending(): boolean {
-    return !!(this.tenantName?.trim() || this.tenantKey?.trim());
-  }
-
-  /** Glow Create facility when new name has input and a tenant is in context. */
-  get facilityCreatePending(): boolean {
-    return !!(
-      this.contextTenantId &&
-      this.contextTenantId > 0 &&
-      this.facilityName?.trim()
-    );
-  }
-
-  /** Glow Create user when any create-user field is set and tenant is in context. */
-  get userCreatePending(): boolean {
-    if (!this.contextTenantId || this.contextTenantId <= 0) {
-      return false;
-    }
-    return !!(
-      this.userName?.trim() ||
-      this.userPassword?.trim() ||
-      (this.newUserFacilityId != null && this.newUserFacilityId > 0)
-    );
-  }
-
-  /** Glow Save facility access when checkboxes differ from last load. */
-  get facilityAccessSavePending(): boolean {
-    if (!this.selectedUserId || this.selectedUserAccess.length === 0) {
-      return false;
-    }
-    if (this.facilityAccessBaseline == null) {
-      return false;
-    }
-    return this.snapshotFacilityAccess(this.selectedUserAccess) !== this.facilityAccessBaseline;
-  }
-
-  private snapshotFacilityAccess(rows: UserFacilityAccessRow[]): string {
-    return JSON.stringify(
-      rows
-        .map((r) => ({ i: r.facilityId, h: r.hasAccess }))
-        .sort((a, b) => a.i - b.i)
-    );
-  }
-
-  reloadTenants(preferredTenantId?: number): void {
+  reloadTenantRows(): void {
+    this.loading = true;
     this.errorMessage = '';
-    this.api.getTenants().subscribe({
+    this.api.getTenants().pipe(
+      switchMap((tenants) => {
+        if (!tenants.length) {
+          return of([] as TenantSummaryRow[]);
+        }
+        return forkJoin(
+          tenants.map((t) =>
+            forkJoin({
+              facilities: this.api.getFacilities(t.tenantId).pipe(catchError(() => of([]))),
+              users: this.api.getUsers(t.tenantId).pipe(catchError(() => of([]))),
+            }).pipe(
+              map(({ facilities, users }) => {
+                const admin = users[0];
+                return {
+                  tenantId: t.tenantId,
+                  name: t.name,
+                  tenantKey: t.tenantKey,
+                  adminUserName: admin?.userName ?? '—',
+                  adminUserGuid: admin?.userGuid ?? null,
+                  facilityCount: facilities.length,
+                  status: 'Active',
+                  createdDate: t.createdDate,
+                } satisfies TenantSummaryRow;
+              })
+            )
+          )
+        );
+      })
+    ).subscribe({
       next: (rows) => {
-        this.tenants = rows;
-        let pick: SuperAdminTenant | null = null;
-        if (preferredTenantId != null) {
-          pick = rows.find((r) => r.tenantId === preferredTenantId) ?? null;
-        }
-        if (pick == null) {
-          const stored = this.ctx.getSelectedTenantId();
-          if (stored != null) {
-            pick = rows.find((r) => r.tenantId === stored) ?? null;
-          }
-        }
-        if (pick == null && rows.length > 0) {
-          pick = rows[0];
-        }
-        if (pick) {
-          this.applyTenantContext(pick);
-        } else {
-          this.contextTenantId = null;
-          this.facilities = [];
-          this.users = [];
-        }
-      },
-      error: (err) => this.handleErr(err),
-    });
-  }
-
-  reloadFacilitiesAndUsers(): void {
-    const tid = this.contextTenantId;
-    if (tid == null || tid <= 0) {
-      this.facilities = [];
-      this.users = [];
-      return;
-    }
-    this.errorMessage = '';
-    this.facilities = [];
-    this.api.getFacilities(tid).subscribe({
-      next: (f) => {
-        this.facilities = f;
+        this.tenantRows = rows;
+        this.loading = false;
       },
       error: (err) => {
+        this.loading = false;
         this.handleErr(err);
       },
     });
-    this.api.getUsers(tid).subscribe({
-      next: (u) => {
-        this.users = u;
-        if (!this.selectedUserId || !u.some((x) => x.userGuid === this.selectedUserId)) {
-          this.selectedUserId = null;
-          this.selectedUserAccess = [];
-        } else {
-          this.loadSelectedUserAccess();
+  }
+
+  openCreateModal(): void {
+    this.clearWizard();
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+    this.wizardSaving = false;
+  }
+
+  private clearWizard(): void {
+    this.wizardTenantName = '';
+    this.wizardTenantKey = '';
+    this.wizardAdminUsername = '';
+    this.wizardAdminPassword = '';
+    this.wizardAdminEmail = '';
+    this.wizardFacilityName = '';
+  }
+
+  saveNewTenant(): void {
+    const name = this.wizardTenantName.trim();
+    const key = this.wizardTenantKey.trim();
+    const user = this.wizardAdminUsername.trim();
+    const pass = this.wizardAdminPassword;
+    const facility = this.wizardFacilityName.trim();
+
+    if (!name || !key || !user || !pass || !facility) {
+      this.errorMessage = 'Fill in tenant name, key, admin username, password, and facility name.';
+      return;
+    }
+
+    this.wizardSaving = true;
+    this.errorMessage = '';
+
+    this.api.createTenant({ name, tenantKey: key }).pipe(
+      switchMap((res) => {
+        const tenantId = (res as { tenantId?: number })?.tenantId;
+        if (typeof tenantId !== 'number' || tenantId <= 0) {
+          throw new Error('Tenant was created but no tenant id was returned.');
         }
+        return this.api.createFacility({ tenantId, name: facility }).pipe(
+          switchMap((facRes) => {
+            const facilityId = (facRes as { facilityId?: number })?.facilityId;
+            if (typeof facilityId !== 'number' || facilityId <= 0) {
+              throw new Error('Facility was created but no facility id was returned.');
+            }
+            return this.api
+              .createUser({
+                tenantId,
+                facilityId,
+                userName: user,
+                password: pass,
+              })
+              .pipe(map(() => tenantId));
+          })
+        );
+      })
+    ).subscribe({
+      next: () => {
+        this.wizardSaving = false;
+        this.closeCreateModal();
+        this.reloadTenantRows();
       },
-      error: (err) => this.handleErr(err),
+      error: (err) => {
+        this.wizardSaving = false;
+        this.handleErr(err);
+      },
     });
   }
 
-  createTenant(): void {
+  openEditModal(row: TenantSummaryRow): void {
+    this.editRow = { ...row };
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editRow = null;
+  }
+
+  openResetPasswordModal(row: TenantSummaryRow): void {
+    this.resetRow = row;
+    this.resetPassword = '';
+    this.showResetPasswordModal = true;
+  }
+
+  closeResetPasswordModal(): void {
+    this.showResetPasswordModal = false;
+    this.resetRow = null;
+    this.resetPassword = '';
+  }
+
+  saveResetPassword(): void {
+    if (!this.resetRow?.adminUserName || this.resetRow.adminUserName === '—') {
+      this.errorMessage = 'No admin user is on file for this tenant.';
+      return;
+    }
+    if (!this.resetPassword.trim()) {
+      this.errorMessage = 'Enter a new password.';
+      return;
+    }
+    if (environment.production) {
+      this.errorMessage =
+        'Password reset from this screen is not enabled in production yet. Use your deployment process or support tools.';
+      return;
+    }
+
     this.errorMessage = '';
     this.api
-      .createTenant({ name: this.tenantName, tenantKey: this.tenantKey })
+      .setPasswordDev({
+        userName: this.resetRow.adminUserName,
+        password: this.resetPassword,
+        tenantKey: this.resetRow.tenantKey,
+      })
       .subscribe({
-        next: (res) => {
-          const raw = res as { tenantId?: number };
-          const newId =
-            typeof raw?.tenantId === 'number' ? raw.tenantId : undefined;
-          this.tenantName = '';
-          this.tenantKey = '';
-          this.reloadTenants(newId);
+        next: () => {
+          this.closeResetPasswordModal();
         },
         error: (err) => this.handleErr(err),
       });
   }
 
-  deleteTenant(t: SuperAdminTenant): void {
+  disableTenant(row: TenantSummaryRow): void {
     if (
       !confirm(
-        `Deactivate tenant "${t.name}" (${t.tenantKey})? Users and facilities will be disabled; data is kept.`
+        `Disable "${row.name}"? Users and facilities will be deactivated; data is kept.`
       )
     ) {
       return;
     }
     this.errorMessage = '';
-    this.api.deleteTenant(t.tenantId).subscribe({
-      next: () => this.reloadTenants(undefined),
+    this.api.deleteTenant(row.tenantId).subscribe({
+      next: () => this.reloadTenantRows(),
       error: (err) => this.handleErr(err),
     });
-  }
-
-  createFacility(): void {
-    if (this.contextTenantId == null || this.contextTenantId <= 0) {
-      this.errorMessage = 'Select a tenant before creating a facility.';
-      return;
-    }
-    this.errorMessage = '';
-    this.api
-      .createFacility({
-        tenantId: this.contextTenantId,
-        name: this.facilityName,
-      })
-      .subscribe({
-        next: () => {
-          this.facilityName = '';
-          this.reloadFacilitiesAndUsers();
-        },
-        error: (err) => this.handleErr(err),
-      });
-  }
-
-  createUser(): void {
-    if (this.contextTenantId == null || this.contextTenantId <= 0) {
-      this.errorMessage = 'Select a tenant before creating a user.';
-      return;
-    }
-    if (this.newUserFacilityId == null || this.newUserFacilityId <= 0) {
-      this.errorMessage =
-        'Select a facility for this user (explicit access only).';
-      return;
-    }
-    this.errorMessage = '';
-    const payload: {
-      userName: string;
-      password: string;
-      tenantId: number;
-      facilityId: number;
-    } = {
-      userName: this.userName,
-      password: this.userPassword,
-      tenantId: this.contextTenantId,
-      facilityId: this.newUserFacilityId,
-    };
-    this.api.createUser(payload).subscribe({
-      next: () => {
-        this.userName = '';
-        this.userPassword = '';
-        this.newUserFacilityId = null;
-        this.reloadFacilitiesAndUsers();
-      },
-      error: (err) => this.handleErr(err),
-    });
-  }
-
-  onSelectedUserChange(userId: unknown): void {
-    const nextUserId =
-      typeof userId === 'string' && userId.trim().length > 0 && userId !== 'null'
-        ? userId
-        : null;
-    this.selectedUserId = nextUserId;
-    this.facilityAccessBaseline = null;
-    this.loadSelectedUserAccess();
-  }
-
-  toggleSelectedUserMenu(event: Event): void {
-    event.stopPropagation();
-    this.selectedUserMenuOpen = !this.selectedUserMenuOpen;
-    if (this.selectedUserMenuOpen) {
-      this.newUserFacilityMenuOpen = false;
-    }
-  }
-
-  toggleNewUserFacilityMenu(event: Event): void {
-    event.stopPropagation();
-    this.newUserFacilityMenuOpen = !this.newUserFacilityMenuOpen;
-    if (this.newUserFacilityMenuOpen) {
-      this.selectedUserMenuOpen = false;
-    }
-  }
-
-  pickSelectedUser(userGuid: string | null): void {
-    this.selectedUserMenuOpen = false;
-    this.onSelectedUserChange(userGuid);
-  }
-
-  pickNewUserFacility(facilityId: number | null): void {
-    this.newUserFacilityMenuOpen = false;
-    this.newUserFacilityId = facilityId;
-  }
-
-  getSelectedUserLabel(): string {
-    if (!this.selectedUserId) return '— select user —';
-    const u = this.users.find((x) => x.userGuid === this.selectedUserId);
-    return u?.userName ?? '— select user —';
-  }
-
-  getSelectedNewUserFacilityLabel(): string {
-    if (this.newUserFacilityId == null || this.newUserFacilityId <= 0) return '— select facility —';
-    const f = this.facilities.find((x) => x.facilityId === this.newUserFacilityId);
-    return f ? `${f.name} (${f.facilityId})` : '— select facility —';
-  }
-
-  toggleFacilityAccess(facilityId: number, checked: boolean): void {
-    this.selectedUserAccess = this.selectedUserAccess.map((row) =>
-      row.facilityId === facilityId ? { ...row, hasAccess: checked } : row
-    );
-  }
-
-  saveSelectedUserAccess(): void {
-    if (!this.contextTenantId || !this.selectedUserId) {
-      this.errorMessage = 'Select tenant and user first.';
-      return;
-    }
-
-    const assignedIds = this.selectedUserAccess
-      .filter((x) => x.hasAccess)
-      .map((x) => x.facilityId);
-
-    this.errorMessage = '';
-    this.api
-      .updateUserFacilityAccess(this.contextTenantId, this.selectedUserId, assignedIds)
-      .subscribe({
-        next: () => {
-          this.loadSelectedUserAccess();
-        },
-        error: (err) => this.handleErr(err),
-      });
-  }
-
-  private loadSelectedUserAccess(): void {
-    if (!this.contextTenantId || !this.selectedUserId) {
-      this.selectedUserAccess = [];
-      return;
-    }
-
-    this.api
-      .getUserFacilityAccess(this.contextTenantId, this.selectedUserId)
-      .subscribe({
-        next: (rows) => {
-          this.selectedUserAccess = rows;
-          this.facilityAccessBaseline = this.snapshotFacilityAccess(rows);
-        },
-        error: (err) => this.handleErr(err),
-      });
   }
 
   formatDate(v: string | null | undefined): string {
@@ -382,56 +248,23 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
   private handleErr(err: unknown): void {
     console.error(err);
-    /* status 0 = browser could not connect (ERR_CONNECTION_REFUSED, offline, CORS preflight blocked, etc.) */
     if (err instanceof HttpErrorResponse && err.status === 0) {
-      this.errorMessage = `Cannot reach the API at ${environment.apiUrl}. Start the backend (Zebl.Api HTTPS profile listens on port 7183), or change environment.apiUrl if you run HTTP-only (e.g. http://localhost:5226).`;
+      this.errorMessage = `Cannot reach the API at ${environment.apiUrl}. Start the backend: dotnet run --launch-profile http.`;
       return;
     }
     if (err instanceof HttpErrorResponse && err.status === 403) {
       void this.router.navigateByUrl('/login');
       return;
     }
-    const e = err as {
-      status?: number;
-      error?: {
-        message?: string;
-        error?: string;
-        Message?: string;
-        errorCode?: string;
-      };
-      message?: string;
-    };
-    if (e?.status === 403) {
-      void this.router.navigateByUrl('/login');
-      return;
-    }
-    const body =
-      err instanceof HttpErrorResponse ? err.error : e?.error;
+    const body = err instanceof HttpErrorResponse ? err.error : (err as { error?: unknown })?.error;
     const msg =
       (typeof body === 'object' && body !== null
-        ? (body as { message?: string; Message?: string }).message ??
-          (body as { Message?: string }).Message
+        ? (body as { message?: string; error?: string }).message ??
+          (body as { error?: string }).error
         : undefined) ??
       (typeof body === 'string' ? body : undefined) ??
-      e?.error?.error ??
-      e?.message ??
+      (err as Error)?.message ??
       'Request failed';
-    const code =
-      typeof body === 'object' &&
-      body !== null &&
-      'errorCode' in body &&
-      typeof (body as { errorCode?: string }).errorCode === 'string'
-        ? (body as { errorCode: string }).errorCode
-        : undefined;
-    this.errorMessage = code ? `${code}: ${msg}` : msg;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.sa-custom-select')) {
-      this.selectedUserMenuOpen = false;
-      this.newUserFacilityMenuOpen = false;
-    }
+    this.errorMessage = msg;
   }
 }

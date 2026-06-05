@@ -9,7 +9,16 @@ export interface UserListItemDto {
   email?: string | null;
   isActive: boolean;
   isAdmin: boolean;
+  role?: string | null;
   createdAt: string;
+}
+
+export interface CreateUserRequest {
+  userName: string;
+  password: string;
+  email?: string | null;
+  facilityId: number;
+  role?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -20,7 +29,7 @@ export class UsersApiService {
     return this.http.get<UserListItemDto[]>(`${environment.apiUrl}/api/users`);
   }
 
-  createUser(req: { userName: string; password: string; email?: string | null }): Observable<any> {
+  createUser(req: CreateUserRequest): Observable<unknown> {
     return this.http.post(`${environment.apiUrl}/api/users`, req);
   }
 

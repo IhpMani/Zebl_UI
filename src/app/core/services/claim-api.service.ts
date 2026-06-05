@@ -334,10 +334,28 @@ export class ClaimApiService {
     return this.http.get<any>(`${this.baseUrl}/available-columns`);
   }
 
-  getClaimById(claId: number): Observable<Claim> {
+  getClaimById(claId: number, options?: { detail?: 'summary' | 'full' }): Observable<Claim> {
+    let params = new HttpParams();
+    if (options?.detail === 'summary') {
+      params = params.set('detail', 'summary');
+    }
     return this.http
-      .get<unknown>(`${environment.apiUrl}/api/claims/${claId}`)
+      .get<unknown>(`${environment.apiUrl}/api/claims/${claId}`, { params })
       .pipe(map((body) => normalizeClaimDetail(body)));
+  }
+
+  /** Lazy-load claim audit/notes after summary claim payload. */
+  getClaimActivity(claId: number): Observable<NonNullable<Claim['claimActivity']>> {
+    return this.http
+      .get<unknown>(`${environment.apiUrl}/api/claims/${claId}/activity`)
+      .pipe(
+        map((body) => {
+          if (body == null || typeof body !== 'object') return [];
+          const o = body as Record<string, unknown>;
+          const raw = o['claimActivity'] ?? o['ClaimActivity'] ?? o['data'];
+          return Array.isArray(raw) ? (raw as NonNullable<Claim['claimActivity']>) : [];
+        })
+      );
   }
 
   getUserKpis(trendDays: number = 30): Observable<UserKpiDashboard> {

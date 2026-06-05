@@ -5,10 +5,8 @@ export const environment = {
   // - HTTPS profile (`dotnet run --launch-profile https`): use https://localhost:7183.
   // If you use HTTP here, open the Angular app over http://localhost:4200 (CORS allows it by default).
   //apiUrl: 'https://broadbill.runasp.net',
-  // HTTP profile: dotnet run --launch-profile http  →  apiUrl: 'http://localhost:5226'
-  // Use http when running: dotnet run --launch-profile http
-  //apiUrl: 'http://localhost:5226',
-  // Use https when running: dotnet run --launch-profile https
-  apiUrl: 'https://localhost:7183',
+  // Local default: HTTP profile (no dev cert). Backend: dotnet run --launch-profile http
+  apiUrl: 'http://localhost:5226',
+  // HTTPS alternative: dotnet run --launch-profile https → apiUrl: 'https://localhost:7183'
 };
 

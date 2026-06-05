@@ -8,6 +8,7 @@ import { ClaimApiService } from '../core/services/claim-api.service';
 import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
 import { EdiReportCountService } from '../core/services/edi-report-count.service';
 import { SidebarStateService } from '../core/services/sidebar-state.service';
+import { AuthService } from '../core/services/auth.service';
 import { SidebarPanelItem } from './sidebar-floating-panel.component';
 
 @Component({
@@ -61,8 +62,14 @@ export class RibbonComponent implements OnInit, OnDestroy {
     private ediReportCountService: EdiReportCountService,
     private sidebarState: SidebarStateService,
     private readonly patientNav: PatientNavigationService,
-    private readonly patientWorkspaceState: PatientWorkspaceStateService
+    private readonly patientWorkspaceState: PatientWorkspaceStateService,
+    private readonly auth: AuthService
   ) { }
+
+  /** Practice admin user management — normal nav item, no "Administration" section label. */
+  get showAdministration(): boolean {
+    return this.auth.canAccessUserManagement();
+  }
 
   ngOnInit(): void {
     this.ediReportCountService.refresh();
@@ -237,6 +244,16 @@ export class RibbonComponent implements OnInit, OnDestroy {
 
   goToProgramSetup(): void {
     this.router.navigate(['/tools/program-setup']);
+    this.closeFloatingPanel();
+    this.closeMobileSidebar();
+  }
+
+  goToUsers(): void {
+    this.router.navigate(['/admin/users']);
+  }
+
+  goToFacilities(): void {
+    this.router.navigate(['/admin/facilities']);
     this.closeFloatingPanel();
     this.closeMobileSidebar();
   }

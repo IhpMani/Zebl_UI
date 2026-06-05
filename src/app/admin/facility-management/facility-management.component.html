@@ -1,0 +1,102 @@
+<div class="fm-page">
+  <header class="fm-toolbar">
+    <h2 class="fm-toolbar__title">Facilities</h2>
+    <div class="fm-toolbar__actions">
+      <button type="button" class="fm-btn fm-btn--primary" (click)="openAdd()">Add Facility</button>
+      <button type="button" class="fm-btn" (click)="openEdit()" [disabled]="!selected || showAddForm">Edit Facility</button>
+      <button type="button" class="fm-btn fm-btn--danger" (click)="toggleActive()" [disabled]="!selected || showAddForm">
+        {{ selected?.isActive ? 'Deactivate' : 'Activate' }}
+      </button>
+    </div>
+  </header>
+
+  <p class="fm-duplicate-warning" *ngIf="duplicateFacilityNameWarnings.length">
+    Duplicate facility names found:
+    {{ duplicateFacilityNameWarnings.join('; ') }}.
+    Edit and rename until each name is unique in your practice.
+  </p>
+
+  <div class="fm-master-detail">
+    <aside class="fm-list-panel">
+      <div class="fm-list-toolbar">
+        <input
+          type="search"
+          class="fm-search"
+          placeholder="Search…"
+          [(ngModel)]="searchQuery"
+          aria-label="Search facilities"
+        />
+        <label class="fm-filter">
+          <input type="checkbox" [(ngModel)]="showInactive" (change)="onShowInactiveChange()" />
+          Show inactive
+        </label>
+      </div>
+      <div *ngIf="loading" class="fm-status">Loading…</div>
+      <table class="fm-table" *ngIf="!loading">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Active</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let f of filteredFacilities"
+            [class.fm-row--active]="selected?.facilityId === f.facilityId"
+            [class.fm-row--inactive]="!f.isActive"
+            (click)="select(f)"
+          >
+            <td>{{ facilityDisplayName(f) }}</td>
+            <td>{{ f.facilityCode || '—' }}</td>
+            <td>{{ f.isActive ? 'Yes' : 'No' }}</td>
+            <td>{{ f.usersAssigned }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="fm-status" *ngIf="!loading && filteredFacilities.length === 0">No facilities match.</p>
+    </aside>
+
+    <main class="fm-detail-panel">
+      <ng-container *ngIf="showAddForm || showEditForm">
+        <h3 class="fm-detail-title">{{ showAddForm ? 'New facility' : 'Edit facility' }}</h3>
+        <div class="fm-form-grid">
+          <label><span>Facility name</span><input [(ngModel)]="form.name" /></label>
+          <label><span>Facility code</span><input [(ngModel)]="form.facilityCode" placeholder="e.g. MAIN" /></label>
+          <label><span>Address</span><input [(ngModel)]="form.address1" /></label>
+          <label><span>Address 2</span><input [(ngModel)]="form.address2" /></label>
+          <label><span>City</span><input [(ngModel)]="form.city" /></label>
+          <label><span>State</span><input [(ngModel)]="form.state" maxlength="2" /></label>
+          <label><span>Zip</span><input [(ngModel)]="form.zip" /></label>
+          <label><span>Phone</span><input [(ngModel)]="form.phone" /></label>
+          <label><span>NPI</span><input [(ngModel)]="form.npi" /></label>
+          <label><span>Tax ID</span><input [(ngModel)]="form.taxId" /></label>
+          <label class="fm-check" *ngIf="showAddForm">
+            <input type="checkbox" [(ngModel)]="form.isActive" />
+            <span>Active</span>
+          </label>
+        </div>
+        <div class="fm-form-actions">
+          <button type="button" class="fm-btn fm-btn--primary" (click)="save()">Save</button>
+          <button type="button" class="fm-btn" (click)="cancelForm()">Cancel</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!showAddForm && !showEditForm && selected">
+        <h3 class="fm-detail-title">{{ selected.name }}</h3>
+        <dl class="fm-facts">
+          <div><dt>Code</dt><dd>{{ selected.facilityCode || '—' }}</dd></div>
+          <div><dt>Status</dt><dd>{{ selected.isActive ? 'Active' : 'Inactive' }}</dd></div>
+          <div><dt>Users assigned</dt><dd>{{ selected.usersAssigned }}</dd></div>
+          <div *ngIf="selected.address1"><dt>Address</dt><dd>{{ selected.address1 }}</dd></div>
+          <div *ngIf="selected.city"><dt>City / State / Zip</dt><dd>{{ selected.city }}, {{ selected.state }} {{ selected.zip }}</dd></div>
+          <div *ngIf="selected.phone"><dt>Phone</dt><dd>{{ selected.phone }}</dd></div>
+          <div *ngIf="selected.npi"><dt>NPI</dt><dd>{{ selected.npi }}</dd></div>
+          <div *ngIf="selected.taxId"><dt>Tax ID</dt><dd>{{ selected.taxId }}</dd></div>
+        </dl>
+        <p class="fm-hint">New facilities appear in the facility switcher and can be assigned to users.</p>
+      </ng-container>
+    </main>
+  </div>
+</div>

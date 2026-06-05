@@ -15,12 +15,13 @@ import { FacilityService } from '../core/services/facility.service';
 import { ContextResetService } from '../core/services/context-reset.service';
 
 import { FacilitiesApiService, OperationalFacilityRow } from '../core/services/facilities-api.service';
+import { facilityDisplayLabel } from '../core/utils/facility-display.util';
+import { OperationalFacilitiesRefreshService } from '../core/services/operational-facilities-refresh.service';
 
 import { HttpErrorMessageService } from '../core/services/http-error-message.service';
 
 import { SidebarStateService } from '../core/services/sidebar-state.service';
 
-import { SuperAdminService } from '../super-admin/super-admin.service';
 import { PatientNavigationService } from '../features/patients/services/patient-navigation.service';
 import { ClaimApiService } from '../core/services/claim-api.service';
 import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
@@ -45,6 +46,36 @@ import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
 
 
 
+      <ng-container *ngIf="auth.isLoggedIn() && auth.isSuperAdmin()">
+        <header class="topbar topbar--platform">
+          <div class="topbar-left">
+            <span class="topbar-brand" aria-label="BroadBill Platform">
+              <span class="topbar-brand-main">Broad</span><span class="topbar-brand-accent">Bill</span>
+              <span class="topbar-platform-tag">Platform</span>
+            </span>
+          </div>
+          <div class="topbar-right">
+            <div class="topbar-profile">
+              <div class="user-menu">
+                <div class="profile-icon" (click)="toggleMenu()">
+                  <span class="profile-initials">{{ getInitials() }}</span>
+                </div>
+                <div class="dropdown" *ngIf="showMenu">
+                  <div class="menu-item username-display">{{ (auth.userName$ | async) || '' }}</div>
+                  <div class="menu-item" (click)="logout()">Logout</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main class="main-content main-content--platform">
+          <div class="workspace-content workspace-content--platform">
+            <router-outlet></router-outlet>
+          </div>
+        </main>
+      </ng-container>
+
+      <ng-container *ngIf="!auth.isLoggedIn() || !auth.isSuperAdmin()">
       <header class="topbar">
 
         <div class="topbar-left">
@@ -203,7 +234,7 @@ import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
 
                   >
 
-                    {{ f.name.trim() }}
+                    {{ formatFacilityLabel(f) }}
 
                   </button>
 
@@ -252,12 +283,6 @@ import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
                   {{ (auth.userName$ | async) || '' }}
 
                 </div>
-
-                <div class="menu-item" *ngIf="auth.getIsAdmin()" (click)="goToUserManagement()">User Management</div>
-
-                <div class="menu-item" *ngIf="auth.isSuperAdmin()" (click)="goToSuperAdmin()">Super Admin</div>
-
-                <div class="menu-item" *ngIf="auth.isImpersonating()" (click)="exitTenantView()">Exit tenant view</div>
 
                 <div class="menu-item" (click)="resetPassword()">Reset Password</div>
 
@@ -331,6 +356,7 @@ import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
       <app-workspace-slideover></app-workspace-slideover>
       <app-operational-toast-host></app-operational-toast-host>
       <app-broadbill-keyboard-host></app-broadbill-keyboard-host>
+      </ng-container>
     </div>
 
   `,
@@ -366,6 +392,7 @@ export class AppShellComponent implements OnDestroy, OnInit {
   private httpErrSub?: Subscription;
 
   private facilitiesLoadSub?: Subscription;
+  private facilitiesRefreshSub?: Subscription;
 
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -389,9 +416,10 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
     private facilitiesApi: FacilitiesApiService,
 
+    private facilitiesRefresh: OperationalFacilitiesRefreshService,
+
     private httpErrors: HttpErrorMessageService,
 
-    private superAdminApi: SuperAdminService,
     private readonly patientNavigation: PatientNavigationService,
     private readonly claimApi: ClaimApiService
 
@@ -449,6 +477,12 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
     }
 
+    this.facilitiesRefreshSub = this.facilitiesRefresh.facilitiesChanged$.subscribe(() => {
+      if (this.auth.isLoggedIn() && !this.auth.isSuperAdmin()) {
+        this.loadOperationalFacilities();
+      }
+    });
+
   }
 
 
@@ -470,6 +504,8 @@ export class AppShellComponent implements OnDestroy, OnInit {
     this.httpErrSub?.unsubscribe();
 
     this.facilitiesLoadSub?.unsubscribe();
+
+    this.facilitiesRefreshSub?.unsubscribe();
 
   }
 
@@ -701,9 +737,15 @@ export class AppShellComponent implements OnDestroy, OnInit {
     }
 
     const row = this.facilityOptions.find((r) => this.sameFacilityId(r.facilityId, id));
+    if (!row) {
+      return 'Select facility…';
+    }
+    return this.formatFacilityLabel(row);
 
-    return row?.name.trim() || `Facility #${id}`;
+  }
 
+  formatFacilityLabel(f: OperationalFacilityRow): string {
+    return facilityDisplayLabel(f.name);
   }
 
 
@@ -793,52 +835,6 @@ export class AppShellComponent implements OnDestroy, OnInit {
     this.facilityOptionsLoaded = false;
 
     void this.router.navigateByUrl('/login');
-
-  }
-
-
-
-  goToUserManagement(): void {
-
-    this.showMenu = false;
-
-    void this.router.navigateByUrl('/admin/users');
-
-  }
-
-
-
-  goToSuperAdmin(): void {
-
-    this.showMenu = false;
-
-    void this.router.navigateByUrl('/super-admin');
-
-  }
-
-
-
-  exitTenantView(): void {
-
-    this.showMenu = false;
-
-    this.superAdminApi.exitImpersonation().subscribe({
-
-      next: (res) => {
-
-        this.auth.applySuperAdminSession(res);
-
-        void this.router.navigateByUrl('/super-admin');
-
-      },
-
-      error: () => {
-
-        this.httpErrors.show('Could not restore super-admin session.');
-
-      },
-
-    });
 
   }
 

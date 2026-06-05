@@ -1,11 +1,22 @@
 <div class="claim-details-wrapper">
-  <div class="loading-overlay" *ngIf="loading">
+  <div class="loading-overlay" *ngIf="loading && !claim">
     <div class="loading">Loading claim details...</div>
   </div>
 
   <div class="page-container">
     <div class="page-content">
       <div class="card" *ngIf="error">{{ error }}</div>
+
+      <app-card class="claim-header claim-header--shell" *ngIf="claId && loading && !claim">
+        <div class="claim-header-inner">
+          <div class="header-left">
+            <div class="header-text">
+              <span class="claim-id-label">Claim {{ claId }}</span>
+              <div class="claim-sub">Loading claim details…</div>
+            </div>
+          </div>
+        </div>
+      </app-card>
 
       <ng-container *ngIf="claim as c">
         <app-card class="claim-header">
@@ -246,7 +257,7 @@
                 </thead>
                 <tbody>
                   <tr
-                    *ngFor="let line of displayServiceLinesArray; trackBy: trackByServiceLine"
+                    *ngFor="let line of displayServiceLines; trackBy: trackByServiceLine"
                     class="service-line-row"
                     [class.active]="line.srvID === selectedServiceLineId"
                     (click)="selectServiceLine(line)">
@@ -363,9 +374,3 @@
     </div>
   </div>
 </div>
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">
-
-                <li *ngFor="let item of procedureLookupResults" class="result-item" (dblclick)="onProcedureLookupSelect(item)" (click)="onProcedureLookupSelect(item)">

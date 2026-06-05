@@ -29,6 +29,18 @@ export interface SuperAdminUserRow {
   createdAt?: string | null;
 }
 
+/** Row for Super Admin → Tenants list (aggregated client-side). */
+export interface TenantSummaryRow {
+  tenantId: number;
+  name: string;
+  tenantKey: string;
+  adminUserName: string;
+  adminUserGuid: string | null;
+  facilityCount: number;
+  status: string;
+  createdDate?: string | null;
+}
+
 export interface UserFacilityAccessRow {
   facilityId: number;
   name: string;
@@ -93,6 +105,16 @@ export class SuperAdminService {
     facilityId: number;
   }): Observable<unknown> {
     return this.http.post(`${this.superAdminBase()}/users`, data);
+  }
+
+  /** Dev-only helper at POST /api/auth/set-password (not for production). */
+  setPasswordDev(data: {
+    userName: string;
+    password: string;
+    tenantKey: string;
+  }): Observable<unknown> {
+    const base = (environment.apiUrl || '').replace(/\/$/, '');
+    return this.http.post(`${base}/api/auth/set-password`, data);
   }
 
   getUserFacilityAccess(

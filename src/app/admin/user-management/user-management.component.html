@@ -1,51 +1,253 @@
-<div class="page">
-  <h2>User Management</h2>
-
-  <div class="error" *ngIf="error">{{ error }}</div>
-
-  <div class="card">
-    <h3>Create user</h3>
-    <div class="form">
-      <input placeholder="Username" [(ngModel)]="newUserName" />
-      <input placeholder="Password" [(ngModel)]="newPassword" type="password" />
-      <input placeholder="Email (optional)" [(ngModel)]="newEmail" />
-      <button (click)="create()" [disabled]="!newUserName || !newPassword">Create</button>
+<div class="um-page">
+  <header class="um-toolbar">
+    <div class="um-toolbar__heading">
+      <h2 class="um-toolbar__title">Users</h2>
+      <p class="um-toolbar__subtitle">Manage office staff and practice facilities</p>
     </div>
-    <div class="note">
-      Admin status is config-driven (server-side <code>AdminUsers</code> list).
+    <div class="um-toolbar__actions">
+      <div class="um-toolbar__primary">
+        <button type="button" class="um-btn um-btn--primary" (click)="openAddUser()">Add User</button>
+        <button
+          type="button"
+          class="um-btn um-btn--primary"
+          (click)="openAddFacilityModal()"
+          [disabled]="addFacilitySaving"
+        >
+          + Add Facility
+        </button>
+      </div>
+      <div class="um-toolbar__secondary">
+      <button
+        type="button"
+        class="um-btn"
+        (click)="openResetPassword()"
+        [disabled]="!canResetPassword"
+        title="Set a new password for the selected user"
+      >
+        Reset Password
+      </button>
+      <button
+        type="button"
+        class="um-btn um-btn--danger"
+        (click)="deactivateSelected()"
+        [disabled]="!canDeactivateSelected"
+      >
+        {{ selectedUser?.isActive ? 'Deactivate User' : 'Activate User' }}
+      </button>
+      </div>
     </div>
+  </header>
+
+  <p class="um-duplicate-warning" *ngIf="duplicateFacilityNameWarnings.length">
+    Duplicate facility names in your practice:
+    {{ duplicateFacilityNameWarnings.join('; ') }}.
+    Rename extras on the Facilities screen — new duplicates are blocked.
+  </p>
+
+  <div class="um-master-detail">
+    <aside class="um-list-panel">
+      <div class="um-list-toolbar">
+        <input
+          type="search"
+          class="um-search"
+          placeholder="Search…"
+          [(ngModel)]="searchQuery"
+          aria-label="Search users"
+        />
+        <label class="um-filter-inactive">
+          <input type="checkbox" [(ngModel)]="showInactive" (change)="onShowInactiveChange()" />
+          Inactive
+        </label>
+      </div>
+
+      <div *ngIf="loading" class="um-list-status">Loading…</div>
+      <ul class="um-user-list" *ngIf="!loading">
+        <li
+          *ngFor="let u of filteredUsers"
+          class="um-user-item"
+          [class.um-user-item--active]="selectedUser?.userGuid === u.userGuid"
+          [class.um-user-item--inactive]="!u.isActive"
+          (click)="selectUser(u)"
+        >
+          <span class="um-user-item__name">{{ u.userName }}</span>
+          <span class="um-user-item__type">{{ roleDisplayLabel(u.role, u.isAdmin) }}</span>
+        </li>
+      </ul>
+      <p class="um-list-status" *ngIf="!loading && filteredUsers.length === 0 && users.length > 0">
+        No users match your search.
+      </p>
+    </aside>
+
+    <main class="um-detail-panel">
+      <ng-container *ngIf="showAddForm">
+        <div class="um-detail-section">
+          <h3 class="um-detail-section__title">New user</h3>
+          <p class="um-hint">Office staff — choose a facility by name to start.</p>
+        </div>
+        <div class="um-form-grid">
+          <label>
+            <span>Username</span>
+            <input [(ngModel)]="newUserName" autocomplete="off" />
+          </label>
+          <label>
+            <span>Password</span>
+            <input [(ngModel)]="newPassword" type="password" autocomplete="new-password" />
+          </label>
+          <label>
+            <span>Email</span>
+            <input [(ngModel)]="newEmail" type="email" placeholder="Optional" />
+          </label>
+          <label class="um-field um-field--facility">
+            <span>Facility</span>
+            <select
+              class="um-facility-select"
+              [(ngModel)]="newFacility"
+              [compareWith]="compareFacilityOption"
+              [disabled]="facilitiesLoading || addFacilitySaving"
+              aria-label="Assign facility by name"
+            >
+              <option [ngValue]="null">— Select facility —</option>
+                <option *ngFor="let f of assignableFacilities" [ngValue]="f">
+                  {{ facilityDisplayName(f) }}
+                </option>
+            </select>
+            <p class="um-hint" *ngIf="facilitiesLoading">Loading facilities…</p>
+            <p class="um-hint" *ngIf="!facilitiesLoading && assignableFacilities.length === 0">
+              No active facilities yet. Use <strong>+ Add Facility</strong> in the toolbar to create one.
+            </p>
+          </label>
+        </div>
+        <div class="um-permissions um-permissions--compact">
+          <span class="um-permissions-title">Access preview</span>
+          <div class="um-permissions-grid">
+            <label class="um-perm" *ngFor="let p of permissionRows">
+              <input type="checkbox" [checked]="addPermissionPreview[p.id]" disabled />
+              <span>{{ p.label }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="um-form-actions">
+          <button type="button" class="um-btn um-btn--primary" (click)="create()" [disabled]="!newUserName || !newPassword">
+            Save
+          </button>
+          <button type="button" class="um-btn" (click)="cancelAddUser()">Cancel</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="showResetPanel && selectedUser">
+        <div class="um-detail-section">
+          <h3 class="um-detail-section__title">Reset password — {{ selectedUser.userName }}</h3>
+        </div>
+        <label class="um-field">
+          <span>New password</span>
+          <input [(ngModel)]="resetPasswordValue" type="password" autocomplete="new-password" />
+        </label>
+        <p class="um-hint" *ngIf="!isDev">Password reset from this screen is not enabled in production yet.</p>
+        <div class="um-form-actions">
+          <button type="button" class="um-btn um-btn--primary" (click)="saveResetPassword()" [disabled]="!isDev || !resetPasswordValue">
+            Apply password
+          </button>
+          <button type="button" class="um-btn" (click)="closeResetPassword()">Cancel</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!showAddForm && !showResetPanel && selectedUser">
+        <div class="um-detail-section um-detail-section--header">
+          <div>
+            <h3 class="um-detail-section__title">{{ selectedUser.userName }}</h3>
+            <p class="um-detail-meta">
+              {{ roleDisplayLabel(selectedUser.role, selectedUser.isAdmin) }}
+              <span class="um-badge" [class.um-badge--inactive]="!selectedUser.isActive">
+                {{ selectedUser.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </p>
+            <p class="um-detail-meta" *ngIf="selectedUser.email">{{ selectedUser.email }}</p>
+          </div>
+        </div>
+
+        <p class="um-hint um-hint--block" *ngIf="isSelectedPracticeAdmin">
+          Practice administrators are set up when your practice is onboarded. Contact BroadBill support to change the practice administrator account.
+        </p>
+
+        <div class="um-permissions um-permissions--compact" *ngIf="!isSelectedPracticeAdmin">
+          <span class="um-permissions-title">Access</span>
+          <div class="um-permissions-grid">
+            <label class="um-perm" *ngFor="let p of permissionRows">
+              <input type="checkbox" [checked]="editPermissionPreview[p.id]" disabled />
+              <span>{{ p.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="um-facilities-block" *ngIf="!isSelectedPracticeAdmin">
+          <span class="um-facilities-title">Assigned facilities</span>
+          <p class="um-hint" *ngIf="facilityAccessSaving">Saving…</p>
+          <p class="um-hint" *ngIf="facilitiesLoading">Loading facilities…</p>
+          <ul class="um-facility-list" *ngIf="!facilitiesLoading && assignableFacilities.length > 0">
+            <li class="um-facility" *ngFor="let f of assignableFacilities">
+              <label class="um-facility__label">
+                <input
+                  type="checkbox"
+                  [checked]="hasFacilityAccess(f.facilityId)"
+                  [disabled]="facilityAccessSaving"
+                  (change)="toggleEditFacility(f.facilityId, $any($event.target).checked)"
+                />
+                <span class="um-facility__name">{{ facilityDisplayName(f) }}</span>
+              </label>
+            </li>
+          </ul>
+          <p class="um-hint" *ngIf="!facilitiesLoading && assignableFacilities.length === 0">
+            No active facilities. Use <strong>+ Add Facility</strong> in the toolbar, then assign access below.
+          </p>
+        </div>
+
+        <div class="um-facilities-block" *ngIf="isSelectedPracticeAdmin && editFacilityIds.length">
+          <span class="um-facilities-title">Assigned facilities</span>
+          <p class="um-detail-meta">{{ assignedFacilitySummary() }}</p>
+        </div>
+      </ng-container>
+
+      <p
+        class="um-list-status um-detail-empty"
+        *ngIf="!showAddForm && !showResetPanel && !selectedUser && !loading"
+      >
+        Select a user from the list, or use <strong>Add User</strong> / <strong>+ Add Facility</strong> in the toolbar.
+      </p>
+    </main>
   </div>
 
-  <div class="card">
-    <div class="row">
-      <h3>Users</h3>
-      <button (click)="refresh()">Refresh</button>
+  <div
+    class="um-modal-backdrop"
+    *ngIf="showAddFacilityModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="um-add-facility-title"
+  >
+    <div class="um-modal">
+      <h3 id="um-add-facility-title" class="um-modal__title">Add Facility</h3>
+      <p class="um-hint">Creates an active facility for your practice using the same setup as onboarding. It is available immediately for user assignment and the facility switcher.</p>
+      <label class="um-field">
+        <span>Facility name</span>
+        <input
+          [(ngModel)]="addFacilityName"
+          autocomplete="off"
+          placeholder="e.g. Main Clinic"
+          (keyup.enter)="saveNewFacility()"
+        />
+      </label>
+      <div class="um-form-actions um-form-actions--modal">
+        <button
+          type="button"
+          class="um-btn um-btn--primary"
+          (click)="saveNewFacility()"
+          [disabled]="addFacilitySaving || !addFacilityName.trim()"
+        >
+          {{ addFacilitySaving ? 'Adding…' : 'Add Facility' }}
+        </button>
+        <button type="button" class="um-btn" (click)="closeAddFacilityModal()" [disabled]="addFacilitySaving">
+          Cancel
+        </button>
+      </div>
     </div>
-
-    <div *ngIf="loading">Loading…</div>
-
-    <table *ngIf="!loading">
-      <thead>
-        <tr>
-          <th>UserName</th>
-          <th>Email</th>
-          <th>Active</th>
-          <th>Admin</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let u of users">
-          <td>{{ u.userName }}</td>
-          <td>{{ u.email || '' }}</td>
-          <td>{{ u.isActive ? 'Yes' : 'No' }}</td>
-          <td>{{ u.isAdmin ? 'Yes' : 'No' }}</td>
-          <td>
-            <button (click)="toggleActive(u)">{{ u.isActive ? 'Deactivate' : 'Activate' }}</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 </div>
-

@@ -23,9 +23,23 @@
       </div>
 
       <div class="right-panel card">
-        <h2 class="section-title">
-        {{ selectedSectionLabel }}
-      </h2>
+        <div class="section-title-row">
+          <h2 class="section-title">{{ selectedSectionLabel }}</h2>
+          <button
+            type="button"
+            class="link-quiet"
+            *ngIf="canCustomizeForFacility && !facilityCustomizeMode"
+            (click)="startFacilityCustomize()"
+          >
+            Customize settings for this facility
+          </button>
+        </div>
+        <p class="facility-customize-bar" *ngIf="facilityCustomizeMode">
+          <span>These settings apply only at this facility.</span>
+          <button type="button" class="link-quiet" (click)="revertToSharedSettings()" [disabled]="isSaving || isLoading">
+            Use shared settings
+          </button>
+        </p>
 
       <div class="section-content" [class.section-content--eligibility]="selectedSection === 'patient-eligibility'">
         <ng-container *ngIf="isLoading">

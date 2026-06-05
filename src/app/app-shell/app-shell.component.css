@@ -743,3 +743,33 @@ tr.selected {
   border-color: var(--ps-orange);
   color: var(--color-text-light);
 }
+
+.topbar--platform {
+  border-bottom: 1px solid var(--bb-border, #e2e8f0);
+}
+
+.topbar-platform-tag {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-text-muted, #64748b);
+  background: var(--bb-bg-subtle, #f1f5f9);
+  border-radius: 4px;
+}
+
+.main-content--platform {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-content--platform {
+  flex: 1;
+  min-height: 0;
+  padding: 1.25rem 1.5rem;
+}

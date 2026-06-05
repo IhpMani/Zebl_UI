@@ -34,9 +34,17 @@ export class AuthService {
     private readonly claimBootstrap: ClaimDetailsBootstrapCacheService
   ) {}
 
-  login(userName: string, password: string): Observable<LoginResponse> {
+  login(userName: string, password: string, tenantKey?: string | null): Observable<LoginResponse> {
+    const body: { userName: string; password: string; tenantKey?: string } = {
+      userName,
+      password,
+    };
+    const tk = tenantKey?.trim();
+    if (tk) {
+      body.tenantKey = tk;
+    }
     return this.http
-      .post<LoginResponse>(`${environment.apiUrl}/api/auth/login`, { userName, password })
+      .post<LoginResponse>(`${environment.apiUrl}/api/auth/login`, body)
       .pipe(
         tap((res) => {
           this.setToken(res.token);
@@ -105,6 +113,40 @@ export class AuthService {
     return this.isAdminSubject.value;
   }
 
+  /** JWT `role` claim (TenantAdmin, StandardUser, SuperAdmin, …). */
+  getRole(): string | null {
+    const payload = this.getJwtPayload() as Record<string, unknown> | null;
+    if (!payload) return null;
+    const keys = [
+      'role',
+      'Role',
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+    ];
+    for (const key of keys) {
+      const raw = payload[key];
+      if (typeof raw === 'string' && raw.trim().length > 0) {
+        return raw.trim();
+      }
+    }
+    return null;
+  }
+
+  /** Practice administrator only — never platform super-admin accounts. */
+  canAccessUserManagement(): boolean {
+    if (!this.isLoggedIn() || this.isSuperAdmin()) {
+      return false;
+    }
+    if (this.getIsAdmin()) {
+      return true;
+    }
+    return this.getRole() === 'TenantAdmin';
+  }
+
+  /** Tenant-wide program settings (save at practice level). */
+  canManageTenantProgramSettings(): boolean {
+    return this.canAccessUserManagement();
+  }
+
   /** From JWT claim `isSuperAdmin` (platform super-admin only). */
   isSuperAdmin(): boolean {
     const payload = this.getJwtPayload() as Record<string, unknown> | null;
@@ -161,9 +203,15 @@ export class AuthService {
   }
 
   private getIsAdminFromToken(): boolean {
-    const payload = this.getJwtPayload();
-    const v = payload?.IsAdmin;
-    return v === true || v === 'true';
+    const payload = this.getJwtPayload() as Record<string, unknown> | null;
+    if (!payload) return false;
+    for (const key of ['IsAdmin', 'isAdmin', 'isadmin']) {
+      const v = payload[key];
+      if (v === true || v === 'true') {
+        return true;
+      }
+    }
+    return false;
   }
 
   private getJwtPayload(): any | null {
