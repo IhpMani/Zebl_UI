@@ -167,6 +167,7 @@ export class AuthService {
   applyImpersonationSession(res: {
     token: string;
     facilityId?: number | null;
+    tenantName?: string | null;
   }): void {
     this.setToken(res.token);
     this.syncOperationalContextFromJwt();

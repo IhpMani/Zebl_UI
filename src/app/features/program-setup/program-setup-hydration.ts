@@ -296,7 +296,7 @@ export function hydratePatientEligibilitySettings(raw: ApiRecord): PatientEligib
 
   return {
     receiverId: readApiNullableString(raw, 'receiverId', 'ReceiverId'),
-    vendor: readApiString(raw, 'vendor', 'Vendor') || defaults.vendor,
+    vendor: readApiString(raw, 'source', 'vendor', 'Vendor') || defaults.vendor,
     providerMode,
     specificProviderId: readApiNullableNumber(raw, 'specificProviderId', 'SpecificProviderId'),
     username: readApiString(raw, 'username', 'Username'),
@@ -311,9 +311,11 @@ export function hydratePatientEligibilitySettings(raw: ApiRecord): PatientEligib
 }
 
 export function toPatientEligibilitySavePayload(
-  state: PatientEligibilityProgramSettings
+  state: PatientEligibilityProgramSettings,
+  options?: { includeDirectoryFields?: boolean }
 ): Record<string, unknown> {
   const pwd = (state.password ?? '').trim();
+  const includeDirectoryFields = options?.includeDirectoryFields ?? true;
   const payload: Record<string, unknown> = {
     receiverId: state.receiverId,
     vendor: (state.vendor ?? 'GenericSftp').toString(),
@@ -321,11 +323,13 @@ export function toPatientEligibilitySavePayload(
     specificProviderId: state.specificProviderId,
     username: (state.username ?? '').trim(),
     server: (state.server ?? '').trim(),
-    uploadDirectory: (state.uploadDirectory ?? '').trim(),
-    incomingDirectory: (state.incomingDirectory ?? '').trim(),
-    processedDirectory: (state.processedDirectory ?? '').trim(),
     showEligibilityResponseViewer: state.showEligibilityResponseViewer !== false
   };
+  if (includeDirectoryFields) {
+    payload['uploadDirectory'] = (state.uploadDirectory ?? '').trim();
+    payload['incomingDirectory'] = (state.incomingDirectory ?? '').trim();
+    payload['processedDirectory'] = (state.processedDirectory ?? '').trim();
+  }
   if (pwd) {
     payload['password'] = pwd;
   } else if (state.passwordConfigured) {

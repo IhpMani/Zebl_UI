@@ -1,14 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
-import {
-  SuperAdminService,
-  SuperAdminTenant,
-  TenantSummaryRow,
-} from './super-admin.service';
+import { switchMap, map } from 'rxjs/operators';
+import { SuperAdminService, TenantSummaryRow } from './super-admin.service';
 import { SuperAdminContextService } from './super-admin-context.service';
+import { ImpersonationContextService } from './impersonation-context.service';
 import { AuthService } from '../core/services/auth.service';
 import { environment } from 'src/environments/environment';
 
@@ -18,17 +14,15 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./super-admin.component.css'],
 })
 export class SuperAdminComponent implements OnInit, OnDestroy {
-  readonly isDev = !environment.production;
-
   tenantRows: TenantSummaryRow[] = [];
   loading = false;
   errorMessage = '';
+  actionInProgress = false;
 
   showCreateModal = false;
   showEditModal = false;
   showResetPasswordModal = false;
 
-  /** Create tenant wizard */
   wizardTenantName = '';
   wizardTenantKey = '';
   wizardAdminUsername = '';
@@ -44,6 +38,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   constructor(
     private api: SuperAdminService,
     private ctx: SuperAdminContextService,
+    private impersonation: ImpersonationContextService,
     private auth: AuthService,
     private router: Router
   ) {}
@@ -63,35 +58,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   reloadTenantRows(): void {
     this.loading = true;
     this.errorMessage = '';
-    this.api.getTenants().pipe(
-      switchMap((tenants) => {
-        if (!tenants.length) {
-          return of([] as TenantSummaryRow[]);
-        }
-        return forkJoin(
-          tenants.map((t) =>
-            forkJoin({
-              facilities: this.api.getFacilities(t.tenantId).pipe(catchError(() => of([]))),
-              users: this.api.getUsers(t.tenantId).pipe(catchError(() => of([]))),
-            }).pipe(
-              map(({ facilities, users }) => {
-                const admin = users[0];
-                return {
-                  tenantId: t.tenantId,
-                  name: t.name,
-                  tenantKey: t.tenantKey,
-                  adminUserName: admin?.userName ?? '—',
-                  adminUserGuid: admin?.userGuid ?? null,
-                  facilityCount: facilities.length,
-                  status: 'Active',
-                  createdDate: t.createdDate,
-                } satisfies TenantSummaryRow;
-              })
-            )
-          )
-        );
-      })
-    ).subscribe({
+    this.api.getTenants().subscribe({
       next: (rows) => {
         this.tenantRows = rows;
         this.loading = false;
@@ -130,7 +97,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const facility = this.wizardFacilityName.trim();
 
     if (!name || !key || !user || !pass || !facility) {
-      this.errorMessage = 'Fill in tenant name, key, admin username, password, and facility name.';
+      this.errorMessage = 'Fill in practice name, key, admin username, password, and facility name.';
       return;
     }
 
@@ -141,7 +108,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       switchMap((res) => {
         const tenantId = (res as { tenantId?: number })?.tenantId;
         if (typeof tenantId !== 'number' || tenantId <= 0) {
-          throw new Error('Tenant was created but no tenant id was returned.');
+          throw new Error('Practice was created but no tenant id was returned.');
         }
         return this.api.createFacility({ tenantId, name: facility }).pipe(
           switchMap((facRes) => {
@@ -196,33 +163,28 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   }
 
   saveResetPassword(): void {
-    if (!this.resetRow?.adminUserName || this.resetRow.adminUserName === '—') {
-      this.errorMessage = 'No admin user is on file for this tenant.';
+    const admin = this.resetRow?.primaryAdmin;
+    if (!admin?.userGuid) {
+      this.errorMessage = 'No primary administrator is on file for this practice.';
       return;
     }
     if (!this.resetPassword.trim()) {
       this.errorMessage = 'Enter a new password.';
       return;
     }
-    if (environment.production) {
-      this.errorMessage =
-        'Password reset from this screen is not enabled in production yet. Use your deployment process or support tools.';
-      return;
-    }
 
     this.errorMessage = '';
-    this.api
-      .setPasswordDev({
-        userName: this.resetRow.adminUserName,
-        password: this.resetPassword,
-        tenantKey: this.resetRow.tenantKey,
-      })
-      .subscribe({
-        next: () => {
-          this.closeResetPasswordModal();
-        },
-        error: (err) => this.handleErr(err),
-      });
+    this.actionInProgress = true;
+    this.api.resetPrimaryAdminPassword(this.resetRow!.tenantId, this.resetPassword).subscribe({
+      next: () => {
+        this.actionInProgress = false;
+        this.closeResetPasswordModal();
+      },
+      error: (err) => {
+        this.actionInProgress = false;
+        this.handleErr(err);
+      },
+    });
   }
 
   disableTenant(row: TenantSummaryRow): void {
@@ -233,17 +195,111 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     ) {
       return;
     }
+    this.runTenantAction(() => this.api.disableTenant(row.tenantId));
+  }
+
+  enableTenant(row: TenantSummaryRow): void {
+    if (!confirm(`Enable "${row.name}"? The practice shell and facilities will be restored.`)) {
+      return;
+    }
+    this.runTenantAction(() => this.api.enableTenant(row.tenantId));
+  }
+
+  disablePrimaryAdmin(row: TenantSummaryRow): void {
+    const adminName = row.primaryAdmin?.userName ?? 'the administrator';
+    if (!confirm(`Disable primary administrator "${adminName}" for "${row.name}"?`)) {
+      return;
+    }
+    this.runTenantAction(() => this.api.disablePrimaryAdmin(row.tenantId));
+  }
+
+  enablePrimaryAdmin(row: TenantSummaryRow): void {
+    this.runTenantAction(() => this.api.enablePrimaryAdmin(row.tenantId));
+  }
+
+  openPractice(row: TenantSummaryRow): void {
+    if (!row.isActive) {
+      this.errorMessage = `Cannot open "${row.name}" — the practice is disabled. Enable it first.`;
+      return;
+    }
+    if (row.facilityCount <= 0) {
+      this.errorMessage = `Cannot open "${row.name}" — no facilities exist for this practice.`;
+      return;
+    }
+
     this.errorMessage = '';
-    this.api.deleteTenant(row.tenantId).subscribe({
-      next: () => this.reloadTenantRows(),
-      error: (err) => this.handleErr(err),
+    this.actionInProgress = true;
+    this.api.impersonate({ tenantId: row.tenantId }).subscribe({
+      next: (res) => {
+        this.actionInProgress = false;
+        const practiceName = res.tenantName?.trim() || row.name;
+        this.impersonation.setPracticeName(practiceName);
+        this.auth.applyImpersonationSession({
+          token: res.token,
+          facilityId: res.facilityId,
+          tenantName: practiceName,
+        });
+        void this.router.navigateByUrl('/dashboard');
+      },
+      error: (err) => {
+        this.actionInProgress = false;
+        this.handleErr(err);
+      },
     });
   }
 
-  formatDate(v: string | null | undefined): string {
-    if (v == null || v === '') return '—';
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+  private runTenantAction(action: () => ReturnType<SuperAdminService['enableTenant']>): void {
+    this.errorMessage = '';
+    this.actionInProgress = true;
+    action().subscribe({
+      next: () => {
+        this.actionInProgress = false;
+        this.reloadTenantRows();
+        if (this.editRow) {
+          const updated = this.tenantRows.find((r) => r.tenantId === this.editRow?.tenantId);
+          if (updated) {
+            this.editRow = { ...updated };
+          }
+        }
+      },
+      error: (err) => {
+        this.actionInProgress = false;
+        this.handleErr(err);
+      },
+    });
+  }
+
+  adminUserName(row: TenantSummaryRow): string {
+    return row.primaryAdmin?.userName ?? '—';
+  }
+
+  adminStatus(row: TenantSummaryRow): string {
+    if (!row.primaryAdmin) {
+      return 'Not assigned';
+    }
+    return row.primaryAdmin.isActive ? 'Active' : 'Disabled';
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'Active':
+        return 'sa-status sa-status--active';
+      case 'Disabled':
+        return 'sa-status sa-status--disabled';
+      case 'Pending':
+        return 'sa-status sa-status--pending';
+      default:
+        return 'sa-status';
+    }
+  }
+
+  adminStatusClass(row: TenantSummaryRow): string {
+    if (!row.primaryAdmin) {
+      return 'sa-status sa-status--pending';
+    }
+    return row.primaryAdmin.isActive
+      ? 'sa-status sa-status--active'
+      : 'sa-status sa-status--disabled';
   }
 
   private handleErr(err: unknown): void {

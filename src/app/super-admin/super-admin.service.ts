@@ -4,47 +4,22 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
-/** Matches API JSON (camelCase). */
-export interface SuperAdminTenant {
-  tenantId: number;
-  name: string;
-  tenantKey: string;
-  createdDate?: string | null;
-}
-
-export interface SuperAdminFacility {
-  facilityId: number;
-  name: string;
-  tenantId: number;
-  tenantName: string;
-  createdDate?: string | null;
-}
-
-export interface SuperAdminUserRow {
+export interface PrimaryAdminSummary {
   userGuid: string;
   userName: string;
-  tenantId: number;
-  tenantName: string;
-  role: string;
-  createdAt?: string | null;
+  isActive: boolean;
 }
 
-/** Row for Super Admin → Tenants list (aggregated client-side). */
+/** Platform practice row from GET /api/super-admin/tenants */
 export interface TenantSummaryRow {
   tenantId: number;
   name: string;
   tenantKey: string;
-  adminUserName: string;
-  adminUserGuid: string | null;
+  isActive: boolean;
+  status: 'Active' | 'Disabled' | 'Pending' | string;
   facilityCount: number;
-  status: string;
-  createdDate?: string | null;
-}
-
-export interface UserFacilityAccessRow {
-  facilityId: number;
-  name: string;
-  hasAccess: boolean;
+  userCount: number;
+  primaryAdmin: PrimaryAdminSummary | null;
 }
 
 export interface ImpersonateResponse {
@@ -54,6 +29,7 @@ export interface ImpersonateResponse {
   tenantId?: number | null;
   facilityId?: number | null;
   tenantKey?: string | null;
+  tenantName?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -65,23 +41,9 @@ export class SuperAdminService {
     return base ? `${base}/api/super-admin` : '/api/super-admin';
   }
 
-  getTenants(): Observable<SuperAdminTenant[]> {
+  getTenants(): Observable<TenantSummaryRow[]> {
     const url = `${this.superAdminBase()}/tenants`;
-    return this.http.get<SuperAdminTenant[] | null>(url).pipe(
-      map((data) => (Array.isArray(data) ? data : []))
-    );
-  }
-
-  getFacilities(tenantId: number): Observable<SuperAdminFacility[]> {
-    const url = `${this.superAdminBase()}/tenants/${tenantId}/facilities`;
-    return this.http.get<SuperAdminFacility[] | null>(url).pipe(
-      map((data) => (Array.isArray(data) ? data : []))
-    );
-  }
-
-  getUsers(tenantId: number): Observable<SuperAdminUserRow[]> {
-    const url = `${this.superAdminBase()}/users?tenantId=${tenantId}`;
-    return this.http.get<SuperAdminUserRow[] | null>(url).pipe(
+    return this.http.get<TenantSummaryRow[] | null>(url).pipe(
       map((data) => (Array.isArray(data) ? data : []))
     );
   }
@@ -90,8 +52,27 @@ export class SuperAdminService {
     return this.http.post(`${this.superAdminBase()}/tenants`, data);
   }
 
-  deleteTenant(tenantId: number): Observable<unknown> {
+  disableTenant(tenantId: number): Observable<unknown> {
     return this.http.delete(`${this.superAdminBase()}/tenants/${tenantId}`);
+  }
+
+  enableTenant(tenantId: number): Observable<unknown> {
+    return this.http.post(`${this.superAdminBase()}/tenants/${tenantId}/enable`, {});
+  }
+
+  enablePrimaryAdmin(tenantId: number): Observable<unknown> {
+    return this.http.post(`${this.superAdminBase()}/tenants/${tenantId}/primary-admin/enable`, {});
+  }
+
+  disablePrimaryAdmin(tenantId: number): Observable<unknown> {
+    return this.http.post(`${this.superAdminBase()}/tenants/${tenantId}/primary-admin/disable`, {});
+  }
+
+  resetPrimaryAdminPassword(tenantId: number, password: string): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/primary-admin/reset-password`,
+      { password }
+    );
   }
 
   createFacility(data: { tenantId: number; name: string }): Observable<unknown> {
@@ -105,38 +86,6 @@ export class SuperAdminService {
     facilityId: number;
   }): Observable<unknown> {
     return this.http.post(`${this.superAdminBase()}/users`, data);
-  }
-
-  /** Dev-only helper at POST /api/auth/set-password (not for production). */
-  setPasswordDev(data: {
-    userName: string;
-    password: string;
-    tenantKey: string;
-  }): Observable<unknown> {
-    const base = (environment.apiUrl || '').replace(/\/$/, '');
-    return this.http.post(`${base}/api/auth/set-password`, data);
-  }
-
-  getUserFacilityAccess(
-    tenantId: number,
-    userId: string
-  ): Observable<UserFacilityAccessRow[]> {
-    return this.http
-      .get<UserFacilityAccessRow[] | null>(
-        `${this.superAdminBase()}/tenants/${tenantId}/users/${userId}/facilities`
-      )
-      .pipe(map((data) => (Array.isArray(data) ? data : [])));
-  }
-
-  updateUserFacilityAccess(
-    tenantId: number,
-    userId: string,
-    facilityIds: number[]
-  ): Observable<unknown> {
-    return this.http.put(
-      `${this.superAdminBase()}/tenants/${tenantId}/users/${userId}/facilities`,
-      { facilityIds }
-    );
   }
 
   impersonate(data: {

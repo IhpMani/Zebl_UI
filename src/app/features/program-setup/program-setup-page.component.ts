@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { forkJoin, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { FacilityService } from '../../core/services/facility.service';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { PatientTemplatesApiService, PatientTemplateDto } from '../../core/services/patient-templates-api.service';
 import { CLAIM_STATUS_OPTIONS, ClaimStatusOption } from '../../shared/constants/claim-status';
@@ -59,7 +60,7 @@ interface ProgramSetupSection {
   templateUrl: './program-setup-page.component.html',
   styleUrls: ['./program-setup-page.component.scss']
 })
-export class ProgramSetupPageComponent implements OnInit {
+export class ProgramSetupPageComponent implements OnInit, OnDestroy {
   sections: ProgramSetupSection[] = [
     { id: 'general', label: 'General' },
     { id: 'patient', label: 'Patient' },
@@ -73,7 +74,7 @@ export class ProgramSetupPageComponent implements OnInit {
     { id: 'interface', label: 'Interface' }
   ];
 
-  selectedSection: string = 'general';
+  selectedSection: string = 'patient';
   /** Off by default: saves apply company-wide. When on, saves apply to the current facility only. */
   facilityCustomizeMode = false;
   /** Section-specific shape; hydrated via program-setup-hydration.ts before bind. */
@@ -87,6 +88,17 @@ export class ProgramSetupPageComponent implements OnInit {
   eligibilityConfigStatus: EligibilityConfigurationStatusDto | null = null;
   eligibilityTestResult: EligibilityConnectionTestResultDto | null = null;
   isTestingEligibility = false;
+  /** When off, file-path settings are omitted from save (existing values preserved server-side). */
+  eligibilityAdvancedMode = false;
+  readonly eligibilitySourceOptions: { value: string; label: string }[] = [
+    { value: 'GenericSftp', label: 'Generic SFTP' },
+    { value: 'Waystar', label: 'Waystar' },
+    { value: 'OfficeAlly', label: 'Office Ally' },
+    { value: 'TriZetto', label: 'TriZetto' },
+    { value: 'ChangeHealthcare', label: 'Change Healthcare' },
+    { value: 'ZirMed', label: 'ZirMed' },
+    { value: 'Navicure', label: 'Navicure' }
+  ];
 
   patientTemplates: PatientTemplateDto[] = [];
   showMissingAccountsModal = false;
@@ -137,6 +149,8 @@ export class ProgramSetupPageComponent implements OnInit {
   readonly customFieldTypeOptions = CUSTOM_FIELD_TYPES;
   readonly maxCustomFieldsPerEntity = 5;
 
+  private facilityChangeSub: Subscription | null = null;
+
   constructor(
     private programSettingsApi: ProgramSettingsApiService,
     private patientTemplatesApi: PatientTemplatesApiService,
@@ -147,22 +161,70 @@ export class ProgramSetupPageComponent implements OnInit {
     private customFieldsApi: CustomFieldsApiService,
     private eligibilityApi: EligibilityApiService,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private facility: FacilityService
   ) { }
+
+  /** True when the current section has form settings that Save can persist. */
+  get canSaveCurrentSection(): boolean {
+    if (this.isLoading || this.isSaving) {
+      return false;
+    }
+    if (this.loadError || this.customFieldsLoadError) {
+      return false;
+    }
+    const id = this.selectedSection;
+    if (id === 'general' || id === 'payment') {
+      return false;
+    }
+    if (id === 'patient-custom-fields' || id === 'claim-custom-fields') {
+      return false;
+    }
+    return this.settingsData != null;
+  }
+
+  /** Shown when Save is disabled so the user knows why. */
+  get saveDisabledReason(): string | null {
+    if (this.isLoading || this.isSaving || this.canSaveCurrentSection) {
+      return null;
+    }
+    const id = this.selectedSection;
+    if (id === 'general' || id === 'payment') {
+      return 'This section has no settings to save yet.';
+    }
+    if (id === 'patient-custom-fields' || id === 'claim-custom-fields') {
+      return 'Custom fields save when you add or edit each field (Add Field / Edit). Use Close to leave this page.';
+    }
+    if (this.loadError || this.customFieldsLoadError) {
+      return null;
+    }
+    return 'Settings are not loaded. Try selecting this section again.';
+  }
 
   ngOnInit(): void {
     this.loadSection(this.selectedSection);
+    this.facilityChangeSub = this.facility.facilityId$.pipe(distinctUntilChanged()).subscribe(() => {
+      if (this.selectedSection === 'patient-eligibility') {
+        this.loadSection('patient-eligibility');
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.facilityChangeSub?.unsubscribe();
   }
 
   get canCustomizeForFacility(): boolean {
     return (
       this.auth.canManageTenantProgramSettings() &&
-      this.sectionUsesProgramTier(this.selectedSection)
+      this.sectionUsesProgramTier(this.selectedSection) &&
+      this.selectedSection !== 'patient-eligibility'
     );
   }
 
   startFacilityCustomize(): void {
     this.facilityCustomizeMode = true;
+    this.loadSection(this.selectedSection);
   }
 
   revertToSharedSettings(): void {
@@ -199,7 +261,9 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     this.selectedSection = sectionId;
-    if (!this.sectionUsesProgramTier(sectionId)) {
+    this.saveError = null;
+    this.saveSuccessMessage = null;
+    if (!this.sectionUsesProgramTier(sectionId) || sectionId === 'patient-eligibility') {
       this.facilityCustomizeMode = false;
     }
     this.loadSection(sectionId);
@@ -246,6 +310,8 @@ export class ProgramSetupPageComponent implements OnInit {
     this.isLoading = true;
     this.loadError = null;
     this.customFieldsLoadError = null;
+    this.saveError = null;
+    this.saveSuccessMessage = null;
     this.settingsData = null;
 
     if (sectionId === 'patient-custom-fields') {
@@ -265,9 +331,11 @@ export class ProgramSetupPageComponent implements OnInit {
     }
 
     if (sectionId === 'patient-eligibility') {
-      this.programSettingsApi.getSection('patientEligibility', this.apiScopeForSection('patient-eligibility')).subscribe({
+      this.eligibilityAdvancedMode = false;
+      this.programSettingsApi.getSection('patientEligibility').subscribe({
         next: data => {
           this.settingsData = hydratePatientEligibilitySettings(data);
+          this.syncEligibilityAdvancedModeFromSettings(this.settingsData);
           this.loadEligibilityLookups();
           this.refreshEligibilityConfigStatus();
           this.isLoading = false;
@@ -364,9 +432,12 @@ export class ProgramSetupPageComponent implements OnInit {
     return sectionId;
   }
 
-  /** Always load merged effective settings for display. */
-  private apiScopeForSection(_sectionId: string): undefined {
-    return undefined;
+  /** Tenant scope when editing shared defaults; facility-effective when customizing for one facility. */
+  private apiScopeForSection(sectionId: string): 'tenant' | undefined {
+    if (!this.sectionUsesProgramTier(sectionId)) {
+      return undefined;
+    }
+    return this.facilityCustomizeMode ? undefined : 'tenant';
   }
 
   /** Save to company settings by default; facility when advanced override is on. */
@@ -382,6 +453,10 @@ export class ProgramSetupPageComponent implements OnInit {
   }
 
   onSaveAndClose(): void {
+    if (!this.canSaveCurrentSection) {
+      this.onClose();
+      return;
+    }
     this.save(true);
   }
 
@@ -410,14 +485,13 @@ export class ProgramSetupPageComponent implements OnInit {
   }
 
   private save(closeAfter: boolean): void {
-    if (this.selectedSection === 'patient-custom-fields' || this.selectedSection === 'claim-custom-fields') {
-      if (closeAfter) {
-        this.onClose();
-      }
+    if (!this.canSaveCurrentSection) {
+      this.saveError = this.saveDisabledReason ?? 'Nothing to save for this section.';
       return;
     }
 
-    if (!this.settingsData) {
+    if (this.selectedSection === 'patient' && this.facility.getFacilityIdOptional() == null) {
+      this.saveError = 'Select a facility in the top bar before saving patient settings.';
       return;
     }
 
@@ -450,6 +524,12 @@ export class ProgramSetupPageComponent implements OnInit {
         error: err => this.handleSaveError(err, 'claim')
       });
     } else if (this.selectedSection === 'patient-eligibility') {
+      if (this.facility.getFacilityIdOptional() == null) {
+        this.saveError = 'Select a facility in the top bar before saving eligibility settings.';
+        this.isSaving = false;
+        return;
+      }
+
       const eligibility = this.settingsData as PatientEligibilityProgramSettings;
       const validationError = this.validatePatientEligibility(eligibility);
       if (validationError) {
@@ -458,20 +538,17 @@ export class ProgramSetupPageComponent implements OnInit {
         return;
       }
 
-      const payload = toPatientEligibilitySavePayload(eligibility);
-      this.programSettingsApi.saveSection('patientEligibility', payload, this.saveScopeForSection('patient-eligibility')).pipe(
-        switchMap(saved => of(hydratePatientEligibilitySettings(saved)))
+      const payload = toPatientEligibilitySavePayload(eligibility, {
+        includeDirectoryFields: this.eligibilityAdvancedMode
+      });
+      this.programSettingsApi.saveSection('patientEligibility', payload).pipe(
+        switchMap(() => this.programSettingsApi.getSection('patientEligibility'))
       ).subscribe({
         next: data => {
-          const missingTransport = this.getMissingEligibilityTransportFields(data);
-          if (missingTransport.length > 0) {
-            this.isSaving = false;
-            this.saveError = `Save completed but persisted settings are missing: ${missingTransport.join(', ')}.`;
-            return;
-          }
-          this.settingsData = data;
+          this.settingsData = hydratePatientEligibilitySettings(data);
+          this.syncEligibilityAdvancedModeFromSettings(this.settingsData);
           this.refreshEligibilityConfigStatus();
-          this.finishSave(closeAfter, 'Patient Eligibility settings saved.');
+          this.finishSave(closeAfter, '');
         },
         error: err => this.handleEligibilitySaveError(err)
       });
@@ -542,17 +619,26 @@ export class ProgramSetupPageComponent implements OnInit {
 
   private finishSave(closeAfter: boolean, successMessage: string): void {
     this.isSaving = false;
-    this.saveSuccessMessage = successMessage;
+    this.saveSuccessMessage = successMessage?.trim() ? successMessage : null;
     if (closeAfter) {
       this.onClose();
     }
   }
 
-  private handleSaveError(err: unknown, sectionLabel: string, useApiMessage = false): void {
+  private extractApiErrorMessage(err: unknown, fallback = 'Failed to save settings.'): string {
+    const httpErr = err as HttpErrorResponse;
+    const body = httpErr?.error;
+    if (typeof body === 'string' && body.trim()) {
+      return body;
+    }
+    const obj = (body ?? {}) as { error?: string; message?: string; details?: string };
+    return obj.error ?? obj.message ?? obj.details ?? fallback;
+  }
+
+  private handleSaveError(err: unknown, sectionLabel: string, useApiMessage = true): void {
     this.isSaving = false;
-    const body = (err as { error?: { error?: string; message?: string; details?: string } })?.error;
     this.saveError = useApiMessage
-      ? (body?.error ?? body?.message ?? body?.details ?? 'Failed to save settings.')
+      ? this.extractApiErrorMessage(err)
       : 'Failed to save settings.';
     // eslint-disable-next-line no-console
     console.error(`Error saving ${sectionLabel} program settings`, err);
@@ -562,13 +648,14 @@ export class ProgramSetupPageComponent implements OnInit {
     this.isSaving = false;
     const httpErr = err as HttpErrorResponse;
     const body = (httpErr?.error ?? {}) as { error?: string; message?: string; details?: string; errorCode?: string };
-    const apiMessage = body?.error ?? body?.message ?? body?.details ?? 'Failed to save settings.';
+    const apiMessage = body?.error ?? body?.message ?? body?.details ?? '';
 
     if (httpErr?.status === 409) {
-      this.saveError = `Save conflict: ${apiMessage} Reloaded latest server values. Re-apply changes and save again.`;
+      this.saveError = 'Eligibility settings were changed elsewhere. Your screen was refreshed — review and save again.';
       this.programSettingsApi.getSection('patientEligibility').subscribe({
         next: data => {
           this.settingsData = hydratePatientEligibilitySettings(data);
+          this.syncEligibilityAdvancedModeFromSettings(this.settingsData);
           this.refreshEligibilityConfigStatus();
         },
         error: () => {
@@ -578,9 +665,75 @@ export class ProgramSetupPageComponent implements OnInit {
       return;
     }
 
-    this.saveError = apiMessage;
+    this.saveError = this.toEligibilityUserMessage(apiMessage);
     // eslint-disable-next-line no-console
     console.error('Error saving patient eligibility program settings', err);
+  }
+
+  private toEligibilityUserMessage(raw: string): string {
+    const message = (raw ?? '').trim();
+    if (!message) {
+      return 'Unable to save eligibility settings.';
+    }
+    const technical =
+      /persistence verification|uploaddirectory|incomingdirectory|processeddirectory|quarantinedirectory|repository|round-trip|request uploaddirectory|settings uploaddirectory|diagnostics/i;
+    if (technical.test(message)) {
+      return 'Unable to save eligibility settings.';
+    }
+    if (/connection settings/i.test(message)) {
+      return 'Please complete all required eligibility connection settings.';
+    }
+    if (/password/i.test(message) && /required/i.test(message)) {
+      return 'Password is required.';
+    }
+    if (/receiver/i.test(message) && /required/i.test(message)) {
+      return 'Select a receiver.';
+    }
+    if (/username/i.test(message) && /required/i.test(message)) {
+      return 'Username is required.';
+    }
+    if (/server/i.test(message) && /required/i.test(message)) {
+      return 'Server is required.';
+    }
+    if (/succeeded|looks valid|test failed/i.test(message)) {
+      return message;
+    }
+    if (/could not be saved|unable to save|please verify|select a /i.test(message)) {
+      return message;
+    }
+    if (/required/i.test(message) && !/directory/i.test(message)) {
+      return message;
+    }
+    return 'Eligibility settings could not be saved.';
+  }
+
+  onEligibilitySourceChange(): void {
+    if (!this.settingsData || this.eligibilityAdvancedMode) {
+      return;
+    }
+    const state = this.settingsData as PatientEligibilityProgramSettings;
+    state.uploadDirectory = '';
+    state.incomingDirectory = '';
+    state.processedDirectory = '';
+  }
+
+  /** Operational display label for the current eligibility source/vendor. */
+  getEligibilitySourceLabel(value: string | null | undefined): string {
+    const match = this.eligibilitySourceOptions.find(o => o.value === value);
+    return match?.label ?? (value ?? '');
+  }
+
+  private syncEligibilityAdvancedModeFromSettings(state: PatientEligibilityProgramSettings | null): void {
+    if (!state) {
+      return;
+    }
+    const hasPaths =
+      !!(state.uploadDirectory ?? '').trim() ||
+      !!(state.incomingDirectory ?? '').trim() ||
+      !!(state.processedDirectory ?? '').trim();
+    if (hasPaths) {
+      this.eligibilityAdvancedMode = true;
+    }
   }
 
   private handlePatientSaveError(err: unknown): void {
@@ -595,43 +748,49 @@ export class ProgramSetupPageComponent implements OnInit {
       this.showMissingAccountsModal = true;
       return;
     }
-    this.saveError = 'Failed to save settings.';
+    this.saveError = this.extractApiErrorMessage(err);
     // eslint-disable-next-line no-console
     console.error('Error saving patient program settings', err);
   }
 
   private validatePatientEligibility(state: PatientEligibilityProgramSettings): string | null {
     if (!(state.receiverId ?? '').toString().trim()) {
-      return 'Receiver is required for eligibility.';
+      return 'Select a receiver.';
     }
     if (!(state.vendor ?? '').toString().trim()) {
-      return 'Eligibility vendor is required.';
+      return 'Select a source.';
     }
     if (!(state.username ?? '').trim()) {
-      return 'Username is required for eligibility.';
-    }
-    if (!(state.server ?? '').trim()) {
-      return 'Server is required for eligibility.';
+      return 'Username is required.';
     }
     const pwd = (state.password ?? '').toString();
     if (!pwd.trim() && !state.passwordConfigured) {
-      return 'Password is required for eligibility (or configure a password to enable persistence).';
+      return 'Password is required.';
     }
-    if (!(state.uploadDirectory ?? '').trim() ||
-      !(state.incomingDirectory ?? '').trim() ||
-      !(state.processedDirectory ?? '').trim()) {
-      return 'Upload, Incoming, and Processed directories are required.';
+    if (!(state.server ?? '').trim()) {
+      return 'Server is required.';
+    }
+    if (this.eligibilityAdvancedMode) {
+      if (!(state.uploadDirectory ?? '').trim() ||
+        !(state.incomingDirectory ?? '').trim() ||
+        !(state.processedDirectory ?? '').trim()) {
+        return 'Please complete all file path settings.';
+      }
     }
     return null;
   }
 
-  private getMissingEligibilityTransportFields(state: PatientEligibilityProgramSettings): string[] {
-    const missing: string[] = [];
-    if (!(state.server ?? '').trim()) missing.push('server');
-    if (!(state.uploadDirectory ?? '').trim()) missing.push('uploadDirectory');
-    if (!(state.incomingDirectory ?? '').trim()) missing.push('incomingDirectory');
-    if (!(state.processedDirectory ?? '').trim()) missing.push('processedDirectory');
-    return missing;
+  get eligibilityTestResultMessage(): string | null {
+    if (!this.eligibilityTestResult) {
+      return null;
+    }
+    const raw = (this.eligibilityTestResult.message ?? '').trim();
+    if (!raw) {
+      return this.eligibilityTestResult.success
+        ? 'Connection test succeeded.'
+        : 'Connection test failed. Please verify your settings.';
+    }
+    return this.toEligibilityUserMessage(raw);
   }
 
   closeMissingAccountsModal(): void {
@@ -736,7 +895,9 @@ export class ProgramSetupPageComponent implements OnInit {
 
     this.eligibilityApi.testConnection(this.buildEligibilityTestConnectionRequest()).subscribe({
       next: res => {
-        this.eligibilityTestResult = this.normalizeEligibilityTestResult(res);
+        const normalized = this.normalizeEligibilityTestResult(res);
+        normalized.message = this.toEligibilityUserMessage(normalized.message ?? '');
+        this.eligibilityTestResult = normalized;
         this.isTestingEligibility = false;
       },
       error: err => {
@@ -752,7 +913,7 @@ export class ProgramSetupPageComponent implements OnInit {
         this.eligibilityTestResult = this.normalizeEligibilityTestResult({
           ...(typeof raw === 'object' && raw !== null ? raw : {}),
           success: Boolean(raw?.success),
-          message,
+          message: this.toEligibilityUserMessage(message),
         });
       }
     });

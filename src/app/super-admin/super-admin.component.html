@@ -2,7 +2,7 @@
   <header class="sa-page-header">
     <h1>Platform administration</h1>
     <p class="sa-subtitle">
-      Create client practices and hand off credentials to the practice administrator. Clients sign in separately to the billing application.
+      Manage client practices, subscriptions, and primary administrators. Operational staff access requires impersonating the practice.
     </p>
   </header>
 
@@ -10,7 +10,7 @@
 
   <div class="sa-toolbar">
     <button type="button" class="sa-btn sa-btn-action" (click)="openCreateModal()">Create practice</button>
-    <button type="button" class="sa-btn sa-btn-ghost" (click)="reloadTenantRows()" [disabled]="loading">
+    <button type="button" class="sa-btn sa-btn-ghost" (click)="reloadTenantRows()" [disabled]="loading || actionInProgress">
       Refresh
     </button>
   </div>
@@ -23,10 +23,10 @@
         <thead>
           <tr>
             <th>Practice name</th>
-            <th>Administrator</th>
-            <th>Facilities</th>
             <th>Status</th>
-            <th>Created</th>
+            <th>Primary admin</th>
+            <th>Facilities</th>
+            <th>Users</th>
             <th class="sa-actions">Actions</th>
           </tr>
         </thead>
@@ -36,17 +36,52 @@
               <div class="sa-tenant-name">{{ row.name }}</div>
               <div class="sa-tenant-key">Sign-in key: {{ row.tenantKey }}</div>
             </td>
-            <td>{{ row.adminUserName }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{ row.status }}</span>
+            </td>
+            <td>
+              <div>{{ adminUserName(row) }}</div>
+              <span [class]="adminStatusClass(row)">{{ adminStatus(row) }}</span>
+            </td>
             <td>{{ row.facilityCount }}</td>
-            <td>{{ row.status }}</td>
-            <td>{{ formatDate(row.createdDate) }}</td>
+            <td>{{ row.userCount }}</td>
             <td class="sa-actions sa-actions-stack">
-              <button type="button" class="sa-btn sa-btn-ghost" (click)="openEditModal(row)">View</button>
-              <button type="button" class="sa-btn sa-btn-ghost" (click)="openResetPasswordModal(row)">
-                Reset administrator password
+              <button
+                type="button"
+                class="sa-btn sa-btn-action"
+                *ngIf="row.isActive"
+                (click)="openPractice(row)"
+                [disabled]="actionInProgress"
+              >
+                Open practice
               </button>
-              <button type="button" class="sa-btn sa-btn-danger btn-delete" (click)="disableTenant(row)">
+              <button type="button" class="sa-btn sa-btn-ghost" (click)="openEditModal(row)">View details</button>
+              <button
+                type="button"
+                class="sa-btn sa-btn-ghost"
+                *ngIf="row.primaryAdmin"
+                (click)="openResetPasswordModal(row)"
+                [disabled]="actionInProgress"
+              >
+                Reset admin password
+              </button>
+              <button
+                type="button"
+                class="sa-btn sa-btn-danger btn-delete"
+                *ngIf="row.isActive"
+                (click)="disableTenant(row)"
+                [disabled]="actionInProgress"
+              >
                 Disable practice
+              </button>
+              <button
+                type="button"
+                class="sa-btn sa-btn-action"
+                *ngIf="!row.isActive"
+                (click)="enableTenant(row)"
+                [disabled]="actionInProgress"
+              >
+                Enable practice
               </button>
             </td>
           </tr>
@@ -81,15 +116,84 @@
 </div>
 
 <div class="sa-modal-backdrop" *ngIf="showEditModal && editRow">
-  <div class="sa-modal" role="dialog">
+  <div class="sa-modal sa-modal--wide" role="dialog">
     <h2>Practice details</h2>
     <div class="sa-form">
       <label>Practice name<input [value]="editRow.name" readonly class="sa-readonly" /></label>
       <label>Sign-in key<input [value]="editRow.tenantKey" readonly class="sa-readonly" /></label>
-      <label>Administrator<input [value]="editRow.adminUserName" readonly class="sa-readonly" /></label>
+      <label>Status
+        <span [class]="statusClass(editRow.status)">{{ editRow.status }}</span>
+      </label>
       <label>Facilities<input [value]="editRow.facilityCount" readonly class="sa-readonly" /></label>
+      <label>Users (summary)<input [value]="editRow.userCount" readonly class="sa-readonly" /></label>
     </div>
-    <div class="sa-modal-actions">
+
+    <h3 class="sa-panel-title">Primary administrator</h3>
+    <div class="sa-form" *ngIf="editRow.primaryAdmin; else noAdmin">
+      <label>Username<input [value]="editRow.primaryAdmin.userName" readonly class="sa-readonly" /></label>
+      <label>Status
+        <span [class]="adminStatusClass(editRow)">{{ adminStatus(editRow) }}</span>
+      </label>
+    </div>
+    <ng-template #noAdmin>
+      <p class="sa-muted">No primary administrator assigned yet.</p>
+    </ng-template>
+
+    <div class="sa-modal-actions sa-modal-actions--wrap">
+      <button
+        type="button"
+        class="sa-btn sa-btn-action"
+        *ngIf="editRow.isActive"
+        (click)="openPractice(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Open practice
+      </button>
+      <button
+        type="button"
+        class="sa-btn sa-btn-ghost"
+        *ngIf="editRow.primaryAdmin && editRow.primaryAdmin.isActive"
+        (click)="disablePrimaryAdmin(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Disable administrator
+      </button>
+      <button
+        type="button"
+        class="sa-btn sa-btn-action"
+        *ngIf="editRow.primaryAdmin && !editRow.primaryAdmin.isActive"
+        (click)="enablePrimaryAdmin(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Enable administrator
+      </button>
+      <button
+        type="button"
+        class="sa-btn sa-btn-ghost"
+        *ngIf="editRow.primaryAdmin"
+        (click)="openResetPasswordModal(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Reset password
+      </button>
+      <button
+        type="button"
+        class="sa-btn sa-btn-danger btn-delete"
+        *ngIf="editRow.isActive"
+        (click)="disableTenant(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Disable practice
+      </button>
+      <button
+        type="button"
+        class="sa-btn sa-btn-action"
+        *ngIf="!editRow.isActive"
+        (click)="enableTenant(editRow)"
+        [disabled]="actionInProgress"
+      >
+        Enable practice
+      </button>
       <button type="button" class="sa-btn sa-btn-ghost" (click)="closeEditModal()">Close</button>
     </div>
   </div>
@@ -99,15 +203,18 @@
   <div class="sa-modal" role="dialog">
     <h2>Reset administrator password</h2>
     <p class="sa-muted">
-      User: <strong>{{ resetRow.adminUserName }}</strong> ({{ resetRow.name }})
+      User: <strong>{{ adminUserName(resetRow) }}</strong> ({{ resetRow.name }})
     </p>
     <div class="sa-form">
       <label>New password<input type="password" [(ngModel)]="resetPassword" autocomplete="new-password" /></label>
     </div>
-    <p class="sa-muted" *ngIf="isDev">Development mode: uses the local set-password helper.</p>
     <div class="sa-modal-actions">
-      <button type="button" class="sa-btn sa-btn-action" (click)="saveResetPassword()">Save password</button>
-      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeResetPasswordModal()">Cancel</button>
+      <button type="button" class="sa-btn sa-btn-action" (click)="saveResetPassword()" [disabled]="actionInProgress">
+        Save password
+      </button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeResetPasswordModal()" [disabled]="actionInProgress">
+        Cancel
+      </button>
     </div>
   </div>
 </div>

@@ -17,6 +17,8 @@ import { ContextResetService } from '../core/services/context-reset.service';
 import { FacilitiesApiService, OperationalFacilityRow } from '../core/services/facilities-api.service';
 import { facilityDisplayLabel } from '../core/utils/facility-display.util';
 import { OperationalFacilitiesRefreshService } from '../core/services/operational-facilities-refresh.service';
+import { SuperAdminService } from '../super-admin/super-admin.service';
+import { ImpersonationContextService } from '../super-admin/impersonation-context.service';
 
 import { HttpErrorMessageService } from '../core/services/http-error-message.service';
 
@@ -37,6 +39,15 @@ import { resolveClaimPatientId } from '../core/utils/claim-patient-id.util';
     <div class="app-container">
 
       <div class="api-error-banner" *ngIf="httpBanner">{{ httpBanner }}</div>
+
+      <div class="impersonation-banner" *ngIf="auth.isLoggedIn() && auth.isImpersonating()">
+        <span class="impersonation-banner__text">
+          Impersonating: <strong>{{ impersonationPracticeName }}</strong>
+        </span>
+        <button type="button" class="impersonation-banner__exit" (click)="exitImpersonation()" [disabled]="exitImpersonationInProgress">
+          {{ exitImpersonationInProgress ? 'Exiting…' : 'Exit impersonation' }}
+        </button>
+      </div>
 
       <div class="app-toast-container" *ngIf="toastVisible">
 
@@ -385,7 +396,8 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
   toastVisible = false;
 
-
+  impersonationPracticeName = 'Practice';
+  exitImpersonationInProgress = false;
 
   private navSub?: Subscription;
 
@@ -421,7 +433,9 @@ export class AppShellComponent implements OnDestroy, OnInit {
     private httpErrors: HttpErrorMessageService,
 
     private readonly patientNavigation: PatientNavigationService,
-    private readonly claimApi: ClaimApiService
+    private readonly claimApi: ClaimApiService,
+    private readonly superAdminApi: SuperAdminService,
+    private readonly impersonationCtx: ImpersonationContextService
 
   ) {
 
@@ -472,9 +486,8 @@ export class AppShellComponent implements OnDestroy, OnInit {
     });
 
     if (this.auth.isLoggedIn() && !this.auth.isSuperAdmin()) {
-
+      this.refreshImpersonationBanner();
       this.loadOperationalFacilities();
-
     }
 
     this.facilitiesRefreshSub = this.facilitiesRefresh.facilitiesChanged$.subscribe(() => {
@@ -824,9 +837,41 @@ export class AppShellComponent implements OnDestroy, OnInit {
 
 
 
+  exitImpersonation(): void {
+    if (this.exitImpersonationInProgress) {
+      return;
+    }
+    this.exitImpersonationInProgress = true;
+    this.superAdminApi.exitImpersonation().subscribe({
+      next: (res) => {
+        this.exitImpersonationInProgress = false;
+        this.impersonationCtx.clear();
+        this.auth.applySuperAdminSession(res);
+        this.facilityOptions = [];
+        this.facilityOptionsLoaded = false;
+        void this.router.navigateByUrl('/super-admin');
+      },
+      error: () => {
+        this.exitImpersonationInProgress = false;
+        this.showToast('Could not exit impersonation. Try again or log out.');
+      },
+    });
+  }
+
+  private refreshImpersonationBanner(): void {
+    if (!this.auth.isImpersonating()) {
+      return;
+    }
+    this.impersonationPracticeName =
+      this.impersonationCtx.getPracticeName() ??
+      this.facility.getTenantKeyOptional() ??
+      'Practice';
+  }
+
   logout(): void {
 
     this.showMenu = false;
+    this.impersonationCtx.clear();
 
     this.auth.logout();
 

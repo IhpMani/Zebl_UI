@@ -41,6 +41,37 @@
   flex-wrap: wrap;
 }
 
+.save-status-bar {
+  margin: -6px 0 12px;
+  flex-shrink: 0;
+}
+
+.save-status {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.save-status--error {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.save-status--success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.save-status--hint {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
 .btn {
   padding: 6px 14px;
   border-radius: 8px;
@@ -310,6 +341,16 @@
     &:first-child {
       margin-top: 0;
     }
+  }
+
+  .eligibility-actions {
+    margin-top: 4px;
+  }
+
+  .eligibility-advanced-toggle {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
   }
 
   .form-row {

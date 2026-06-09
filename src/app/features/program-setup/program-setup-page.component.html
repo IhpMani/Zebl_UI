@@ -3,10 +3,29 @@
     <div class="program-setup-header">
       <h2 class="page-title">Program Setup</h2>
       <div class="actions">
-        <button type="button" class="btn btn-primary btn-save" (click)="onSave()" [disabled]="isSaving">Save</button>
-        <button type="button" class="btn btn-primary btn-save" (click)="onSaveAndClose()" [disabled]="isSaving">Save &amp; Close</button>
+        <button
+          type="button"
+          class="btn btn-primary btn-save"
+          (click)="onSave()"
+          [disabled]="isSaving || !canSaveCurrentSection"
+          [attr.title]="saveDisabledReason || null"
+        >Save</button>
+        <button
+          type="button"
+          class="btn btn-primary btn-save"
+          (click)="onSaveAndClose()"
+          [disabled]="isSaving || isLoading"
+        >Save &amp; Close</button>
         <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isSaving">Close</button>
       </div>
+    </div>
+
+    <div class="save-status-bar" *ngIf="saveError || saveSuccessMessage || saveDisabledReason">
+      <p class="save-status save-status--error" *ngIf="saveError">{{ saveError }}</p>
+      <p class="save-status save-status--success" *ngIf="saveSuccessMessage">{{ saveSuccessMessage }}</p>
+      <p class="save-status save-status--hint" *ngIf="!saveError && !saveSuccessMessage && saveDisabledReason">
+        {{ saveDisabledReason }}
+      </p>
     </div>
 
     <div class="program-setup-body">
@@ -432,8 +451,22 @@
             </ng-container>
 
             <ng-container *ngSwitchCase="'patient-eligibility'">
+              <p class="eligibility-facility-hint" *ngIf="settingsData">
+                Eligibility settings apply to the facility selected in the top bar (e.g. NJ or LL).
+              </p>
               <div *ngIf="settingsData" class="eligibility-settings-form">
-                <h3 class="eligibility-section-title">Receiver &amp; provider</h3>
+                <h3 class="eligibility-section-title">1. Source &amp; receiver</h3>
+                <div class="form-row">
+                  <label>
+                    <span>Source</span>
+                    <select [(ngModel)]="settingsData.vendor" (ngModelChange)="onEligibilitySourceChange()">
+                      <option *ngFor="let s of eligibilitySourceOptions" [ngValue]="s.value">
+                        {{ s.label }}
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
                 <div class="form-row">
                   <label>
                     <span>Receiver</span>
@@ -446,24 +479,10 @@
                   </label>
                 </div>
 
+                <h3 class="eligibility-section-title">2. Provider</h3>
                 <div class="form-row">
                   <label>
-                    <span>Eligibility Vendor</span>
-                    <select [(ngModel)]="settingsData.vendor">
-                      <option [ngValue]="'GenericSftp'">Generic SFTP</option>
-                      <option [ngValue]="'Waystar'">Waystar</option>
-                      <option [ngValue]="'OfficeAlly'">Office Ally</option>
-                      <option [ngValue]="'TriZetto'">TriZetto</option>
-                      <option [ngValue]="'ChangeHealthcare'">Change Healthcare</option>
-                      <option [ngValue]="'ZirMed'">ZirMed</option>
-                      <option [ngValue]="'Navicure'">Navicure</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="form-row">
-                  <label>
-                    <span>Provider Mode</span>
+                    <span>Provider</span>
                     <select [(ngModel)]="settingsData.providerMode">
                       <option *ngFor="let opt of providerModeOptions" [ngValue]="opt.value">
                         {{ opt.label }}
@@ -472,12 +491,10 @@
                   </label>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row" *ngIf="settingsData.providerMode === 'Specific'">
                   <label>
                     <span>Specific Provider</span>
-                    <select
-                      [(ngModel)]="settingsData.specificProviderId"
-                      [disabled]="settingsData.providerMode !== 'Specific'">
+                    <select [(ngModel)]="settingsData.specificProviderId">
                       <option [ngValue]="null">-- Select Provider --</option>
                       <option *ngFor="let p of physiciansList" [ngValue]="p.phyID">
                         {{ p.phyFullNameCC || p.phyName || (p.phyLastName + ', ' + p.phyFirstName) }}
@@ -486,30 +503,31 @@
                   </label>
                 </div>
 
-                <h3 class="eligibility-section-title">Clearinghouse credentials</h3>
+                <h3 class="eligibility-section-title">3. Clearinghouse login</h3>
 
                 <div class="form-row">
-                  <label [attr.title]="'Clearinghouse account username used for eligibility 270 requests.'">
+                  <label>
                     <span>Username</span>
                     <input
                       type="text"
                       [(ngModel)]="settingsData.username"
-                      placeholder="Clearinghouse account username"
+                      placeholder="Clearinghouse username"
                     />
                   </label>
-                  <p class="form-hint">Clearinghouse account username used for eligibility 270 requests.</p>
                 </div>
 
                 <div class="form-row">
-                  <label [attr.title]="'Clearinghouse account password used for eligibility 270 requests.'">
+                  <label>
                     <span>Password</span>
                     <input
                       type="password"
                       [(ngModel)]="settingsData.password"
-                      placeholder="Clearinghouse account password"
+                      placeholder="Clearinghouse password"
                     />
                   </label>
-                  <p class="form-hint">Clearinghouse account password used for eligibility 270 requests.</p>
+                  <p class="form-hint" *ngIf="settingsData.passwordConfigured">
+                    Leave blank to keep the current password.
+                  </p>
                 </div>
 
                 <div class="form-row">
@@ -518,91 +536,89 @@
                     <input
                       type="text"
                       [(ngModel)]="settingsData.server"
+                      placeholder="Host or SFTP server"
                     />
                   </label>
                 </div>
 
-                <h3 class="eligibility-section-title">Directories</h3>
-                <div class="form-row">
-                  <label>
-                    <span>Upload Directory</span>
-                    <input type="text" [(ngModel)]="settingsData.uploadDirectory" />
-                  </label>
-                </div>
-                <div class="form-row">
-                  <label>
-                    <span>Incoming Directory</span>
-                    <input type="text" [(ngModel)]="settingsData.incomingDirectory" />
-                  </label>
-                </div>
-                <div class="form-row">
-                  <label>
-                    <span>Processed Directory</span>
-                    <input type="text" [(ngModel)]="settingsData.processedDirectory" />
-                  </label>
-                </div>
-
-                <div class="form-row">
+                <div class="form-row eligibility-actions">
                   <button
                     type="button"
+                    class="btn btn-secondary"
                     (click)="testEligibilityConnection()"
                     [disabled]="isTestingEligibility || !settingsData">
-                    {{ isTestingEligibility ? 'Testing...' : 'Test Connection' }}
+                    {{ isTestingEligibility ? 'Testing...' : 'Test connection' }}
                   </button>
                 </div>
 
                 <div *ngIf="eligibilityConfigStatus" class="eligibility-readiness">
                   <div *ngIf="!eligibilityConfigStatus.receiverValid" class="save-error">
-                    Receiver Library configuration required (ExportFormat must be Eligibility270).
+                    Select a valid eligibility receiver.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.payerEligibilityIdsPresent" class="save-error">
-                    Payer Eligibility IDs required (PayEligibilityPayerID + PayEligibilityPhyID).
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.payerEligibilityIdsPresent" class="form-hint form-hint--block">
+                    Some payers may need eligibility IDs configured in Payer setup.
                   </div>
                   <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.credentialsValid" class="save-error">
-                    Clearinghouse credentials invalid or unreachable.
+                    Unable to verify clearinghouse login. Check username, password, and server.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && !eligibilityConfigStatus.directoriesValid" class="save-error">
-                    SFTP directories invalid. Verify upload/incoming/processed paths.
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && !eligibilityConfigStatus.directoriesValid && eligibilityAdvancedMode" class="save-error">
+                    File paths could not be verified. Review advanced connection settings.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && eligibilityConfigStatus.directoriesValid && saveError == null" class="form-hint form-hint--block">
-                    Eligibility configuration looks ready.
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && (eligibilityConfigStatus.directoriesValid || !eligibilityAdvancedMode) && !saveError" class="form-hint form-hint--block">
+                    Eligibility setup looks ready. Save, then run an eligibility check from a patient.
                   </div>
                 </div>
 
                 <div *ngIf="eligibilityTestResult" class="eligibility-test-result">
-                  <div class="form-hint form-hint--block">
-                    {{ eligibilityTestResult.success ? 'Test succeeded: ' : 'Test failed: ' }}{{ eligibilityTestResult.message }}
-                  </div>
-                  <div *ngIf="!eligibilityTestResult.success && eligibilityTestResult.diagnostics?.length" class="save-error">
-                    <div *ngFor="let d of eligibilityTestResult.diagnostics">{{ d }}</div>
-                  </div>
-                  <div *ngIf="!eligibilityTestResult.success && eligibilityTestResult.errors?.length" class="save-error">
-                    <div *ngFor="let e of eligibilityTestResult.errors">{{ e }}</div>
+                  <div class="form-hint form-hint--block" [class.save-error]="!eligibilityTestResult.success">
+                    {{ eligibilityTestResult.success ? 'Connection test succeeded.' : 'Connection test failed.' }}
+                    <span *ngIf="eligibilityTestResultMessage"> {{ eligibilityTestResultMessage }}</span>
                   </div>
                 </div>
+
+                <div class="form-row checkbox-row eligibility-advanced-toggle">
+                  <label>
+                    <input type="checkbox" [(ngModel)]="eligibilityAdvancedMode" />
+                    Show advanced connection settings
+                  </label>
+                </div>
+
+                <ng-container *ngIf="eligibilityAdvancedMode">
+                  <h3 class="eligibility-section-title">Advanced file paths</h3>
+                  <p class="form-hint form-hint--block">
+                    For IT or clearinghouse-specific folder setup. Most practices can leave these unchanged after initial setup.
+                  </p>
+                  <div class="form-row">
+                    <label>
+                      <span>Upload folder</span>
+                      <input type="text" [(ngModel)]="settingsData.uploadDirectory" />
+                    </label>
+                  </div>
+                  <div class="form-row">
+                    <label>
+                      <span>Incoming folder</span>
+                      <input type="text" [(ngModel)]="settingsData.incomingDirectory" />
+                    </label>
+                  </div>
+                  <div class="form-row">
+                    <label>
+                      <span>Processed folder</span>
+                      <input type="text" [(ngModel)]="settingsData.processedDirectory" />
+                    </label>
+                  </div>
+                </ng-container>
 
                 <h3 class="eligibility-section-title">Response options</h3>
 
                 <div class="form-row checkbox-row">
                   <label>
                     <input type="checkbox" [(ngModel)]="settingsData.showEligibilityResponseViewer" />
-                    Show Eligibility Response Viewer
+                    Show eligibility response viewer
                   </label>
                 </div>
                 <p class="form-hint form-hint--block" *ngIf="!settingsData.showEligibilityResponseViewer">
-                  If unchecked, eligibility responses will skip the viewer screen and process automatically.
+                  Responses will process automatically without opening the viewer.
                 </p>
-
-                <div class="form-row" *ngIf="settingsData.passwordConfigured">
-                  <p class="form-hint form-hint--block">Password is configured. Leave blank to keep current password.</p>
-                </div>
-
-                <div *ngIf="saveSuccessMessage" class="form-hint form-hint--block">
-                  {{ saveSuccessMessage }}
-                </div>
-                <div *ngIf="saveError" class="save-error">
-                  {{ saveError }}
-                </div>
               </div>
             </ng-container>
 
@@ -657,6 +673,7 @@
               <div class="placeholder">
                 Settings form will be implemented here for the
                 <strong>{{ selectedSectionLabel }}</strong>.
+                Save is not available for this section yet — use <strong>Close</strong> or pick another option on the left.
               </div>
             </ng-container>
           </ng-container>

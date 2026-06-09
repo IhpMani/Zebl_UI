@@ -77,6 +77,43 @@
   flex-shrink: 0;
 }
 
+.impersonation-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.impersonation-banner__text strong {
+  font-weight: 700;
+}
+
+.impersonation-banner__exit {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d97706;
+  background: #ffffff;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.impersonation-banner__exit:hover:not(:disabled) {
+  background: #fffbeb;
+}
+
+.impersonation-banner__exit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .app-toast-container {
   position: fixed;
   top: 18px;
