@@ -60,7 +60,7 @@
                 type="button"
                 class="sa-btn sa-btn-ghost"
                 *ngIf="row.primaryAdmin"
-                (click)="openResetPasswordModal(row)"
+                (click)="openResetPasswordForRow(row)"
                 [disabled]="actionInProgress"
               >
                 Reset admin password
@@ -128,16 +128,45 @@
       <label>Users (summary)<input [value]="editRow.userCount" readonly class="sa-readonly" /></label>
     </div>
 
-    <h3 class="sa-panel-title">Primary administrator</h3>
-    <div class="sa-form" *ngIf="editRow.primaryAdmin; else noAdmin">
-      <label>Username<input [value]="editRow.primaryAdmin.userName" readonly class="sa-readonly" /></label>
-      <label>Status
-        <span [class]="adminStatusClass(editRow)">{{ adminStatus(editRow) }}</span>
-      </label>
+    <h3 class="sa-panel-title">Tenant administrators</h3>
+    <p class="sa-muted" *ngIf="adminsLoading">Loading administrators…</p>
+    <div class="sa-admin-toolbar" *ngIf="!adminsLoading && editRow">
+      <button type="button" class="sa-btn sa-btn-action" (click)="openAddAdminModal()" [disabled]="actionInProgress || practiceFacilities.length === 0">
+        Add administrator
+      </button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="openPromoteModal()" [disabled]="actionInProgress">
+        Promote existing user
+      </button>
     </div>
-    <ng-template #noAdmin>
-      <p class="sa-muted">No primary administrator assigned yet.</p>
-    </ng-template>
+    <div class="sa-table-wrap" *ngIf="!adminsLoading && tenantAdmins.length > 0">
+      <table class="sa-table sa-table--compact">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Role</th>
+            <th class="sa-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let admin of tenantAdmins">
+            <td>
+              <div>{{ admin.userName }}</div>
+              <div class="sa-tenant-key" *ngIf="admin.isPrimaryAdmin">Primary administrator</div>
+            </td>
+            <td><span [class]="adminRowStatusClass(admin)">{{ admin.isActive ? 'Active' : 'Disabled' }}</span></td>
+            <td>Practice administrator</td>
+            <td class="sa-actions sa-actions-stack">
+              <button type="button" class="sa-btn sa-btn-ghost" (click)="openResetPasswordModal(admin)" [disabled]="actionInProgress">Reset password</button>
+              <button type="button" class="sa-btn sa-btn-ghost" *ngIf="admin.isActive" (click)="disableAdmin(admin)" [disabled]="actionInProgress">Disable</button>
+              <button type="button" class="sa-btn sa-btn-action" *ngIf="!admin.isActive" (click)="enableAdmin(admin)" [disabled]="actionInProgress">Enable</button>
+              <button type="button" class="sa-btn sa-btn-ghost" (click)="demoteAdmin(admin)" [disabled]="actionInProgress">Demote</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sa-muted" *ngIf="!adminsLoading && tenantAdmins.length === 0">No practice administrators yet.</p>
 
     <div class="sa-modal-actions sa-modal-actions--wrap">
       <button
@@ -148,33 +177,6 @@
         [disabled]="actionInProgress"
       >
         Open practice
-      </button>
-      <button
-        type="button"
-        class="sa-btn sa-btn-ghost"
-        *ngIf="editRow.primaryAdmin && editRow.primaryAdmin.isActive"
-        (click)="disablePrimaryAdmin(editRow)"
-        [disabled]="actionInProgress"
-      >
-        Disable administrator
-      </button>
-      <button
-        type="button"
-        class="sa-btn sa-btn-action"
-        *ngIf="editRow.primaryAdmin && !editRow.primaryAdmin.isActive"
-        (click)="enablePrimaryAdmin(editRow)"
-        [disabled]="actionInProgress"
-      >
-        Enable administrator
-      </button>
-      <button
-        type="button"
-        class="sa-btn sa-btn-ghost"
-        *ngIf="editRow.primaryAdmin"
-        (click)="openResetPasswordModal(editRow)"
-        [disabled]="actionInProgress"
-      >
-        Reset password
       </button>
       <button
         type="button"
@@ -199,11 +201,12 @@
   </div>
 </div>
 
-<div class="sa-modal-backdrop" *ngIf="showResetPasswordModal && resetRow">
+<div class="sa-modal-backdrop" *ngIf="showResetPasswordModal && resetAdmin">
   <div class="sa-modal" role="dialog">
     <h2>Reset administrator password</h2>
     <p class="sa-muted">
-      User: <strong>{{ adminUserName(resetRow) }}</strong> ({{ resetRow.name }})
+      User: <strong>{{ resetAdmin.userName }}</strong>
+      <span *ngIf="editRow"> ({{ editRow.name }})</span>
     </p>
     <div class="sa-form">
       <label>New password<input type="password" [(ngModel)]="resetPassword" autocomplete="new-password" /></label>
@@ -215,6 +218,51 @@
       <button type="button" class="sa-btn sa-btn-ghost" (click)="closeResetPasswordModal()" [disabled]="actionInProgress">
         Cancel
       </button>
+    </div>
+  </div>
+</div>
+
+<div class="sa-modal-backdrop" *ngIf="showAddAdminModal && editRow">
+  <div class="sa-modal" role="dialog">
+    <h2>Add administrator</h2>
+    <p class="sa-muted">Creates a new practice administrator for {{ editRow.name }}.</p>
+    <div class="sa-form">
+      <label>Username<input [(ngModel)]="addAdminUsername" autocomplete="off" /></label>
+      <label>Password<input type="password" [(ngModel)]="addAdminPassword" autocomplete="new-password" /></label>
+      <label>Email (optional)<input type="email" [(ngModel)]="addAdminEmail" /></label>
+      <label>Facility
+        <select [(ngModel)]="addAdminFacilityId">
+          <option [ngValue]="null">-- Select facility --</option>
+          <option *ngFor="let f of practiceFacilities" [ngValue]="f.facilityId">{{ f.name }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="sa-modal-actions">
+      <button type="button" class="sa-btn sa-btn-action" (click)="saveAddAdmin()" [disabled]="addAdminSaving">
+        {{ addAdminSaving ? 'Saving…' : 'Add administrator' }}
+      </button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closeAddAdminModal()" [disabled]="addAdminSaving">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="sa-modal-backdrop" *ngIf="showPromoteModal && editRow">
+  <div class="sa-modal" role="dialog">
+    <h2>Promote existing user</h2>
+    <p class="sa-muted">Enter the username of an existing office user in {{ editRow.name }}.</p>
+    <div class="sa-form">
+      <label>Username<input [(ngModel)]="promoteUserName" autocomplete="off" /></label>
+    </div>
+    <p class="sa-error" *ngIf="promoteLookupError">{{ promoteLookupError }}</p>
+    <p class="sa-muted" *ngIf="promoteLookup && promoteLookup.canPromote">
+      Found: <strong>{{ promoteLookup.userName }}</strong> ({{ promoteLookup.displayName }})
+    </p>
+    <div class="sa-modal-actions">
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="lookupPromoteUser()" [disabled]="promoteSaving">Look up user</button>
+      <button type="button" class="sa-btn sa-btn-action" (click)="confirmPromoteUser()" [disabled]="promoteSaving || !promoteLookup?.canPromote">
+        {{ promoteSaving ? 'Promoting…' : 'Promote to administrator' }}
+      </button>
+      <button type="button" class="sa-btn sa-btn-ghost" (click)="closePromoteModal()" [disabled]="promoteSaving">Cancel</button>
     </div>
   </div>
 </div>

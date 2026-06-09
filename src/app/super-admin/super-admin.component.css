@@ -130,6 +130,18 @@
   color: #334155;
 }
 
+.sa-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sa-table--compact td,
+.sa-table--compact th {
+  font-size: 13px;
+}
+
 .sa-readonly {
   background: #f1f5f9;
   color: #64748b;

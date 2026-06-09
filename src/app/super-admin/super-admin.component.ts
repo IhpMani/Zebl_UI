@@ -1,8 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
-import { SuperAdminService, TenantSummaryRow } from './super-admin.service';
+import {
+  SuperAdminService,
+  SuperAdminFacilityRow,
+  TenantAdminRow,
+  TenantSummaryRow,
+  TenantUserLookup,
+} from './super-admin.service';
 import { SuperAdminContextService } from './super-admin-context.service';
 import { ImpersonationContextService } from './impersonation-context.service';
 import { AuthService } from '../core/services/auth.service';
@@ -22,6 +29,8 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   showCreateModal = false;
   showEditModal = false;
   showResetPasswordModal = false;
+  showAddAdminModal = false;
+  showPromoteModal = false;
 
   wizardTenantName = '';
   wizardTenantKey = '';
@@ -32,8 +41,23 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   wizardSaving = false;
 
   editRow: TenantSummaryRow | null = null;
-  resetRow: TenantSummaryRow | null = null;
+  tenantAdmins: TenantAdminRow[] = [];
+  practiceFacilities: SuperAdminFacilityRow[] = [];
+  adminsLoading = false;
+
+  resetAdmin: TenantAdminRow | null = null;
   resetPassword = '';
+
+  addAdminUsername = '';
+  addAdminPassword = '';
+  addAdminEmail = '';
+  addAdminFacilityId: number | null = null;
+  addAdminSaving = false;
+
+  promoteUserName = '';
+  promoteLookup: TenantUserLookup | null = null;
+  promoteLookupError = '';
+  promoteSaving = false;
 
   constructor(
     private api: SuperAdminService,
@@ -95,6 +119,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     const user = this.wizardAdminUsername.trim();
     const pass = this.wizardAdminPassword;
     const facility = this.wizardFacilityName.trim();
+    const email = this.wizardAdminEmail.trim();
 
     if (!name || !key || !user || !pass || !facility) {
       this.errorMessage = 'Fill in practice name, key, admin username, password, and facility name.';
@@ -122,6 +147,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
                 facilityId,
                 userName: user,
                 password: pass,
+                email: email || null,
               })
               .pipe(map(() => tenantId));
           })
@@ -143,29 +169,205 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
   openEditModal(row: TenantSummaryRow): void {
     this.editRow = { ...row };
     this.showEditModal = true;
+    this.loadPracticeDetails(row.tenantId);
   }
 
   closeEditModal(): void {
     this.showEditModal = false;
     this.editRow = null;
+    this.tenantAdmins = [];
+    this.practiceFacilities = [];
   }
 
-  openResetPasswordModal(row: TenantSummaryRow): void {
-    this.resetRow = row;
+  private loadPracticeDetails(tenantId: number): void {
+    this.adminsLoading = true;
+    forkJoin({
+      admins: this.api.getTenantAdmins(tenantId),
+      facilities: this.api.getFacilities(tenantId),
+    }).subscribe({
+      next: ({ admins, facilities }) => {
+        this.tenantAdmins = admins;
+        this.practiceFacilities = facilities;
+        this.adminsLoading = false;
+      },
+      error: (err) => {
+        this.adminsLoading = false;
+        this.handleErr(err);
+      },
+    });
+  }
+
+  private refreshEditPractice(): void {
+    if (!this.editRow) {
+      return;
+    }
+    this.reloadTenantRows();
+    this.loadPracticeDetails(this.editRow.tenantId);
+    const updated = this.tenantRows.find((r) => r.tenantId === this.editRow?.tenantId);
+    if (updated) {
+      this.editRow = { ...updated };
+    }
+  }
+
+  openAddAdminModal(): void {
+    this.addAdminUsername = '';
+    this.addAdminPassword = '';
+    this.addAdminEmail = '';
+    this.addAdminFacilityId = this.practiceFacilities[0]?.facilityId ?? null;
+    this.showAddAdminModal = true;
+  }
+
+  closeAddAdminModal(): void {
+    this.showAddAdminModal = false;
+    this.addAdminSaving = false;
+  }
+
+  saveAddAdmin(): void {
+    if (!this.editRow) {
+      return;
+    }
+    const userName = this.addAdminUsername.trim();
+    const password = this.addAdminPassword;
+    const facilityId = this.addAdminFacilityId;
+    if (!userName || !password || facilityId == null || facilityId <= 0) {
+      this.errorMessage = 'Username, password, and facility are required.';
+      return;
+    }
+
+    this.addAdminSaving = true;
+    this.errorMessage = '';
+    this.api
+      .createUser({
+        tenantId: this.editRow.tenantId,
+        facilityId,
+        userName,
+        password,
+        email: this.addAdminEmail.trim() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.addAdminSaving = false;
+          this.closeAddAdminModal();
+          this.refreshEditPractice();
+        },
+        error: (err) => {
+          this.addAdminSaving = false;
+          this.handleErr(err);
+        },
+      });
+  }
+
+  openPromoteModal(): void {
+    this.promoteUserName = '';
+    this.promoteLookup = null;
+    this.promoteLookupError = '';
+    this.showPromoteModal = true;
+  }
+
+  closePromoteModal(): void {
+    this.showPromoteModal = false;
+    this.promoteLookup = null;
+    this.promoteLookupError = '';
+    this.promoteSaving = false;
+  }
+
+  lookupPromoteUser(): void {
+    if (!this.editRow) {
+      return;
+    }
+    const userName = this.promoteUserName.trim();
+    if (!userName) {
+      this.promoteLookupError = 'Enter a username.';
+      this.promoteLookup = null;
+      return;
+    }
+    this.promoteLookupError = '';
+    this.api.lookupTenantUser(this.editRow.tenantId, userName).subscribe({
+      next: (user) => {
+        this.promoteLookup = user;
+        if (!user.canPromote) {
+          this.promoteLookupError = 'This user is already a practice administrator.';
+        }
+      },
+      error: (err) => {
+        this.promoteLookup = null;
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          this.promoteLookupError = 'User not found in this practice.';
+          return;
+        }
+        this.promoteLookupError = this.extractMessage(err);
+      },
+    });
+  }
+
+  confirmPromoteUser(): void {
+    if (!this.editRow || !this.promoteLookup?.canPromote) {
+      return;
+    }
+    this.promoteSaving = true;
+    this.errorMessage = '';
+    this.api
+      .promoteTenantAdmin(this.editRow.tenantId, this.promoteLookup.userGuid)
+      .subscribe({
+        next: () => {
+          this.promoteSaving = false;
+          this.closePromoteModal();
+          this.refreshEditPractice();
+        },
+        error: (err) => {
+          this.promoteSaving = false;
+          this.handleErr(err);
+        },
+      });
+  }
+
+  demoteAdmin(admin: TenantAdminRow): void {
+    if (!this.editRow) {
+      return;
+    }
+    if (!confirm(`Demote "${admin.userName}" to office staff?`)) {
+      return;
+    }
+    this.runAdminAction(() =>
+      this.api.demoteTenantAdmin(this.editRow!.tenantId, admin.userGuid)
+    );
+  }
+
+  enableAdmin(admin: TenantAdminRow): void {
+    if (!this.editRow) {
+      return;
+    }
+    this.runAdminAction(() =>
+      this.api.enableTenantAdmin(this.editRow!.tenantId, admin.userGuid)
+    );
+  }
+
+  disableAdmin(admin: TenantAdminRow): void {
+    if (!this.editRow) {
+      return;
+    }
+    if (!confirm(`Disable administrator "${admin.userName}"?`)) {
+      return;
+    }
+    this.runAdminAction(() =>
+      this.api.disableTenantAdmin(this.editRow!.tenantId, admin.userGuid)
+    );
+  }
+
+  openResetPasswordModal(admin: TenantAdminRow): void {
+    this.resetAdmin = admin;
     this.resetPassword = '';
     this.showResetPasswordModal = true;
   }
 
   closeResetPasswordModal(): void {
     this.showResetPasswordModal = false;
-    this.resetRow = null;
+    this.resetAdmin = null;
     this.resetPassword = '';
   }
 
   saveResetPassword(): void {
-    const admin = this.resetRow?.primaryAdmin;
-    if (!admin?.userGuid) {
-      this.errorMessage = 'No primary administrator is on file for this practice.';
+    if (!this.editRow || !this.resetAdmin) {
       return;
     }
     if (!this.resetPassword.trim()) {
@@ -175,15 +377,38 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
 
     this.errorMessage = '';
     this.actionInProgress = true;
-    this.api.resetPrimaryAdminPassword(this.resetRow!.tenantId, this.resetPassword).subscribe({
-      next: () => {
-        this.actionInProgress = false;
-        this.closeResetPasswordModal();
-      },
-      error: (err) => {
-        this.actionInProgress = false;
-        this.handleErr(err);
-      },
+    this.api
+      .resetTenantAdminPassword(
+        this.editRow.tenantId,
+        this.resetAdmin.userGuid,
+        this.resetPassword
+      )
+      .subscribe({
+        next: () => {
+          this.actionInProgress = false;
+          this.closeResetPasswordModal();
+        },
+        error: (err) => {
+          this.actionInProgress = false;
+          this.handleErr(err);
+        },
+      });
+  }
+
+  openResetPasswordForRow(row: TenantSummaryRow): void {
+    const primary = row.primaryAdmin;
+    if (!primary) {
+      this.errorMessage = 'No primary administrator is on file for this practice.';
+      return;
+    }
+    this.editRow = { ...row };
+    this.openResetPasswordModal({
+      userGuid: primary.userGuid,
+      userName: primary.userName,
+      displayName: primary.userName,
+      isActive: primary.isActive,
+      createdAt: '',
+      isPrimaryAdmin: true,
     });
   }
 
@@ -203,18 +428,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       return;
     }
     this.runTenantAction(() => this.api.enableTenant(row.tenantId));
-  }
-
-  disablePrimaryAdmin(row: TenantSummaryRow): void {
-    const adminName = row.primaryAdmin?.userName ?? 'the administrator';
-    if (!confirm(`Disable primary administrator "${adminName}" for "${row.name}"?`)) {
-      return;
-    }
-    this.runTenantAction(() => this.api.disablePrimaryAdmin(row.tenantId));
-  }
-
-  enablePrimaryAdmin(row: TenantSummaryRow): void {
-    this.runTenantAction(() => this.api.enablePrimaryAdmin(row.tenantId));
   }
 
   openPractice(row: TenantSummaryRow): void {
@@ -248,6 +461,21 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
     });
   }
 
+  private runAdminAction(action: () => ReturnType<SuperAdminService['enableTenant']>): void {
+    this.errorMessage = '';
+    this.actionInProgress = true;
+    action().subscribe({
+      next: () => {
+        this.actionInProgress = false;
+        this.refreshEditPractice();
+      },
+      error: (err) => {
+        this.actionInProgress = false;
+        this.handleErr(err);
+      },
+    });
+  }
+
   private runTenantAction(action: () => ReturnType<SuperAdminService['enableTenant']>): void {
     this.errorMessage = '';
     this.actionInProgress = true;
@@ -259,6 +487,7 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
           const updated = this.tenantRows.find((r) => r.tenantId === this.editRow?.tenantId);
           if (updated) {
             this.editRow = { ...updated };
+            this.loadPracticeDetails(updated.tenantId);
           }
         }
       },
@@ -302,6 +531,25 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       : 'sa-status sa-status--disabled';
   }
 
+  adminRowStatusClass(admin: TenantAdminRow): string {
+    return admin.isActive
+      ? 'sa-status sa-status--active'
+      : 'sa-status sa-status--disabled';
+  }
+
+  private extractMessage(err: unknown): string {
+    const body = err instanceof HttpErrorResponse ? err.error : (err as { error?: unknown })?.error;
+    return (
+      (typeof body === 'object' && body !== null
+        ? (body as { message?: string; error?: string }).message ??
+          (body as { error?: string }).error
+        : undefined) ??
+      (typeof body === 'string' ? body : undefined) ??
+      (err as Error)?.message ??
+      'Request failed'
+    );
+  }
+
   private handleErr(err: unknown): void {
     console.error(err);
     if (err instanceof HttpErrorResponse && err.status === 0) {
@@ -312,15 +560,6 @@ export class SuperAdminComponent implements OnInit, OnDestroy {
       void this.router.navigateByUrl('/login');
       return;
     }
-    const body = err instanceof HttpErrorResponse ? err.error : (err as { error?: unknown })?.error;
-    const msg =
-      (typeof body === 'object' && body !== null
-        ? (body as { message?: string; error?: string }).message ??
-          (body as { error?: string }).error
-        : undefined) ??
-      (typeof body === 'string' ? body : undefined) ??
-      (err as Error)?.message ??
-      'Request failed';
-    this.errorMessage = msg;
+    this.errorMessage = this.extractMessage(err);
   }
 }

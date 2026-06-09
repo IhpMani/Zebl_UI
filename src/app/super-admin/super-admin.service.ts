@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -20,6 +20,30 @@ export interface TenantSummaryRow {
   facilityCount: number;
   userCount: number;
   primaryAdmin: PrimaryAdminSummary | null;
+}
+
+export interface TenantAdminRow {
+  userGuid: string;
+  userName: string;
+  displayName: string;
+  isActive: boolean;
+  createdAt: string;
+  isPrimaryAdmin: boolean;
+}
+
+export interface TenantUserLookup {
+  userGuid: string;
+  userName: string;
+  displayName: string;
+  isActive: boolean;
+  role: string;
+  canPromote: boolean;
+}
+
+export interface SuperAdminFacilityRow {
+  facilityId: number;
+  name: string;
+  tenantId: number;
 }
 
 export interface ImpersonateResponse {
@@ -46,6 +70,28 @@ export class SuperAdminService {
     return this.http.get<TenantSummaryRow[] | null>(url).pipe(
       map((data) => (Array.isArray(data) ? data : []))
     );
+  }
+
+  getTenantAdmins(tenantId: number): Observable<TenantAdminRow[]> {
+    return this.http
+      .get<TenantAdminRow[] | null>(`${this.superAdminBase()}/tenants/${tenantId}/admins`)
+      .pipe(map((data) => (Array.isArray(data) ? data : [])));
+  }
+
+  lookupTenantUser(tenantId: number, userName: string): Observable<TenantUserLookup> {
+    const params = new HttpParams().set('userName', userName.trim());
+    return this.http.get<TenantUserLookup>(
+      `${this.superAdminBase()}/tenants/${tenantId}/users/lookup`,
+      { params }
+    );
+  }
+
+  getFacilities(tenantId: number): Observable<SuperAdminFacilityRow[]> {
+    return this.http
+      .get<SuperAdminFacilityRow[] | null>(
+        `${this.superAdminBase()}/tenants/${tenantId}/facilities`
+      )
+      .pipe(map((data) => (Array.isArray(data) ? data : [])));
   }
 
   createTenant(data: { name: string; tenantKey: string }): Observable<unknown> {
@@ -75,6 +121,45 @@ export class SuperAdminService {
     );
   }
 
+  promoteTenantAdmin(tenantId: number, userGuid: string): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/admins/${userGuid}/promote`,
+      {}
+    );
+  }
+
+  demoteTenantAdmin(tenantId: number, userGuid: string): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/admins/${userGuid}/demote`,
+      {}
+    );
+  }
+
+  enableTenantAdmin(tenantId: number, userGuid: string): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/admins/${userGuid}/enable`,
+      {}
+    );
+  }
+
+  disableTenantAdmin(tenantId: number, userGuid: string): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/admins/${userGuid}/disable`,
+      {}
+    );
+  }
+
+  resetTenantAdminPassword(
+    tenantId: number,
+    userGuid: string,
+    password: string
+  ): Observable<unknown> {
+    return this.http.post(
+      `${this.superAdminBase()}/tenants/${tenantId}/admins/${userGuid}/reset-password`,
+      { password }
+    );
+  }
+
   createFacility(data: { tenantId: number; name: string }): Observable<unknown> {
     return this.http.post(`${this.superAdminBase()}/facilities`, data);
   }
@@ -82,6 +167,7 @@ export class SuperAdminService {
   createUser(data: {
     userName: string;
     password: string;
+    email?: string | null;
     tenantId: number;
     facilityId: number;
   }): Observable<unknown> {
