@@ -26,6 +26,7 @@ import {
   EligibilityConnectionTestRequestDto,
   EligibilityConnectionTestResultDto
 } from '../../core/services/eligibility-api.service';
+import { eligibilityUsesRestGateway, eligibilityUsesSftpDirectories } from './eligibility-vendor.util';
 import {
   cloneSettings,
   hydrateClaimSettings,
@@ -92,7 +93,7 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
   eligibilityAdvancedMode = false;
   readonly eligibilitySourceOptions: { value: string; label: string }[] = [
     { value: 'GenericSftp', label: 'Generic SFTP' },
-    { value: 'Waystar', label: 'Waystar' },
+    { value: 'Waystar', label: 'Waystar (REST API)' },
     { value: 'OfficeAlly', label: 'Office Ally' },
     { value: 'TriZetto', label: 'TriZetto' },
     { value: 'ChangeHealthcare', label: 'Change Healthcare' },
@@ -539,7 +540,8 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       }
 
       const payload = toPatientEligibilitySavePayload(eligibility, {
-        includeDirectoryFields: this.eligibilityAdvancedMode
+        includeDirectoryFields:
+          this.eligibilityAdvancedMode && eligibilityUsesSftpDirectories(eligibility.vendor)
       });
       this.programSettingsApi.saveSection('patientEligibility', payload).pipe(
         switchMap(() => this.programSettingsApi.getSection('patientEligibility'))
@@ -708,13 +710,27 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
   }
 
   onEligibilitySourceChange(): void {
-    if (!this.settingsData || this.eligibilityAdvancedMode) {
+    if (!this.settingsData) {
       return;
     }
     const state = this.settingsData as PatientEligibilityProgramSettings;
-    state.uploadDirectory = '';
-    state.incomingDirectory = '';
-    state.processedDirectory = '';
+    if (eligibilityUsesRestGateway(state.vendor)) {
+      state.uploadDirectory = '';
+      state.incomingDirectory = '';
+      state.processedDirectory = '';
+      this.eligibilityAdvancedMode = false;
+      return;
+    }
+    if (!this.eligibilityAdvancedMode) {
+      state.uploadDirectory = '';
+      state.incomingDirectory = '';
+      state.processedDirectory = '';
+    }
+  }
+
+  usesEligibilitySftpDirectories(): boolean {
+    const vendor = (this.settingsData as PatientEligibilityProgramSettings | null)?.vendor;
+    return eligibilityUsesSftpDirectories(vendor);
   }
 
   /** Operational display label for the current eligibility source/vendor. */
@@ -725,6 +741,10 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
 
   private syncEligibilityAdvancedModeFromSettings(state: PatientEligibilityProgramSettings | null): void {
     if (!state) {
+      return;
+    }
+    if (!eligibilityUsesSftpDirectories(state.vendor)) {
+      this.eligibilityAdvancedMode = false;
       return;
     }
     const hasPaths =
@@ -770,7 +790,7 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     if (!(state.server ?? '').trim()) {
       return 'Server is required.';
     }
-    if (this.eligibilityAdvancedMode) {
+    if (this.eligibilityAdvancedMode && eligibilityUsesSftpDirectories(state.vendor)) {
       if (!(state.uploadDirectory ?? '').trim() ||
         !(state.incomingDirectory ?? '').trim() ||
         !(state.processedDirectory ?? '').trim()) {
@@ -923,20 +943,21 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     const d = (this.settingsData ?? {}) as PatientEligibilityProgramSettings;
     const pwd = (d.password ?? '').toString().trim();
 
-    return {
-      patientId: null,
-      settings: {
-        vendor: (d.vendor ?? 'GenericSftp').toString(),
-        receiverId: d.receiverId != null ? String(d.receiverId) : null,
-        server: (d.server ?? '').trim() || null,
-        username: (d.username ?? '').trim() || null,
-        password: pwd || (d.passwordConfigured ? '********' : null),
-        uploadDirectory: (d.uploadDirectory ?? '').trim() || null,
-        incomingDirectory: (d.incomingDirectory ?? '').trim() || null,
-        processedDirectory: (d.processedDirectory ?? '').trim() || null,
-        quarantineDirectory: null
-      }
+    const vendor = (d.vendor ?? 'GenericSftp').toString();
+    const settings: EligibilityConnectionTestRequestDto['settings'] = {
+      vendor,
+      receiverId: d.receiverId != null ? String(d.receiverId) : null,
+      server: (d.server ?? '').trim() || null,
+      username: (d.username ?? '').trim() || null,
+      password: pwd || (d.passwordConfigured ? '********' : null),
+      quarantineDirectory: null
     };
+    if (eligibilityUsesSftpDirectories(vendor)) {
+      settings.uploadDirectory = (d.uploadDirectory ?? '').trim() || null;
+      settings.incomingDirectory = (d.incomingDirectory ?? '').trim() || null;
+      settings.processedDirectory = (d.processedDirectory ?? '').trim() || null;
+    }
+    return { patientId: null, settings };
   }
 
   private normalizeEligibilityTestResult(raw: any): EligibilityConnectionTestResultDto {

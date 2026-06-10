@@ -536,7 +536,7 @@
                     <input
                       type="text"
                       [(ngModel)]="settingsData.server"
-                      placeholder="Host or SFTP server"
+                      [placeholder]="usesEligibilitySftpDirectories() ? 'Host or SFTP server' : 'HTTPS gateway host or URL'"
                     />
                   </label>
                 </div>
@@ -561,10 +561,10 @@
                   <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.credentialsValid" class="save-error">
                     Unable to verify clearinghouse login. Check username, password, and server.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && !eligibilityConfigStatus.directoriesValid && eligibilityAdvancedMode" class="save-error">
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && !eligibilityConfigStatus.directoriesValid && eligibilityAdvancedMode && usesEligibilitySftpDirectories()" class="save-error">
                     File paths could not be verified. Review advanced connection settings.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && (eligibilityConfigStatus.directoriesValid || !eligibilityAdvancedMode) && !saveError" class="form-hint form-hint--block">
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && (eligibilityConfigStatus.directoriesValid || !eligibilityAdvancedMode || !usesEligibilitySftpDirectories()) && !saveError" class="form-hint form-hint--block">
                     Eligibility setup looks ready. Save, then run an eligibility check from a patient.
                   </div>
                 </div>
@@ -576,14 +576,14 @@
                   </div>
                 </div>
 
-                <div class="form-row checkbox-row eligibility-advanced-toggle">
+                <div class="form-row checkbox-row eligibility-advanced-toggle" *ngIf="usesEligibilitySftpDirectories()">
                   <label>
                     <input type="checkbox" [(ngModel)]="eligibilityAdvancedMode" />
-                    Show advanced connection settings
+                    Show advanced file path settings (SFTP / batch)
                   </label>
                 </div>
 
-                <ng-container *ngIf="eligibilityAdvancedMode">
+                <ng-container *ngIf="eligibilityAdvancedMode && usesEligibilitySftpDirectories()">
                   <h3 class="eligibility-section-title">Advanced file paths</h3>
                   <p class="form-hint form-hint--block">
                     For IT or clearinghouse-specific folder setup. Most practices can leave these unchanged after initial setup.
