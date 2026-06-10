@@ -800,17 +800,31 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  get eligibilityCredentialsStatusMessage(): string {
+    const status = this.eligibilityConfigStatus;
+    if (!status) {
+      return 'Complete username, password, and server settings.';
+    }
+    const custom = (status.credentialsStatusMessage ?? '').trim();
+    if (custom) {
+      return custom;
+    }
+    return status.credentialsValid
+      ? 'Credentials are configured. Use Test Connection to verify gateway access.'
+      : 'Complete username, password, and server settings. You can still save while provisioning finishes.';
+  }
+
   get eligibilityTestResultMessage(): string | null {
     if (!this.eligibilityTestResult) {
       return null;
     }
-    const raw = (this.eligibilityTestResult.message ?? '').trim();
-    if (!raw) {
-      return this.eligibilityTestResult.success
-        ? 'Connection test succeeded.'
-        : 'Connection test failed. Please verify your settings.';
+    const mapped = this.mapEligibilityTestMessage(this.eligibilityTestResult);
+    if (mapped) {
+      return mapped;
     }
-    return this.toEligibilityUserMessage(raw);
+    return this.eligibilityTestResult.success
+      ? 'Connection test succeeded.'
+      : 'Connection test failed. Please verify your settings.';
   }
 
   closeMissingAccountsModal(): void {
@@ -916,7 +930,7 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     this.eligibilityApi.testConnection(this.buildEligibilityTestConnectionRequest()).subscribe({
       next: res => {
         const normalized = this.normalizeEligibilityTestResult(res);
-        normalized.message = this.toEligibilityUserMessage(normalized.message ?? '');
+        normalized.message = this.mapEligibilityTestMessage(normalized) ?? normalized.message ?? '';
         this.eligibilityTestResult = normalized;
         this.isTestingEligibility = false;
       },
@@ -929,12 +943,13 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
           err?.message ??
           'Eligibility test failed.';
 
-        // Always normalize so template never hits undefined arrays.
-        this.eligibilityTestResult = this.normalizeEligibilityTestResult({
+        const normalized = this.normalizeEligibilityTestResult({
           ...(typeof raw === 'object' && raw !== null ? raw : {}),
           success: Boolean(raw?.success),
-          message: this.toEligibilityUserMessage(message),
+          message,
         });
+        normalized.message = this.mapEligibilityTestMessage(normalized) ?? message;
+        this.eligibilityTestResult = normalized;
       }
     });
   }
@@ -960,6 +975,39 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     return { patientId: null, settings };
   }
 
+  private mapEligibilityTestMessage(result: EligibilityConnectionTestResultDto): string | null {
+    const raw = (result.message ?? '').trim();
+    const failureKind = (result.failureKind ?? '').trim();
+
+    switch (failureKind) {
+      case 'Authentication':
+        return 'Waystar rejected the username or password.';
+      case 'Timeout':
+        return 'Waystar gateway did not respond in time. Check network connectivity or try again later.';
+      case 'Network':
+        return 'Could not reach the Waystar gateway. Check the server URL and network connectivity.';
+      case 'InvalidPayload':
+        return 'Waystar rejected the test eligibility request. Verify receiver ISA/GS settings.';
+      case 'IpRestriction':
+        return 'Your server IP may not be allowlisted with Waystar yet. You can still save credentials.';
+      case 'GatewayError':
+        return raw || 'Waystar returned an unexpected gateway error.';
+      default:
+        break;
+    }
+
+    if (/connected host failed to respond/i.test(raw)) {
+      return 'Waystar gateway did not respond in time. This usually means the gateway URL or transport settings are wrong.';
+    }
+    if (/rejected the username|invalid user|unauthorized/i.test(raw)) {
+      return 'Waystar rejected the username or password.';
+    }
+    if (raw) {
+      return raw;
+    }
+    return null;
+  }
+
   private normalizeEligibilityTestResult(raw: any): EligibilityConnectionTestResultDto {
     const message =
       raw?.message ??
@@ -975,6 +1023,8 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       receiverValid: Boolean(raw?.receiverValid),
       credentialsValid: Boolean(raw?.credentialsValid),
       directoriesValid: Boolean(raw?.directoriesValid),
+      failureKind: raw?.failureKind ?? null,
+      httpStatusCode: raw?.httpStatusCode ?? null,
       errors: Array.isArray(raw?.errors)
         ? raw.errors
         : message

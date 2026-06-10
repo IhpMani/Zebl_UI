@@ -558,8 +558,8 @@
                   <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.payerEligibilityIdsPresent" class="form-hint form-hint--block">
                     Some payers may need eligibility IDs configured in Payer setup.
                   </div>
-                  <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.credentialsValid" class="save-error">
-                    Unable to verify clearinghouse login. Check username, password, and server.
+                  <div *ngIf="eligibilityConfigStatus.receiverValid && !eligibilityConfigStatus.credentialsValid" class="form-hint form-hint--block">
+                    {{ eligibilityCredentialsStatusMessage }}
                   </div>
                   <div *ngIf="eligibilityConfigStatus.receiverValid && eligibilityConfigStatus.credentialsValid && !eligibilityConfigStatus.directoriesValid && eligibilityAdvancedMode && usesEligibilitySftpDirectories()" class="save-error">
                     File paths could not be verified. Review advanced connection settings.

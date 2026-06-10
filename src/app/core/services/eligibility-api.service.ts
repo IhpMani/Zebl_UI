@@ -72,6 +72,8 @@ export interface EligibilityConnectionTestResultDto {
   receiverValid: boolean;
   credentialsValid: boolean;
   directoriesValid: boolean;
+  failureKind?: string | null;
+  httpStatusCode?: number | null;
   errors: string[];
   diagnostics: string[];
 }
@@ -85,6 +87,7 @@ export interface EligibilityConfigurationStatusDto {
   receiverValid: boolean;
   credentialsValid: boolean;
   directoriesValid: boolean;
+  credentialsStatusMessage?: string | null;
   payerEligibilityIdsPresent: boolean;
   payerCoveragePercent: number;
   providerResolutionStatus?: string | null;
