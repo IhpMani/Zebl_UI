@@ -987,6 +987,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       case 'Network':
         return 'Could not reach the Waystar gateway. Check the server URL and network connectivity.';
       case 'InvalidPayload':
+        if (/empty request received|api specifications/i.test(raw)) {
+          return 'Waystar received the request but the payload format was invalid. The gateway expects CAQH CORE multipart/form-data.';
+        }
         return 'Waystar rejected the test eligibility request. Verify receiver ISA/GS settings.';
       case 'IpRestriction':
         return 'Your server IP may not be allowlisted with Waystar yet. You can still save credentials.';
