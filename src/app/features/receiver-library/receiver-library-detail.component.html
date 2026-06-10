@@ -138,19 +138,22 @@
               <option value="03">03 - Additional Data Identification</option>
             </select>
             <input type="text" formControlName="authorizationInfo" class="form-input combo-input" maxlength="10" />
-            <span class="field-hint">Max 10 characters (X12 ISA02).</span>
+            <span class="field-hint">X12 envelope field (max 10). Usually 00 with blank value for Waystar.</span>
           </div>
         </div>
         
         <div class="form-field">
-          <label>Password Information ISA03 and ISA04:</label>
+          <label>ISA Security ISA03 and ISA04 (X12 envelope only):</label>
           <div class="inline-combo">
             <select formControlName="securityInfoQualifier" class="form-input combo-select">
               <option value="00">00 - No Security Information Present</option>
               <option value="01">01 - Password</option>
             </select>
             <input type="text" formControlName="securityInfo" class="form-input combo-input" maxlength="10" />
-            <span class="field-hint">Max 10 characters (X12 ISA04).</span>
+            <span class="field-hint">
+              Not your Waystar portal password. X12 allows max 10 characters here. For Waystar, use 00 and leave blank.
+              Put your clearinghouse login in Program Setup → Patient Eligibility → Clearinghouse login.
+            </span>
           </div>
         </div>
         

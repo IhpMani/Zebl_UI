@@ -37,6 +37,11 @@ export class ReceiverLibraryDetailComponent implements OnInit {
     this.buildForm();
     this.loadExportFormats();
     this.form.valueChanges.subscribe(() => { this.validationMessage = null; });
+    this.form.get('securityInfoQualifier')?.valueChanges.subscribe((qualifier) => {
+      if (qualifier === '00') {
+        this.form.patchValue({ securityInfo: '' }, { emitEvent: false });
+      }
+    });
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam === 'new' || idParam === 'null' || !idParam || (typeof idParam === 'string' && idParam.trim() === '')) {
@@ -238,7 +243,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
         error: (err) => {
           this.error = friendlyApiErrorMessage(err, 'Failed to create receiver library');
           this.saving = false;
-          console.error('Receiver library create failed', err?.status, err?.error, msg);
+          console.error('Receiver library create failed', err?.status, err?.error, this.error);
         }
       });
     } else if (this.currentId) {
@@ -251,7 +256,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
         error: (err) => {
           this.error = friendlyApiErrorMessage(err, 'Failed to update receiver library');
           this.saving = false;
-          console.error('Receiver library update failed', err?.status, err?.error, msg);
+          console.error('Receiver library update failed', err?.status, err?.error, this.error);
         }
       });
     } else {
@@ -293,7 +298,8 @@ export class ReceiverLibraryDetailComponent implements OnInit {
     result.authorizationInfoQualifier = this.clampIsa(formValue.authorizationInfoQualifier, 2) || '00';
     result.authorizationInfo = this.clampIsa(formValue.authorizationInfo, 10);
     result.securityInfoQualifier = this.clampIsa(formValue.securityInfoQualifier, 2) || '00';
-    result.securityInfo = this.clampIsa(formValue.securityInfo, 10);
+    result.securityInfo =
+      result.securityInfoQualifier === '00' ? '' : this.clampIsa(formValue.securityInfo, 10);
     result.senderQualifier = this.clampIsa(formValue.senderIdQualifier, 2) || '01';
     result.senderId = this.clampIsa(formValue.senderId, 15);
     result.receiverQualifier = this.clampIsa(formValue.interchangeReceiverIdQualifier, 2) || '01';

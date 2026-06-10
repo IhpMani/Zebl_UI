@@ -104,11 +104,28 @@ export class ReceiverLibraryApiService {
   }
 
   create(command: CreateReceiverLibraryCommand): Observable<ApiResponse<ReceiverLibraryDto>> {
-    return this.http.post<ApiResponse<ReceiverLibraryDto>>(this.baseUrl, command);
+    return this.http.post<ApiResponse<ReceiverLibraryDto>>(this.baseUrl, this.normalizeIsaPayload(command));
   }
 
   update(id: string, command: UpdateReceiverLibraryCommand): Observable<ApiResponse<ReceiverLibraryDto>> {
-    return this.http.put<ApiResponse<ReceiverLibraryDto>>(`${this.baseUrl}/${id}`, command);
+    return this.http.put<ApiResponse<ReceiverLibraryDto>>(`${this.baseUrl}/${id}`, this.normalizeIsaPayload(command));
+  }
+
+  /** X12 ISA element limits — truncate before API so legacy backends never 400 on long portal passwords. */
+  private normalizeIsaPayload<T extends CreateReceiverLibraryCommand>(command: T): T {
+    const qualifier = (command.securityInfoQualifier ?? '00').trim();
+    const payload = { ...command };
+    payload.authorizationInfoQualifier = clampIsa(command.authorizationInfoQualifier, 2) || '00';
+    payload.authorizationInfo = clampIsa(command.authorizationInfo, 10);
+    payload.securityInfoQualifier = clampIsa(qualifier, 2) || '00';
+    payload.securityInfo =
+      payload.securityInfoQualifier === '00' ? '' : clampIsa(command.securityInfo, 10);
+    payload.senderQualifier = clampIsa(command.senderQualifier, 2) || '01';
+    payload.senderId = clampIsa(command.senderId, 15);
+    payload.receiverQualifier = clampIsa(command.receiverQualifier, 2) || '01';
+    payload.interchangeReceiverId = clampIsa(command.interchangeReceiverId, 15);
+    payload.testProdIndicator = clampIsa(command.testProdIndicator, 1) || command.testProdIndicator;
+    return payload;
   }
 
   delete(id: string): Observable<void> {
@@ -118,4 +135,9 @@ export class ReceiverLibraryApiService {
   getExportFormats(): Observable<ApiResponse<ExportFormatOption[]>> {
     return this.http.get<ApiResponse<ExportFormatOption[]>>(`${this.baseUrl}/export-formats`);
   }
+}
+
+function clampIsa(value: string | undefined | null, maxLen: number): string {
+  const text = (value ?? '').toString().trim();
+  return text.length > maxLen ? text.slice(0, maxLen) : text;
 }
