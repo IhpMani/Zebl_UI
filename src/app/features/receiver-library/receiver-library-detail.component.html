@@ -137,7 +137,8 @@
               <option value="00">00 - No Authorization Information Present</option>
               <option value="03">03 - Additional Data Identification</option>
             </select>
-            <input type="text" formControlName="authorizationInfo" class="form-input combo-input" />
+            <input type="text" formControlName="authorizationInfo" class="form-input combo-input" maxlength="10" />
+            <span class="field-hint">Max 10 characters (X12 ISA02).</span>
           </div>
         </div>
         
@@ -148,7 +149,8 @@
               <option value="00">00 - No Security Information Present</option>
               <option value="01">01 - Password</option>
             </select>
-            <input type="text" formControlName="securityInfo" class="form-input combo-input" />
+            <input type="text" formControlName="securityInfo" class="form-input combo-input" maxlength="10" />
+            <span class="field-hint">Max 10 characters (X12 ISA04).</span>
           </div>
         </div>
         
@@ -166,7 +168,7 @@
               <option value="33">33 - National Association of Insurance Commissioners</option>
               <option value="ZZ">ZZ - Mutually Defined</option>
             </select>
-            <input type="text" formControlName="senderId" class="form-input combo-input" />
+            <input type="text" formControlName="senderId" class="form-input combo-input" maxlength="15" />
           </div>
         </div>
         
@@ -184,7 +186,7 @@
               <option value="33">33 - National Association of Insurance Commissioners</option>
               <option value="ZZ">ZZ - Mutually Defined</option>
             </select>
-            <input type="text" formControlName="interchangeReceiverId" class="form-input combo-input" />
+            <input type="text" formControlName="interchangeReceiverId" class="form-input combo-input" maxlength="15" />
           </div>
         </div>
         

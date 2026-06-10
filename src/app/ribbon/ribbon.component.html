@@ -78,6 +78,21 @@
         </span>
         <span class="nav-item__label" *ngIf="!sidebarCollapsed">Facilities</span>
       </button>
+      <button
+        *ngIf="showAdministration"
+        type="button"
+        class="nav-item"
+        [class.active]="isRouteActive('/admin/api-access')"
+        (click)="goToApiAccess()"
+        [attr.title]="sidebarCollapsed ? 'API Access' : null"
+      >
+        <span class="nav-item__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+          </svg>
+        </span>
+        <span class="nav-item__label" *ngIf="!sidebarCollapsed">API Access</span>
+      </button>
       <div class="dropdown-wrapper">
         <button type="button" class="nav-item nav-item--dropdown-trigger" [class.active]="showLibrariesDropdown" (click)="toggleLibrariesDropdown($event)" [attr.aria-expanded]="showLibrariesDropdown" aria-haspopup="true" [attr.title]="sidebarCollapsed ? 'Libraries' : null"><span class="nav-item__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"></path><path d="M12 6v14"></path><path d="M8 8v12"></path><path d="M4 4v16"></path></svg></span><span class="nav-item__label" *ngIf="!sidebarCollapsed">Libraries</span></button>
         <div class="dropdown-content dropdown-content--libraries" [class.show]="showLibrariesDropdown" role="menu" aria-label="Libraries menu">

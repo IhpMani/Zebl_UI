@@ -8,6 +8,7 @@ import { OperationalToastService } from '../../shared/operational/services/opera
 import { OperationalFacilitiesRefreshService } from '../../core/services/operational-facilities-refresh.service';
 import { friendlyApiErrorMessage } from '../../core/utils/api-error-message.util';
 import {
+  duplicateFacilityIdSet,
   facilityDisplayLabel,
   findDuplicateFacilityNameGroups,
 } from '../../core/utils/facility-display.util';
@@ -43,10 +44,20 @@ export class FacilityManagementComponent implements OnInit {
     return facilityDisplayLabel(f.name);
   }
 
-  get duplicateFacilityNameWarnings(): string[] {
-    return findDuplicateFacilityNameGroups(this.facilities).map(
-      (group) => `"${facilityDisplayLabel(group[0].name)}" (${group.length} facilities)`
-    );
+  get duplicateFacilityGroups(): AdminFacilityListItem[][] {
+    return findDuplicateFacilityNameGroups(this.facilities);
+  }
+
+  get hasDuplicateNames(): boolean {
+    return this.duplicateFacilityGroups.length > 0;
+  }
+
+  isDuplicateFacility(f: AdminFacilityListItem): boolean {
+    return this.duplicateFacilityIdSet.has(f.facilityId);
+  }
+
+  private get duplicateFacilityIdSet(): Set<number> {
+    return duplicateFacilityIdSet(this.facilities);
   }
 
   get filteredFacilities(): AdminFacilityListItem[] {
@@ -116,6 +127,20 @@ export class FacilityManagementComponent implements OnInit {
     this.showEditForm = false;
     this.selected = null;
     this.form = { ...this.emptyForm(), isActive: true };
+  }
+
+  openRename(f: AdminFacilityListItem): void {
+    this.select(f);
+    this.openEdit();
+  }
+
+  async copyFacilityId(f: AdminFacilityListItem): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(String(f.facilityId));
+      this.toast.success('Facility ID copied.');
+    } catch {
+      this.toast.error('Could not copy to clipboard.');
+    }
   }
 
   openEdit(): void {

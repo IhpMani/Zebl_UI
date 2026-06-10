@@ -1,0 +1,120 @@
+<div class="aa-page">
+  <header class="aa-toolbar">
+    <div class="aa-toolbar__titles">
+      <h2 class="aa-toolbar__title">API Access</h2>
+      <p class="aa-toolbar__subtitle">Manage API tokens for external applications and automation.</p>
+    </div>
+    <div class="aa-toolbar__actions">
+      <button type="button" class="aa-btn aa-btn--primary" (click)="openGenerate()">+ Generate Token</button>
+    </div>
+  </header>
+
+  <section class="aa-panel">
+    <div *ngIf="loading" class="aa-status">Loading…</div>
+
+    <table class="aa-table" *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Facility</th>
+          <th>Token Preview</th>
+          <th>Created</th>
+          <th>Expires</th>
+          <th>Last Used</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of tokens" [class.aa-row--inactive]="!row.isActive">
+          <td>{{ row.name }}</td>
+          <td>{{ row.facilityName }}</td>
+          <td><code class="aa-code">{{ row.tokenPreview }}</code></td>
+          <td>{{ formatDate(row.createdAt) }}</td>
+          <td>{{ formatDate(row.expiresAt) }}</td>
+          <td>{{ formatDate(row.lastUsedAt) }}</td>
+          <td><span class="aa-status-pill" [ngClass]="statusClass(row.status)">{{ row.status }}</span></td>
+          <td class="aa-actions">
+            <button
+              type="button"
+              class="aa-btn aa-btn--sm"
+              (click)="copyPrefix(row)"
+              [disabled]="!row.tokenPreview"
+            >
+              Copy prefix
+            </button>
+            <button
+              type="button"
+              class="aa-btn aa-btn--sm aa-btn--danger"
+              (click)="revoke(row)"
+              [disabled]="!row.isActive || revokingId === row.id"
+            >
+              Revoke
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="aa-status" *ngIf="!loading && tokens.length === 0">No API tokens yet.</p>
+  </section>
+
+  <div
+    class="aa-modal-backdrop"
+    *ngIf="showGenerateModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aa-generate-title"
+  >
+    <div class="aa-modal">
+      <h3 id="aa-generate-title" class="aa-modal__title">Generate Token</h3>
+      <div class="aa-form-grid">
+        <label class="aa-form-full">
+          <span>Token Name</span>
+          <input [(ngModel)]="tokenName" maxlength="128" placeholder="e.g. Billing sync script" />
+        </label>
+        <label class="aa-form-full">
+          <span>Facility</span>
+          <select [(ngModel)]="facilityId" [disabled]="facilitiesLoading || facilities.length === 0">
+            <option [ngValue]="null" disabled>Select facility…</option>
+            <option *ngFor="let f of facilities" [ngValue]="f.facilityId">{{ f.name }}</option>
+          </select>
+        </label>
+        <label class="aa-form-full">
+          <span>Expiry</span>
+          <select [(ngModel)]="expiryDays">
+            <option *ngFor="let opt of expiryOptions" [ngValue]="opt.days">{{ opt.label }}</option>
+          </select>
+        </label>
+      </div>
+      <div class="aa-form-actions aa-form-actions--modal">
+        <button type="button" class="aa-btn aa-btn--primary" (click)="submitGenerate()" [disabled]="generating">
+          {{ generating ? 'Generating…' : 'Generate' }}
+        </button>
+        <button type="button" class="aa-btn" (click)="closeGenerate()" [disabled]="generating">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="aa-modal-backdrop"
+    *ngIf="showSuccessModal && createdToken"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aa-success-title"
+  >
+    <div class="aa-modal aa-modal--wide">
+      <h3 id="aa-success-title" class="aa-modal__title">Token Created</h3>
+      <p class="aa-warning">This token will not be shown again.</p>
+      <label class="aa-form-full">
+        <span>API Token</span>
+        <textarea class="aa-token-field" readonly [value]="createdToken.token" rows="3"></textarea>
+      </label>
+      <div class="aa-form-actions aa-form-actions--modal">
+        <button type="button" class="aa-btn aa-btn--primary" (click)="copyCreatedToken()">Copy Token</button>
+        <button type="button" class="aa-btn" (click)="closeSuccess()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+

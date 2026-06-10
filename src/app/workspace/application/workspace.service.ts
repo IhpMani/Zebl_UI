@@ -418,6 +418,7 @@ export class WorkspaceService {
     '/tools/program-setup': 'Program Setup',
     '/admin/users': 'Users',
     '/admin/facilities': 'Facilities',
+    '/admin/api-access': 'API Access',
     '/lists': 'Lists'
   };
 

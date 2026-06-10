@@ -10,11 +10,24 @@
     </div>
   </header>
 
-  <p class="fm-duplicate-warning" *ngIf="duplicateFacilityNameWarnings.length">
-    Duplicate facility names found:
-    {{ duplicateFacilityNameWarnings.join('; ') }}.
-    Edit and rename until each name is unique in your practice.
-  </p>
+  <div class="fm-duplicate-warning" *ngIf="hasDuplicateNames">
+    <p class="fm-duplicate-warning__title">Duplicate facility names found. Rename each until names are unique in your practice.</p>
+    <ul class="fm-duplicate-list">
+      <li *ngFor="let group of duplicateFacilityGroups">
+        <span class="fm-duplicate-label">"{{ facilityDisplayName(group[0]) }}"</span>
+        <span class="fm-duplicate-items">
+          <button
+            type="button"
+            class="fm-duplicate-rename"
+            *ngFor="let f of group"
+            (click)="openRename(f)"
+          >
+            Rename ID {{ f.facilityId }}
+          </button>
+        </span>
+      </li>
+    </ul>
+  </div>
 
   <div class="fm-master-detail">
     <aside class="fm-list-panel">
@@ -36,9 +49,11 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Facility ID</th>
             <th>Code</th>
             <th>Active</th>
             <th>Users</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -46,12 +61,17 @@
             *ngFor="let f of filteredFacilities"
             [class.fm-row--active]="selected?.facilityId === f.facilityId"
             [class.fm-row--inactive]="!f.isActive"
+            [class.fm-row--duplicate]="isDuplicateFacility(f)"
             (click)="select(f)"
           >
             <td>{{ facilityDisplayName(f) }}</td>
+            <td><code class="fm-code">{{ f.facilityId }}</code></td>
             <td>{{ f.facilityCode || '—' }}</td>
             <td>{{ f.isActive ? 'Yes' : 'No' }}</td>
             <td>{{ f.usersAssigned }}</td>
+            <td class="fm-row-actions" (click)="$event.stopPropagation()">
+              <button type="button" class="fm-btn fm-btn--sm" (click)="copyFacilityId(f)">Copy API ID</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -61,6 +81,9 @@
     <main class="fm-detail-panel">
       <ng-container *ngIf="showAddForm || showEditForm">
         <h3 class="fm-detail-title">{{ showAddForm ? 'New facility' : 'Edit facility' }}</h3>
+        <p class="fm-rename-hint" *ngIf="showEditForm && selected && isDuplicateFacility(selected)">
+          This name is duplicated in your practice. Choose a unique name (Facility ID {{ selected.facilityId }} stays the same for API integrations).
+        </p>
         <div class="fm-form-grid">
           <label><span>Facility name</span><input [(ngModel)]="form.name" /></label>
           <label><span>Facility code</span><input [(ngModel)]="form.facilityCode" placeholder="e.g. MAIN" /></label>
@@ -86,6 +109,7 @@
       <ng-container *ngIf="!showAddForm && !showEditForm && selected">
         <h3 class="fm-detail-title">{{ selected.name }}</h3>
         <dl class="fm-facts">
+          <div><dt>Facility ID</dt><dd><code class="fm-code">{{ selected.facilityId }}</code></dd></div>
           <div><dt>Code</dt><dd>{{ selected.facilityCode || '—' }}</dd></div>
           <div><dt>Status</dt><dd>{{ selected.isActive ? 'Active' : 'Inactive' }}</dd></div>
           <div><dt>Users assigned</dt><dd>{{ selected.usersAssigned }}</dd></div>
@@ -95,7 +119,10 @@
           <div *ngIf="selected.npi"><dt>NPI</dt><dd>{{ selected.npi }}</dd></div>
           <div *ngIf="selected.taxId"><dt>Tax ID</dt><dd>{{ selected.taxId }}</dd></div>
         </dl>
-        <p class="fm-hint">New facilities appear in the facility switcher and can be assigned to users.</p>
+        <div class="fm-detail-actions">
+          <button type="button" class="fm-btn fm-btn--sm" (click)="copyFacilityId(selected)">Copy API ID</button>
+        </div>
+        <p class="fm-hint">Use Facility ID in API integrations (X-Facility-Id header). Names are for display only.</p>
       </ng-container>
     </main>
   </div>

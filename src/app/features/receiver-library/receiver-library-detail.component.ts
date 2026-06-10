@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReceiverLibraryService } from './receiver-library.service';
 import { ReceiverLibraryDto } from '../../core/services/receiver-library-api.service';
+import { friendlyApiErrorMessage } from '../../core/utils/api-error-message.util';
 
 interface ExportFormatOption {
   value: string;
@@ -178,7 +179,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
           });
         },
         error: (err) => {
-          this.error = err?.error?.message || err?.message || 'Failed to create receiver library';
+          this.error = friendlyApiErrorMessage(err, 'Failed to create receiver library');
           this.saving = false;
           console.error('Receiver library create failed', err);
         }
@@ -206,7 +207,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
           this.router.navigate(['../new'], { relativeTo: this.route });
         },
         error: (err) => {
-          this.error = err?.error?.message || err?.message || 'Failed to update receiver library';
+          this.error = friendlyApiErrorMessage(err, 'Failed to update receiver library');
           this.saving = false;
           console.error('Receiver library update failed', err);
         }
@@ -235,8 +236,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
           this.router.navigate(['../'], { relativeTo: this.route });
         },
         error: (err) => {
-          const msg = err?.error?.message || err?.message || 'Failed to create receiver library';
-          this.error = msg;
+          this.error = friendlyApiErrorMessage(err, 'Failed to create receiver library');
           this.saving = false;
           console.error('Receiver library create failed', err?.status, err?.error, msg);
         }
@@ -249,8 +249,7 @@ export class ReceiverLibraryDetailComponent implements OnInit {
           this.router.navigate(['../'], { relativeTo: this.route });
         },
         error: (err) => {
-          const msg = err?.error?.message || err?.message || 'Failed to update receiver library';
-          this.error = msg;
+          this.error = friendlyApiErrorMessage(err, 'Failed to update receiver library');
           this.saving = false;
           console.error('Receiver library update failed', err?.status, err?.error, msg);
         }
@@ -291,14 +290,14 @@ export class ReceiverLibraryDetailComponent implements OnInit {
     result.submitterType = typeof st === 'number' ? st : (st != null && st !== '' ? Number(st) : 0);
 
     // Map frontend field names to backend field names
-    result.authorizationInfoQualifier = formValue.authorizationInfoQualifier || '00';
-    result.authorizationInfo = formValue.authorizationInfo || '';
-    result.securityInfoQualifier = formValue.securityInfoQualifier || '00';
-    result.securityInfo = formValue.securityInfo || '';
-    result.senderQualifier = formValue.senderIdQualifier || '01';
-    result.senderId = formValue.senderId || '';
-    result.receiverQualifier = formValue.interchangeReceiverIdQualifier || '01';
-    result.interchangeReceiverId = formValue.interchangeReceiverId || '';
+    result.authorizationInfoQualifier = this.clampIsa(formValue.authorizationInfoQualifier, 2) || '00';
+    result.authorizationInfo = this.clampIsa(formValue.authorizationInfo, 10);
+    result.securityInfoQualifier = this.clampIsa(formValue.securityInfoQualifier, 2) || '00';
+    result.securityInfo = this.clampIsa(formValue.securityInfo, 10);
+    result.senderQualifier = this.clampIsa(formValue.senderIdQualifier, 2) || '01';
+    result.senderId = this.clampIsa(formValue.senderId, 15);
+    result.receiverQualifier = this.clampIsa(formValue.interchangeReceiverIdQualifier, 2) || '01';
+    result.interchangeReceiverId = this.clampIsa(formValue.interchangeReceiverId, 15);
     
     // Remove frontend-only field names
     delete result.senderIdQualifier;
@@ -310,5 +309,11 @@ export class ReceiverLibraryDetailComponent implements OnInit {
     delete result.notes;
     
     return result;
+  }
+
+  /** X12 ISA segment element max lengths. */
+  private clampIsa(value: unknown, maxLen: number): string {
+    const text = (value ?? '').toString().trim();
+    return text.length > maxLen ? text.slice(0, maxLen) : text;
   }
 }

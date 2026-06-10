@@ -27,6 +27,7 @@ import { ClaimNoteListComponent } from './claim-notes/claim-note-list/claim-note
 import { LoginComponent } from './login/login.component';
 import { UserManagementComponent } from './admin/user-management/user-management.component';
 import { FacilityManagementComponent } from './admin/facility-management/facility-management.component';
+import { ApiAccessComponent } from './admin/api-access/api-access.component';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { FacilityHeaderInterceptor } from './core/interceptors/facility-header.interceptor';
 import { InterfaceDataReviewComponent } from './hl7/interface-data-review/interface-data-review.component';
@@ -80,6 +81,7 @@ import { PayerLibraryModule } from './features/payer-library/payer-library.modul
     LoginComponent,
     UserManagementComponent,
     FacilityManagementComponent,
+    ApiAccessComponent,
     InterfaceDataReviewComponent,
     EdiReportsComponent,
     EdiEraReviewComponent,

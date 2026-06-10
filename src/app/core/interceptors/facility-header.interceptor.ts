@@ -208,7 +208,8 @@ export class FacilityHeaderInterceptor implements HttpInterceptor {
     return (
       url.includes('/api/admin/facilities') ||
       url.includes('/api/users') ||
-      url.includes('/api/user-facilities')
+      url.includes('/api/user-facilities') ||
+      url.includes('/api/api-tokens')
     );
   }
 

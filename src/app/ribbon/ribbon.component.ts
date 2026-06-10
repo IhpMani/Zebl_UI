@@ -258,6 +258,12 @@ export class RibbonComponent implements OnInit, OnDestroy {
     this.closeMobileSidebar();
   }
 
+  goToApiAccess(): void {
+    this.router.navigate(['/admin/api-access']);
+    this.closeFloatingPanel();
+    this.closeMobileSidebar();
+  }
+
   /** EDI Library = Submitter/Receiver library (configure receivers). */
   goToReceiverLibrary(): void {
     this.router.navigate(['/receiver-library']);

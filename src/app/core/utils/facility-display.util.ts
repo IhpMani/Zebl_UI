@@ -10,8 +10,10 @@ export interface FacilityNameRow {
 }
 
 /** Returns groups of facility ids that share the same normalized name within a tenant list. */
-export function findDuplicateFacilityNameGroups(rows: FacilityNameRow[]): FacilityNameRow[][] {
-  const groups = new Map<string, FacilityNameRow[]>();
+export function findDuplicateFacilityNameGroups<T extends FacilityNameRow>(
+  rows: T[]
+): T[][] {
+  const groups = new Map<string, T[]>();
   for (const row of rows) {
     const key = (row.name?.trim() || '').toLowerCase();
     if (!key) {
@@ -22,4 +24,14 @@ export function findDuplicateFacilityNameGroups(rows: FacilityNameRow[]): Facili
     groups.set(key, list);
   }
   return [...groups.values()].filter((g) => g.length > 1);
+}
+
+export function duplicateFacilityIdSet(rows: FacilityNameRow[]): Set<number> {
+  const ids = new Set<number>();
+  for (const group of findDuplicateFacilityNameGroups(rows)) {
+    for (const row of group) {
+      ids.add(row.facilityId);
+    }
+  }
+  return ids;
 }

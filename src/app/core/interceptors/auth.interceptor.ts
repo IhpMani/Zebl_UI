@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth.service';
 import { HttpErrorMessageService } from '../services/http-error-message.service';
 import { ContextResetService } from '../services/context-reset.service';
 import { environment } from 'src/environments/environment';
+import { friendlyApiErrorMessage } from '../utils/api-error-message.util';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -50,15 +51,8 @@ export class AuthInterceptor implements HttpInterceptor {
             return;
           }
           if (err?.status === 400) {
-            const body = err?.error as Record<string, unknown> | string | null | undefined;
-            const msg =
-              (typeof body === 'object' && body != null
-                ? (typeof body['message'] === 'string' ? body['message'] : null) ??
-                  (typeof body['Message'] === 'string' ? body['Message'] : null) ??
-                  (typeof body['error'] === 'string' ? body['error'] : null)
-                : null) ??
-              (typeof body === 'string' ? body : null);
-            if (typeof msg === 'string' && msg.length > 0) {
+            const msg = friendlyApiErrorMessage(err, '');
+            if (msg) {
               this.httpErrors.show(msg);
             }
           }
