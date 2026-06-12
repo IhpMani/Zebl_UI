@@ -979,6 +979,18 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     const raw = (result.message ?? '').trim();
     const failureKind = (result.failureKind ?? '').trim();
 
+    if (result.success && result.credentialsValid) {
+      if (/accepted RTE credentials|accepted credentials but could not parse|built-in test 270 was rejected/i.test(raw)) {
+        return 'Waystar accepted your RTE credentials. The built-in test 270 was rejected — set Sender ID / Submitter ID to your Waystar customer ID (e.g. 277514), Interchange Receiver ID to ZIRMED, and use payer eligibility IDs from the payer library for live checks.';
+      }
+      if (!failureKind && raw) {
+        return raw;
+      }
+      if (!failureKind) {
+        return 'Waystar RTE credentials verified. Live eligibility uses payer IDs from each insurance payer record.';
+      }
+    }
+
     switch (failureKind) {
       case 'Authentication':
         if (/authentication failure/i.test(raw)) {
@@ -990,6 +1002,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       case 'Network':
         return 'Could not reach the Waystar gateway. Check the server URL and network connectivity.';
       case 'InvalidPayload':
+        if (/receiver library entry/i.test(raw)) {
+          return 'Eligibility receiver library is incomplete. Fill Sender ID ISA06 (or Submitter ID), Interchange Receiver ID ISA08 (or Receiver ID), and payer fields, then retry.';
+        }
         if (/accepted credentials but could not parse|accepted RTE credentials/i.test(raw)) {
           return 'Waystar accepted your RTE credentials. The test 270 was rejected — verify Receiver Library ISA/GS sender, submitter, and payer IDs.';
         }

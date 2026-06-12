@@ -571,7 +571,13 @@
 
                 <div *ngIf="eligibilityTestResult" class="eligibility-test-result">
                   <div class="form-hint form-hint--block" [class.save-error]="!eligibilityTestResult.success">
-                    {{ eligibilityTestResult.success ? 'Connection test succeeded.' : 'Connection test failed.' }}
+                    {{
+                      eligibilityTestResult.success
+                        ? (eligibilityTestResult.credentialsValid && eligibilityTestResult.failureKind === 'InvalidPayload'
+                            ? 'Credentials verified.'
+                            : 'Connection test succeeded.')
+                        : 'Connection test failed.'
+                    }}
                     <span *ngIf="eligibilityTestResultMessage"> {{ eligibilityTestResultMessage }}</span>
                   </div>
                 </div>
