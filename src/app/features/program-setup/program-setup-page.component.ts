@@ -980,14 +980,18 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
     const failureKind = (result.failureKind ?? '').trim();
 
     if (result.success && result.credentialsValid) {
-      if (/accepted RTE credentials|accepted credentials but could not parse|built-in test 270 was rejected/i.test(raw)) {
-        return 'Waystar accepted your RTE credentials. The built-in test 270 was rejected — set Sender ID / Submitter ID to your Waystar customer ID (e.g. 277514), Interchange Receiver ID to ZIRMED, and use payer eligibility IDs from the payer library for live checks.';
+      if (
+        /RTE credentials verified|synthetic test patient|synthetic connectivity-test|accepted RTE credentials|accepted credentials but could not parse|built-in test 270 was rejected/i.test(
+          raw
+        )
+      ) {
+        return 'Gateway login is working. Test Connection uses a fake patient, so Waystar may reject that inquiry. Set Eligibility Payer ID on payers (e.g. 2426 for Blue Care Network HMO), then run eligibility on a real patient.';
       }
       if (!failureKind && raw) {
         return raw;
       }
       if (!failureKind) {
-        return 'Waystar RTE credentials verified. Live eligibility uses payer IDs from each insurance payer record.';
+        return 'Waystar RTE credentials verified. Run eligibility from a patient record next.';
       }
     }
 
