@@ -990,6 +990,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       case 'Network':
         return 'Could not reach the Waystar gateway. Check the server URL and network connectivity.';
       case 'InvalidPayload':
+        if (/accepted credentials but could not parse|accepted RTE credentials/i.test(raw)) {
+          return 'Waystar accepted your RTE credentials. The test 270 was rejected — verify Receiver Library ISA/GS sender, submitter, and payer IDs.';
+        }
         if (/form-urlencoded|empty request received|api specifications/i.test(raw)) {
           return 'Waystar received the request but did not accept the payload format. GatewayAsync expects form-urlencoded fields: UserID, Password, DataFormat, Data, ResponseType.';
         }
@@ -997,6 +1000,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       case 'IpRestriction':
         return 'Your server IP may not be allowlisted with Waystar yet. You can still save credentials.';
       case 'GatewayError':
+        if (/HTTP 500/i.test(raw)) {
+          return 'Waystar returned HTTP 500. The form-urlencoded request reached the gateway but the server errored. Retry the test; if it persists, contact Waystar support and include the response preview from diagnostics.';
+        }
         return raw || 'Waystar returned an unexpected gateway error.';
       default:
         break;
