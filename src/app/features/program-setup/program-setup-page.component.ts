@@ -981,16 +981,19 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
 
     switch (failureKind) {
       case 'Authentication':
+        if (/authentication failure/i.test(raw)) {
+          return 'Waystar accepted the request but rejected the RTE credentials. Confirm the RTE User ID and API password with Waystar (not the portal password).';
+        }
         return 'Waystar rejected the username or password.';
       case 'Timeout':
         return 'Waystar gateway did not respond in time. Check network connectivity or try again later.';
       case 'Network':
         return 'Could not reach the Waystar gateway. Check the server URL and network connectivity.';
       case 'InvalidPayload':
-        if (/empty request received|api specifications/i.test(raw)) {
-          return 'Waystar received the request but the payload format was invalid. The gateway expects CAQH CORE multipart/form-data.';
+        if (/form-urlencoded|empty request received|api specifications/i.test(raw)) {
+          return 'Waystar received the request but did not accept the payload format. GatewayAsync expects form-urlencoded fields: UserID, Password, DataFormat, Data, ResponseType.';
         }
-        return 'Waystar rejected the test eligibility request. Verify receiver ISA/GS settings.';
+        return 'Waystar rejected the test eligibility request. Verify the 270 payload and receiver configuration.';
       case 'IpRestriction':
         return 'Your server IP may not be allowlisted with Waystar yet. You can still save credentials.';
       case 'GatewayError':
