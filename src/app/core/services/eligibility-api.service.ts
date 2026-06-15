@@ -26,6 +26,7 @@ export interface EligibilityStatusDto {
   eligibilityStatus?: string | null;
   errorMessage?: string | null;
   raw271?: string | null;
+  raw270?: string | null;
   payerName?: string | null;
   planName?: string | null;
   planDetails?: string | null;
@@ -162,8 +163,10 @@ export class EligibilityApiService {
     return this.http.get<PatientEligibilitySnapshotDto>(`${this.baseUrl}/patient/${patientId}/snapshot`);
   }
 
-  getById(requestId: number, includeRaw271 = false): Observable<EligibilityStatusDto> {
-    return this.http.get<EligibilityStatusDto>(`${this.baseUrl}/${requestId}?includeRaw271=${includeRaw271}`);
+  getById(requestId: number, includeRaw271 = false, includeRaw270 = false): Observable<EligibilityStatusDto> {
+    return this.http.get<EligibilityStatusDto>(
+      `${this.baseUrl}/${requestId}?includeRaw271=${includeRaw271}&includeRaw270=${includeRaw270}`
+    );
   }
 
   testConnection(body?: EligibilityConnectionTestRequestDto): Observable<EligibilityConnectionTestResultDto> {

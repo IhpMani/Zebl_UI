@@ -1168,6 +1168,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
       controlNumber: status.controlNumber,
       batchFileName: status.batchFileName ?? null,
       raw271: status.raw271 ?? null,
+      raw270: status.raw270 ?? null,
       planName: status.planName,
       planDetails: status.planDetails,
       eligibilityStartDate: status.eligibilityStartDate,

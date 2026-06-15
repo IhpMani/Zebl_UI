@@ -13,6 +13,7 @@ export interface EligibilityResponsePayload {
   controlNumber?: string | null;
   batchFileName?: string | null;
   raw271?: string | null;
+  raw270?: string | null;
   planName?: string | null;
   planDetails?: string | null;
   eligibilityStartDate?: string | null;
@@ -87,5 +88,6 @@ export interface EligibilityResponseViewModel {
     providerNpi: string;
     providerMode: string;
     raw271Preview: string;
+    raw270Preview: string;
   };
 }

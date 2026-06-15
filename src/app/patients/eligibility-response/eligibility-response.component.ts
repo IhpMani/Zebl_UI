@@ -26,9 +26,10 @@ export class EligibilityResponseComponent implements OnChanges {
 
   view: EligibilityResponseViewModel | null = null;
   diagnosticsExpanded = false;
-  loadingRaw271 = false;
+  loadingRawPayloads = false;
 
   private raw271Override: string | null = null;
+  private raw270Override: string | null = null;
 
   constructor(private readonly eligibilityApi: EligibilityApiService) {}
 
@@ -39,7 +40,8 @@ export class EligibilityResponseComponent implements OnChanges {
       if (prevId !== nextId) {
         this.diagnosticsExpanded = false;
         this.raw271Override = null;
-        this.loadingRaw271 = false;
+        this.raw270Override = null;
+        this.loadingRawPayloads = false;
       }
       this.refreshView();
       queueMicrotask(() => this.syncDialogOpenState());
@@ -55,40 +57,51 @@ export class EligibilityResponseComponent implements OnChanges {
     const expanding = !this.diagnosticsExpanded;
     this.diagnosticsExpanded = expanding;
     if (expanding) {
-      this.loadRaw271Preview();
+      this.loadDiagnosticsPayloads();
     }
   }
 
-  private loadRaw271Preview(): void {
+  private loadDiagnosticsPayloads(): void {
     const id = this.response?.inquiryId;
-    if (!id || this.loadingRaw271 || this.raw271Override) {
+    if (!id || this.loadingRawPayloads) {
       return;
     }
-    if (this.response?.raw271) {
-      this.raw271Override = this.response.raw271;
+
+    const has271 = !!(this.response?.raw271 || this.raw271Override);
+    const has270 = !!(this.response?.raw270 || this.raw270Override);
+    if (has271 && has270) {
       this.refreshView();
       return;
     }
 
-    this.loadingRaw271 = true;
+    this.loadingRawPayloads = true;
     this.refreshView();
-    this.eligibilityApi.getById(id, true).subscribe({
+    this.eligibilityApi.getById(id, true, true).subscribe({
       next: status => {
         this.raw271Override = status.raw271 ?? null;
-        this.loadingRaw271 = false;
+        this.raw270Override = status.raw270 ?? null;
+        this.loadingRawPayloads = false;
         this.refreshView();
       },
       error: () => {
-        this.loadingRaw271 = false;
+        this.loadingRawPayloads = false;
         this.refreshView();
       }
     });
   }
 
+  private loadRaw271Preview(): void {
+    this.loadDiagnosticsPayloads();
+  }
+
   private refreshView(): void {
     const payload =
-      this.response && this.raw271Override
-        ? { ...this.response, raw271: this.raw271Override }
+      this.response && (this.raw271Override || this.raw270Override)
+        ? {
+            ...this.response,
+            raw271: this.raw271Override ?? this.response.raw271,
+            raw270: this.raw270Override ?? this.response.raw270
+          }
         : this.response;
     this.view = buildEligibilityResponseViewModel(payload, v => this.formatDate(v));
   }

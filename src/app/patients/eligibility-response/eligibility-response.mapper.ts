@@ -322,7 +322,8 @@ export function buildEligibilityResponseViewModel(
       technicalError: classifyTechnicalError(payload.errorMessage),
       providerNpi: displayOrDash(payload.providerNpi),
       providerMode: displayOrDash(payload.providerMode),
-      raw271Preview: truncateRaw271(payload.raw271)
+      raw271Preview: truncateRaw271(payload.raw271),
+      raw270Preview: truncateRaw271(payload.raw270)
     }
   };
 }
