@@ -674,7 +674,7 @@ function buildOperationalSummary(
   if (kind === 'error' || isTechnicalFailure(payload.errorMessage, lifecycle)) {
     const payerMsg = (payload.errorMessage ?? '').trim();
     if (/error parsing inquiry/i.test(payerMsg)) {
-      return 'Waystar could not parse the eligibility inquiry. The payer returned “Error Parsing Inquiry” — usually a 270 format issue. Open Advanced Diagnostics for the raw 271, or run a new check after the latest backend deploy.';
+      return 'Waystar returned “Error Parsing Inquiry” — the gateway could not complete this check. After the latest deploy, a correct 270 often means the wrong eligibility payer ID on the payer record, or the provider/NPI is not enrolled for RTE with this payer in Waystar. Open Advanced Diagnostics (or fetch raw 270/271 from the API) and verify NM1*PR uses the Waystar RTE payer ID for this plan.';
     }
     if (payerMsg && !isTechnicalFailure(payerMsg, lifecycle)) {
       return `Payer response: ${payerMsg}`;

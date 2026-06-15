@@ -93,11 +93,11 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
   eligibilityAdvancedMode = false;
   readonly eligibilitySourceOptions: { value: string; label: string }[] = [
     { value: 'GenericSftp', label: 'Generic SFTP' },
-    { value: 'Waystar', label: 'Waystar (REST API)' },
+    { value: 'Waystar', label: 'Waystar / ZirMed (REST API)' },
     { value: 'OfficeAlly', label: 'Office Ally' },
     { value: 'TriZetto', label: 'TriZetto' },
     { value: 'ChangeHealthcare', label: 'Change Healthcare' },
-    { value: 'ZirMed', label: 'ZirMed' },
+    { value: 'ZirMed', label: 'ZirMed (same as Waystar REST)' },
     { value: 'Navicure', label: 'Navicure' }
   ];
 
