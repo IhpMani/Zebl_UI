@@ -88,6 +88,9 @@
         <p class="benefits-empty" *ngIf="!view.hasBenefits && view.benefitsEmptyTitle">
           {{ view.benefitsEmptyTitle }}
         </p>
+        <p class="form-hint form-hint--block" *ngIf="!view.hasBenefits && view.benefitsEmptyHint">
+          {{ view.benefitsEmptyHint }}
+        </p>
       </section>
 
       <section class="panel panel--diagnostics">

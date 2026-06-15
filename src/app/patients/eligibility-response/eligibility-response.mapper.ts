@@ -253,7 +253,14 @@ export function buildEligibilityResponseViewModel(
     coverageRaw = derived.raw;
   }
 
-  const benefitsEmpty = resolveBenefitsEmptyState(isLoading, lifecycle, lifecycleLabel, benefitRows.length > 0);
+  const benefitsEmpty = resolveBenefitsEmptyState(
+    isLoading,
+    lifecycle,
+    lifecycleLabel,
+    benefitRows.length > 0,
+    coverageKind,
+    payload.errorMessage
+  );
   let operationalSummary = buildOperationalSummary(
     coverageKind,
     coverageLabel,
@@ -429,6 +436,7 @@ function resolveCoverageKind(
   if (PROCESSING_LIFECYCLE.has(lifecycle)) return 'processing';
 
   const c = coverageRaw.toLowerCase();
+  if (c.includes('rejected') || c.includes('denied')) return 'error';
   if (c.includes('active') && !c.includes('inactive')) return 'active';
   if (c.includes('inactive') || c.includes('terminated')) return 'inactive';
   if (c.includes('partial') || c.includes('limited') || c.includes('unknown')) return 'partial';
@@ -450,6 +458,12 @@ function deriveCoverageFromBenefitRows(
   coverageRaw: string
 ): { kind: CoverageBadgeKind; label: string; raw: string } {
   const raw = coverageRaw.toLowerCase();
+  if (raw.includes('rejected') || raw.includes('denied')) {
+    return { kind: 'error', label: 'Rejected', raw: 'rejected' };
+  }
+  if (raw.includes('fail')) {
+    return { kind: 'error', label: 'Error', raw: 'error' };
+  }
   if (raw.includes('active') && !raw.includes('inactive')) {
     return { kind: 'active', label: 'Active', raw: 'active' };
   }
@@ -529,7 +543,9 @@ function resolveBenefitsEmptyState(
   isLoading: boolean,
   lifecycle: string,
   lifecycleLabel: string,
-  hasBenefitRows: boolean
+  hasBenefitRows: boolean,
+  coverageKind: CoverageBadgeKind = 'partial',
+  errorMessage?: string | null
 ): { title: string; hint: string | null } {
   if (hasBenefitRows) {
     return { title: '', hint: null };
@@ -540,6 +556,13 @@ function resolveBenefitsEmptyState(
   }
 
   if (lifecycle === 'completed') {
+    if (coverageKind === 'error') {
+      const hint = (errorMessage ?? '').trim() || null;
+      return {
+        title: 'No benefit details returned.',
+        hint: hint ?? 'The payer rejected or could not process this eligibility inquiry.'
+      };
+    }
     return {
       title: 'No benefit details returned.',
       hint: null
@@ -648,6 +671,13 @@ function buildOperationalSummary(
   }
 
   if (kind === 'error' || isTechnicalFailure(payload.errorMessage, lifecycle)) {
+    const payerMsg = (payload.errorMessage ?? '').trim();
+    if (/error parsing inquiry/i.test(payerMsg)) {
+      return 'Waystar could not parse the eligibility inquiry. The payer returned “Error Parsing Inquiry” — usually a 270 format issue. Open Advanced Diagnostics for the raw 271, or run a new check after the latest backend deploy.';
+    }
+    if (payerMsg && !isTechnicalFailure(payerMsg, lifecycle)) {
+      return `Payer response: ${payerMsg}`;
+    }
     return 'Eligibility could not be completed. Review the summary below or open Advanced Diagnostics for technical details.';
   }
 

@@ -100,6 +100,22 @@ describe('eligibility-response.mapper', () => {
     expect(pcp?.amount).toContain('$25');
   });
 
+  it('shows Rejected coverage when payer returns parse failure', () => {
+    const vm = buildEligibilityResponseViewModel(
+      {
+        inquiryStatus: 'Completed',
+        status: 'Rejected',
+        payerName: 'BLUE CARE NETWORK',
+        errorMessage: 'Error Parsing Inquiry'
+      },
+      formatDate
+    );
+    expect(vm!.coverageKind).toBe('error');
+    expect(vm!.coverageLabel).toBe('Rejected');
+    expect(vm!.operationalSummary).toContain('Error Parsing Inquiry');
+    expect(vm!.benefitsEmptyHint).toContain('Error Parsing Inquiry');
+  });
+
   it('returns empty benefit messaging when no rows', () => {
     const vm = buildEligibilityResponseViewModel({ status: 'Active', benefits: [] }, formatDate);
     expect(vm!.hasBenefits).toBe(false);
