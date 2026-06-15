@@ -138,6 +138,10 @@
               <dt>Technical Error</dt>
               <dd class="technical">{{ view.diagnostics.technicalError }}</dd>
             </div>
+            <div class="field field--wide" *ngIf="diagnosticsLoadError">
+              <dt>Diagnostics</dt>
+              <dd class="technical">{{ diagnosticsLoadError }}</dd>
+            </div>
             <div class="field field--wide">
               <dt>270 Preview</dt>
               <dd>

@@ -27,6 +27,7 @@ export class EligibilityResponseComponent implements OnChanges {
   view: EligibilityResponseViewModel | null = null;
   diagnosticsExpanded = false;
   loadingRawPayloads = false;
+  diagnosticsLoadError: string | null = null;
 
   private raw271Override: string | null = null;
   private raw270Override: string | null = null;
@@ -42,6 +43,7 @@ export class EligibilityResponseComponent implements OnChanges {
         this.raw271Override = null;
         this.raw270Override = null;
         this.loadingRawPayloads = false;
+        this.diagnosticsLoadError = null;
       }
       this.refreshView();
       queueMicrotask(() => this.syncDialogOpenState());
@@ -75,16 +77,20 @@ export class EligibilityResponseComponent implements OnChanges {
     }
 
     this.loadingRawPayloads = true;
+    this.diagnosticsLoadError = null;
     this.refreshView();
     this.eligibilityApi.getById(id, true, true).subscribe({
       next: status => {
         this.raw271Override = status.raw271 ?? null;
         this.raw270Override = status.raw270 ?? null;
         this.loadingRawPayloads = false;
+        this.diagnosticsLoadError = null;
         this.refreshView();
       },
       error: () => {
         this.loadingRawPayloads = false;
+        this.diagnosticsLoadError =
+          'Could not load raw 270/271 (check login, CORS, or republish the API with broadbill.netlify.app allowed).';
         this.refreshView();
       }
     });
