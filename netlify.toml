@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist/ez-claim-frontend"
+
+# SPA fallback (also in src/_redirects copied to publish root at build time)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
