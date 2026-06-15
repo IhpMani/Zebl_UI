@@ -137,7 +137,11 @@
             </div>
             <div class="field field--wide">
               <dt>271 Preview</dt>
-              <dd><pre class="raw-preview">{{ view.diagnostics.raw271Preview }}</pre></dd>
+              <dd>
+                <pre class="raw-preview">{{
+                  loadingRaw271 ? 'Loading raw 271…' : view.diagnostics.raw271Preview
+                }}</pre>
+              </dd>
             </div>
           </dl>
         </div>

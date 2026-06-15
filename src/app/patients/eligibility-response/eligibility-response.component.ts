@@ -9,6 +9,7 @@ import {
   SimpleChanges,
   ViewChild
 } from '@angular/core';
+import { EligibilityApiService } from '../../core/services/eligibility-api.service';
 import { EligibilityResponsePayload, EligibilityResponseViewModel } from './eligibility-response.models';
 import { buildEligibilityResponseViewModel } from './eligibility-response.mapper';
 
@@ -25,6 +26,11 @@ export class EligibilityResponseComponent implements OnChanges {
 
   view: EligibilityResponseViewModel | null = null;
   diagnosticsExpanded = false;
+  loadingRaw271 = false;
+
+  private raw271Override: string | null = null;
+
+  constructor(private readonly eligibilityApi: EligibilityApiService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['response']) {
@@ -32,8 +38,10 @@ export class EligibilityResponseComponent implements OnChanges {
       const nextId = changes['response'].currentValue?.inquiryId;
       if (prevId !== nextId) {
         this.diagnosticsExpanded = false;
+        this.raw271Override = null;
+        this.loadingRaw271 = false;
       }
-      this.view = buildEligibilityResponseViewModel(this.response, v => this.formatDate(v));
+      this.refreshView();
       queueMicrotask(() => this.syncDialogOpenState());
     }
   }
@@ -44,7 +52,45 @@ export class EligibilityResponseComponent implements OnChanges {
   }
 
   toggleDiagnostics(): void {
-    this.diagnosticsExpanded = !this.diagnosticsExpanded;
+    const expanding = !this.diagnosticsExpanded;
+    this.diagnosticsExpanded = expanding;
+    if (expanding) {
+      this.loadRaw271Preview();
+    }
+  }
+
+  private loadRaw271Preview(): void {
+    const id = this.response?.inquiryId;
+    if (!id || this.loadingRaw271 || this.raw271Override) {
+      return;
+    }
+    if (this.response?.raw271) {
+      this.raw271Override = this.response.raw271;
+      this.refreshView();
+      return;
+    }
+
+    this.loadingRaw271 = true;
+    this.refreshView();
+    this.eligibilityApi.getById(id, true).subscribe({
+      next: status => {
+        this.raw271Override = status.raw271 ?? null;
+        this.loadingRaw271 = false;
+        this.refreshView();
+      },
+      error: () => {
+        this.loadingRaw271 = false;
+        this.refreshView();
+      }
+    });
+  }
+
+  private refreshView(): void {
+    const payload =
+      this.response && this.raw271Override
+        ? { ...this.response, raw271: this.raw271Override }
+        : this.response;
+    this.view = buildEligibilityResponseViewModel(payload, v => this.formatDate(v));
   }
 
   formatDate(value: unknown): string {
