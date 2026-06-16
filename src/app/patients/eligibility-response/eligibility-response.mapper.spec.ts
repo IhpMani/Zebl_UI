@@ -106,13 +106,20 @@ describe('eligibility-response.mapper', () => {
         inquiryStatus: 'Completed',
         status: 'Rejected',
         payerName: 'BLUE CARE NETWORK',
-        errorMessage: 'Error Parsing Inquiry'
+        errorMessage: 'Error Parsing Inquiry',
+        payerMessage: 'Error Parsing Inquiry',
+        rejectionCode: '42',
+        rejectionReason: 'AAA reject reason 42 (valid request indicator N)'
       },
       formatDate
     );
     expect(vm!.coverageKind).toBe('error');
     expect(vm!.coverageLabel).toBe('Rejected');
+    expect(vm!.rejectionSummary).toContain('AAA reject reason 42');
+    expect(vm!.operationalSummary).toContain('AAA reject reason 42');
     expect(vm!.operationalSummary).toContain('Error Parsing Inquiry');
+    expect(vm!.diagnostics.rejectionCode).toBe('42');
+    expect(vm!.diagnostics.payerMessage).toBe('Error Parsing Inquiry');
     expect(vm!.benefitsEmptyHint).toContain('Error Parsing Inquiry');
   });
 

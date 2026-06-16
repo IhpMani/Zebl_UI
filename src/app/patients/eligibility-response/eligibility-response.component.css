@@ -208,6 +208,17 @@
   color: var(--ps-text-muted, #5a6578);
 }
 
+.rejection-summary {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}
+
 .wait-line__spinner {
   width: 12px;
   height: 12px;

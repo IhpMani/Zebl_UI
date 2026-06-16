@@ -25,6 +25,9 @@ export interface EligibilityStatusDto {
   batchFileName?: string | null;
   eligibilityStatus?: string | null;
   errorMessage?: string | null;
+  payerMessage?: string | null;
+  rejectionCode?: string | null;
+  rejectionReason?: string | null;
   raw271?: string | null;
   raw270?: string | null;
   payerName?: string | null;

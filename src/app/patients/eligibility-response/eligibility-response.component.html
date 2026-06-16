@@ -26,6 +26,9 @@
             <dd class="field-value">{{ view.planType }}</dd>
           </div>
         </dl>
+        <p class="rejection-summary" *ngIf="view.rejectionSummary" role="status">
+          {{ view.rejectionSummary }}
+        </p>
         <p class="wait-line" *ngIf="view.waitingMessage" aria-live="polite">
           <span class="wait-line__spinner" *ngIf="view.isLoading" aria-hidden="true"></span>
           {{ view.waitingMessage }}
@@ -129,6 +132,18 @@
             <div class="field field--wide" *ngIf="view.operationalSummary">
               <dt>Summary</dt>
               <dd>{{ view.operationalSummary }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.diagnostics.rejectionCode !== '—'">
+              <dt>AAA Reject Code</dt>
+              <dd class="technical mono">{{ view.diagnostics.rejectionCode }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.diagnostics.payerMessage !== '—'">
+              <dt>Payer Message (MSG)</dt>
+              <dd class="technical">{{ view.diagnostics.payerMessage }}</dd>
+            </div>
+            <div class="field field--wide" *ngIf="view.diagnostics.rejectionReason !== '—'">
+              <dt>Rejection Reason</dt>
+              <dd class="technical">{{ view.diagnostics.rejectionReason }}</dd>
             </div>
             <div class="field field--wide" *ngIf="view.diagnostics.rawStatusMessage !== '—'">
               <dt>Status Message</dt>

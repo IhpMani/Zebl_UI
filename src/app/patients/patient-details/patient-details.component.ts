@@ -1175,6 +1175,9 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
       eligibilityEndDate: status.eligibilityEndDate,
       benefits: status.benefits ?? [],
       errorMessage: status.errorMessage,
+      payerMessage: status.payerMessage,
+      rejectionCode: status.rejectionCode,
+      rejectionReason: status.rejectionReason,
       providerNpi: status.providerNpi,
       providerMode: status.providerMode,
       usedPayerOverride: status.usedPayerOverride

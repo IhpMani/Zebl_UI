@@ -259,7 +259,10 @@ export function buildEligibilityResponseViewModel(
     lifecycleLabel,
     benefitRows.length > 0,
     coverageKind,
-    payload.errorMessage
+    payload.errorMessage,
+    payload.payerMessage,
+    payload.rejectionCode,
+    payload.rejectionReason
   );
   let operationalSummary = buildOperationalSummary(
     coverageKind,
@@ -287,6 +290,15 @@ export function buildEligibilityResponseViewModel(
     displayOrDash(payload.patientAddress)
   );
   const waitingMessage = resolveWaitingMessage(isLoading, lifecycle, pollTimedOut);
+  const rejectionSummary =
+    coverageKind === 'error' && !isLoading && !isInFlightLifecycle(lifecycle)
+      ? formatPayerRejectionHint(
+          payload.payerMessage,
+          payload.errorMessage,
+          payload.rejectionCode,
+          payload.rejectionReason
+        )
+      : null;
 
   return {
     isLoading,
@@ -314,11 +326,15 @@ export function buildEligibilityResponseViewModel(
     hasBenefits: benefitRows.length > 0,
     benefitsEmptyTitle: benefitsEmpty.title,
     benefitsEmptyHint: benefitsEmpty.hint,
+    rejectionSummary,
     showPayerOverrideWarning: !!payload.usedPayerOverride,
     diagnostics: {
       lifecycleStatus: displayOrDash(payload.inquiryStatus),
       batchFileName: displayOrDash(payload.batchFileName),
       rawStatusMessage: displayOrDash(payload.errorMessage),
+      payerMessage: displayOrDash(payload.payerMessage ?? payload.errorMessage),
+      rejectionCode: displayOrDash(payload.rejectionCode),
+      rejectionReason: displayOrDash(payload.rejectionReason),
       technicalError: classifyTechnicalError(payload.errorMessage),
       providerNpi: displayOrDash(payload.providerNpi),
       providerMode: displayOrDash(payload.providerMode),
@@ -546,7 +562,10 @@ function resolveBenefitsEmptyState(
   lifecycleLabel: string,
   hasBenefitRows: boolean,
   coverageKind: CoverageBadgeKind = 'partial',
-  errorMessage?: string | null
+  errorMessage?: string | null,
+  payerMessage?: string | null,
+  rejectionCode?: string | null,
+  rejectionReason?: string | null
 ): { title: string; hint: string | null } {
   if (hasBenefitRows) {
     return { title: '', hint: null };
@@ -558,7 +577,7 @@ function resolveBenefitsEmptyState(
 
   if (lifecycle === 'completed') {
     if (coverageKind === 'error') {
-      const hint = (errorMessage ?? '').trim() || null;
+      const hint = formatPayerRejectionHint(payerMessage, errorMessage, rejectionCode, rejectionReason);
       return {
         title: 'No benefit details returned.',
         hint: hint ?? 'The payer rejected or could not process this eligibility inquiry.'
@@ -672,12 +691,14 @@ function buildOperationalSummary(
   }
 
   if (kind === 'error' || isTechnicalFailure(payload.errorMessage, lifecycle)) {
-    const payerMsg = (payload.errorMessage ?? '').trim();
-    if (/error parsing inquiry/i.test(payerMsg)) {
-      return 'Waystar returned “Error Parsing Inquiry” — the gateway could not complete this check. After the latest deploy, a correct 270 often means the wrong eligibility payer ID on the payer record, or the provider/NPI is not enrolled for RTE with this payer in Waystar. Open Advanced Diagnostics (or fetch raw 270/271 from the API) and verify NM1*PR uses the Waystar RTE payer ID for this plan.';
-    }
-    if (payerMsg && !isTechnicalFailure(payerMsg, lifecycle)) {
-      return `Payer response: ${payerMsg}`;
+    const rejectionSummary = formatPayerRejectionHint(
+      payload.payerMessage,
+      payload.errorMessage,
+      payload.rejectionCode,
+      payload.rejectionReason
+    );
+    if (rejectionSummary) {
+      return rejectionSummary;
     }
     return 'Eligibility could not be completed. Review the summary below or open Advanced Diagnostics for technical details.';
   }
@@ -715,6 +736,26 @@ function isTechnicalFailure(errorMessage: string | null | undefined, lifecycle: 
 function classifyTechnicalError(errorMessage: string | null | undefined): string {
   if (!errorMessage?.trim()) return '—';
   return errorMessage.trim();
+}
+
+function formatPayerRejectionHint(
+  payerMessage?: string | null,
+  errorMessage?: string | null,
+  rejectionCode?: string | null,
+  rejectionReason?: string | null
+): string | null {
+  const msg = (payerMessage ?? errorMessage ?? '').trim();
+  const code = (rejectionCode ?? '').trim();
+  const reason = (rejectionReason ?? '').trim();
+
+  if (!msg && !code && !reason) return null;
+
+  const parts: string[] = [];
+  if (code) parts.push(`AAA reject reason ${code}`);
+  if (msg) parts.push(`MSG: ${msg}`);
+  if (reason && reason !== msg && !reason.includes(msg)) parts.push(reason);
+
+  return parts.join(' — ');
 }
 
 function formatBenefitAmount(amount: string | null | undefined): string {

@@ -20,6 +20,9 @@ export interface EligibilityResponsePayload {
   eligibilityEndDate?: string | null;
   benefits?: EligibilityBenefitRowPayload[] | null;
   errorMessage?: string | null;
+  payerMessage?: string | null;
+  rejectionCode?: string | null;
+  rejectionReason?: string | null;
   providerNpi?: string | null;
   providerMode?: string | null;
   usedPayerOverride?: boolean;
@@ -79,11 +82,16 @@ export interface EligibilityResponseViewModel {
   benefitsEmptyTitle: string;
   /** Secondary hint; omitted when null. */
   benefitsEmptyHint: string | null;
+  /** Payer AAA/MSG rejection summary when coverage is rejected. */
+  rejectionSummary: string | null;
   showPayerOverrideWarning: boolean;
   diagnostics: {
     lifecycleStatus: string;
     batchFileName: string;
     rawStatusMessage: string;
+    payerMessage: string;
+    rejectionCode: string;
+    rejectionReason: string;
     technicalError: string;
     providerNpi: string;
     providerMode: string;
