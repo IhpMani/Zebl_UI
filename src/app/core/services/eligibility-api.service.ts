@@ -78,6 +78,9 @@ export interface EligibilityConnectionTestResultDto {
   directoriesValid: boolean;
   failureKind?: string | null;
   httpStatusCode?: number | null;
+  authenticationOutcome?: string | null;
+  aaaRejectCode?: string | null;
+  payerMessage?: string | null;
   errors: string[];
   diagnostics: string[];
 }

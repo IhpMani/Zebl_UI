@@ -978,6 +978,21 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
   private mapEligibilityTestMessage(result: EligibilityConnectionTestResultDto): string | null {
     const raw = (result.message ?? '').trim();
     const failureKind = (result.failureKind ?? '').trim();
+    const authOutcome = (result.authenticationOutcome ?? '').trim();
+
+    if (authOutcome === 'Authentication Failure') {
+      const aaa = (result.aaaRejectCode ?? '').trim();
+      const msg = (result.payerMessage ?? '').trim();
+      const parts = ['Waystar rejected the RTE credentials during GatewayAsync authentication.'];
+      if (aaa) parts.push(`AAA ${aaa}`);
+      if (msg) parts.push(msg);
+      if (result.httpStatusCode != null) parts.push(`HTTP ${result.httpStatusCode}`);
+      return parts.join(' ');
+    }
+
+    if (authOutcome === 'Authentication Success') {
+      return 'GatewayAsync authentication succeeded. The synthetic test 270 was accepted at the credential layer; run eligibility on a real patient next.';
+    }
 
     if (result.success && result.credentialsValid) {
       if (
@@ -1056,6 +1071,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       directoriesValid: Boolean(raw?.directoriesValid),
       failureKind: raw?.failureKind ?? null,
       httpStatusCode: raw?.httpStatusCode ?? null,
+      authenticationOutcome: raw?.authenticationOutcome ?? null,
+      aaaRejectCode: raw?.aaaRejectCode ?? null,
+      payerMessage: raw?.payerMessage ?? null,
       errors: Array.isArray(raw?.errors)
         ? raw.errors
         : message
