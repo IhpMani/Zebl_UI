@@ -78,6 +78,14 @@ export class EligibilityResponseComponent implements OnChanges {
       return;
     }
 
+    // Raw payloads + transport snapshot were already supplied when the modal was opened
+    // (view flow fetches with includeRaw271=true&includeRaw270=true) — render without refetching.
+    if (this.response?.raw270 || this.response?.raw271 || this.response?.transportMetadataJson) {
+      this.diagnosticsLoaded = true;
+      this.refreshView();
+      return;
+    }
+
     this.loadingRawPayloads = true;
     this.diagnosticsLoadError = null;
     this.refreshView();

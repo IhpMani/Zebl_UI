@@ -107,7 +107,7 @@ export class PatientEligibilityFlowService {
       this.getLastRequestId(patientId);
 
     if (id) {
-      this.eligibilityApi.getById(id, false).subscribe({
+      this.eligibilityApi.getById(id, true, true).subscribe({
         next: (status) => this.presentResult(status, true),
         error: (err) => alert(err?.message || err?.error?.error || 'Failed to load eligibility response.')
       });
@@ -122,7 +122,7 @@ export class PatientEligibilityFlowService {
           alert('No eligibility history found for this patient.');
           return;
         }
-        this.eligibilityApi.getById(preferred.inquiryId, false).subscribe({
+        this.eligibilityApi.getById(preferred.inquiryId, true, true).subscribe({
           next: (status) => this.presentResult(status, true),
           error: (err) => alert(err?.message || err?.error?.error || 'Failed to load eligibility response.')
         });
@@ -191,6 +191,9 @@ export class PatientEligibilityFlowService {
       createdAt: status.createdAt,
       controlNumber: status.controlNumber,
       batchFileName: status.batchFileName ?? undefined,
+      raw271: status.raw271 ?? undefined,
+      raw270: status.raw270 ?? undefined,
+      transportMetadataJson: status.transportMetadataJson ?? undefined,
       errorMessage: status.errorMessage ?? undefined,
       payerMessage: status.payerMessage ?? undefined,
       rejectionCode: status.rejectionCode ?? undefined,

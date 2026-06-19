@@ -1053,7 +1053,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
             return throwError(() => new Error('No eligibility history found for this patient.'));
           }
 
-          return this.eligibilityApi.getById(preferredId, false);
+          return this.eligibilityApi.getById(preferredId, true, true);
         }),
         takeUntil(this.destroy$)
       )
@@ -1169,6 +1169,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
       batchFileName: status.batchFileName ?? null,
       raw271: status.raw271 ?? null,
       raw270: status.raw270 ?? null,
+      transportMetadataJson: status.transportMetadataJson ?? null,
       planName: status.planName,
       planDetails: status.planDetails,
       eligibilityStartDate: status.eligibilityStartDate,
