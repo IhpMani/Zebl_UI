@@ -14,6 +14,8 @@ export interface EligibilityResponsePayload {
   batchFileName?: string | null;
   raw271?: string | null;
   raw270?: string | null;
+  /** Per-inquiry transport observability snapshot (JSON string from the API). */
+  transportMetadataJson?: string | null;
   planName?: string | null;
   planDetails?: string | null;
   eligibilityStartDate?: string | null;
@@ -97,5 +99,25 @@ export interface EligibilityResponseViewModel {
     providerMode: string;
     raw271Preview: string;
     raw270Preview: string;
+    transport: EligibilityTransportView | null;
   };
+}
+
+export interface EligibilityTransportKeyValue {
+  label: string;
+  value: string;
+}
+
+export interface EligibilityTransportView {
+  capturedAt: string;
+  userId: string;
+  gatewayUrl: string;
+  httpMethod: string;
+  httpStatus: string;
+  requestedAt: string;
+  respondedAt: string;
+  durationMs: string;
+  httpRequestBody: string;
+  httpResponseBody: string;
+  receiverLibrary: EligibilityTransportKeyValue[];
 }

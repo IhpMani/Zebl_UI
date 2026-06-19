@@ -173,6 +173,48 @@
                 }}</pre>
               </dd>
             </div>
+
+            <ng-container *ngIf="view.diagnostics.transport as t">
+              <div class="field">
+                <dt>Gateway UserID</dt>
+                <dd class="mono">{{ t.userId }}</dd>
+              </div>
+              <div class="field">
+                <dt>HTTP Status</dt>
+                <dd class="mono">{{ t.httpStatus }}</dd>
+              </div>
+              <div class="field">
+                <dt>Response Time</dt>
+                <dd class="mono">{{ t.durationMs }}</dd>
+              </div>
+              <div class="field">
+                <dt>Sent At (UTC)</dt>
+                <dd class="mono">{{ t.requestedAt }}</dd>
+              </div>
+              <div class="field field--wide">
+                <dt>Gateway URL</dt>
+                <dd class="mono">{{ t.gatewayUrl }}</dd>
+              </div>
+              <div class="field field--wide">
+                <dt>ReceiverLibrary values used</dt>
+                <dd>
+                  <table class="kv-table">
+                    <tr *ngFor="let row of t.receiverLibrary">
+                      <th>{{ row.label }}</th>
+                      <td class="mono">{{ row.value }}</td>
+                    </tr>
+                  </table>
+                </dd>
+              </div>
+              <div class="field field--wide">
+                <dt>HTTP Request Body (password redacted)</dt>
+                <dd><pre class="raw-preview">{{ t.httpRequestBody }}</pre></dd>
+              </div>
+              <div class="field field--wide">
+                <dt>HTTP Response Body</dt>
+                <dd><pre class="raw-preview">{{ t.httpResponseBody }}</pre></dd>
+              </div>
+            </ng-container>
           </dl>
         </div>
       </section>

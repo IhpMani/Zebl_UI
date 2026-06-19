@@ -367,6 +367,28 @@
   word-break: break-all;
 }
 
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.kv-table th {
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  padding: 2px 8px 2px 0;
+  white-space: nowrap;
+  vertical-align: top;
+  width: 45%;
+}
+
+.kv-table td {
+  padding: 2px 0;
+  color: #0f172a;
+  word-break: break-all;
+}
+
 .modal-footer {
   display: flex;
   align-items: flex-end;

@@ -3,7 +3,8 @@ import {
   EligibilityBenefitGridRow,
   EligibilityBenefitRowPayload,
   EligibilityResponsePayload,
-  EligibilityResponseViewModel
+  EligibilityResponseViewModel,
+  EligibilityTransportView
 } from './eligibility-response.models';
 
 /** X12 service type codes (common EB03 values). */
@@ -339,8 +340,52 @@ export function buildEligibilityResponseViewModel(
       providerNpi: displayOrDash(payload.providerNpi),
       providerMode: displayOrDash(payload.providerMode),
       raw271Preview: truncateRaw271(payload.raw271),
-      raw270Preview: truncateRaw271(payload.raw270)
+      raw270Preview: truncateRaw271(payload.raw270),
+      transport: parseTransport(payload.transportMetadataJson)
     }
+  };
+}
+
+function parseTransport(json: string | null | undefined): EligibilityTransportView | null {
+  if (!json?.trim()) return null;
+  let parsed: any;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return null;
+  }
+
+  const gw = parsed?.gateway ?? {};
+  const rl = parsed?.receiverLibrary ?? {};
+
+  const receiverLibrary = [
+    ['Library', rl.libraryEntryName],
+    ['ISA01 AuthQualifier', rl.authorizationInfoQualifier],
+    ['ISA02 AuthInfo', rl.authorizationInfo],
+    ['ISA05 SenderQualifier', rl.senderQualifier],
+    ['ISA06 SenderId', rl.senderId],
+    ['ISA07 ReceiverQualifier', rl.receiverQualifier],
+    ['ISA08 InterchangeReceiverId', rl.interchangeReceiverId],
+    ['ISA15 TestProd', rl.testProdIndicator],
+    ['GS SenderCode', rl.senderCode],
+    ['GS ReceiverCode', rl.receiverCode],
+    ['SubmitterId', rl.submitterId],
+    ['ReceiverName', rl.receiverName],
+    ['ReceiverId', rl.receiverId]
+  ].map(([label, value]) => ({ label: String(label), value: displayOrDash(value == null ? '' : String(value)) }));
+
+  return {
+    capturedAt: displayOrDash(parsed?.capturedAtUtc),
+    userId: displayOrDash(parsed?.userId),
+    gatewayUrl: displayOrDash(gw.url),
+    httpMethod: displayOrDash(gw.httpMethod),
+    httpStatus: gw.httpStatusCode == null ? '—' : String(gw.httpStatusCode),
+    requestedAt: displayOrDash(gw.requestedAtUtc),
+    respondedAt: displayOrDash(gw.respondedAtUtc),
+    durationMs: gw.durationMs == null ? '—' : `${Math.round(Number(gw.durationMs))} ms`,
+    httpRequestBody: truncateRaw271(gw.requestBody),
+    httpResponseBody: truncateRaw271(gw.responseBody),
+    receiverLibrary
   };
 }
 

@@ -30,6 +30,7 @@ export interface EligibilityStatusDto {
   rejectionReason?: string | null;
   raw271?: string | null;
   raw270?: string | null;
+  transportMetadataJson?: string | null;
   payerName?: string | null;
   planName?: string | null;
   planDetails?: string | null;

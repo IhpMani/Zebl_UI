@@ -27,10 +27,12 @@ export class EligibilityResponseComponent implements OnChanges {
   view: EligibilityResponseViewModel | null = null;
   diagnosticsExpanded = false;
   loadingRawPayloads = false;
+  diagnosticsLoaded = false;
   diagnosticsLoadError: string | null = null;
 
   private raw271Override: string | null = null;
   private raw270Override: string | null = null;
+  private transportOverride: string | null = null;
 
   constructor(private readonly eligibilityApi: EligibilityApiService) {}
 
@@ -42,7 +44,9 @@ export class EligibilityResponseComponent implements OnChanges {
         this.diagnosticsExpanded = false;
         this.raw271Override = null;
         this.raw270Override = null;
+        this.transportOverride = null;
         this.loadingRawPayloads = false;
+        this.diagnosticsLoaded = false;
         this.diagnosticsLoadError = null;
       }
       this.refreshView();
@@ -69,9 +73,7 @@ export class EligibilityResponseComponent implements OnChanges {
       return;
     }
 
-    const has271 = !!(this.response?.raw271 || this.raw271Override);
-    const has270 = !!(this.response?.raw270 || this.raw270Override);
-    if (has271 && has270) {
+    if (this.diagnosticsLoaded) {
       this.refreshView();
       return;
     }
@@ -83,7 +85,9 @@ export class EligibilityResponseComponent implements OnChanges {
       next: status => {
         this.raw271Override = status.raw271 ?? null;
         this.raw270Override = status.raw270 ?? null;
+        this.transportOverride = status.transportMetadataJson ?? null;
         this.loadingRawPayloads = false;
+        this.diagnosticsLoaded = true;
         this.diagnosticsLoadError = null;
         this.refreshView();
       },
@@ -102,11 +106,12 @@ export class EligibilityResponseComponent implements OnChanges {
 
   private refreshView(): void {
     const payload =
-      this.response && (this.raw271Override || this.raw270Override)
+      this.response && (this.raw271Override || this.raw270Override || this.transportOverride)
         ? {
             ...this.response,
             raw271: this.raw271Override ?? this.response.raw271,
-            raw270: this.raw270Override ?? this.response.raw270
+            raw270: this.raw270Override ?? this.response.raw270,
+            transportMetadataJson: this.transportOverride ?? this.response.transportMetadataJson
           }
         : this.response;
     this.view = buildEligibilityResponseViewModel(payload, v => this.formatDate(v));
