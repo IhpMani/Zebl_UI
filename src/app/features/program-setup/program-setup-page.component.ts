@@ -718,6 +718,9 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       state.uploadDirectory = '';
       state.incomingDirectory = '';
       state.processedDirectory = '';
+      if (!state.gatewayDataFormat) {
+        state.gatewayDataFormat = 'X12';
+      }
       this.eligibilityAdvancedMode = false;
       return;
     }
@@ -971,6 +974,8 @@ export class ProgramSetupPageComponent implements OnInit, OnDestroy {
       settings.uploadDirectory = (d.uploadDirectory ?? '').trim() || null;
       settings.incomingDirectory = (d.incomingDirectory ?? '').trim() || null;
       settings.processedDirectory = (d.processedDirectory ?? '').trim() || null;
+    } else {
+      settings.gatewayDataFormat = d.gatewayDataFormat === '12' ? '12' : 'X12';
     }
     return { patientId: null, settings };
   }

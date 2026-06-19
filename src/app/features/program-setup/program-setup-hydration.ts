@@ -8,6 +8,7 @@ import {
   SendingClaimsExtendedSettings,
   SendingClaimsProgramSettings
 } from './program-setup.models';
+import { eligibilityUsesRestGateway } from './eligibility-vendor.util';
 
 type ApiRecord = Record<string, unknown> | null | undefined;
 
@@ -279,7 +280,8 @@ export function hydratePatientEligibilitySettings(raw: ApiRecord): PatientEligib
     incomingDirectory: '',
     processedDirectory: '',
     passwordConfigured: false,
-    showEligibilityResponseViewer: true
+    showEligibilityResponseViewer: true,
+    gatewayDataFormat: 'X12'
   };
   if (!raw || typeof raw !== 'object') {
     return { ...defaults };
@@ -306,8 +308,17 @@ export function hydratePatientEligibilitySettings(raw: ApiRecord): PatientEligib
     incomingDirectory: readApiString(raw, 'incomingDirectory', 'IncomingDirectory'),
     processedDirectory: readApiString(raw, 'processedDirectory', 'ProcessedDirectory'),
     passwordConfigured: readApiBoolean(raw, 'passwordConfigured', false),
-    showEligibilityResponseViewer: readApiBoolean(raw, 'showEligibilityResponseViewer', true)
+    showEligibilityResponseViewer: readApiBoolean(raw, 'showEligibilityResponseViewer', true),
+    gatewayDataFormat: normalizeGatewayDataFormat(readApiString(raw, 'gatewayDataFormat', 'GatewayDataFormat'))
   };
+}
+
+function normalizeGatewayDataFormat(value: string | null | undefined): 'X12' | '12' {
+  const raw = (value ?? '').trim();
+  if (raw === '12' || /^legacy$/i.test(raw) || /^numeric$/i.test(raw)) {
+    return '12';
+  }
+  return 'X12';
 }
 
 export function toPatientEligibilitySavePayload(
@@ -325,6 +336,9 @@ export function toPatientEligibilitySavePayload(
     server: (state.server ?? '').trim(),
     showEligibilityResponseViewer: state.showEligibilityResponseViewer !== false
   };
+  if (eligibilityUsesRestGateway(state.vendor)) {
+    payload['gatewayDataFormat'] = state.gatewayDataFormat === '12' ? '12' : 'X12';
+  }
   if (includeDirectoryFields) {
     payload['uploadDirectory'] = (state.uploadDirectory ?? '').trim();
     payload['incomingDirectory'] = (state.incomingDirectory ?? '').trim();

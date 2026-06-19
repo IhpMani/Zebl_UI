@@ -541,6 +541,19 @@
                   </label>
                 </div>
 
+                <div class="form-row" *ngIf="!usesEligibilitySftpDirectories()">
+                  <label>
+                    <span>Gateway DataFormat</span>
+                    <select [(ngModel)]="settingsData.gatewayDataFormat">
+                      <option value="X12">X12 (Waystar recommended)</option>
+                      <option value="12">12 (legacy numeric — troubleshooting only)</option>
+                    </select>
+                  </label>
+                  <p class="form-hint">
+                    Waystar GatewayAsync expects the string <strong>X12</strong> in the DataFormat form field, not the numeric code 12.
+                  </p>
+                </div>
+
                 <div class="form-row eligibility-actions">
                   <button
                     type="button"

@@ -88,4 +88,6 @@ export interface PatientEligibilityProgramSettings {
   processedDirectory: string;
   passwordConfigured: boolean;
   showEligibilityResponseViewer: boolean;
+  /** GatewayAsync DataFormat form field: X12 (Waystar) or legacy 12. */
+  gatewayDataFormat: 'X12' | '12';
 }

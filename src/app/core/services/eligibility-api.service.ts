@@ -61,6 +61,7 @@ export interface EligibilityConnectionTestSettingsDto {
   incomingDirectory?: string | null;
   processedDirectory?: string | null;
   quarantineDirectory?: string | null;
+  gatewayDataFormat?: string | null;
 }
 
 export interface EligibilityConnectionTestRequestDto {
