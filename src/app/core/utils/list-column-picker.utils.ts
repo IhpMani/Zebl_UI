@@ -54,7 +54,7 @@ const CATEGORY_ORDER = [
 export const SCREEN_IMPORTANT_KEYS: Record<string, string[]> = {
   'Find Claims': ['claClassification', 'claStatus', 'claTotalChargeTRIG', 'claTotalBalanceCC', 'primaryPayerName'],
   'Find Patients': ['patClassification', 'patPaymentMatchingKey', 'patTotalBalanceCC'],
-  'Find Services': ['srvProcedureCode', 'srvTotalInsBalanceCC', 'srvTotalPatBalanceCC'],
+  'Find Services': ['srvProcedureCode', 'srvTotalInsBalanceCC', 'srvTotalPatBalanceCC', 'srvPlace'],
   'Find Payments': ['payClassification', 'patClassification', 'pmt835Ref', 'pmtRemainingCC'],
   'Find Disbursements': ['disbAmount', 'disbCode', 'disbBatchOperationReference'],
   'Find Adjustments': ['adj835Ref', 'adjGroupCode', 'adjReasonCode', 'adjRemarkCode'],
@@ -99,6 +99,7 @@ export function inferListColumnCategory(key: string, label: string): string {
   if (/facility/.test(k) || k === 'facilityname') return 'Facility';
   if (/bill|invoice|submission|admission|discharge|visit/.test(k)) return 'Billing';
   if (/custom/.test(k)) return 'Custom';
+  if (/place/.test(k) || /place of service/.test(l)) return 'Clinical';
   if (/^srv|^adj|^pmt|^disb/.test(k) && /id$/.test(k)) return 'Identity';
   if (/^cla?id$|^pat?id$|^pay?id$|^phy?id$/.test(k)) return 'Identity';
   return 'Other';

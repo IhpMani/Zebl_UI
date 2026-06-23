@@ -11,6 +11,7 @@ export interface ServiceListItem {
   srvDesc: string | null;
   srvCharges: number;
   srvUnits: number | null;
+  srvPlace?: string | null;
   srvTotalBalanceCC: number | null;
   srvTotalAmtPaidCC: number | null;
   srvTotalAdjCC?: number | null;

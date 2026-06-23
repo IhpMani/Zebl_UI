@@ -14,6 +14,9 @@
                 <button class="add-column-btn" (click)="toggleCustomizationDialog()" title="Add Column">
                   Add Column <span class="arrow">▼</span>
                 </button>
+                <button type="button" class="dump-columns-btn" (click)="dumpColumns()" title="Debug: log columns to console">
+                  Dump Columns
+                </button>
               </div>
             </th>
             <th *ngFor="let col of visibleColumns">
@@ -70,6 +73,7 @@
               <span *ngSwitchCase="'srvTotalAmtPaidCC'" class="money-amount" [ngClass]="getCurrencyTone(service.srvTotalAmtPaidCC)">
                 {{ service.srvTotalAmtPaidCC | currency:'USD':'symbol':'1.2-2' }}
               </span>
+              <span *ngSwitchCase="'srvPlace'">{{ getCellValue(service, col.key) }}</span>
               <span *ngSwitchDefault>
                 {{ getCellValue(service, col.key) }}
               </span>
@@ -218,11 +222,16 @@
         <div class="column-section" *ngFor="let section of columnPickerSections">
           <h4>{{ section.title }}</h4>
           <div class="column-list">
-            <label *ngFor="let col of section.columns" class="column-item">
+            <label
+              *ngFor="let col of section.columns"
+              class="column-item"
+              (click)="onPickerLabelClick(col.key, $event)"
+            >
               <input
                 type="checkbox"
-                [checked]="col.visible"
-                (change)="toggleColumnVisibility(col.key)"
+                [checked]="isColumnVisible(col.key)"
+                tabindex="-1"
+                (click)="$event.preventDefault(); $event.stopPropagation(); onPickerLabelClick(col.key, $event)"
               />
               <span>{{ col.label }}</span>
               <span class="column-item-key" *ngIf="columnSearchText.trim()">{{ col.key }}</span>
@@ -263,6 +272,7 @@
       </div>
       <div class="dialog-footer">
         <button class="clear-all-btn" (click)="clearAllColumns()">Clear All</button>
+        <button type="button" class="btn-secondary" (click)="dumpColumns('dialog-footer')">Dump Columns</button>
         <button class="btn-primary" (click)="closeCustomizationDialog()">OK</button>
       </div>
     </div>

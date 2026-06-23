@@ -1,2 +1,12 @@
 /* Match Find Claims list theme (shared styles). */
 @import '../../claims/claim-list/claim-list.component.css';
+
+.dump-columns-btn {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--ps-border, #c8d6e8);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}

@@ -8,8 +8,23 @@ import { getListCellValue } from '../../core/utils/list-cell-value';
 import { formatApiDateTimeDisplay, isApiDateTimeColumnKey } from '../../core/utils/api-datetime-display';
 import {
   buildFlatListPickerSections,
+  dedupeListPickerColumns,
   filterListPickerColumns
 } from '../../core/utils/list-column-picker.utils';
+import {
+  buildColumnPreferencesPayload,
+  orderVisibleColumns,
+  parseColumnPreferences,
+  visibleKeysInDisplayOrder
+} from '../../claims/shared/claim-column-preferences';
+import {
+  cloneDefaultServiceListColumns,
+  DEFAULT_SERVICE_LIST_COLUMNS,
+  SERVICE_LIST_COLUMN_PREFS_KEY,
+  SERVICE_LIST_COLUMN_PREFS_VERSION,
+  SERVICE_LIST_DEFAULT_VISIBLE_KEYS,
+  ServiceListColumnDef
+} from './service-list-default-columns';
 
 @Component({
   selector: 'app-service-list',
@@ -38,92 +53,11 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   // Related columns from other tables
   availableRelatedColumns: Array<{ table: string; key: string; label: string; path: string }> = [];
   selectedAdditionalColumns: Set<string> = new Set<string>();
+  columnDisplayOrder: string[] = [...SERVICE_LIST_DEFAULT_VISIBLE_KEYS];
 
   private destroy$ = new Subject<void>();
 
-  columns: Array<{
-    key: string;
-    label: string;
-    visible: boolean;
-    filterValue: string;
-    isRelatedColumn?: boolean;
-    table?: string;
-  }> = [
-    { key: 'srvID', label: 'Service ID', visible: true, filterValue: '' },
-    { key: 'srvClaFID', label: 'Claim ID', visible: true, filterValue: '' },
-    { key: 'createdDate', label: 'Date Created', visible: true, filterValue: '' },
-    { key: 'srvFromDate', label: 'From Date', visible: true, filterValue: '' },
-    { key: 'srvToDate', label: 'To Date', visible: true, filterValue: '' },
-    { key: 'srvProcedureCode', label: 'Procedure Code', visible: true, filterValue: '' },
-    { key: 'srvDesc', label: 'Description', visible: true, filterValue: '' },
-    { key: 'srvCharges', label: 'Charges', visible: true, filterValue: '' },
-    { key: 'srvUnits', label: 'Units', visible: false, filterValue: '' },
-    { key: 'srvTotalBalanceCC', label: 'Total Balance', visible: true, filterValue: '' },
-    { key: 'srvTotalAmtPaidCC', label: 'Amount Paid', visible: false, filterValue: '' },
-    { key: 'modifiedDate', label: 'Date Modified', visible: false, filterValue: '' },
-    { key: 'srvCreatedUserGUID', label: 'Created User GUID', visible: false, filterValue: '' },
-    { key: 'srvLastUserGUID', label: 'Last User GUID', visible: false, filterValue: '' },
-    { key: 'srvCreatedUserName', label: 'Created User Name', visible: false, filterValue: '' },
-    { key: 'srvLastUserName', label: 'Last User Name', visible: false, filterValue: '' },
-    { key: 'srvCreatedComputerName', label: 'Created Computer Name', visible: false, filterValue: '' },
-    { key: 'srvLastComputerName', label: 'Last Computer Name', visible: false, filterValue: '' },
-    { key: 'srvAllowedAmt', label: 'Allowed Amt', visible: false, filterValue: '' },
-    { key: 'srvApprovedAmt', label: 'Approved Amt', visible: false, filterValue: '' },
-    { key: 'srvAttachCMN', label: 'Attach CMN', visible: false, filterValue: '' },
-    { key: 'srvAuthorizationOverride', label: 'Authorization Override', visible: false, filterValue: '' },
-    { key: 'srvCoPayAmountDue', label: 'Co Pay Amount Due', visible: false, filterValue: '' },
-    { key: 'srvCost', label: 'Cost', visible: false, filterValue: '' },
-    { key: 'srvCustomField1', label: 'Custom Field 1', visible: false, filterValue: '' },
-    { key: 'srvCustomField2', label: 'Custom Field 2', visible: false, filterValue: '' },
-    { key: 'srvCustomField3', label: 'Custom Field 3', visible: false, filterValue: '' },
-    { key: 'srvCustomField4', label: 'Custom Field 4', visible: false, filterValue: '' },
-    { key: 'srvCustomField5', label: 'Custom Field 5', visible: false, filterValue: '' },
-    { key: 'srvDiagnosisPointer', label: 'Diagnosis Pointer', visible: false, filterValue: '' },
-    { key: 'srvDrugUnitCount', label: 'Drug Unit Count', visible: false, filterValue: '' },
-    { key: 'srvDrugUnitMeasurement', label: 'Drug Unit Measurement', visible: false, filterValue: '' },
-    { key: 'srvDrugUnitPrice', label: 'Drug Unit Price', visible: false, filterValue: '' },
-    { key: 'srvEMG', label: 'EMG', visible: false, filterValue: '' },
-    { key: 'srvEndTime', label: 'End Time', visible: false, filterValue: '' },
-    { key: 'srvEPSDT', label: 'EPSDT', visible: false, filterValue: '' },
-    { key: 'srvExpectedPriPmt', label: 'Expected Pri Pmt', visible: false, filterValue: '' },
-    { key: 'srvFirstInsPaymentDateTRIG', label: 'First Ins Payment Date TRIG', visible: false, filterValue: '' },
-    { key: 'srvGUID', label: 'GUID', visible: false, filterValue: '' },
-    { key: 'srvK3FileInformation', label: 'K3 File Information', visible: false, filterValue: '' },
-    { key: 'srvModifier1', label: 'Modifier 1', visible: false, filterValue: '' },
-    { key: 'srvModifier2', label: 'Modifier 2', visible: false, filterValue: '' },
-    { key: 'srvModifier3', label: 'Modifier 3', visible: false, filterValue: '' },
-    { key: 'srvModifier4', label: 'Modifier 4', visible: false, filterValue: '' },
-    { key: 'srvNationalDrugCode', label: 'National Drug Code', visible: false, filterValue: '' },
-    { key: 'srvNonCoveredCharges', label: 'Non Covered Charges', visible: false, filterValue: '' },
-    { key: 'srvPatBalanceReasonCode', label: 'Pat Balance Reason Code', visible: false, filterValue: '' },
-    { key: 'srvPlace', label: 'Place', visible: false, filterValue: '' },
-    { key: 'srvPrescriptionNumber', label: 'Prescription Number', visible: false, filterValue: '' },
-    { key: 'srvPrintLineItem', label: 'Print Line Item', visible: false, filterValue: '' },
-    { key: 'srvProductCode', label: 'Product Code', visible: false, filterValue: '' },
-    { key: 'srvRespChangeDate', label: 'Resp Change Date', visible: false, filterValue: '' },
-    { key: 'srvResponsibleParty', label: 'Responsible Party', visible: false, filterValue: '' },
-    { key: 'srvRevenueCode', label: 'Revenue Code', visible: false, filterValue: '' },
-    { key: 'srvSortTiebreaker', label: 'Sort Tiebreaker', visible: false, filterValue: '' },
-    { key: 'srvStartTime', label: 'Start Time', visible: false, filterValue: '' },
-    { key: 'srvTotalCOAdjTRIG', label: 'Total CO Adj TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalCRAdjTRIG', label: 'Total CR Adj TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalOAAdjTRIG', label: 'Total OA Adj TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalPIAdjTRIG', label: 'Total PI Adj TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalPRAdjTRIG', label: 'Total PR Adj TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalInsAmtPaidTRIG', label: 'Total Ins Amt Paid TRIG', visible: false, filterValue: '' },
-    { key: 'srvTotalPatAmtPaidTRIG', label: 'Total Pat Amt Paid TRIG', visible: false, filterValue: '' },
-    { key: 'srvPerUnitChargesCC', label: 'Per Unit Charges CC', visible: false, filterValue: '' },
-    { key: 'srvModifiersCC', label: 'Modifiers CC', visible: false, filterValue: '' },
-    { key: 'srvRespDaysAgedCC', label: 'Resp Days Aged CC', visible: false, filterValue: '' },
-    { key: 'srvTotalAdjCC', label: 'Total Adj CC', visible: false, filterValue: '' },
-    { key: 'srvTotalOtherAdjCC', label: 'Total Other Adj CC', visible: false, filterValue: '' },
-    { key: 'srvTotalAmtAppliedCC', label: 'Total Amt Applied CC', visible: false, filterValue: '' },
-    { key: 'srvTotalInsBalanceCC', label: 'Total Ins Balance CC', visible: false, filterValue: '' },
-    { key: 'srvTotalPatBalanceCC', label: 'Total Pat Balance CC', visible: false, filterValue: '' },
-    { key: 'srvTotalMinutesCC', label: 'Total Minutes CC', visible: false, filterValue: '' },
-    { key: 'srvAdditionalData', label: 'Additional Data', visible: false, filterValue: '' },
-    { key: 'srvNOCOverride', label: 'NOC Override', visible: false, filterValue: '' }
-  ];
+  columns: ServiceListColumnDef[] = cloneDefaultServiceListColumns();
 
   constructor(
     private serviceApiService: ServiceApiService,
@@ -136,6 +70,9 @@ export class ServiceListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.workspace.updateActiveTabTitle('Find Services');
+    this.mergeMissingColumnDefinitions();
+    this.loadColumnPreferences();
+    this.deduplicateColumns();
     this.loadAvailableColumns();
     this.loadServices(this.currentPage, this.pageSize);
   }
@@ -297,12 +234,15 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }
 
   get visibleColumns() {
-    return this.columns.filter(c => c.visible);
+    return orderVisibleColumns(this.columns, this.columnDisplayOrder);
   }
 
   hideColumn(columnKey: string): void {
     const col = this.columns.find(c => c.key === columnKey);
-    if (col) col.visible = false;
+    if (col) {
+      col.visible = false;
+      this.saveColumnPreferences();
+    }
   }
 
   showColumn(columnKey: string): void {
@@ -467,29 +407,177 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }
 
   toggleCustomizationDialog(): void {
-    this.showCustomizationDialog = !this.showCustomizationDialog;
-    if (!this.showCustomizationDialog) {
+    const opening = !this.showCustomizationDialog;
+    this.showCustomizationDialog = opening;
+    if (opening) {
+      this.logPickerColumnState('dialog-open');
+    } else {
       this.columnSearchText = '';
     }
   }
 
   closeCustomizationDialog(event?: MouseEvent): void {
-    if (event && (event.target as HTMLElement).classList.contains('customization-overlay')) {
-      this.showCustomizationDialog = false;
-      this.columnSearchText = '';
-    } else if (!event) {
+    const shouldClose =
+      !event || (event.target as HTMLElement).classList.contains('customization-overlay');
+    if (shouldClose) {
+      this.saveColumnPreferences();
+      this.dumpColumns('dialog-close');
       this.showCustomizationDialog = false;
       this.columnSearchText = '';
     }
   }
 
-  toggleColumnVisibility(columnKey: string): void {
+  isColumnVisible(columnKey: string): boolean {
+    return this.columns.find(c => c.key === columnKey)?.visible === true;
+  }
+
+  onPickerLabelClick(columnKey: string, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.setColumnVisible(columnKey, !this.isColumnVisible(columnKey));
+  }
+
+  setColumnVisible(columnKey: string, visible: boolean): void {
+    console.log('checkbox clicked', columnKey, visible);
+    console.log('columns before', this.snapshotColumnsForLog());
     const col = this.columns.find(c => c.key === columnKey);
-    if (col) col.visible = !col.visible;
+    if (!col) {
+      console.warn('[ServiceList] column not found for toggle:', columnKey);
+      return;
+    }
+    col.visible = visible;
+    if (visible && !this.columnDisplayOrder.includes(columnKey)) {
+      this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+    }
+    console.log('columns after', this.snapshotColumnsForLog());
+    if (columnKey === 'srvPlace') {
+      console.log(
+        'srvPlace visible after toggle:',
+        this.columns.find(c => c.key === 'srvPlace')?.visible
+      );
+    }
+  }
+
+  toggleColumnVisibility(columnKey: string): void {
+    this.setColumnVisible(columnKey, !this.isColumnVisible(columnKey));
   }
 
   clearAllColumns(): void {
-    this.columns.forEach(col => col.visible = false);
+    this.columns.forEach(col => (col.visible = false));
+    this.columnDisplayOrder = [];
+    this.saveColumnPreferences();
+  }
+
+  dumpColumns(context = 'manual'): void {
+    console.log(`[ServiceList] columns dump (${context})`, this.snapshotColumnsForLog());
+    console.log('[ServiceList] srvPlace entry', this.columns.find(c => c.key === 'srvPlace'));
+    console.log('[ServiceList] visible column keys', this.visibleColumns.map(c => c.key));
+    console.log(
+      '[ServiceList] localStorage prefs',
+      localStorage.getItem(SERVICE_LIST_COLUMN_PREFS_KEY)
+    );
+  }
+
+  private snapshotColumnsForLog(): Array<{ key: string; label: string; visible: boolean }> {
+    return this.columns.map(c => ({ key: c.key, label: c.label, visible: c.visible }));
+  }
+
+  private logPickerColumnState(context: string): void {
+    const { unique, duplicateKeys } = dedupeListPickerColumns(this.columns);
+    console.log(`[ServiceList] deduped columns (${context})`, unique.map(c => c.key));
+    if (duplicateKeys.length > 0) {
+      console.warn('[ServiceList] duplicate column keys', duplicateKeys);
+    }
+    console.log(
+      '[ServiceList] srvPlace in source columns:',
+      this.columns.find(c => c.key === 'srvPlace')
+    );
+    console.log(
+      '[ServiceList] srvPlace in deduped picker:',
+      unique.find(c => c.key === 'srvPlace')
+    );
+  }
+
+  saveColumnPreferences(): void {
+    const preferences = buildColumnPreferencesPayload(
+      SERVICE_LIST_COLUMN_PREFS_VERSION,
+      visibleKeysInDisplayOrder(this.columns, this.columnDisplayOrder),
+      this.selectedAdditionalColumns
+    );
+    localStorage.setItem(SERVICE_LIST_COLUMN_PREFS_KEY, JSON.stringify(preferences));
+    this.columnDisplayOrder = preferences.visibleColumns;
+    console.log('[ServiceList] saved column preferences', preferences);
+  }
+
+  loadColumnPreferences(): void {
+    const preferences = parseColumnPreferences(
+      localStorage.getItem(SERVICE_LIST_COLUMN_PREFS_KEY)
+    );
+    if (!preferences) {
+      this.applyDefaultColumnConfiguration();
+      return;
+    }
+
+    try {
+      const visibleKeys = new Set(preferences.visibleColumns);
+      this.columnDisplayOrder = [...preferences.visibleColumns];
+
+      this.columns.forEach(col => {
+        if (!col.isRelatedColumn) {
+          col.visible = visibleKeys.has(col.key);
+        }
+      });
+
+      if (preferences.selectedAdditional) {
+        preferences.selectedAdditional.forEach(key => this.selectedAdditionalColumns.add(key));
+      }
+
+      this.mergeMissingColumnDefinitions();
+      this.deduplicateColumns();
+    } catch (e) {
+      console.error('[ServiceList] error loading column preferences:', e);
+      this.applyDefaultColumnConfiguration();
+    }
+  }
+
+  private applyDefaultColumnConfiguration(): void {
+    const defaultVisible = new Set<string>(SERVICE_LIST_DEFAULT_VISIBLE_KEYS);
+    this.columns.forEach(col => {
+      col.visible = defaultVisible.has(col.key);
+    });
+    this.columnDisplayOrder = [...SERVICE_LIST_DEFAULT_VISIBLE_KEYS];
+    this.selectedAdditionalColumns = new Set<string>();
+  }
+
+  private mergeMissingColumnDefinitions(): void {
+    const byKey = new Map(this.columns.map(col => [col.key, col]));
+    for (const def of DEFAULT_SERVICE_LIST_COLUMNS) {
+      if (!byKey.has(def.key)) {
+        this.columns.push({ ...def });
+        console.log('[ServiceList] migrated missing column definition:', def.key);
+      }
+    }
+    if (!this.columns.some(c => c.key === 'srvPlace')) {
+      this.columns.push({ key: 'srvPlace', label: 'Place', visible: false, filterValue: '' });
+      console.log('[ServiceList] migrated missing srvPlace column');
+    }
+  }
+
+  private deduplicateColumns(): void {
+    const mergedByKey = new Map<string, ServiceListColumnDef>();
+    for (const col of this.columns) {
+      const key = col.key;
+      if (!key) continue;
+      const existing = mergedByKey.get(key);
+      if (!existing) {
+        mergedByKey.set(key, col);
+        continue;
+      }
+      if (col.visible && !existing.visible) {
+        mergedByKey.set(key, { ...existing, ...col, visible: true });
+      }
+    }
+    this.columns = Array.from(mergedByKey.values());
   }
 
   get filteredColumnsForDialog() {
@@ -497,7 +585,11 @@ export class ServiceListComponent implements OnInit, OnDestroy {
   }
 
   get columnPickerSections() {
-    return buildFlatListPickerSections(this.columns, this.columnSearchText, { standardOnly: true });
+    const { unique, duplicateKeys } = dedupeListPickerColumns(this.columns);
+    if (duplicateKeys.length > 0) {
+      console.warn('[ServiceList] columnPickerSections duplicate keys', duplicateKeys);
+    }
+    return buildFlatListPickerSections(unique, this.columnSearchText, { standardOnly: true });
   }
 
   getStandardColumns() {
@@ -515,6 +607,14 @@ export class ServiceListComponent implements OnInit, OnDestroy {
 
   addRelatedColumn(columnKey: string, label: string, table: string): void {
     if (this.columns.some(c => c.key === columnKey)) {
+      const existing = this.columns.find(c => c.key === columnKey);
+      if (existing) {
+        existing.visible = true;
+        if (!this.columnDisplayOrder.includes(columnKey)) {
+          this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+        }
+        this.saveColumnPreferences();
+      }
       return;
     }
     this.selectedAdditionalColumns.add(columnKey);
@@ -526,6 +626,10 @@ export class ServiceListComponent implements OnInit, OnDestroy {
       isRelatedColumn: true,
       table: table
     });
+    if (!this.columnDisplayOrder.includes(columnKey)) {
+      this.columnDisplayOrder = [...this.columnDisplayOrder, columnKey];
+    }
+    this.saveColumnPreferences();
     this.loadServices(this.currentPage, this.pageSize);
   }
 
@@ -535,6 +639,8 @@ export class ServiceListComponent implements OnInit, OnDestroy {
     if (index >= 0) {
       this.columns.splice(index, 1);
     }
+    this.columnDisplayOrder = this.columnDisplayOrder.filter(k => k !== columnKey);
+    this.saveColumnPreferences();
     this.loadServices(this.currentPage, this.pageSize);
   }
 
