@@ -94,6 +94,13 @@ function normalizeClaimDetail(raw: unknown): Claim {
   const claClass = pickFirstDefined(o['claClassification'], o['ClaClassification']);
   if (claClass !== undefined) o['claClassification'] = claClass as string | null;
 
+  for (let i = 1; i <= 12; i++) {
+    const camel = `claDiagnosis${i}`;
+    const pascal = `ClaDiagnosis${i}`;
+    const val = pickFirstDefined(o[camel], o[pascal]);
+    if (val !== undefined) o[camel] = val as string | null;
+  }
+
   return o as unknown as Claim;
 }
 

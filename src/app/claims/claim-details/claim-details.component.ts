@@ -1277,6 +1277,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
         return this.formatLineEmg(line);
       case 'procedure':
         return (line?.srvProcedureCode ?? '').trim();
+      case 'place':
+        return (line?.srvPlace ?? line?.SrvPlace ?? '').trim();
       case 'from':
         return line?.srvFromDate ?? '';
       case 'to':
@@ -1405,6 +1407,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     const defaultResponsibleParty = previousResponsible > 0
       ? previousResponsible
       : (this.primaryPayerId ?? null);
+    const defaultPlace = (previous?.srvPlace ?? previous?.SrvPlace ?? '').trim();
     const tempId = this.nextTempServiceLineId--;
     const row = this.normalizeServiceLine({
       srvID: tempId,
@@ -1412,6 +1415,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       srvFromDate: defaultFromDate,
       srvToDate: defaultToDate,
       srvProcedureCode: '',
+      srvPlace: defaultPlace,
       srvModifier1: '',
       srvModifier2: '',
       srvModifier3: '',
@@ -1739,6 +1743,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       srvModifier4: line?.srvModifier4 ?? '',
       srvDiagnosisPointer:
         line?.srvDiagnosisPointer ?? line?.SrvDiagnosisPointer ?? '',
+      srvPlace: line?.srvPlace ?? line?.SrvPlace ?? '',
       srvEMG: line?.srvEMG ?? line?.SrvEMG ?? '',
       srvNationalDrugCode: line?.srvNationalDrugCode ?? '',
       srvDrugUnitCount: line?.srvDrugUnitCount ?? null,
@@ -1754,6 +1759,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       srvFromDate: line.srvFromDate || null,
       srvToDate: line.srvToDate || null,
       srvProcedureCode: line.srvProcedureCode || null,
+      srvPlace: line.srvPlace?.trim() || null,
       srvModifier1: line.srvModifier1 || null,
       srvModifier2: line.srvModifier2 || null,
       srvModifier3: line.srvModifier3 || null,
@@ -2185,9 +2191,24 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       claPaperWorkTransmissionCode: this.claim.claPaperWorkTransmissionCode ?? null,
       claPaperWorkControlNumber: this.claim.claPaperWorkControlNumber ?? null,
       claPaperWorkInd: this.claim.claPaperWorkInd ?? null,
+      ...this.buildDiagnosisPayloadFields(),
       additionalData: this.claim.additionalData ?? undefined,
       noteText: partial.noteText
     };
+  }
+
+  private buildDiagnosisPayloadFields(): Record<string, string | null> {
+    const fields: Record<string, string | null> = {};
+    for (const { field } of this.diagnosisFields) {
+      const raw = this.claim?.[field];
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        fields[field] = trimmed || null;
+      } else {
+        fields[field] = raw ?? null;
+      }
+    }
+    return fields;
   }
 
   private getSelectedPrimaryPayerId(): number | null {

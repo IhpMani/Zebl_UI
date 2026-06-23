@@ -522,6 +522,15 @@ button:disabled {
   padding: 6px 4px;
 }
 
+.service-lines-table th.col-place,
+.service-lines-table td.col-place {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  max-width: 4rem;
+  text-align: center;
+  padding: 6px 4px;
+}
+
 .service-lines-table th.col-mod,
 .service-lines-table td.col-mod {
   width: 2.25rem;
