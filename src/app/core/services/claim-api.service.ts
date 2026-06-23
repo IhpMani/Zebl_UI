@@ -67,7 +67,12 @@ function normalizeClaimDetail(raw: unknown): Claim {
   if (raw == null || typeof raw !== 'object') {
     return raw as Claim;
   }
-  const o = { ...(raw as Record<string, unknown>) } as Record<string, unknown>;
+  let source = raw as Record<string, unknown>;
+  const wrapped = source['data'] ?? source['Data'];
+  if (wrapped != null && typeof wrapped === 'object' && !Array.isArray(wrapped)) {
+    source = wrapped as Record<string, unknown>;
+  }
+  const o = { ...source } as Record<string, unknown>;
   const get = (camel: string, pascal: string): unknown =>
     pickFirstDefined(o[camel], o[pascal]);
 

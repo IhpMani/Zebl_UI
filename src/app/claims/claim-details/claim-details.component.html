@@ -102,7 +102,7 @@
                 <div class="form-grid clinical-card">
                   <div class="form-group" *ngFor="let field of diagnosisFields">
                     <label>{{ field.label }}</label>
-                    <input type="text" [(ngModel)]="c[field.field]" [ngModelOptions]="{standalone: true}" />
+                    <input type="text" [(ngModel)]="claimDiagnosisValues[field.field]" [ngModelOptions]="{standalone: true}" />
                   </div>
                 </div>
               </div>

@@ -36,6 +36,7 @@ import {
 } from '../shared/service-line-display.util';
 import {
   buildClaimDiagnosisFormFields,
+  claimDiagnosisFieldKeys,
   emptyClaimDiagnosisValues,
   readClaimDiagnosisValues
 } from '../shared/claim-diagnosis.util';
@@ -60,6 +61,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     { id: 'custom', label: 'Custom Template' }
   ];
   diagnosisFields = buildClaimDiagnosisFormFields();
+  /** Bound diagnosis inputs — dynamic ngModel on claim[field] does not persist reliably under OnPush. */
+  claimDiagnosisValues: Record<string, string> = Object.fromEntries(
+    claimDiagnosisFieldKeys().map((key) => [key, ''])
+  );
 
   /** Classification options from Libraries → List → Claim Classification */
   classificationOptions: ListValueDto[] = [];
@@ -270,6 +275,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   private initNewClaim(): void {
     this.isNewMode = true;
     this.claim = this.createEmptyClaim();
+    this.syncClaimDiagnosisFormFromClaim(this.claim);
     this.claId = null;
     this.error = null;
     this.loading = false;
@@ -1007,7 +1013,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.perfTime('loadClaim post-processing');
           this.claimStatuses = [...CLAIM_STATUS_OPTIONS];
           this.claim = claim;
-          Object.assign(this.claim, readClaimDiagnosisValues(claim));
+          this.syncClaimDiagnosisFormFromClaim(claim);
+          console.debug('[ClaimDetails] diagnosis load', {
+            fromApi: readClaimDiagnosisValues(claim).claDiagnosis1,
+            form: this.claimDiagnosisValues['claDiagnosis1']
+          });
           this.loading = false;
           this.perfMark('loadClaim shell ready (overlay dismissed)');
           if (!this.claim.additionalData) {
@@ -2182,7 +2192,29 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private buildDiagnosisPayloadFields(): Record<string, string | null> {
-    return readClaimDiagnosisValues(this.claim);
+    this.syncClaimDiagnosisClaimFromForm();
+    const fields: Record<string, string | null> = {};
+    for (const key of claimDiagnosisFieldKeys()) {
+      const trimmed = (this.claimDiagnosisValues[key] ?? '').trim();
+      fields[key] = trimmed || null;
+    }
+    return fields;
+  }
+
+  private syncClaimDiagnosisFormFromClaim(source?: Claim | Record<string, unknown> | null): void {
+    const values = readClaimDiagnosisValues(source ?? this.claim);
+    for (const key of claimDiagnosisFieldKeys()) {
+      this.claimDiagnosisValues[key] = values[key] ?? '';
+    }
+  }
+
+  private syncClaimDiagnosisClaimFromForm(): void {
+    if (!this.claim) return;
+    const claimRecord = this.claim as unknown as Record<string, unknown>;
+    for (const key of claimDiagnosisFieldKeys()) {
+      const trimmed = (this.claimDiagnosisValues[key] ?? '').trim();
+      claimRecord[key] = trimmed || null;
+    }
   }
 
   private getSelectedPrimaryPayerId(): number | null {
