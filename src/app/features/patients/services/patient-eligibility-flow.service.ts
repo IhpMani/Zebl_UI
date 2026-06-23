@@ -199,6 +199,8 @@ export class PatientEligibilityFlowService {
       rejectionCode: status.rejectionCode ?? undefined,
       rejectionReason: status.rejectionReason ?? undefined,
       benefits: status.benefits ?? [],
+      structured271: status.structured271 ?? undefined,
+      presentation: status.presentation ?? undefined,
       eligibilityStartDate: status.eligibilityStartDate ?? undefined,
       eligibilityEndDate: status.eligibilityEndDate ?? undefined,
       providerNpi: status.providerNpi ?? undefined,

@@ -1,6 +1,7 @@
 import {
   buildBcbsNjActiveSamplePayload,
   buildEligibilityResponseViewModel,
+  formatEligibilityDateRange,
   mapBenefitRows
 } from './eligibility-response.mapper';
 
@@ -127,5 +128,33 @@ describe('eligibility-response.mapper', () => {
     const vm = buildEligibilityResponseViewModel({ status: 'Active', benefits: [] }, formatDate);
     expect(vm!.hasBenefits).toBe(false);
     expect(mapBenefitRows([])).toEqual([]);
+  });
+
+  it('formats compact eligibility date ranges for presentation', () => {
+    expect(formatEligibilityDateRange('20260101-20261231')).toBe('01/01/2026 - 12/31/2026');
+    expect(formatEligibilityDateRange('20260101')).toBe('01/01/2026');
+    expect(formatEligibilityDateRange('01/01/2024 - 01/01/2024 - 01/01/2024')).toBe('01/01/2024');
+  });
+
+  it('uses presentation display plan name when provided', () => {
+    const vm = buildEligibilityResponseViewModel(
+      {
+        status: 'Active',
+        inquiryStatus: 'Completed',
+        presentation: {
+          summary: {
+            coverageStatus: 'Active',
+            displayPlanName: 'NJ WELLPOINT FULL DUAL ADVANTAGE (HMO D-SNP)',
+            coverageDates: '01/01/2026 - 12/31/2026'
+          },
+          benefitCards: [{ title: 'Health Benefit Plan Coverage', status: 'Active Coverage' }]
+        }
+      },
+      formatDate
+    );
+    expect(vm!.eligibilitySummary.displayPlanName).toBe('NJ WELLPOINT FULL DUAL ADVANTAGE (HMO D-SNP)');
+    expect(vm!.eligibilitySummary.coverageDates).toBe('01/01/2026 - 12/31/2026');
+    expect(vm!.hasPresentation).toBe(true);
+    expect(vm!.benefitCards.length).toBe(1);
   });
 });

@@ -272,7 +272,7 @@
                     <td class="col-emg cell-readonly">
                       <span class="emg-pill" [class.emg-pill--yes]="isServiceLineEmg(line)">{{ formatLineEmg(line) }}</span>
                     </td>
-                    <td><input type="number" [(ngModel)]="line.srvUnits" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
+                    <td><input type="number" [(ngModel)]="line.srvUnits" (ngModelChange)="onServiceLineUnitsChanged(line, $event)" [ngModelOptions]="{standalone: true}" [disabled]="!isEditingServiceLine(line)" /></td>
                     <td>{{ formatCurrency(line.srvCharges) }}</td>
                     <td>{{ formatCurrency(line.srvAllowedAmt) }}</td>
                     <td>{{ formatCurrency(line.srvTotalAmtPaidCC) }}</td>

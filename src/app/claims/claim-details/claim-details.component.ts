@@ -1201,6 +1201,11 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     return Array.isArray(this.serviceLines) ? this.serviceLines : [];
   }
 
+  private setServiceLines(lines: any[]): void {
+    this.serviceLines = lines;
+    this.rebuildDisplayServiceLines();
+  }
+
   private rebuildDisplayServiceLines(): void {
     const lines = [...this.serviceLinesArray];
     const key = this.serviceLineSortKey;
@@ -1430,7 +1435,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       srvPrescriptionNumber: '',
       isNew: true
     });
-    this.serviceLines = [row, ...this.serviceLinesArray];
+    this.setServiceLines([row, ...this.serviceLinesArray]);
     this.selectedServiceLineId = tempId;
     this.startEditServiceLine(row);
     this.cdr.markForCheck();
@@ -1452,7 +1457,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   cancelEditServiceLine(line: any): void {
     const draft = this.serviceLineDrafts[line.srvID];
     if (line?.isNew) {
-      this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+      this.setServiceLines(this.serviceLinesArray.filter(l => l.srvID !== line.srvID));
       this.editingServiceLineIds.delete(line.srvID);
       delete this.serviceLineDrafts[line.srvID];
       this.selectedServiceLineId = this.serviceLinesArray[0]?.srvID ?? null;
@@ -1504,9 +1509,10 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (res: any) => {
           const updated = this.normalizeServiceLine(res?.data ?? res);
           if (line.isNew) {
-            this.serviceLines = this.serviceLinesArray.map(l => l.srvID === line.srvID ? updated : l);
+            this.setServiceLines(this.serviceLinesArray.map(l => l.srvID === line.srvID ? updated : l));
           } else {
             Object.assign(line, updated);
+            this.rebuildDisplayServiceLines();
           }
           this.editingServiceLineIds.delete(updated.srvID);
           delete this.serviceLineDrafts[line.srvID];
@@ -1522,14 +1528,14 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   deleteServiceLine(line: any): void {
     if (!this.claId) return;
     if (line?.isNew) {
-      this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+      this.setServiceLines(this.serviceLinesArray.filter(l => l.srvID !== line.srvID));
       this.cdr.markForCheck();
       return;
     }
     if (!confirm('Delete this service line?')) return;
     this.serviceApi.deleteServiceLine(this.claId, line.srvID).subscribe({
       next: () => {
-        this.serviceLines = this.serviceLinesArray.filter(l => l.srvID !== line.srvID);
+        this.setServiceLines(this.serviceLinesArray.filter(l => l.srvID !== line.srvID));
         this.selectedServiceLineId = this.serviceLinesArray[0]?.srvID ?? null;
         this.cdr.markForCheck();
       },
@@ -1540,8 +1546,13 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  onServiceLineUnitsChanged(line: any): void {
-    const newUnits = line.srvUnits != null && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : 1;
+  onServiceLineUnitsChanged(line: any, newUnitsRaw?: number | string | null): void {
+    const newUnits = newUnitsRaw != null && Number(newUnitsRaw) > 0
+      ? Number(newUnitsRaw)
+      : (line.srvUnits != null && Number(line.srvUnits) > 0 ? Number(line.srvUnits) : 1);
+    if (line.srvUnits !== newUnits) {
+      line.srvUnits = newUnits;
+    }
     const oldUnits = Number(line._prevServiceLineUnits);
     if (!Number.isFinite(oldUnits) || oldUnits <= 0) {
       line._prevServiceLineUnits = newUnits;

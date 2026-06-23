@@ -75,6 +75,132 @@
   flex-shrink: 0;
 }
 
+.benefits-table--structured th,
+.benefits-table--structured td {
+  font-size: 11px;
+}
+
+.message-list,
+.entity-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.message-list li,
+.entity-list li {
+  margin-bottom: 2px;
+}
+
+.field-grid--summary,
+.field-grid--pcp {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.benefit-cards,
+.vendor-cards {
+  display: grid;
+  gap: 8px;
+}
+
+.benefit-card,
+.vendor-card {
+  border: 1px solid var(--ps-border, #dde3ea);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: #fafbfd;
+}
+
+.benefit-card__header {
+  margin-bottom: 6px;
+}
+
+.benefit-card__title,
+.vendor-card__role {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ps-text, #1a2332);
+}
+
+.benefit-card__status {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--ps-text-muted, #5a6578);
+}
+
+.benefit-card__line {
+  margin-top: 6px;
+}
+
+.benefit-card__line-label,
+.benefit-card__notes-label,
+.financial-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ps-text-muted, #5a6578);
+  margin-bottom: 2px;
+}
+
+.benefit-card__values,
+.benefit-card__bullets,
+.benefit-card__notes ul,
+.amount-list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.benefit-card__values li,
+.benefit-card__bullets li,
+.benefit-card__notes li,
+.amount-list li {
+  margin-bottom: 2px;
+}
+
+.amount-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.financial-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.financial-block {
+  border: 1px solid var(--ps-border, #dde3ea);
+  border-radius: 4px;
+  padding: 8px;
+  background: #fafbfd;
+}
+
+.vendor-card__name {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vendor-card__phone,
+.vendor-card__contact {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--ps-text-muted, #5a6578);
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .field-grid--summary,
+  .field-grid--pcp {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .panel--benefits {
   flex: 1;
   min-height: 200px;

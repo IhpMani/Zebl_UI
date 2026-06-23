@@ -21,6 +21,8 @@ export interface EligibilityResponsePayload {
   eligibilityStartDate?: string | null;
   eligibilityEndDate?: string | null;
   benefits?: EligibilityBenefitRowPayload[] | null;
+  structured271?: EligibilityStructured271Dto | null;
+  presentation?: EligibilityPresentationDto | null;
   errorMessage?: string | null;
   payerMessage?: string | null;
   rejectionCode?: string | null;
@@ -41,6 +43,135 @@ export interface EligibilityBenefitRowPayload {
   benefit?: string | null;
   amount?: string | null;
   description?: string | null;
+}
+
+export interface EligibilityStructured271Dto {
+  summary?: EligibilitySummaryDto | null;
+  benefits?: BenefitEntryDto[] | null;
+  vendorContacts?: VendorContactDto[] | null;
+  primaryCareProvider?: PrimaryCareProviderDto | null;
+  globalMessages?: string[] | null;
+}
+
+export interface EligibilitySummaryDto {
+  coverageStatus?: string | null;
+  planName?: string | null;
+  groupName?: string | null;
+  groupNumber?: string | null;
+  planSponsor?: string | null;
+  insuranceType?: string | null;
+  coveragePeriod?: string | null;
+  payerName?: string | null;
+  subscriberName?: string | null;
+  eligibilityStartDate?: string | null;
+  eligibilityEndDate?: string | null;
+}
+
+export interface BenefitEntryDto {
+  serviceType?: string | null;
+  serviceTypeCode?: string | null;
+  status?: string | null;
+  network?: string | null;
+  timePeriod?: string | null;
+  copay?: number | null;
+  coinsurance?: number | null;
+  deductible?: number | null;
+  outOfPocket?: number | null;
+  authorizationRequired?: boolean | null;
+  placeOfService?: string | null;
+  planDescription?: string | null;
+  messages?: string[] | null;
+}
+
+export interface VendorContactDto {
+  serviceType?: string | null;
+  entityRole?: string | null;
+  vendorName?: string | null;
+  contactName?: string | null;
+  phoneNumber?: string | null;
+  faxNumber?: string | null;
+  email?: string | null;
+  address1?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  npi?: string | null;
+}
+
+export interface PrimaryCareProviderDto {
+  name?: string | null;
+  phone?: string | null;
+  fax?: string | null;
+  email?: string | null;
+  address1?: string | null;
+  address2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  npi?: string | null;
+}
+
+export interface EligibilityBenefitSectionRow {
+  serviceType: string;
+  status: string;
+  network: string;
+  copay: string;
+  authorizationRequired: string;
+  notes: string;
+  deductible: string;
+  outOfPocket: string;
+  timePeriod: string;
+  placeOfService: string;
+}
+
+export interface EligibilityPresentationDto {
+  summary?: EligibilityPresentationSummaryDto | null;
+  financialSummary?: EligibilityFinancialSummaryDto | null;
+  benefitCards?: EligibilityBenefitCardDto[] | null;
+  vendorContacts?: EligibilityVendorPresentationDto[] | null;
+  primaryCareProvider?: PrimaryCareProviderDto | null;
+  additionalNotes?: string[] | null;
+}
+
+export interface EligibilityPresentationSummaryDto {
+  coverageStatus?: string | null;
+  displayPlanName?: string | null;
+  groupName?: string | null;
+  groupNumber?: string | null;
+  planSponsor?: string | null;
+  insuranceType?: string | null;
+  coverageDates?: string | null;
+  payerName?: string | null;
+}
+
+export interface EligibilityFinancialSummaryDto {
+  deductibles?: EligibilityAmountLineDto[] | null;
+  outOfPocket?: EligibilityAmountLineDto[] | null;
+}
+
+export interface EligibilityAmountLineDto {
+  label: string;
+  amount: string;
+}
+
+export interface EligibilityBenefitCardDto {
+  title: string;
+  status?: string | null;
+  lines?: EligibilityBenefitCardLineDto[] | null;
+  bulletItems?: string[] | null;
+  notes?: string[] | null;
+}
+
+export interface EligibilityBenefitCardLineDto {
+  label: string;
+  values: string[];
+}
+
+export interface EligibilityVendorPresentationDto {
+  role: string;
+  vendorName: string;
+  phone?: string | null;
+  contactName?: string | null;
 }
 
 export type CoverageBadgeKind = 'active' | 'inactive' | 'partial' | 'error' | 'processing';
@@ -80,6 +211,33 @@ export interface EligibilityResponseViewModel {
   controlNumber: string;
   benefitRows: EligibilityBenefitGridRow[];
   hasBenefits: boolean;
+  hasStructuredBenefits: boolean;
+  hasPresentation: boolean;
+  eligibilitySummary: {
+    coverageStatus: string;
+    planName: string;
+    displayPlanName: string;
+    groupName: string;
+    insuranceType: string;
+    coverageDates: string;
+    planSponsor: string;
+    groupNumber: string;
+  };
+  financialSummary: {
+    deductibles: EligibilityAmountLineDto[];
+    outOfPocket: EligibilityAmountLineDto[];
+    hasFinancialData: boolean;
+  };
+  benefitCards: EligibilityBenefitCardDto[];
+  structuredBenefitRows: EligibilityBenefitSectionRow[];
+  vendorContacts: VendorContactDto[];
+  vendorPresentations: EligibilityVendorPresentationDto[];
+  hasVendorContacts: boolean;
+  primaryCareProvider: PrimaryCareProviderDto | null;
+  hasPrimaryCareProvider: boolean;
+  globalMessages: string[];
+  additionalNotes: string[];
+  hasAdditionalNotes: boolean;
   /** Primary message when benefit grid is empty. */
   benefitsEmptyTitle: string;
   /** Secondary hint; omitted when null. */

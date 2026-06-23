@@ -37,6 +37,8 @@ export interface EligibilityStatusDto {
   eligibilityStartDate?: string | null;
   eligibilityEndDate?: string | null;
   benefits?: EligibilityBenefitDto[] | null;
+  structured271?: EligibilityStructured271Dto | null;
+  presentation?: EligibilityPresentationDto | null;
   providerNpi?: string | null;
   providerMode?: string | null;
   usedPayerOverride?: boolean;
@@ -110,6 +112,121 @@ export interface EligibilityBenefitDto {
   benefit?: string | null;
   amount?: string | null;
   description?: string | null;
+}
+
+export interface EligibilityStructured271Dto {
+  summary?: EligibilitySummaryDto | null;
+  benefits?: BenefitEntryDto[] | null;
+  vendorContacts?: VendorContactDto[] | null;
+  primaryCareProvider?: PrimaryCareProviderDto | null;
+  globalMessages?: string[] | null;
+}
+
+export interface EligibilitySummaryDto {
+  coverageStatus?: string | null;
+  planName?: string | null;
+  groupName?: string | null;
+  groupNumber?: string | null;
+  planSponsor?: string | null;
+  insuranceType?: string | null;
+  coveragePeriod?: string | null;
+  payerName?: string | null;
+  subscriberName?: string | null;
+  eligibilityStartDate?: string | null;
+  eligibilityEndDate?: string | null;
+}
+
+export interface BenefitEntryDto {
+  serviceType?: string | null;
+  status?: string | null;
+  network?: string | null;
+  timePeriod?: string | null;
+  copay?: number | null;
+  coinsurance?: number | null;
+  deductible?: number | null;
+  outOfPocket?: number | null;
+  authorizationRequired?: boolean | null;
+  placeOfService?: string | null;
+  planDescription?: string | null;
+  messages?: string[] | null;
+}
+
+export interface VendorContactDto {
+  serviceType?: string | null;
+  entityRole?: string | null;
+  vendorName?: string | null;
+  contactName?: string | null;
+  phoneNumber?: string | null;
+  faxNumber?: string | null;
+  email?: string | null;
+  address1?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  npi?: string | null;
+}
+
+export interface PrimaryCareProviderDto {
+  name?: string | null;
+  phone?: string | null;
+  fax?: string | null;
+  email?: string | null;
+  address1?: string | null;
+  address2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  npi?: string | null;
+}
+
+export interface EligibilityPresentationDto {
+  summary?: EligibilityPresentationSummaryDto | null;
+  financialSummary?: EligibilityFinancialSummaryDto | null;
+  benefitCards?: EligibilityBenefitCardDto[] | null;
+  vendorContacts?: EligibilityVendorPresentationDto[] | null;
+  primaryCareProvider?: PrimaryCareProviderDto | null;
+  additionalNotes?: string[] | null;
+}
+
+export interface EligibilityPresentationSummaryDto {
+  coverageStatus?: string | null;
+  displayPlanName?: string | null;
+  groupName?: string | null;
+  groupNumber?: string | null;
+  planSponsor?: string | null;
+  insuranceType?: string | null;
+  coverageDates?: string | null;
+  payerName?: string | null;
+}
+
+export interface EligibilityFinancialSummaryDto {
+  deductibles?: EligibilityAmountLineDto[] | null;
+  outOfPocket?: EligibilityAmountLineDto[] | null;
+}
+
+export interface EligibilityAmountLineDto {
+  label: string;
+  amount: string;
+}
+
+export interface EligibilityBenefitCardDto {
+  title: string;
+  status?: string | null;
+  lines?: EligibilityBenefitCardLineDto[] | null;
+  bulletItems?: string[] | null;
+  notes?: string[] | null;
+}
+
+export interface EligibilityBenefitCardLineDto {
+  label: string;
+  values: string[];
+}
+
+export interface EligibilityVendorPresentationDto {
+  role: string;
+  vendorName: string;
+  phone?: string | null;
+  contactName?: string | null;
 }
 
 export interface EligibilityPatientHistoryItemDto {

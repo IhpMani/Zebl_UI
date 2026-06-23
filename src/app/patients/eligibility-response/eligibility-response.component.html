@@ -8,64 +8,178 @@
 
     <div class="eligibility-body">
 
-      <section class="panel" aria-label="Payer information">
-        <h3 class="panel-title">Payer Information</h3>
-        <dl class="field-grid field-grid--payer">
-          <div class="field field--payer-name">
+      <section class="panel" aria-label="Eligibility summary">
+        <h3 class="panel-title">Eligibility Summary</h3>
+        <dl class="field-grid field-grid--summary">
+          <div class="field">
+            <dt>Coverage Status</dt>
+            <dd>
+              <span class="coverage-emphasis" [attr.data-coverage]="view.coverageKind">{{ view.eligibilitySummary.coverageStatus }}</span>
+            </dd>
+          </div>
+          <div class="field">
             <dt>Payer</dt>
             <dd class="field-value field-value--strong">{{ view.payerName }}</dd>
           </div>
           <div class="field">
-            <dt>Coverage</dt>
-            <dd>
-              <span class="coverage-emphasis" [attr.data-coverage]="view.coverageKind">{{ view.coverageLabel }}</span>
-            </dd>
-          </div>
-          <div class="field">
-            <dt>Plan</dt>
-            <dd class="field-value">{{ view.planType }}</dd>
-          </div>
-        </dl>
-        <p class="rejection-summary" *ngIf="view.rejectionSummary" role="status">
-          {{ view.rejectionSummary }}
-        </p>
-        <p class="wait-line" *ngIf="view.waitingMessage" aria-live="polite">
-          <span class="wait-line__spinner" *ngIf="view.isLoading" aria-hidden="true"></span>
-          {{ view.waitingMessage }}
-        </p>
-      </section>
-
-      <section class="panel" aria-label="Insured information">
-        <h3 class="panel-title">Insured's Information</h3>
-        <p class="insured-line">{{ view.insuredLine }}</p>
-        <dl class="field-grid field-grid--insured">
-          <div class="field">
-            <dt>Identification</dt>
+            <dt>Member ID</dt>
             <dd class="field-value mono">{{ view.memberId }}</dd>
-          </div>
-          <div class="field">
-            <dt>DOB</dt>
-            <dd class="field-value">{{ view.patientDob }}</dd>
-          </div>
-          <div class="field">
-            <dt>Gender</dt>
-            <dd class="field-value">{{ view.patientGender }}</dd>
-          </div>
-          <div class="field">
-            <dt>Eligibility Date</dt>
-            <dd class="field-value">{{ view.eligibilityDateRange }}</dd>
           </div>
           <div class="field">
             <dt>Inquiry Date</dt>
             <dd class="field-value">{{ view.inquiryDate }}</dd>
           </div>
         </dl>
+        <p class="rejection-summary" *ngIf="view.rejectionSummary" role="status">{{ view.rejectionSummary }}</p>
+        <p class="wait-line" *ngIf="view.waitingMessage" aria-live="polite">
+          <span class="wait-line__spinner" *ngIf="view.isLoading" aria-hidden="true"></span>
+          {{ view.waitingMessage }}
+        </p>
       </section>
 
-      <section class="panel panel--benefits" aria-label="Benefit details">
-        <h3 class="panel-title">Benefit Details</h3>
+      <section class="panel" aria-label="Plan information" *ngIf="view.hasPresentation || view.eligibilitySummary.displayPlanName !== '—'">
+        <h3 class="panel-title">Plan Information</h3>
+        <dl class="field-grid field-grid--summary">
+          <div class="field field--wide">
+            <dt>Plan Name</dt>
+            <dd class="field-value field-value--strong">{{ view.eligibilitySummary.displayPlanName }}</dd>
+          </div>
+          <div class="field" *ngIf="view.eligibilitySummary.planSponsor !== '—'">
+            <dt>Plan Sponsor</dt>
+            <dd class="field-value">{{ view.eligibilitySummary.planSponsor }}</dd>
+          </div>
+          <div class="field" *ngIf="view.eligibilitySummary.groupName !== '—'">
+            <dt>Group Name</dt>
+            <dd class="field-value">{{ view.eligibilitySummary.groupName }}</dd>
+          </div>
+          <div class="field" *ngIf="view.eligibilitySummary.groupNumber !== '—'">
+            <dt>Group Number</dt>
+            <dd class="field-value mono">{{ view.eligibilitySummary.groupNumber }}</dd>
+          </div>
+          <div class="field" *ngIf="view.eligibilitySummary.insuranceType !== '—'">
+            <dt>Insurance Type</dt>
+            <dd class="field-value">{{ view.eligibilitySummary.insuranceType }}</dd>
+          </div>
+        </dl>
+      </section>
 
-        <div class="benefits-table-wrap" *ngIf="view.hasBenefits">
+      <section class="panel" aria-label="Coverage dates">
+        <h3 class="panel-title">Coverage Dates</h3>
+        <dl class="field-grid field-grid--summary">
+          <div class="field field--wide">
+            <dt>Eligibility Period</dt>
+            <dd class="field-value">{{ view.eligibilitySummary.coverageDates }}</dd>
+          </div>
+          <div class="field">
+            <dt>Subscriber</dt>
+            <dd class="field-value">{{ view.subscriberName }}</dd>
+          </div>
+          <div class="field">
+            <dt>DOB</dt>
+            <dd class="field-value">{{ view.patientDob }}</dd>
+          </div>
+        </dl>
+        <p class="insured-line">{{ view.insuredLine }}</p>
+      </section>
+
+      <section class="panel" aria-label="Financial summary" *ngIf="view.financialSummary.hasFinancialData">
+        <h3 class="panel-title">Financial Summary</h3>
+        <div class="financial-grid">
+          <div class="financial-block" *ngIf="view.financialSummary.deductibles.length">
+            <h4 class="financial-label">Deductible</h4>
+            <ul class="amount-list">
+              <li *ngFor="let line of view.financialSummary.deductibles">
+                <span>{{ line.label }}</span>
+                <strong>{{ line.amount }}</strong>
+              </li>
+            </ul>
+          </div>
+          <div class="financial-block" *ngIf="view.financialSummary.outOfPocket.length">
+            <h4 class="financial-label">Out of Pocket</h4>
+            <ul class="amount-list">
+              <li *ngFor="let line of view.financialSummary.outOfPocket">
+                <span>{{ line.label }}</span>
+                <strong>{{ line.amount }}</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Primary care provider" *ngIf="view.hasPrimaryCareProvider && view.primaryCareProvider as pcp">
+        <h3 class="panel-title">Primary Care Provider</h3>
+        <dl class="field-grid field-grid--pcp">
+          <div class="field">
+            <dt>Name</dt>
+            <dd class="field-value">{{ pcp.name || '—' }}</dd>
+          </div>
+          <div class="field">
+            <dt>Phone</dt>
+            <dd class="field-value">{{ pcp.phone || '—' }}</dd>
+          </div>
+          <div class="field">
+            <dt>NPI</dt>
+            <dd class="field-value mono">{{ pcp.npi || '—' }}</dd>
+          </div>
+          <div class="field field--wide">
+            <dt>Address</dt>
+            <dd class="field-value">{{ formatPcpAddress(pcp) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel panel--benefits" aria-label="Benefit details" *ngIf="view.hasPresentation">
+        <h3 class="panel-title">Benefit Details</h3>
+        <div class="benefit-cards">
+          <article class="benefit-card" *ngFor="let card of view.benefitCards">
+            <header class="benefit-card__header">
+              <h4 class="benefit-card__title">{{ card.title }}</h4>
+              <p class="benefit-card__status" *ngIf="card.status">Status: {{ card.status }}</p>
+            </header>
+
+            <div class="benefit-card__line" *ngFor="let line of card.lines">
+              <div class="benefit-card__line-label">{{ line.label }}</div>
+              <ul class="benefit-card__values">
+                <li *ngFor="let value of line.values">{{ value }}</li>
+              </ul>
+            </div>
+
+            <ul class="benefit-card__bullets" *ngIf="card.bulletItems?.length">
+              <li *ngFor="let item of card.bulletItems">{{ item }}</li>
+            </ul>
+
+            <div class="benefit-card__notes" *ngIf="card.notes?.length">
+              <div class="benefit-card__notes-label">Notes</div>
+              <ul>
+                <li *ngFor="let note of card.notes">{{ note }}</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Vendor contacts" *ngIf="view.hasVendorContacts">
+        <h3 class="panel-title">Vendor Contacts</h3>
+        <div class="vendor-cards">
+          <article class="vendor-card" *ngFor="let vendor of view.vendorPresentations">
+            <h4 class="vendor-card__role">{{ vendor.role }}</h4>
+            <p class="vendor-card__name">{{ vendor.vendorName }}</p>
+            <p class="vendor-card__phone" *ngIf="vendor.phone">Phone: {{ vendor.phone }}</p>
+            <p class="vendor-card__contact" *ngIf="vendor.contactName">{{ vendor.contactName }}</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Additional notes" *ngIf="view.hasAdditionalNotes">
+        <h3 class="panel-title">Additional Notes</h3>
+        <ul class="message-list">
+          <li *ngFor="let note of view.additionalNotes">{{ note }}</li>
+        </ul>
+      </section>
+
+      <section class="panel panel--benefits" aria-label="Legacy benefit details" *ngIf="!view.hasPresentation && view.hasBenefits">
+        <h3 class="panel-title">Benefit Details</h3>
+        <div class="benefits-table-wrap">
           <table class="benefits-table">
             <thead>
               <tr>
@@ -87,14 +201,14 @@
             </tbody>
           </table>
         </div>
-
-        <p class="benefits-empty" *ngIf="!view.hasBenefits && view.benefitsEmptyTitle">
-          {{ view.benefitsEmptyTitle }}
-        </p>
-        <p class="form-hint form-hint--block" *ngIf="!view.hasBenefits && view.benefitsEmptyHint">
-          {{ view.benefitsEmptyHint }}
-        </p>
       </section>
+
+      <p class="benefits-empty" *ngIf="!view.hasBenefits && view.benefitsEmptyTitle">
+        {{ view.benefitsEmptyTitle }}
+      </p>
+      <p class="form-hint form-hint--block" *ngIf="!view.hasBenefits && view.benefitsEmptyHint">
+        {{ view.benefitsEmptyHint }}
+      </p>
 
       <section class="panel panel--diagnostics">
         <button

@@ -2,9 +2,18 @@ import {
   CoverageBadgeKind,
   EligibilityBenefitGridRow,
   EligibilityBenefitRowPayload,
+  EligibilityBenefitSectionRow,
   EligibilityResponsePayload,
   EligibilityResponseViewModel,
-  EligibilityTransportView
+  EligibilityStructured271Dto,
+  EligibilityPresentationDto,
+  EligibilityBenefitCardDto,
+  EligibilityAmountLineDto,
+  EligibilityVendorPresentationDto,
+  EligibilityTransportView,
+  BenefitEntryDto,
+  PrimaryCareProviderDto,
+  VendorContactDto
 } from './eligibility-response.models';
 
 /** X12 service type codes (common EB03 values). */
@@ -246,8 +255,18 @@ export function buildEligibilityResponseViewModel(
   }
 
   const benefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapBenefitRows(payload.benefits ?? []);
+  const structured = payload.structured271 ?? null;
+  const presentation = payload.presentation ?? null;
+  const structuredBenefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapStructuredBenefitRows(structured);
+  const eligibilitySummary = mapEligibilitySummary(presentation, structured, payload, formatDate);
+  const financialSummary = mapFinancialSummary(presentation);
+  const benefitCards = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapBenefitCards(presentation);
+  const vendorPresentations = mapVendorPresentations(presentation);
+  const additionalNotes = presentation?.additionalNotes ?? [];
+  const pcp = presentation?.primaryCareProvider ?? structured?.primaryCareProvider ?? null;
+  const hasPresentation = !!presentation && (!!benefitCards.length || !!presentation.summary?.displayPlanName);
 
-  if (!isLoading && !isInFlightLifecycle(lifecycle) && lifecycle === 'completed') {
+  if (!isLoading && !isInFlightLifecycle(lifecycle) && lifecycle === 'completed' && !hasPresentation) {
     const derived = deriveCoverageFromBenefitRows(benefitRows, coverageRaw);
     coverageKind = derived.kind;
     coverageLabel = derived.label;
@@ -258,7 +277,7 @@ export function buildEligibilityResponseViewModel(
     isLoading,
     lifecycle,
     lifecycleLabel,
-    benefitRows.length > 0,
+    benefitRows.length > 0 || structuredBenefitRows.length > 0 || benefitCards.length > 0,
     coverageKind,
     payload.errorMessage,
     payload.payerMessage,
@@ -310,8 +329,8 @@ export function buildEligibilityResponseViewModel(
     coverageKind,
     operationalSummary,
     insuredLine,
-    payerName: displayOrDash(payload.payerName),
-    planType: displayOrDash(sanitizePlanName(payload.planName)),
+    payerName: displayOrDash(presentation?.summary?.payerName ?? payload.payerName),
+    planType: displayOrDash(eligibilitySummary.displayPlanName || eligibilitySummary.planName || sanitizePlanName(payload.planName)),
     planDetails: displayOrDash(payload.planDetails),
     subscriberName: displayOrDash(payload.subscriberName),
     patientName: displayOrDash(payload.patientName),
@@ -319,12 +338,26 @@ export function buildEligibilityResponseViewModel(
     patientGender: displayOrDash(payload.patientGender),
     memberId: displayOrDash(payload.memberId),
     patientAddress: displayOrDash(payload.patientAddress),
-    eligibilityDateRange,
+    eligibilityDateRange: eligibilitySummary.coverageDates || eligibilityDateRange,
     inquiryDate: displayOrDash(formatDate(payload.createdAt)),
     providerDisplay,
     controlNumber: displayOrDash(payload.controlNumber),
     benefitRows,
-    hasBenefits: benefitRows.length > 0,
+    hasBenefits: benefitRows.length > 0 || structuredBenefitRows.length > 0 || benefitCards.length > 0,
+    hasStructuredBenefits: structuredBenefitRows.length > 0,
+    hasPresentation,
+    eligibilitySummary,
+    financialSummary,
+    benefitCards,
+    structuredBenefitRows,
+    vendorContacts: structured?.vendorContacts ?? [],
+    vendorPresentations,
+    hasVendorContacts: vendorPresentations.length > 0,
+    primaryCareProvider: pcp,
+    hasPrimaryCareProvider: hasPcp(pcp),
+    globalMessages: structured?.globalMessages ?? [],
+    additionalNotes,
+    hasAdditionalNotes: additionalNotes.length > 0,
     benefitsEmptyTitle: benefitsEmpty.title,
     benefitsEmptyHint: benefitsEmpty.hint,
     rejectionSummary,
@@ -438,11 +471,23 @@ function resolveServiceTypeLabel(
   benefitCode: string,
   description: string
 ): string {
-  const code = rawService.toUpperCase();
-  if (SERVICE_TYPE_NAMES[code]) return SERVICE_TYPE_NAMES[code];
-  if (SERVICE_TYPE_NAMES[benefitCode.toUpperCase()]) return SERVICE_TYPE_NAMES[benefitCode.toUpperCase()];
+  if (isCorruptServiceType(rawService)) {
+    const tokens = splitServiceTypeTokens(rawService);
+    for (const token of tokens) {
+      const mapped = lookupServiceTypeCode(token);
+      if (mapped) return mapped;
+    }
+    return 'Unknown';
+  }
 
-  if (rawService && !/^[16]$/.test(rawService) && rawService.length > 2) {
+  const code = rawService.toUpperCase();
+  const fromService = lookupServiceTypeCode(code);
+  if (fromService) return fromService;
+
+  const fromBenefit = lookupServiceTypeCode(benefitCode.toUpperCase());
+  if (fromBenefit) return fromBenefit;
+
+  if (rawService && !/^[16]$/.test(rawService) && rawService.length > 2 && !isCorruptServiceType(rawService)) {
     return titleCaseWords(rawService);
   }
 
@@ -451,12 +496,26 @@ function resolveServiceTypeLabel(
     if (fromDesc) return fromDesc;
   }
 
-  if (benefitCode && !/^[16ABCG]$/.test(benefitCode)) {
-    const mapped = SERVICE_TYPE_NAMES[benefitCode.toUpperCase()];
-    if (mapped) return mapped;
-  }
+  return 'Unknown';
+}
 
-  return rawService ? titleCaseWords(rawService) : 'General Coverage';
+function isCorruptServiceType(value: string | null | undefined): boolean {
+  const text = (value ?? '').trim();
+  if (!text) return false;
+  return /[{}~*>]/.test(text);
+}
+
+function splitServiceTypeTokens(raw: string): string[] {
+  return raw
+    .split(/[{}~*>^:,]+/)
+    .map(token => token.trim())
+    .filter(Boolean);
+}
+
+function lookupServiceTypeCode(code: string): string | null {
+  const normalized = (code ?? '').trim().toUpperCase();
+  if (!normalized) return null;
+  return SERVICE_TYPE_NAMES[normalized] ?? null;
 }
 
 function inferServiceFromDescription(description: string): string | null {
@@ -471,16 +530,204 @@ function inferServiceFromDescription(description: string): string | null {
   return null;
 }
 
+function mapStructuredBenefitRows(structured: EligibilityStructured271Dto | null): EligibilityBenefitSectionRow[] {
+  if (!structured?.benefits?.length) return [];
+
+  return structured.benefits
+    .map((b): EligibilityBenefitSectionRow => ({
+      serviceType: displayOrDash(resolveStructuredServiceType(b)),
+      status: displayOrDash(b.status),
+      network: displayOrDash(b.network),
+      copay: formatNullableCurrency(b.copay),
+      authorizationRequired: formatAuthorization(b.authorizationRequired),
+      notes: formatBenefitNotes(b),
+      deductible: formatNullableCurrency(b.deductible),
+      outOfPocket: formatNullableCurrency(b.outOfPocket),
+      timePeriod: displayOrDash(b.timePeriod),
+      placeOfService: displayOrDash(b.placeOfService)
+    }))
+    .filter(row => row.serviceType !== '—' || row.status !== '—');
+}
+
+function resolveStructuredServiceType(benefit: BenefitEntryDto): string {
+  const rawCode = (benefit.serviceTypeCode ?? benefit.serviceType ?? '').trim();
+  if (isCorruptServiceType(rawCode)) {
+    const tokens = splitServiceTypeTokens(rawCode);
+    for (const token of tokens) {
+      const mapped = lookupServiceTypeCode(token);
+      if (mapped) return mapped;
+    }
+    return 'Unknown';
+  }
+
+  const mapped = lookupServiceTypeCode(rawCode.toUpperCase());
+  if (mapped) return mapped;
+
+  const label = (benefit.serviceType ?? '').trim();
+  if (label && !isCorruptServiceType(label) && label.length > 3) {
+    return label;
+  }
+
+  return 'Unknown';
+}
+
+function mapBenefitCards(presentation: EligibilityPresentationDto | null): EligibilityBenefitCardDto[] {
+  return (presentation?.benefitCards ?? []).filter(card => !!card?.title);
+}
+
+function mapFinancialSummary(presentation: EligibilityPresentationDto | null): EligibilityResponseViewModel['financialSummary'] {
+  const deductibles = presentation?.financialSummary?.deductibles ?? [];
+  const outOfPocket = presentation?.financialSummary?.outOfPocket ?? [];
+  return {
+    deductibles,
+    outOfPocket,
+    hasFinancialData: deductibles.length > 0 || outOfPocket.length > 0
+  };
+}
+
+function mapVendorPresentations(presentation: EligibilityPresentationDto | null): EligibilityVendorPresentationDto[] {
+  return presentation?.vendorContacts ?? [];
+}
+
+function mapEligibilitySummary(
+  presentation: EligibilityPresentationDto | null,
+  structured: EligibilityStructured271Dto | null,
+  payload: EligibilityResponsePayload,
+  formatDate: (value: unknown) => string
+): EligibilityResponseViewModel['eligibilitySummary'] {
+  const summary = presentation?.summary ?? null;
+  const structuredSummary = structured?.summary;
+  const coverageDates =
+    summary?.coverageDates ||
+    formatEligibilityDateRange(structuredSummary?.coveragePeriod) ||
+    formatEligibilityDateRange(
+      buildRawDateRange(
+        structuredSummary?.eligibilityStartDate ?? payload.eligibilityStartDate,
+        structuredSummary?.eligibilityEndDate ?? payload.eligibilityEndDate
+      )
+    ) ||
+    formatDateRange(
+      formatDate(structuredSummary?.eligibilityStartDate ?? payload.eligibilityStartDate),
+      formatDate(structuredSummary?.eligibilityEndDate ?? payload.eligibilityEndDate)
+    );
+
+  const displayPlanName =
+    summary?.displayPlanName ||
+    sanitizePlanName(structuredSummary?.planName ?? payload.planName) ||
+    '';
+
+  return {
+    coverageStatus: displayOrDash(summary?.coverageStatus ?? structuredSummary?.coverageStatus ?? payload.status),
+    planName: displayOrDash(sanitizePlanName(payload.planName ?? structuredSummary?.planName)),
+    displayPlanName: displayOrDash(displayPlanName),
+    groupName: displayOrDash(summary?.groupName ?? structuredSummary?.groupName),
+    insuranceType: displayOrDash(summary?.insuranceType ?? structuredSummary?.insuranceType),
+    coverageDates: coverageDates === '—' ? '—' : coverageDates,
+    planSponsor: displayOrDash(summary?.planSponsor ?? structuredSummary?.planSponsor),
+    groupNumber: displayOrDash(summary?.groupNumber ?? structuredSummary?.groupNumber)
+  };
+}
+
+export function formatEligibilityDateRange(raw: string | null | undefined): string {
+  if (!raw?.trim()) return '';
+
+  const trimmed = raw.trim();
+  if (trimmed.includes(' - ') || trimmed.includes(' – ')) {
+    const parts = trimmed
+      .split(/\s[-–]\s/)
+      .map(part => part.trim())
+      .filter(Boolean)
+      .map(part => formatEligibilityDateRange(part))
+      .filter(Boolean);
+
+    const unique = [...new Set(parts)];
+    if (unique.length === 1) return unique[0];
+    if (unique.length > 1) return `${unique[0]} - ${unique[unique.length - 1]}`;
+  }
+
+  if (trimmed.includes('/') && !/^\d{8}/.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.includes('-') && !trimmed.includes('/')) {
+    const pieces = trimmed.split('-').map(p => p.trim()).filter(Boolean);
+    if (pieces.length === 2 && pieces.every(p => /^\d{8}$/.test(p))) {
+      return `${formatCompactDate(pieces[0])} - ${formatCompactDate(pieces[1])}`;
+    }
+  }
+
+  if (/^\d{8}$/.test(trimmed)) {
+    return formatCompactDate(trimmed);
+  }
+
+  return trimmed;
+}
+
+function buildRawDateRange(start?: string | null, end?: string | null): string {
+  if (!start && !end) return '';
+  if (!end) return start ?? '';
+  if (!start) return end ?? '';
+  return `${start}-${end}`;
+}
+
+function formatCompactDate(raw: string): string {
+  if (!/^\d{8}$/.test(raw)) return raw;
+  const yyyy = raw.slice(0, 4);
+  const mm = raw.slice(4, 6);
+  const dd = raw.slice(6, 8);
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function formatBenefitNotes(benefit: BenefitEntryDto): string {
+  const parts = [...(benefit.messages ?? [])];
+  if (benefit.planDescription?.trim()) {
+    parts.unshift(benefit.planDescription.trim());
+  }
+  return parts.length ? parts.join(' · ') : '—';
+}
+
+function formatAuthorization(value: boolean | null | undefined): string {
+  if (value === true) return 'Yes';
+  if (value === false) return 'No';
+  return '—';
+}
+
+function formatNullableCurrency(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
+function hasPcp(pcp: PrimaryCareProviderDto | null | undefined): boolean {
+  if (!pcp) return false;
+  return !!(pcp.name?.trim() || pcp.npi?.trim() || pcp.phone?.trim() || pcp.address1?.trim());
+}
+
+function formatPcpAddress(pcp: PrimaryCareProviderDto): string {
+  const line1 = pcp.address1?.trim();
+  const cityLine = [pcp.city, pcp.state, pcp.zip].filter(Boolean).join(', ');
+  if (line1 && cityLine) return `${line1}, ${cityLine}`;
+  return line1 || cityLine || '—';
+}
+
+export function formatPcpAddressLine(pcp: PrimaryCareProviderDto | null | undefined): string {
+  if (!pcp) return '—';
+  return formatPcpAddress(pcp);
+}
+
+export function formatVendorLine(vendor: VendorContactDto): string {
+  const label = vendor.serviceType || vendor.entityRole || 'Vendor';
+  const name = vendor.vendorName?.trim() || '—';
+  const phone = vendor.phoneNumber?.trim();
+  return phone ? `${label}: ${name} (${phone})` : `${label}: ${name}`;
+}
+
 function resolveBenefitCoverageLabel(benefitCode: string, rawService: string): string {
   const code = (benefitCode || rawService).trim().toUpperCase();
   if (code === '1' || code === 'A' || code === 'ACTIVE') return 'Active';
   if (code === '6' || code === 'I' || code === 'INACTIVE') return 'Inactive';
   if (code === '2' || code === '3' || code === '4' || code === '5') return 'Active';
   if (code === '7' || code === '8') return 'Inactive';
-  if (BENEFIT_CODE_LABELS[code] && /^[ABC]$/i.test(code)) {
-    return 'Applies';
-  }
-  if (BENEFIT_CODE_LABELS[code]) return titleCaseWords(BENEFIT_CODE_LABELS[code]);
+  if (BENEFIT_CODE_LABELS[code]) return BENEFIT_CODE_LABELS[code];
   return benefitCode ? titleCaseWords(benefitCode) : '—';
 }
 
@@ -850,6 +1097,8 @@ function sanitizePlanName(planName: string | null | undefined): string | null {
   const name = (planName ?? '').trim();
   if (!name) return null;
   if (/^active\s+coverage$/i.test(name)) return null;
+  if (/^\d{4,7}-\d{2}([A-Z]{2}\d+)?$/i.test(name)) return null;
+  if (/^[\d\-A-Z]+$/i.test(name) && /\d{4,}-\d{2}/.test(name) && name.length <= 20) return null;
   return name;
 }
 

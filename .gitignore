@@ -83,3 +83,6 @@ Carthage/Build
 e2e/*.js
 e2e/*.map
 
+# Markdown documentation (local investigation / reports)
+*.md
+

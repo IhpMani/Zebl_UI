@@ -11,7 +11,8 @@ import {
 } from '@angular/core';
 import { EligibilityApiService } from '../../core/services/eligibility-api.service';
 import { EligibilityResponsePayload, EligibilityResponseViewModel } from './eligibility-response.models';
-import { buildEligibilityResponseViewModel } from './eligibility-response.mapper';
+import { buildEligibilityResponseViewModel, formatPcpAddressLine } from './eligibility-response.mapper';
+import { PrimaryCareProviderDto } from './eligibility-response.models';
 
 @Component({
   selector: 'app-eligibility-response',
@@ -146,6 +147,10 @@ export class EligibilityResponseComponent implements OnChanges {
     if (!yyyy || !mm || !dd) return str;
 
     return `${mm}/${dd}/${yyyy}`;
+  }
+
+  formatPcpAddress(pcp: PrimaryCareProviderDto): string {
+    return formatPcpAddressLine(pcp);
   }
 
   close(): void {
