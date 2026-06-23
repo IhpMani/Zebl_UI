@@ -170,6 +170,19 @@ export interface Claim {
   claDiagnosis10: string | null;
   claDiagnosis11: string | null;
   claDiagnosis12: string | null;
+  claDiagnosis13?: string | null;
+  claDiagnosis14?: string | null;
+  claDiagnosis15?: string | null;
+  claDiagnosis16?: string | null;
+  claDiagnosis17?: string | null;
+  claDiagnosis18?: string | null;
+  claDiagnosis19?: string | null;
+  claDiagnosis20?: string | null;
+  claDiagnosis21?: string | null;
+  claDiagnosis22?: string | null;
+  claDiagnosis23?: string | null;
+  claDiagnosis24?: string | null;
+  claDiagnosis25?: string | null;
   
   patient: {
     patID: number;

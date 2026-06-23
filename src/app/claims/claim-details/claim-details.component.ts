@@ -34,6 +34,11 @@ import {
   formatServiceLineModifierDisplay,
   isServiceLineEmgActive
 } from '../shared/service-line-display.util';
+import {
+  buildClaimDiagnosisFormFields,
+  emptyClaimDiagnosisValues,
+  readClaimDiagnosisValues
+} from '../shared/claim-diagnosis.util';
 
 @Component({
   selector: 'app-claim-details',
@@ -54,20 +59,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     { id: 'ezclaim', label: 'EZClaim Desktop' },
     { id: 'custom', label: 'Custom Template' }
   ];
-  diagnosisFields: Array<{ label: string; field: keyof Claim }> = [
-    { label: 'Diagnosis A1', field: 'claDiagnosis1' },
-    { label: 'Diagnosis B2', field: 'claDiagnosis2' },
-    { label: 'Diagnosis C3', field: 'claDiagnosis3' },
-    { label: 'Diagnosis D4', field: 'claDiagnosis4' },
-    { label: 'Diagnosis E5', field: 'claDiagnosis5' },
-    { label: 'Diagnosis F6', field: 'claDiagnosis6' },
-    { label: 'Diagnosis G7', field: 'claDiagnosis7' },
-    { label: 'Diagnosis H8', field: 'claDiagnosis8' },
-    { label: 'Diagnosis I9', field: 'claDiagnosis9' },
-    { label: 'Diagnosis J10', field: 'claDiagnosis10' },
-    { label: 'Diagnosis K11', field: 'claDiagnosis11' },
-    { label: 'Diagnosis L12', field: 'claDiagnosis12' }
-  ];
+  diagnosisFields = buildClaimDiagnosisFormFields();
 
   /** Classification options from Libraries → List → Claim Classification */
   classificationOptions: ListValueDto[] = [];
@@ -345,18 +337,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       claFirstDateTRIG: null,
       claLastDateTRIG: null,
       claClassification: null,
-      claDiagnosis1: null,
-      claDiagnosis2: null,
-      claDiagnosis3: null,
-      claDiagnosis4: null,
-      claDiagnosis5: null,
-      claDiagnosis6: null,
-      claDiagnosis7: null,
-      claDiagnosis8: null,
-      claDiagnosis9: null,
-      claDiagnosis10: null,
-      claDiagnosis11: null,
-      claDiagnosis12: null,
+      ...emptyClaimDiagnosisValues(),
       patient: null,
       renderingPhysician: null,
       referringPhysician: null,
@@ -1026,6 +1007,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.perfTime('loadClaim post-processing');
           this.claimStatuses = [...CLAIM_STATUS_OPTIONS];
           this.claim = claim;
+          Object.assign(this.claim, readClaimDiagnosisValues(claim));
           this.loading = false;
           this.perfMark('loadClaim shell ready (overlay dismissed)');
           if (!this.claim.additionalData) {
@@ -1844,6 +1826,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       noteText
     });
     this.logClaimSaveProviderTrace('saveAndClose', payload);
+    console.debug('[ClaimDetails] diagnosis save payload', this.buildDiagnosisPayloadFields());
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -1893,6 +1876,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       noteText
     });
     this.logClaimSaveProviderTrace('save', payload);
+    console.debug('[ClaimDetails] diagnosis save payload', this.buildDiagnosisPayloadFields());
     this.savingClaim = true;
     this.claimApiService.updateClaim(this.claId, payload).pipe(
       finalize(() => {
@@ -2198,17 +2182,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private buildDiagnosisPayloadFields(): Record<string, string | null> {
-    const fields: Record<string, string | null> = {};
-    for (const { field } of this.diagnosisFields) {
-      const raw = this.claim?.[field];
-      if (typeof raw === 'string') {
-        const trimmed = raw.trim();
-        fields[field] = trimmed || null;
-      } else {
-        fields[field] = raw ?? null;
-      }
-    }
-    return fields;
+    return readClaimDiagnosisValues(this.claim);
   }
 
   private getSelectedPrimaryPayerId(): number | null {

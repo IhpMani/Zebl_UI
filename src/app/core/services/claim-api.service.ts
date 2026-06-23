@@ -13,6 +13,7 @@ import {
   UserKpiDashboard
 } from './claim.models';
 import { environment } from 'src/environments/environment';
+import { CLAIM_DIAGNOSIS_COUNT } from '../../claims/shared/claim-diagnosis.util';
 
 function pickFirstDefined(...vals: unknown[]): unknown {
   for (const v of vals) {
@@ -94,7 +95,7 @@ function normalizeClaimDetail(raw: unknown): Claim {
   const claClass = pickFirstDefined(o['claClassification'], o['ClaClassification']);
   if (claClass !== undefined) o['claClassification'] = claClass as string | null;
 
-  for (let i = 1; i <= 12; i++) {
+  for (let i = 1; i <= CLAIM_DIAGNOSIS_COUNT; i++) {
     const camel = `claDiagnosis${i}`;
     const pascal = `ClaDiagnosis${i}`;
     const val = pickFirstDefined(o[camel], o[pascal]);
@@ -131,6 +132,14 @@ function normalizeClaimListRow(row: unknown): ClaimListItem {
   if (add != null && typeof add === 'object') {
     o['additionalColumns'] = add;
   }
+
+  for (let i = 1; i <= CLAIM_DIAGNOSIS_COUNT; i++) {
+    const camel = `claDiagnosis${i}`;
+    const pascal = `ClaDiagnosis${i}`;
+    const val = pickFirstDefined(o[camel], o[pascal]);
+    if (val !== undefined) o[camel] = val as string | null;
+  }
+
   return o as unknown as ClaimListItem;
 }
 
@@ -375,64 +384,27 @@ export class ClaimApiService {
   }
 
   /** Update claim. ClaStatus and ClaClassification from List Library. Physician FIDs map to Claim table. */
-  updateClaim(claId: number, body: {
-    claStatus?: string | null;
-    claClassification?: string | null;
-    claSubmissionMethod?: string | null;
-    claBillTo?: number | null;
-    primaryPayerId?: number | null;
-    claBillingPhyFID?: number | null;
-    claRenderingPhyFID?: number | null;
-    claFacilityPhyFID?: number | null;
-    claInvoiceNumber?: string | null;
-    claAdmittedDate?: string | null;
-    claDischargedDate?: string | null;
-    claDateLastSeen?: string | null;
-    claBillDate?: string | null;
-    claEDINotes?: string | null;
-    claRemarks?: string | null;
-    claRelatedTo?: number | null;
-    claRelatedToState?: string | null;
-    claLocked?: boolean;
-    claDelayCode?: string | null;
-    claMedicaidResubmissionCode?: string | null;
-    claOriginalRefNo?: string | null;
-    claPaperWorkTransmissionCode?: string | null;
-    claPaperWorkControlNumber?: string | null;
-    claPaperWorkInd?: string | null;
-    /** Optional manual note for this edit. If empty, backend uses "Claim edited." */
-    noteText?: string | null;
-    /** Additional data (ClaAdditionalData XML) */
-    additionalData?: import('./claim.models').ClaimAdditionalData;
-  }): Observable<any> {
-    const payload: any = {};
-    if (body.claStatus !== undefined) payload.claStatus = body.claStatus;
-    if (body.claClassification !== undefined) payload.claClassification = body.claClassification;
-    if (body.claSubmissionMethod !== undefined) payload.claSubmissionMethod = body.claSubmissionMethod;
-    if (body.claBillTo !== undefined) payload.claBillTo = body.claBillTo;
-    if (body.primaryPayerId !== undefined) payload.primaryPayerId = body.primaryPayerId;
-    if (body.claBillingPhyFID !== undefined) payload.claBillingPhyFID = body.claBillingPhyFID;
-    if (body.claRenderingPhyFID !== undefined) payload.claRenderingPhyFID = body.claRenderingPhyFID;
-    if (body.claFacilityPhyFID !== undefined) payload.claFacilityPhyFID = body.claFacilityPhyFID;
-    if (body.claInvoiceNumber !== undefined) payload.claInvoiceNumber = body.claInvoiceNumber;
-    if (body.claAdmittedDate !== undefined) payload.claAdmittedDate = body.claAdmittedDate ? new Date(body.claAdmittedDate).toISOString() : null;
-    if (body.claDischargedDate !== undefined) payload.claDischargedDate = body.claDischargedDate ? new Date(body.claDischargedDate).toISOString() : null;
-    if (body.claDateLastSeen !== undefined) payload.claDateLastSeen = body.claDateLastSeen ? new Date(body.claDateLastSeen).toISOString() : null;
-    if (body.claBillDate !== undefined) payload.claBillDate = body.claBillDate ? new Date(body.claBillDate).toISOString() : null;
-    if (body.claEDINotes !== undefined) payload.claEDINotes = body.claEDINotes;
-    if (body.claRemarks !== undefined) payload.claRemarks = body.claRemarks;
-    if (body.claRelatedTo !== undefined) payload.claRelatedTo = body.claRelatedTo;
-    if (body.claRelatedToState !== undefined) payload.claRelatedToState = body.claRelatedToState;
-    if (body.claLocked !== undefined) payload.claLocked = body.claLocked;
-    if (body.claDelayCode !== undefined) payload.claDelayCode = body.claDelayCode;
-    if (body.claMedicaidResubmissionCode !== undefined) payload.claMedicaidResubmissionCode = body.claMedicaidResubmissionCode;
-    if (body.claOriginalRefNo !== undefined) payload.claOriginalRefNo = body.claOriginalRefNo;
-    if (body.claPaperWorkTransmissionCode !== undefined) payload.claPaperWorkTransmissionCode = body.claPaperWorkTransmissionCode;
-    if (body.claPaperWorkControlNumber !== undefined) payload.claPaperWorkControlNumber = body.claPaperWorkControlNumber;
-    if (body.claPaperWorkInd !== undefined) payload.claPaperWorkInd = body.claPaperWorkInd;
-    if (body.noteText !== undefined) payload.noteText = body.noteText;
-    if (body.additionalData !== undefined) payload.additionalData = body.additionalData;
-    return this.http.put<any>(`${environment.apiUrl}/api/claims/${claId}`, payload);
+  updateClaim(claId: number, body: Record<string, unknown>): Observable<unknown> {
+    const payload: Record<string, unknown> = {};
+    const dateKeys = new Set(['claAdmittedDate', 'claDischargedDate', 'claDateLastSeen', 'claBillDate']);
+
+    for (const [key, value] of Object.entries(body)) {
+      if (value === undefined) continue;
+      if (dateKeys.has(key)) {
+        payload[key] = typeof value === 'string' && value.trim() !== ''
+          ? new Date(value).toISOString()
+          : null;
+      } else {
+        payload[key] = value;
+      }
+    }
+
+    console.debug(
+      '[ClaimApi] Final PUT payload',
+      JSON.stringify(payload, null, 2)
+    );
+
+    return this.http.put<unknown>(`${environment.apiUrl}/api/claims/${claId}`, payload);
   }
 
   getSendableClaims(

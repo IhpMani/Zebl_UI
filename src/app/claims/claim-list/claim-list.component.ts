@@ -41,6 +41,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'modifiedDate', label: 'Modified Date' },
     { key: 'claTotalChargeTRIG', label: 'Total Charge' },
     { key: 'claTotalBalanceCC', label: 'Total Balance' },
+    { key: 'claDiagnosis1', label: 'Diagnosis 1' },
     { key: 'patFullNameCC', label: 'Name' }
   ];
 
@@ -104,7 +105,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
     { key: 'claTypeOfBill', label: 'Type of Bill', visible: false, filterValue: '' },
     { key: 'claAdmissionType', label: 'Admission Type', visible: false, filterValue: '' },
     { key: 'claPatientStatus', label: 'Patient Status', visible: false, filterValue: '' },
-    { key: 'claDiagnosis1', label: 'Diagnosis 1', visible: false, filterValue: '' },
+    { key: 'claDiagnosis1', label: 'Diagnosis 1', visible: true, filterValue: '' },
     { key: 'claDiagnosis2', label: 'Diagnosis 2', visible: false, filterValue: '' },
     { key: 'claDiagnosis3', label: 'Diagnosis 3', visible: false, filterValue: '' },
     { key: 'claDiagnosis4', label: 'Diagnosis 4', visible: false, filterValue: '' },
@@ -595,15 +596,25 @@ export class ClaimListComponent implements OnInit, OnDestroy {
   }
 
   private deduplicateColumns(): void {
-    const seenKeys = new Set<string>();
-    const seenLabels = new Set<string>();
-    this.columns = this.columns.filter(col => {
+    const mergedByKey = new Map<string, (typeof this.columns)[number]>();
+    for (const col of this.columns) {
       const key = (col.key || '').toLowerCase();
+      if (!key) continue;
+      const existing = mergedByKey.get(key);
+      if (!existing) {
+        mergedByKey.set(key, col);
+        continue;
+      }
+      // Prefer the visible definition when legacy prefs introduced duplicate keys.
+      if (col.visible && !existing.visible) {
+        mergedByKey.set(key, { ...existing, ...col, visible: true });
+      }
+    }
+
+    const seenLabels = new Set<string>();
+    this.columns = Array.from(mergedByKey.values()).filter(col => {
       const label = (col.label || '').toLowerCase();
-      if (seenKeys.has(key)) return false;
-      // Avoid duplicated headings with different legacy alias keys.
       if (seenLabels.has(label)) return false;
-      seenKeys.add(key);
       seenLabels.add(label);
       return true;
     });
@@ -962,6 +973,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
           this.selectedAdditionalColumns.add(col.key);
         }
       });
+      this.deduplicateColumns();
     } catch (e) {
       console.error('Error loading column preferences:', e);
       this.applyDefaultColumnConfiguration();
@@ -992,6 +1004,7 @@ export class ClaimListComponent implements OnInit, OnDestroy {
 
     this.selectedAdditionalColumns = new Set(['patFullNameCC']);
     this.columnDisplayOrder = this.defaultClaimColumns.map((c) => c.key);
+    this.deduplicateColumns();
   }
 
   clearAllColumns(): void {
