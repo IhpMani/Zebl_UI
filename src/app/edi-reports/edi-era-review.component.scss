@@ -638,6 +638,146 @@ a.era-claim-link:hover {
   word-break: break-word;
 }
 
+.era-match-strategy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  position: relative;
+}
+
+.era-ws-tree {
+  font-size: 0.82rem;
+}
+
+.era-ws-tree__root {
+  margin-top: 0.35rem;
+}
+
+.era-ws-tree__claim-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.65rem;
+  background: #f7f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.era-ws-toolbar {
+  margin-bottom: 0.65rem;
+  border: 1px solid #e8eaed;
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  background: #fafbfc;
+}
+
+.era-ws-toolbar summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.era-matching-panel--compact {
+  margin-top: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #eef0f3;
+}
+
+.era-disbursement--summary {
+  margin-bottom: 0.65rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.era-ws-tree__branch {
+  margin-left: 0.5rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid #d0d7e2;
+  margin-bottom: 0.75rem;
+}
+
+.era-ws-tree__children {
+  margin-left: 1.25rem;
+  padding-left: 0.75rem;
+  border-left: 2px dashed #dde3ea;
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.era-ws-tree__label {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+}
+
+.era-ws-tree__label--line {
+  font-weight: 500;
+}
+
+.era-ws-tree__label--adj {
+  font-size: 0.78rem;
+  color: #5c6470;
+  font-weight: 600;
+}
+
+.era-ws-tree__meta {
+  color: #555;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+.era-ws-tree__empty {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.78rem;
+}
+
+.era-ws-disbursement {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-left: auto;
+  padding: 0.2rem 0.45rem;
+  background: #f0f6ff;
+  border: 1px solid #c8daf5;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
+.era-ws-disbursement--warn {
+  background: #fff8e6;
+  border-color: #e6c200;
+}
+
+.era-cas-workstation th.col-disp,
+.era-cas-workstation td.col-disp {
+  width: 2.4rem;
+  text-align: center;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.era-cas-radio input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.era-cas-desc {
+  max-width: 320px;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.era-cas-workstation th,
+.era-cas-workstation td {
+  font-size: 0.78rem;
+  vertical-align: middle;
+}
+
 .era-confidence {
   position: relative;
   display: inline-flex;

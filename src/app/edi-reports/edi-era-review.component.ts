@@ -98,7 +98,7 @@ export class EdiEraReviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.reportId = this.route.snapshot.paramMap.get('id') || '';
-    this.workspace.updateActiveTabTitle('ERA Payment Review');
+    this.workspace.updateActiveTabTitle('ERA Posting Workstation');
     const uiSnap = this.readUiSnapshot();
     const cached = this.returnCache.consumePayload(this.reportId);
     if (uiSnap) this.applyUiSnapshot(uiSnap);
@@ -106,6 +106,7 @@ export class EdiEraReviewComponent implements OnInit {
       this.data = cached;
       this.rebuildWorkstations();
       this.initDisbursementFromReview();
+      this.ensureWorkstationExpanded();
       this.loading = false;
       this.error = null;
       const name = cached.report?.fileName || 'ERA';
@@ -206,6 +207,7 @@ export class EdiEraReviewComponent implements OnInit {
 
   expandAllClaims(): void {
     this.expandedClaimIds = this.claimWorkstations.map((w) => w.claimExternalId);
+    this.expandAllServiceLines();
     this.cdr.markForCheck();
   }
 
@@ -215,10 +217,57 @@ export class EdiEraReviewComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  bulkAdjDisposition(value: AdjDisposition): void {
-    for (const row of this.data?.adjustmentPanel ?? []) {
-      this.setAdjDisposition(row.key, value);
+  expandAllServiceLines(): void {
+    const keys: string[] = [];
+    for (const ws of this.claimWorkstations) {
+      for (const s of ws.context?.serviceLines ?? []) {
+        keys.push(this.serviceLineKey(ws.claimExternalId, s.lineIndex));
+      }
     }
+    this.expandedServiceLineKeys = keys;
+  }
+
+  collapseAllServiceLines(): void {
+    this.expandedServiceLineKeys = [];
+  }
+
+  findDisbursementLine(
+    ctx: Era835ReviewClaimContextDto,
+    svc: { matchedServiceLineId?: number | null; lineIndex: number }
+  ): Era835ReviewDisbursementLineDto | undefined {
+    const id = svc.matchedServiceLineId;
+    if (id == null) return undefined;
+    return ctx.disbursementPlan?.lines?.find((l) => l.serviceLineId === id);
+  }
+
+  claimStatusLabel(ctx: Era835ReviewClaimContextDto, scope?: string | null): string {
+    if (scope === 'ClaimLevel') return ctx.claimStatus835 || '—';
+    return ctx.internalClaimStatus || ctx.claimStatus835 || '—';
+  }
+
+  casDescription(cas: Era835ReviewCasDto): string {
+    if (cas.description?.trim()) return cas.description.trim();
+    const gc = cas.groupCode ?? '';
+    const rc = cas.reasonCode ?? '';
+    return gc || rc ? `${gc}-${rc}`.replace(/^-|-$/g, '') : '—';
+  }
+
+  private ensureWorkstationExpanded(): void {
+    if (this.expandedClaimIds.length === 0) {
+      this.expandAllClaims();
+    }
+  }
+
+  orphanDisbursementLines(ctx: Era835ReviewClaimContextDto): Era835ReviewDisbursementLineDto[] {
+    const linked = new Set(
+      (ctx.serviceLines ?? [])
+        .map((s) => s.matchedServiceLineId)
+        .filter((id): id is number => id != null)
+    );
+    return (ctx.disbursementPlan?.lines ?? []).filter((l) => !linked.has(l.serviceLineId));
+  }
+
+  bulkAdjDisposition(value: AdjDisposition): void {
     for (const ws of this.claimWorkstations) {
       const ctx = ws.context;
       if (!ctx) continue;
@@ -365,6 +414,7 @@ export class EdiEraReviewComponent implements OnInit {
           this.data = d;
           this.rebuildWorkstations();
           this.initDisbursementFromReview();
+          this.ensureWorkstationExpanded();
           this.page = d.page;
           this.pageSize = d.pageSize;
           this.loading = false;
@@ -494,19 +544,28 @@ export class EdiEraReviewComponent implements OnInit {
     return parts.length ? parts.join(' · ') : '—';
   }
 
+  autoMatchHelp(row: Era835ReviewLineRowDto): string {
+    const strategy = row.matching?.matchingStrategy || row.matchingConfidence || '—';
+    const parts = [
+      `Auto-match strategy: ${strategy}`,
+      this.matchFactorSummary(row),
+      row.matching?.unmatchedReason ? `Unmatched: ${row.matching.unmatchedReason}` : '',
+      row.matching?.alternatives?.length
+        ? 'Alternatives: ' + row.matching.alternatives.map((a) => `Claim ${a.claimId} (${Math.round(a.confidenceScore)}%)`).join(', ')
+        : ''
+    ];
+    return parts.filter((s) => !!s).join('\n');
+  }
+
   confidenceHelp(row: Era835ReviewLineRowDto): string {
     const score = this.confidencePercent(row);
-    const prefix = score != null ? `Confidence: ${score}%` : 'Confidence: —';
-    const factors = this.matchFactorSummary(row);
-    const failures = row.matching?.failureReasons?.length
-      ? `Failed because: ${row.matching.failureReasons.join(' ')}`
-      : '';
+    const prefix = score != null ? `Confidence score: ${score}%` : 'Confidence: not scored';
+    const band = row.matchingConfidence || row.matching?.confidenceExplanation || '';
     const explanation =
       row.confidenceExplanation ||
       row.matching?.confidenceExplanation ||
-      row.matching?.unmatchedReason ||
       '';
-    return [prefix, factors, failures, explanation].filter((s) => !!s).join('\n');
+    return [prefix, band ? `Band: ${band}` : '', explanation].filter((s) => !!s).join('\n');
   }
 
   confidencePercent(row: Era835ReviewLineRowDto): number | null {
