@@ -8,10 +8,12 @@ export interface Era835ReviewUiSnapshot {
   filterDuplicates: boolean;
   filterReversals: boolean;
   filterPayer: string;
+  filterPatient: string;
   filterClaimId: string;
   filterCpt: string;
   filterDos: string;
   filterAdj: string;
   expandedClaimIds: string[];
+  expandedServiceLineKeys?: string[];
   scrollTop: number;
 }

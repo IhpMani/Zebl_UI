@@ -10,6 +10,12 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e8ecf0;
 }
 
 .era-review__title h1 {
@@ -253,7 +259,107 @@ a.era-claim-link:hover {
 }
 
 .era-review__adj h2,
-.era-review__matching h2,
+.era-review__recon h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.era-review__filters--sticky {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 15;
+  background: #fff;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.era-page-size select {
+  margin-left: 0.35rem;
+}
+
+.era-grid__head--sticky th {
+  position: sticky;
+  top: 8.5rem;
+  z-index: 10;
+  background: #f0f3f7;
+  box-shadow: 0 1px 0 #dde3ea;
+}
+
+.era-row--duplicate {
+  background: #fff8e6 !important;
+  box-shadow: inset 3px 0 0 #e6a700;
+}
+
+.era-shortcuts {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #f4f7fb;
+  border: 1px solid #d8e0ea;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.era-side-panel {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e6ec;
+  border-radius: 4px;
+  background: #fafbfc;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.era-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid #d0d7e2;
+}
+
+.era-timeline li {
+  margin: 0 0 0.75rem 0.75rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.era-timeline time {
+  display: block;
+  color: #5c6470;
+  font-size: 0.75rem;
+}
+
+.era-timeline__reversed {
+  opacity: 0.75;
+}
+
+.era-recon-warnings {
+  margin-bottom: 0.5rem;
+}
+
+.era-recon-warning {
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.35rem;
+  border-radius: 4px;
+  background: #fff8e6;
+  border: 1px solid #f0d78c;
+  font-size: 0.85rem;
+}
+
+.era-recon-warning--error {
+  background: #fdecea;
+  border-color: #f5c2c0;
+}
+
+.era-review__recon--warn {
+  border: 1px solid #f0d78c;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  background: #fffdf8;
+}
+
+.recon-line--balanced {
+  color: #1e4d23;
+}
 .era-review__recon h2 {
   font-size: 1rem;
   margin: 0 0 0.5rem;
@@ -358,4 +464,259 @@ a.era-claim-link:hover {
 .toggle {
   font-size: 0.8rem;
   user-select: none;
+}
+
+.era-workstation__claim-row {
+  cursor: pointer;
+}
+
+.era-workstation__expand td {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.era-unmatched-banner {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 0.5rem 0.65rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.era-unmatched-banner__strategy {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 600;
+}
+
+.era-disbursement {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  background: #f0f6ff;
+  border: 1px solid #c8daf5;
+  border-radius: 6px;
+}
+
+.era-disbursement h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.era-disbursement__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.88rem;
+}
+
+.era-disbursement__zero-pay {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #5c4a00;
+}
+
+.era-disbursement__warn {
+  color: #8a1c12;
+  font-weight: 600;
+}
+
+.era-disbursement__error {
+  margin: 0.35rem 0 0;
+  color: #8a1c12;
+  font-size: 0.85rem;
+}
+
+.era-disbursement-grid__warn td {
+  background: #fff8e6;
+}
+
+.era-disbursement-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.era-input--amount {
+  width: 6rem;
+  text-align: right;
+}
+
+.era-claim-context h4,
+.era-cas-section h4,
+.era-svc-section h4 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.85rem;
+}
+
+.context-dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.context-dl dt {
+  font-weight: 600;
+  color: #555;
+}
+
+.context-dl dd {
+  margin: 0 0 0.35rem;
+}
+
+.era-cas-section,
+.era-svc-section {
+  margin-top: 0.5rem;
+}
+
+.era-cas-totals {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.8rem;
+  color: #444;
+}
+
+.era-cas-totals--all {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.era-cas-grid th,
+.era-cas-grid td {
+  vertical-align: middle;
+}
+
+.era-disposition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.era-disposition label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+}
+
+.era-svc-block {
+  border: 1px solid #e8eaed;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+}
+
+.era-svc-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.era-svc-header__title {
+  font-weight: 600;
+}
+
+.era-svc-header__meta {
+  color: #555;
+}
+
+.era-svc-body {
+  padding: 0 0.5rem 0.5rem 1.75rem;
+  border-top: 1px solid #eef0f3;
+}
+
+.era-strategy {
+  max-width: 140px;
+  word-break: break-word;
+}
+
+.era-confidence {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.era-confidence__help {
+  border: 1px solid #cfd4dc;
+  border-radius: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0;
+  cursor: help;
+  background: #fff;
+}
+
+.era-confidence:hover .era-popover,
+.era-confidence:focus-within .era-popover {
+  display: block;
+}
+
+.era-popover {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: calc(100% + 4px);
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0.45rem 0.55rem;
+  background: #fff;
+  border: 1px solid #cfd4dc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: #333;
+  white-space: pre-line;
+}
+
+.era-matching-panel {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e6ec;
+  border-radius: 4px;
+  background: #fafbfc;
+}
+
+.era-matching-panel h4 {
+  margin: 0 0 0.5rem;
+}
+
+.era-matching-panel ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.era-matching-panel__manual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-end;
+  margin-top: 0.75rem;
+}
+
+.era-matching-panel__manual label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  gap: 0.2rem;
+}
+
+.era-matching-panel__manual input {
+  min-width: 160px;
+}
+
+.era-matching-panel__link-btn {
+  padding: 0.35rem 0.75rem;
 }
