@@ -98,7 +98,7 @@ export class EdiEraReviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.reportId = this.route.snapshot.paramMap.get('id') || '';
-    this.workspace.updateActiveTabTitle('ERA Posting Workstation');
+    this.workspace.updateActiveTabTitle('ERA Payment Review');
     const uiSnap = this.readUiSnapshot();
     const cached = this.returnCache.consumePayload(this.reportId);
     if (uiSnap) this.applyUiSnapshot(uiSnap);
@@ -106,7 +106,6 @@ export class EdiEraReviewComponent implements OnInit {
       this.data = cached;
       this.rebuildWorkstations();
       this.initDisbursementFromReview();
-      this.ensureWorkstationExpanded();
       this.loading = false;
       this.error = null;
       const name = cached.report?.fileName || 'ERA';
@@ -207,7 +206,6 @@ export class EdiEraReviewComponent implements OnInit {
 
   expandAllClaims(): void {
     this.expandedClaimIds = this.claimWorkstations.map((w) => w.claimExternalId);
-    this.expandAllServiceLines();
     this.cdr.markForCheck();
   }
 
@@ -250,12 +248,6 @@ export class EdiEraReviewComponent implements OnInit {
     const gc = cas.groupCode ?? '';
     const rc = cas.reasonCode ?? '';
     return gc || rc ? `${gc}-${rc}`.replace(/^-|-$/g, '') : '—';
-  }
-
-  private ensureWorkstationExpanded(): void {
-    if (this.expandedClaimIds.length === 0) {
-      this.expandAllClaims();
-    }
   }
 
   orphanDisbursementLines(ctx: Era835ReviewClaimContextDto): Era835ReviewDisbursementLineDto[] {
@@ -414,7 +406,6 @@ export class EdiEraReviewComponent implements OnInit {
           this.data = d;
           this.rebuildWorkstations();
           this.initDisbursementFromReview();
-          this.ensureWorkstationExpanded();
           this.page = d.page;
           this.pageSize = d.pageSize;
           this.loading = false;
@@ -576,6 +567,18 @@ export class EdiEraReviewComponent implements OnInit {
   confidenceLabel(row: Era835ReviewLineRowDto): string {
     const pct = this.confidencePercent(row);
     return pct != null ? `${pct}%` : row.matchingConfidence || '—';
+  }
+
+  confidenceBadgeClass(row: Era835ReviewLineRowDto): string {
+    const band = (row.matchingConfidence || row.matching?.confidenceExplanation || '').toUpperCase();
+    if (band.includes('HIGH')) return 'era-badge era-badge--success';
+    if (band.includes('MEDIUM')) return 'era-badge era-badge--warning';
+    if (band.includes('LOW')) return 'era-badge era-badge--danger';
+    const pct = this.confidencePercent(row);
+    if (pct != null && pct >= 80) return 'era-badge era-badge--success';
+    if (pct != null && pct >= 50) return 'era-badge era-badge--warning';
+    if (pct != null) return 'era-badge era-badge--danger';
+    return 'era-badge era-badge--muted';
   }
 
   matchedFactors(row: Era835ReviewLineRowDto) {

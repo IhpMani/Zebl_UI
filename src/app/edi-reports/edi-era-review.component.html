@@ -3,7 +3,7 @@
 <div class="era-review" *ngIf="data as d">
   <header class="era-review__header">
     <div class="era-review__title">
-      <h1>ERA Posting Workstation</h1>
+      <h1>ERA Payment Review</h1>
       <p class="era-review__subtitle">{{ d.report.fileName }} · {{ d.report.status }}</p>
     </div>
     <div class="era-review__actions">
@@ -210,96 +210,268 @@
             <td class="num">{{ formatMoney(ws.context?.allCasTotals?.pr ?? ws.primaryLine.casTotals?.pr ?? ws.primaryLine.prAmount) }}</td>
             <td class="num">{{ formatMoney(ws.context?.allCasTotals?.oa ?? ws.primaryLine.casTotals?.oa ?? ws.primaryLine.oaAmount) }}</td>
             <td class="num">{{ formatMoney(ws.context?.allCasTotals?.pi ?? ws.primaryLine.casTotals?.pi ?? ws.primaryLine.piAmount) }}</td>
-            <td class="era-strategy">
-              <span class="era-match-strategy">
-                {{ ws.context?.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}
-                <button
-                  type="button"
-                  class="era-confidence__help"
-                  (click)="$event.stopPropagation()"
-                  [attr.aria-label]="'Auto-match explanation for claim ' + ws.claimExternalId"
-                  [title]="autoMatchHelp(ws.primaryLine)"
-                >?</button>
-                <span class="era-popover" role="tooltip">{{ autoMatchHelp(ws.primaryLine) }}</span>
-              </span>
-            </td>
-            <td>
-              <span class="era-confidence">
-                {{ confidenceLabel(ws.primaryLine) }}
-                <button
-                  type="button"
-                  class="era-confidence__help"
-                  (click)="$event.stopPropagation()"
-                  [attr.aria-label]="'Confidence explanation for claim ' + ws.claimExternalId"
-                  [title]="confidenceHelp(ws.primaryLine)"
-                >?</button>
-                <span class="era-popover" role="tooltip">{{ confidenceHelp(ws.primaryLine) }}</span>
-              </span>
-            </td>
+            <td class="era-strategy">{{ ws.context?.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}</td>
+            <td>{{ confidenceLabel(ws.primaryLine) }}</td>
             <td>{{ formatDate(ws.primaryLine.appliedTimestampUtc) }}</td>
           </tr>
 
           <tr *ngIf="isClaimExpanded(ws.claimExternalId)" class="era-grid__expand era-workstation__expand">
             <td colspan="15">
-              <div class="expand-inner era-ws-tree" *ngIf="ws.context as ctx">
-                <div
-                  *ngIf="ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason"
-                  class="era-unmatched-banner"
-                >
-                  <strong>Unmatched / review required:</strong>
-                  {{ ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason }}
-                  <span *ngIf="ctx.matchingStrategy || ws.primaryLine.matching.matchingStrategy" class="era-unmatched-banner__strategy">
-                    Strategy: {{ ctx.matchingStrategy || ws.primaryLine.matching.matchingStrategy }}
-                  </span>
-                </div>
-
-                <div class="era-ws-tree__root">
-                  <div class="era-ws-tree__claim-head">
-                    <strong>Claim {{ ctx.claimExternalId }}</strong>
-                    <span *ngIf="ctx.matchedClaimId">· Internal #{{ ctx.matchedClaimId }}</span>
-                    <span>· Invoice {{ ctx.claimInvoiceNumber || '—' }}</span>
-                    <span>· {{ ctx.patientName || '—' }}</span>
-                    <span>· Balance {{ formatMoney(ctx.claimBalance) }}</span>
-                    <span>· 835 status {{ ctx.claimStatus835 || '—' }}</span>
-                    <span>· Internal {{ ctx.internalClaimStatus || '—' }}</span>
-                  </div>
-
-                  <details class="era-ws-toolbar">
-                    <summary>Claim matching &amp; manual override</summary>
-                    <div class="era-matching-panel era-matching-panel--compact">
-                      <p class="era-matching-panel__score">
-                        <strong>Auto-match:</strong>
-                        {{ ctx.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}
-                        <span class="era-match-strategy">
-                          <button type="button" class="era-confidence__help" [title]="autoMatchHelp(ws.primaryLine)">?</button>
-                          <span class="era-popover" role="tooltip">{{ autoMatchHelp(ws.primaryLine) }}</span>
-                        </span>
+              <div class="era-expand" *ngIf="ws.context as ctx; else noCtx">
+                <div class="era-expand__cards">
+                  <section class="era-card">
+                    <header class="era-card__header">
+                      <h3>Claim information</h3>
+                      <span [class]="statusClass(ws.primaryLine)">{{ ws.primaryLine.status }}</span>
+                    </header>
+                    <div class="era-card__body">
+                      <dl class="era-info-grid">
+                        <div class="era-info-grid__item">
+                          <dt>Patient</dt>
+                          <dd>{{ ctx.patientName || '—' }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Claim status (835)</dt>
+                          <dd>{{ ctx.claimStatus835 || '—' }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Internal status</dt>
+                          <dd>{{ ctx.internalClaimStatus || '—' }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Invoice number</dt>
+                          <dd>{{ ctx.claimInvoiceNumber || '—' }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Balance</dt>
+                          <dd>{{ formatMoney(ctx.claimBalance) }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>835 CLP payment</dt>
+                          <dd>{{ formatMoney(ctx.claimPayment835) }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Matching strategy</dt>
+                          <dd>{{ ctx.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}</dd>
+                        </div>
+                        <div class="era-info-grid__item">
+                          <dt>Confidence</dt>
+                          <dd>
+                            <span [class]="confidenceBadgeClass(ws.primaryLine)">{{ confidenceLabel(ws.primaryLine) }}</span>
+                          </dd>
+                        </div>
+                      </dl>
+                      <p *ngIf="ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason" class="era-expand__alert">
+                        <strong>Unmatched reason:</strong>
+                        {{ ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason }}
                       </p>
-                      <p class="era-matching-panel__score">
-                        <strong>Confidence:</strong> {{ confidenceLabel(ws.primaryLine) }}
-                        <span class="era-confidence">
-                          <button type="button" class="era-confidence__help" [title]="confidenceHelp(ws.primaryLine)">?</button>
-                          <span class="era-popover" role="tooltip">{{ confidenceHelp(ws.primaryLine) }}</span>
+                    </div>
+                  </section>
+
+                  <section class="era-card era-card--wide">
+                    <header class="era-card__header">
+                      <h3>Service lines</h3>
+                      <div class="era-card__meta" *ngIf="ctx.disbursementPlan as plan">
+                        <span>Payment {{ formatMoney(disbursementPaymentAmount(ctx)) }}</span>
+                        <span>Allocated {{ formatMoney(disbursementAllocated(ctx)) }}</span>
+                        <span [class.era-card__meta--warn]="hasOverDisbursement(ctx)">
+                          Remaining {{ formatMoney(disbursementRemaining(ctx)) }}
                         </span>
-                      </p>
-                      <div *ngIf="matchedFactors(ws.primaryLine).length" class="era-matching-panel__factors">
-                        <strong>Matched because:</strong>
-                        <ul>
-                          <li *ngFor="let factor of matchedFactors(ws.primaryLine)">✓ {{ factor.factor }}</li>
-                        </ul>
+                        <span *ngIf="plan.isZeroPayInformational" class="era-badge era-badge--muted">Zero-pay informational</span>
                       </div>
-                      <div *ngIf="ws.primaryLine.matching?.failureReasons?.length" class="era-matching-panel__failures">
-                        <strong>Why match failed:</strong>
-                        <ul>
-                          <li *ngFor="let reason of ws.primaryLine.matching?.failureReasons">{{ reason }}</li>
-                        </ul>
+                    </header>
+                    <div class="era-card__body">
+                      <div class="era-table-scroll">
+                        <table class="era-data-table">
+                          <thead>
+                            <tr>
+                              <th>CPT</th>
+                              <th>DOS</th>
+                              <th class="num">Charge</th>
+                              <th class="num">Paid</th>
+                              <th class="num">Balance</th>
+                              <th>Apply disbursement</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let s of ctx.serviceLines">
+                              <td>
+                                {{ s.procedureCodeNormalized || '—' }}
+                                <span class="muted" *ngIf="s.procedureCompositeRaw">({{ s.procedureCompositeRaw }})</span>
+                              </td>
+                              <td>{{ s.serviceDate || '—' }}</td>
+                              <td class="num">{{ formatMoney(s.chargeAmount) }}</td>
+                              <td class="num">{{ formatMoney(s.paidAmount) }}</td>
+                              <td class="num">{{ formatMoney(s.serviceLineBalance ?? s.remainingInsuranceBalance) }}</td>
+                              <td>
+                                <ng-container *ngIf="findDisbursementLine(ctx, s) as dl; else noDisb">
+                                  <div class="era-disb-row" [class.era-disb-row--warn]="exceedsLineBalance(ctx, dl)">
+                                    <label class="era-disbursement-check">
+                                      <input
+                                        type="checkbox"
+                                        [checked]="getDisbursementRow(ctx, dl).apply"
+                                        (change)="setDisbursementApply(ctx, dl, $any($event.target).checked)"
+                                      />
+                                      Apply
+                                    </label>
+                                    <input
+                                      type="number"
+                                      class="era-input era-input--amount"
+                                      min="0"
+                                      step="0.01"
+                                      [disabled]="!getDisbursementRow(ctx, dl).apply"
+                                      [value]="getDisbursementRow(ctx, dl).amount"
+                                      (input)="setDisbursementAmount(ctx, dl, $any($event.target).value)"
+                                    />
+                                    <span class="muted">Open {{ formatMoney(dl.openBalance) }}</span>
+                                  </div>
+                                </ng-container>
+                                <ng-template #noDisb><span class="muted">—</span></ng-template>
+                              </td>
+                            </tr>
+                            <tr *ngFor="let dl of orphanDisbursementLines(ctx)" [class.era-disb-row--warn]="exceedsLineBalance(ctx, dl)">
+                              <td colspan="2" class="muted">Internal line #{{ dl.serviceLineId }} · {{ dl.procedureCode || '—' }}</td>
+                              <td class="num">—</td>
+                              <td class="num">—</td>
+                              <td class="num">{{ formatMoney(dl.openBalance) }}</td>
+                              <td>
+                                <div class="era-disb-row">
+                                  <label class="era-disbursement-check">
+                                    <input type="checkbox" [checked]="getDisbursementRow(ctx, dl).apply" (change)="setDisbursementApply(ctx, dl, $any($event.target).checked)" />
+                                    Apply
+                                  </label>
+                                  <input type="number" class="era-input era-input--amount" min="0" step="0.01" [disabled]="!getDisbursementRow(ctx, dl).apply" [value]="getDisbursementRow(ctx, dl).amount" (input)="setDisbursementAmount(ctx, dl, $any($event.target).value)" />
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                      <div class="era-matching-panel__manual">
+                      <p *ngIf="!ctx.serviceLines?.length && !orphanDisbursementLines(ctx).length" class="muted">No service lines on this 835 claim.</p>
+                      <p *ngIf="hasOverDisbursement(ctx)" class="era-expand__error">Disbursement exceeds the 835 payment for this claim.</p>
+                      <p *ngIf="anyExceedsLineBalance(ctx)" class="era-expand__error">One or more disbursement amounts exceed the line open balance.</p>
+                      <div class="era-credit-inline" *ngIf="projectedInsuranceCredit(ctx) > 0">
+                        <span><strong>Projected insurance credit:</strong> {{ formatMoney(projectedInsuranceCredit(ctx)) }}</span>
+                        <label><input type="radio" [name]="'ins-cred-' + ws.claimExternalId" [checked]="getCreditDisposition(ctx).insurance === 'Hold'" (change)="setInsuranceCreditDisposition(ctx, 'Hold')" /> Hold</label>
+                        <label><input type="radio" [name]="'ins-cred-' + ws.claimExternalId" [checked]="getCreditDisposition(ctx).insurance === 'ApplyImmediately'" (change)="setInsuranceCreditDisposition(ctx, 'ApplyImmediately')" /> Apply immediately</label>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="era-card era-card--wide">
+                    <header class="era-card__header">
+                      <h3>Claim-level adjustments</h3>
+                      <span class="muted" *ngIf="ctx.claimLevelCas?.length">{{ formatCasTotals(ctx.claimLevelCasTotals) }}</span>
+                    </header>
+                    <div class="era-card__body">
+                      <div class="era-table-scroll" *ngIf="ctx.claimLevelCas?.length; else noClaimCas">
+                        <table class="era-data-table">
+                          <thead>
+                            <tr>
+                              <th>Action</th>
+                              <th>Group</th>
+                              <th>Reason</th>
+                              <th>Description</th>
+                              <th class="num">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let c of ctx.claimLevelCas; let i = index">
+                              <td>
+                                <select
+                                  class="era-action-select"
+                                  [value]="getAdjDisposition(casRowKey(c, 'cl-' + i))"
+                                  (change)="setAdjDisposition(casRowKey(c, 'cl-' + i), $any($event.target).value)"
+                                >
+                                  <option value="apply">Apply</option>
+                                  <option value="track">Track</option>
+                                  <option value="ignore">Ignore</option>
+                                </select>
+                              </td>
+                              <td><span class="era-code-badge">{{ c.groupCode || '—' }}</span></td>
+                              <td>{{ c.reasonCode || '—' }}</td>
+                              <td class="era-desc-cell">{{ casDescription(c) }}</td>
+                              <td class="num">{{ formatMoney(c.amount) }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <ng-template #noClaimCas><p class="muted">No claim-level adjustments.</p></ng-template>
+                    </div>
+                  </section>
+
+                  <section class="era-card era-card--wide" *ngIf="ctx.serviceLines?.length">
+                    <header class="era-card__header">
+                      <h3>Service-line adjustments</h3>
+                      <span class="muted">{{ formatCasTotals(ctx.allCasTotals) }}</span>
+                    </header>
+                    <div class="era-card__body">
+                      <div class="era-adj-group" *ngFor="let s of ctx.serviceLines">
+                        <div class="era-adj-group__head">
+                          <strong>{{ s.procedureCodeNormalized || 'Line ' + (s.lineIndex + 1) }}</strong>
+                          <span class="muted">DOS {{ s.serviceDate || '—' }}</span>
+                          <span class="muted" *ngIf="s.casTotals">{{ formatCasTotals(s.casTotals) }}</span>
+                        </div>
+                        <div class="era-table-scroll" *ngIf="s.cas?.length; else noLineCas">
+                          <table class="era-data-table">
+                            <thead>
+                              <tr>
+                                <th>Action</th>
+                                <th>Group</th>
+                                <th>Reason</th>
+                                <th>Description</th>
+                                <th class="num">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let c of s.cas; let j = index">
+                                <td>
+                                  <select
+                                    class="era-action-select"
+                                    [value]="getAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j))"
+                                    (change)="setAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j), $any($event.target).value)"
+                                  >
+                                    <option value="apply">Apply</option>
+                                    <option value="track">Track</option>
+                                    <option value="ignore">Ignore</option>
+                                  </select>
+                                </td>
+                                <td><span class="era-code-badge">{{ c.groupCode || '—' }}</span></td>
+                                <td>{{ c.reasonCode || '—' }}</td>
+                                <td class="era-desc-cell">{{ casDescription(c) }}</td>
+                                <td class="num">{{ formatMoney(c.amount) }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <ng-template #noLineCas><p class="muted era-adj-group__empty">No adjustments on this line.</p></ng-template>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="era-card era-card--wide">
+                    <header class="era-card__header">
+                      <h3>Matching details</h3>
+                    </header>
+                    <div class="era-card__body">
+                      <p class="era-match-summary">{{ autoMatchHelp(ws.primaryLine) }}</p>
+                      <p class="era-match-confidence muted">{{ confidenceHelp(ws.primaryLine) }}</p>
+                      <ul class="era-factor-list" *ngIf="matchedFactors(ws.primaryLine).length">
+                        <li *ngFor="let factor of matchedFactors(ws.primaryLine)">{{ factor.factor }}</li>
+                      </ul>
+                      <ul class="era-factor-list era-factor-list--fail" *ngIf="failedFactors(ws.primaryLine).length">
+                        <li *ngFor="let factor of failedFactors(ws.primaryLine)">Not matched: {{ factor.factor }}</li>
+                      </ul>
+                      <ul class="era-factor-list era-factor-list--fail" *ngIf="ws.primaryLine.matching?.failureReasons?.length">
+                        <li *ngFor="let reason of ws.primaryLine.matching?.failureReasons">{{ reason }}</li>
+                      </ul>
+                      <div class="era-manual-match">
                         <label>
                           Manual claim override
                           <input
                             type="number"
                             min="1"
+                            class="era-input"
                             [value]="getManualMatchDraft(ctx.claimExternalId).claimId"
                             (input)="setManualMatchClaimId(ctx.claimExternalId, $any($event.target).value)"
                             placeholder="Internal claim id"
@@ -309,201 +481,23 @@
                           Notes
                           <input
                             type="text"
+                            class="era-input"
                             [value]="getManualMatchDraft(ctx.claimExternalId).notes"
                             (input)="setManualMatchNotes(ctx.claimExternalId, $any($event.target).value)"
                             placeholder="Optional audit note"
                           />
                         </label>
-                        <button
-                          type="button"
-                          class="era-matching-panel__link-btn"
-                          [disabled]="manualMatching"
-                          (click)="saveManualMatch(ctx)"
-                        >
+                        <button type="button" class="btn btn-secondary" [disabled]="manualMatching" (click)="saveManualMatch(ctx)">
                           {{ manualMatching ? 'Linking…' : 'Link claim' }}
                         </button>
                       </div>
                     </div>
-                  </details>
-
-                  <div class="era-disbursement era-disbursement--summary" *ngIf="ctx.disbursementPlan as plan">
-                    <div class="era-disbursement__summary">
-                      <span><strong>835 payment:</strong> {{ formatMoney(disbursementPaymentAmount(ctx)) }}</span>
-                      <span><strong>Allocated:</strong> {{ formatMoney(disbursementAllocated(ctx)) }}</span>
-                      <span [class.era-disbursement__warn]="hasOverDisbursement(ctx)">
-                        <strong>Remaining:</strong> {{ formatMoney(disbursementRemaining(ctx)) }}
-                      </span>
-                      <span *ngIf="plan.isZeroPayInformational" class="muted">Zero-pay informational</span>
-                    </div>
-                    <p *ngIf="hasOverDisbursement(ctx)" class="era-disbursement__error">
-                      Total disbursement exceeds the 835 payment amount for this claim.
-                    </p>
-                    <section class="era-credit" *ngIf="projectedInsuranceCredit(ctx) > 0 || (ctx.creditSummary?.insuranceCreditAvailable ?? 0) > 0 || (ctx.creditSummary?.existingCredits?.length ?? 0) > 0">
-                      <h4>Credits</h4>
-                      <div class="era-credit__summary" *ngIf="projectedInsuranceCredit(ctx) > 0">
-                        <span><strong>Projected insurance credit:</strong> {{ formatMoney(projectedInsuranceCredit(ctx)) }}</span>
-                        <span class="era-credit__disposition">
-                          <label><input type="radio" [name]="'ins-cred-' + ws.claimExternalId" [checked]="getCreditDisposition(ctx).insurance === 'Hold'" (change)="setInsuranceCreditDisposition(ctx, 'Hold')" /> Hold as credit</label>
-                          <label><input type="radio" [name]="'ins-cred-' + ws.claimExternalId" [checked]="getCreditDisposition(ctx).insurance === 'ApplyImmediately'" (change)="setInsuranceCreditDisposition(ctx, 'ApplyImmediately')" /> Apply immediately</label>
-                        </span>
-                      </div>
-                    </section>
-                  </div>
-
-                  <div class="era-ws-tree__branch era-ws-tree__branch--claim-adj">
-                    <div class="era-ws-tree__label">Claim-level adjustments</div>
-                    <p class="era-cas-totals" *ngIf="ctx.claimLevelCas?.length">Totals: {{ formatCasTotals(ctx.claimLevelCasTotals) }}</p>
-                    <table class="era-subgrid era-cas-workstation" *ngIf="ctx.claimLevelCas?.length; else noClaimCas">
-                      <thead>
-                        <tr>
-                          <th class="col-disp">Apply</th>
-                          <th class="col-disp">Track</th>
-                          <th class="col-disp">Ignore</th>
-                          <th>Group</th>
-                          <th>Reason</th>
-                          <th>Description</th>
-                          <th class="num">Amount</th>
-                          <th>Claim status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let c of ctx.claimLevelCas; let i = index">
-                          <td class="col-disp era-cas-radio">
-                            <input type="radio" [name]="'cl-' + ws.claimExternalId + '-' + i" [checked]="getAdjDisposition(casRowKey(c, 'cl-' + i)) === 'apply'" (change)="setAdjDisposition(casRowKey(c, 'cl-' + i), 'apply')" aria-label="Apply adjustment" />
-                          </td>
-                          <td class="col-disp era-cas-radio">
-                            <input type="radio" [name]="'cl-' + ws.claimExternalId + '-' + i" [checked]="getAdjDisposition(casRowKey(c, 'cl-' + i)) === 'track'" (change)="setAdjDisposition(casRowKey(c, 'cl-' + i), 'track')" aria-label="Track adjustment" />
-                          </td>
-                          <td class="col-disp era-cas-radio">
-                            <input type="radio" [name]="'cl-' + ws.claimExternalId + '-' + i" [checked]="getAdjDisposition(casRowKey(c, 'cl-' + i)) === 'ignore'" (change)="setAdjDisposition(casRowKey(c, 'cl-' + i), 'ignore')" aria-label="Ignore adjustment" />
-                          </td>
-                          <td>{{ c.groupCode || '—' }}</td>
-                          <td>{{ c.reasonCode || '—' }}</td>
-                          <td class="era-cas-desc" [title]="casDescription(c)">{{ casDescription(c) }}</td>
-                          <td class="num">{{ formatMoney(c.amount) }}</td>
-                          <td>{{ claimStatusLabel(ctx, 'ClaimLevel') }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <ng-template #noClaimCas><p class="muted era-ws-tree__empty">No claim-level CAS on this 835 CLP.</p></ng-template>
-                  </div>
-
-                  <div class="era-ws-tree__branch era-ws-tree__branch--svc" *ngFor="let s of ctx.serviceLines">
-                    <div class="era-ws-tree__label era-ws-tree__label--line">
-                      <button
-                        type="button"
-                        class="btn-expand"
-                        (click)="toggleServiceLineExpand(ws.claimExternalId, s.lineIndex)"
-                        [attr.aria-expanded]="isServiceLineExpanded(ws.claimExternalId, s.lineIndex)"
-                      >
-                        {{ isServiceLineExpanded(ws.claimExternalId, s.lineIndex) ? '▼' : '▶' }}
-                      </button>
-                      <span>
-                        Service Line {{ s.lineIndex + 1 }} · {{ s.procedureCodeNormalized || '—' }}
-                        <span class="muted" *ngIf="s.procedureCompositeRaw">({{ s.procedureCompositeRaw }})</span>
-                      </span>
-                      <span class="era-ws-tree__meta">DOS {{ s.serviceDate || '—' }}</span>
-                      <span class="era-ws-tree__meta">Charge {{ formatMoney(s.chargeAmount) }}</span>
-                      <span class="era-ws-tree__meta">Paid {{ formatMoney(s.paidAmount) }}</span>
-                      <span class="era-ws-tree__meta" *ngIf="s.matchedServiceLineId">Srv #{{ s.matchedServiceLineId }}</span>
-                      <ng-container *ngIf="findDisbursementLine(ctx, s) as dl">
-                        <span class="era-ws-disbursement" [class.era-ws-disbursement--warn]="exceedsLineBalance(ctx, dl)">
-                          <label class="era-disbursement-check">
-                            <input
-                              type="checkbox"
-                              [checked]="getDisbursementRow(ctx, dl).apply"
-                              (change)="setDisbursementApply(ctx, dl, $any($event.target).checked)"
-                            />
-                            Apply disbursement
-                          </label>
-                          <input
-                            type="number"
-                            class="era-input era-input--amount"
-                            min="0"
-                            step="0.01"
-                            [disabled]="!getDisbursementRow(ctx, dl).apply"
-                            [value]="getDisbursementRow(ctx, dl).amount"
-                            (input)="setDisbursementAmount(ctx, dl, $any($event.target).value)"
-                          />
-                          <span class="muted">Open {{ formatMoney(dl.openBalance) }}</span>
-                        </span>
-                      </ng-container>
-                    </div>
-
-                    <div class="era-ws-tree__children" *ngIf="isServiceLineExpanded(ws.claimExternalId, s.lineIndex)">
-                      <div class="era-ws-tree__label era-ws-tree__label--adj">Adjustments</div>
-                      <p class="era-cas-totals">Line CAS totals: {{ formatCasTotals(s.casTotals) }}</p>
-                      <table class="era-subgrid era-cas-workstation" *ngIf="s.cas?.length; else noLineCas">
-                        <thead>
-                          <tr>
-                            <th class="col-disp">Apply</th>
-                            <th class="col-disp">Track</th>
-                            <th class="col-disp">Ignore</th>
-                            <th>Group</th>
-                            <th>Reason</th>
-                            <th>Description</th>
-                            <th class="num">Amount</th>
-                            <th>Claim status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let c of s.cas; let j = index">
-                            <td class="col-disp era-cas-radio">
-                              <input type="radio" [name]="'sl-' + ws.claimExternalId + '-' + s.lineIndex + '-' + j" [checked]="getAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j)) === 'apply'" (change)="setAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j), 'apply')" aria-label="Apply adjustment" />
-                            </td>
-                            <td class="col-disp era-cas-radio">
-                              <input type="radio" [name]="'sl-' + ws.claimExternalId + '-' + s.lineIndex + '-' + j" [checked]="getAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j)) === 'track'" (change)="setAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j), 'track')" aria-label="Track adjustment" />
-                            </td>
-                            <td class="col-disp era-cas-radio">
-                              <input type="radio" [name]="'sl-' + ws.claimExternalId + '-' + s.lineIndex + '-' + j" [checked]="getAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j)) === 'ignore'" (change)="setAdjDisposition(casRowKey(c, 'sl-' + s.lineIndex + '-' + j), 'ignore')" aria-label="Ignore adjustment" />
-                            </td>
-                            <td>{{ c.groupCode || '—' }}</td>
-                            <td>{{ c.reasonCode || '—' }}</td>
-                            <td class="era-cas-desc" [title]="casDescription(c)">{{ casDescription(c) }}</td>
-                            <td class="num">{{ formatMoney(c.amount) }}</td>
-                            <td>{{ claimStatusLabel(ctx, 'ServiceLine') }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <ng-template #noLineCas><p class="muted era-ws-tree__empty">No service-line CAS on this 835 SVC.</p></ng-template>
-                    </div>
-                  </div>
-
-                  <div class="era-ws-tree__branch era-ws-tree__branch--orphan" *ngIf="orphanDisbursementLines(ctx).length">
-                    <div class="era-ws-tree__label">Unlinked disbursement lines</div>
-                    <table class="era-subgrid era-disbursement-grid">
-                      <thead>
-                        <tr>
-                          <th>Apply</th>
-                          <th>Service line</th>
-                          <th class="num">Open bal.</th>
-                          <th class="num">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let dl of orphanDisbursementLines(ctx)" [class.era-disbursement-grid__warn]="exceedsLineBalance(ctx, dl)">
-                          <td>
-                            <label class="era-disbursement-check">
-                              <input type="checkbox" [checked]="getDisbursementRow(ctx, dl).apply" (change)="setDisbursementApply(ctx, dl, $any($event.target).checked)" />
-                              Apply
-                            </label>
-                          </td>
-                          <td>#{{ dl.serviceLineId }} · {{ dl.procedureCode || '—' }}</td>
-                          <td class="num">{{ formatMoney(dl.openBalance) }}</td>
-                          <td class="num">
-                            <input type="number" class="era-input era-input--amount" min="0" step="0.01" [disabled]="!getDisbursementRow(ctx, dl).apply" [value]="getDisbursementRow(ctx, dl).amount" (input)="setDisbursementAmount(ctx, dl, $any($event.target).value)" />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <p *ngIf="!ctx.serviceLines?.length" class="muted era-ws-tree__empty">No SVC segments — claim-level payment only.</p>
-                  <p *ngIf="anyExceedsLineBalance(ctx)" class="era-disbursement__error">One or more disbursement amounts exceed the service line open balance.</p>
-                  <p class="era-cas-totals era-cas-totals--all">All CAS totals (claim + lines): {{ formatCasTotals(ctx.allCasTotals) }}</p>
+                  </section>
                 </div>
               </div>
-              <div *ngIf="!ws.context" class="muted">Claim context unavailable for {{ ws.claimExternalId }}.</div>
+              <ng-template #noCtx>
+                <p class="muted">Claim context unavailable for {{ ws.claimExternalId }}.</p>
+              </ng-template>
             </td>
           </tr>
         </ng-container>
