@@ -6,6 +6,8 @@
   <div class="page-container">
     <div class="page-content">
       <div class="card" *ngIf="error">{{ error }}</div>
+      <div class="card" *ngIf="submitError">{{ submitError }}</div>
+      <div class="card" *ngIf="submitSuccess">{{ submitSuccess }}</div>
 
       <app-card class="claim-header claim-header--shell" *ngIf="claId && loading && !claim">
         <div class="claim-header-inner">
@@ -42,6 +44,9 @@
             <div class="header-actions">
               <button class="btn-primary btn-header" type="button" (click)="save()">Save</button>
               <button class="btn-secondary btn-header" type="button" (click)="saveAndClose()">Save & Close</button>
+              <button class="btn-primary btn-header" type="button" (click)="submitClaim()" [disabled]="isNewMode || submittingClaim">
+                {{ submittingClaim ? 'Submitting...' : 'Submit' }}
+              </button>
               <button class="btn-warning btn-header" type="button" (click)="scrub()" [disabled]="isNewMode || scrubbingClaim">Scrub</button>
               <button class="btn-danger btn-header" type="button" (click)="deleteClaim()" [disabled]="isNewMode">Delete</button>
               <button class="btn-secondary btn-header" type="button" (click)="close()">Close</button>

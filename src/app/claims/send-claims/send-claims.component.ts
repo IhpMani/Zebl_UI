@@ -30,6 +30,11 @@ import {
   visibleKeysInDisplayOrder
 } from '../shared/claim-column-preferences';
 import { Router } from '@angular/router';
+import { WorkspaceService } from '../../workspace/application/workspace.service';
+import {
+  getCheckedClaimIdsForSendBatch,
+  validateCheckedClaimsForSendBatch
+} from './send-claims-selection.util';
 
 export type SendClaimsGridColumn = {
   key: string;
@@ -226,7 +231,8 @@ export class SendClaimsComponent implements OnInit {
     private claimApi: ClaimApiService,
     private receiverLibraryApi: ReceiverLibraryApiService,
     private connectionLibraryApi: ConnectionLibraryApiService,
-    private router: Router
+    private router: Router,
+    private workspace: WorkspaceService
   ) {}
 
   ngOnInit(): void {
@@ -852,7 +858,7 @@ export class SendClaimsComponent implements OnInit {
     }
 
     if (this.selected.size === 0) {
-      this.error = 'Please select at least one claim.';
+      this.error = validateCheckedClaimsForSendBatch(this.selected) ?? 'Please select at least one claim.';
       this.success = null;
       return;
     }
@@ -873,7 +879,27 @@ export class SendClaimsComponent implements OnInit {
     this.error = null;
     this.success = null;
 
-    const claimIds = Array.from(this.selected);
+    const activeClaimId = this.workspace.getActiveClaimId();
+
+    let claimIds: number[];
+    try {
+      if (this.selected.size === 1 && activeClaimId != null) {
+        const onlySelected = Array.from(this.selected)[0];
+        if (onlySelected !== activeClaimId) {
+          throw new Error(
+            `Submit claim id mismatch: grid selection ${onlySelected} does not match active tab claim ${activeClaimId}.`
+          );
+        }
+      }
+      claimIds = getCheckedClaimIdsForSendBatch(this.selected);
+    } catch (err) {
+      this.sending = false;
+      this.error = err instanceof Error ? err.message : 'Claim id mismatch for submit.';
+      return;
+    }
+
+    console.log('Checked claim IDs:', claimIds);
+
     const sendBatchPayload = {
       claimIds,
       submitterReceiverId: this.selectedSubmitterReceiverId,

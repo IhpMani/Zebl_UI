@@ -24,6 +24,9 @@ import { ServiceApiService } from '../../core/services/service-api.service';
 import { RibbonContextService } from '../../core/services/ribbon-context.service';
 import { CustomFieldsApiService, CustomFieldDefinitionDto } from '../../core/services/custom-fields-api.service';
 import { WorkspaceService } from '../../workspace/application/workspace.service';
+import { resolveSubmitClaimId } from '../shared/claim-submit-id.util';
+import { ConnectionLibraryApiService } from '../../core/services/connection-library-api.service';
+import { ReceiverLibraryApiService } from '../../core/services/receiver-library-api.service';
 import { ProcedureCode, ProcedureCodesApiService } from '../../core/services/procedure-codes-api.service';
 import { ProgramSettingsApiService } from '../../core/services/program-settings-api.service';
 import { resolveClaimPatientId, resolveClaimPatientName } from '../../core/utils/claim-patient-id.util';
@@ -179,6 +182,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   savingClaim = false;
   scrubbingClaim = false;
+  submittingClaim = false;
+  submitError: string | null = null;
+  submitSuccess: string | null = null;
+  submittingClaim = false;
+  submitError: string | null = null;
+  submitSuccess: string | null = null;
 
   /** Responsible party payer options (from claim insureds). */
   primaryPayerId: number | null = null;
@@ -187,6 +196,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   secondaryPayerName: string | null = null;
 
   private claimRequestInFlight = false;
+  private loadClaimGeneration = 0;
   private serviceRequestInFlight = false;
   private readonly destroy$ = new Subject<void>();
   private paymentRequestInFlight = false;
@@ -216,6 +226,8 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
     private procedureCodesApi: ProcedureCodesApiService,
     private customFieldsApi: CustomFieldsApiService,
     private workspace: WorkspaceService,
+    private connectionLibraryApi: ConnectionLibraryApiService,
+    private receiverLibraryApi: ReceiverLibraryApiService,
     private cdr: ChangeDetectorRef,
     private programSettingsApi: ProgramSettingsApiService
   ) { }
@@ -263,7 +275,12 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
         if (!this.isUrlForThisClaim(url)) return;
         this.syncRibbonContextFromClaim();
         this.syncTabTitleFromClaim();
-        if (this.loading || this.claimRequestInFlight) return;
+        if (this.loading || this.claimRequestInFlight) {
+          if (!this.claim || this.claim.claID !== this.claId) {
+            this.loadClaim(this.claId);
+          }
+          return;
+        }
         if (!this.claim) {
           this.loadClaim(this.claId);
         } else {
@@ -982,7 +999,7 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadClaim(claId: number): void {
-    if (this.claimRequestInFlight) return;
+    const generation = ++this.loadClaimGeneration;
     this.perfReset(`loadClaim claId=${claId}`);
     this.loading = true;
     this.error = null;
@@ -1003,13 +1020,18 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
           });
         }),
         finalize(() => {
-          this.perfTimeEnd('loadClaim getClaimById (summary)');
-          this.claimRequestInFlight = false;
-          this.cdr.markForCheck();
+          if (generation === this.loadClaimGeneration) {
+            this.perfTimeEnd('loadClaim getClaimById (summary)');
+            this.claimRequestInFlight = false;
+            this.cdr.markForCheck();
+          }
         })
       )
       .subscribe({
         next: (claim) => {
+          if (generation !== this.loadClaimGeneration || this.claId !== claId) {
+            return;
+          }
           this.perfTime('loadClaim post-processing');
           this.claimStatuses = [...CLAIM_STATUS_OPTIONS];
           this.claim = claim;
@@ -1965,6 +1987,96 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (err) => {
         console.error('Scrub failed:', err?.error?.message || err?.error?.error || err);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Submit the claim visible in this tab via send-batch (Clearinghouse). */
+  submitClaim(): void {
+    if (this.isNewMode || this.submittingClaim) {
+      return;
+    }
+
+    let claimId: number;
+    try {
+      const activeClaimId = this.workspace.getActiveClaimId();
+      console.log('Submitting claim', activeClaimId);
+      const resolved = resolveSubmitClaimId({
+        activeTabClaimId: activeClaimId,
+        routeClaimId: this.claId,
+        loadedClaimId: this.claim?.claID ?? null
+      });
+      if (resolved == null) {
+        this.submitError = 'No claim is selected to submit.';
+        this.cdr.markForCheck();
+        return;
+      }
+      claimId = resolved;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Claim id mismatch for submit.';
+      console.error(message);
+      this.submitError = message;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.submittingClaim = true;
+    this.submitError = null;
+    this.submitSuccess = null;
+
+    forkJoin({
+      receivers: this.receiverLibraryApi.getAll(),
+      connections: this.connectionLibraryApi.getAll()
+    }).pipe(
+      switchMap(({ receivers, connections }) => {
+        const submitterReceiverId = receivers?.data?.[0]?.id ?? null;
+        const connectionLibraryId =
+          (connections ?? []).find((c) => c?.isActive)?.id ?? null;
+
+        if (!submitterReceiverId) {
+          throw new Error('No Submitter/Receiver configured. Add one in Receiver Library.');
+        }
+        if (!connectionLibraryId) {
+          throw new Error('No active SFTP Connection configured. Add one in Connection Library.');
+        }
+
+        console.log('[SendBatch][ClaimDetails] submit current tab claim', {
+          claimIds: [claimId],
+          activeTabClaimId: this.workspace.getActiveClaimId(),
+          routeClaimId: this.claId,
+          loadedClaimId: this.claim?.claID ?? null
+        });
+
+        return this.claimApiService.sendBatch({
+          claimIds: [claimId],
+          submitterReceiverId,
+          connectionType: 'Clearinghouse',
+          connectionLibraryId
+        });
+      }),
+      finalize(() => {
+        this.submittingClaim = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
+      next: (res) => {
+        if (res.success === false) {
+          this.submitError = `Claim ${claimId} was not submitted. Check batch ${res.batchId} for details.`;
+        } else {
+          this.submitSuccess = `Claim ${claimId} submitted successfully (batch ${res.batchId}).`;
+          this.loadClaim(claimId);
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        const body = err?.error;
+        this.submitError =
+          body?.message ??
+          body?.Message ??
+          (typeof body === 'string' ? body : null) ??
+          'Claim submit failed.';
+        console.error('Submit failed:', err);
         this.cdr.markForCheck();
       }
     });

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
 import { TabType, WorkspaceTab } from '../domain/workspace-tab.model';
+import { parseClaimIdFromRoute, resolveWorkspaceTabClaimId } from '../domain/workspace-claim-id.util';
 import { initialWorkspaceState, WorkspaceState } from './workspace.state';
 import { WORKSPACE_REPOSITORY, WorkspaceRepository } from './workspace.repository';
 
@@ -87,6 +88,7 @@ export class WorkspaceService {
             ? {
                 ...t,
                 route,
+                claimId: this.claimIdForRoute(route),
                 params: params ?? {},
                 title: resolvedTitle,
                 tabType: tabType || t.tabType,
@@ -124,6 +126,7 @@ export class WorkspaceService {
       id: this.newId(),
       title,
       route,
+      claimId: this.claimIdForRoute(route),
       params,
       tabType,
       isActive: true,
@@ -234,6 +237,11 @@ export class WorkspaceService {
     const state = this.stateSubject.value;
     if (!state.activeTabId) return null;
     return state.tabs.find((t) => t.id === state.activeTabId) ?? null;
+  }
+
+  /** Claim id for the currently active workspace tab (`activeTab.claimId` or parsed from route). */
+  getActiveClaimId(): number | null {
+    return resolveWorkspaceTabClaimId(this.activeTab);
   }
 
   get tabs(): WorkspaceTab[] {
@@ -493,6 +501,10 @@ export class WorkspaceService {
     const c = globalThis.crypto as Crypto | undefined;
     if (c && typeof (c as any).randomUUID === 'function') return (c as any).randomUUID();
     return `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  private claimIdForRoute(route: string): number | null {
+    return parseClaimIdFromRoute(route);
   }
 }
 
