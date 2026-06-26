@@ -209,54 +209,13 @@
             <td colspan="8">
               <div class="era-expand" *ngIf="ws.context as ctx; else noCtx">
                 <div class="era-expand__cards">
-                  <section class="era-card">
-                    <header class="era-card__header">
-                      <h3>Claim information</h3>
-                      <span [class]="statusClass(ws.primaryLine)">{{ ws.primaryLine.status }}</span>
-                    </header>
-                    <div class="era-card__body">
-                      <dl class="era-info-grid">
-                        <div class="era-info-grid__item">
-                          <dt>Patient</dt>
-                          <dd>{{ ctx.patientName || '—' }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Claim status (835)</dt>
-                          <dd>{{ ctx.claimStatus835 || '—' }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Internal status</dt>
-                          <dd>{{ ctx.internalClaimStatus || '—' }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Invoice number</dt>
-                          <dd>{{ ctx.claimInvoiceNumber || '—' }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Balance</dt>
-                          <dd>{{ formatMoney(ctx.claimBalance) }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>835 CLP payment</dt>
-                          <dd>{{ formatMoney(ctx.claimPayment835) }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Matching strategy</dt>
-                          <dd>{{ ctx.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}</dd>
-                        </div>
-                        <div class="era-info-grid__item">
-                          <dt>Confidence</dt>
-                          <dd>
-                            <span [class]="confidenceBadgeClass(ws.primaryLine)">{{ confidenceLabel(ws.primaryLine) }}</span>
-                          </dd>
-                        </div>
-                      </dl>
-                      <p *ngIf="ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason" class="era-expand__alert">
-                        <strong>Unmatched reason:</strong>
-                        {{ ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason }}
-                      </p>
-                    </div>
-                  </section>
+                  <p
+                    *ngIf="ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason"
+                    class="era-expand__alert era-expand__alert--full"
+                  >
+                    <strong>Unmatched reason:</strong>
+                    {{ ctx.unmatchedReason || ws.primaryLine.matching.unmatchedReason }}
+                  </p>
 
                   <section class="era-card era-card--wide">
                     <header class="era-card__header">
