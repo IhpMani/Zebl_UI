@@ -145,7 +145,7 @@
 
   <section #tableScroll class="era-review__table-wrap">
     <table class="era-grid era-workstation">
-      <thead class="era-grid__head--sticky">
+      <thead>
         <tr>
           <th class="col-expand"></th>
           <th class="col-status">Status</th>
@@ -185,19 +185,24 @@
               <ng-container *ngIf="ws.primaryLine.matchedClaimId as cid; else noMatchClaim">
                 <a class="era-claim-link" [routerLink]="['/claims', cid]" [href]="claimHref(cid)" (click)="onClaimNavClick($event)">{{ cid }}</a>
                 <span class="era-row-meta" *ngIf="ws.primaryLine.claimInvoiceNumber as inv">Inv {{ inv }}</span>
-                <span class="era-row-meta" *ngIf="ws.context?.internalClaimStatus || ws.primaryLine.internalClaimStatus as st">{{ st }}</span>
+                <span class="era-row-meta" *ngIf="internalClaimStatusLabel(ws) as st">{{ st }}</span>
               </ng-container>
               <ng-template #noMatchClaim>
                 <span class="era-claim-link--disabled" title="No matched claim">—</span>
-                <span class="era-row-meta era-row-meta--warn" *ngIf="ws.context?.matchingStrategy || ws.primaryLine.matching.matchingStrategy as strat">{{ strat }}</span>
+                <span class="era-row-meta era-row-meta--warn" *ngIf="matchStrategyLabel(ws) as strat">{{ strat }}</span>
               </ng-template>
             </td>
-            <td class="col-patient">
-              {{ ws.context?.patientName || ws.primaryLine.patientName || '—' }}
+            <td class="col-patient era-patient-cell">
+              <span class="era-patient-cell__name">{{ ws.context?.patientName || ws.primaryLine.patientName || '—' }}</span>
             </td>
             <td class="num col-balance">{{ formatMoney(ws.context?.claimBalance ?? ws.primaryLine.claimBalance) }}</td>
             <td class="num col-paid">{{ formatMoney(ws.context?.claimPayment835 ?? ws.primaryLine.paidAmount) }}</td>
-            <td class="era-adj-summary col-adj">{{ claimRowCasTotals(ws) }}</td>
+            <td class="era-adj-summary col-adj">
+              <ng-container *ngIf="claimRowCasParts(ws) as parts; else noAdj">
+                <span *ngFor="let part of parts" class="era-adj-line">{{ part }}</span>
+              </ng-container>
+              <ng-template #noAdj>—</ng-template>
+            </td>
           </tr>
 
           <tr *ngIf="isClaimExpanded(ws.claimExternalId)" class="era-grid__expand era-workstation__expand">

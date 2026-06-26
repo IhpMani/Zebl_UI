@@ -102,43 +102,62 @@
 
 .era-review__table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #e1e4e8;
   border-radius: 6px;
   margin-bottom: 1.25rem;
+  background: #fff;
 }
 
 .era-workstation {
-  min-width: 52rem;
+  width: 100%;
+  min-width: 56rem;
   table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.era-workstation th,
+.era-workstation td {
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .era-workstation .col-expand {
-  width: 2rem;
+  width: 2.25rem;
 }
 
 .era-workstation .col-status {
-  width: 6.5rem;
+  width: 7%;
+}
+
+.era-workstation .col-status .era-status {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
 }
 
 .era-workstation .col-clp-id {
-  width: 11rem;
+  width: 20%;
 }
 
 .era-workstation .col-matched {
-  width: 7.5rem;
+  width: 11%;
 }
 
 .era-workstation .col-patient {
-  width: 9rem;
+  width: 15%;
 }
 
 .era-workstation .col-balance,
 .era-workstation .col-paid {
-  width: 5.5rem;
+  width: 8%;
 }
 
 .era-workstation .col-adj {
-  width: auto;
+  width: 22%;
 }
 
 .era-clp-id {
@@ -149,11 +168,23 @@
   white-space: nowrap;
 }
 
+.era-patient-cell__name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .era-adj-summary {
-  font-size: 0.75rem;
-  line-height: 1.4;
-  white-space: normal;
-  word-break: break-word;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.era-adj-line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .era-row-meta {
@@ -163,9 +194,9 @@
   font-weight: 400;
   color: #6a737d;
   line-height: 1.25;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .era-row-meta--warn {
@@ -189,7 +220,10 @@
 .era-grid thead th {
   background: #f0f3f7;
   font-weight: 600;
+  font-size: 0.75rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .era-grid__row--selected {
@@ -243,6 +277,7 @@
 .num {
   text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .adj {
@@ -340,14 +375,6 @@ a.era-claim-link:hover {
 
 .era-page-size select {
   margin-left: 0.35rem;
-}
-
-.era-grid__head--sticky th {
-  position: sticky;
-  top: 8.5rem;
-  z-index: 10;
-  background: #f0f3f7;
-  box-shadow: 0 1px 0 #dde3ea;
 }
 
 .era-row--duplicate {

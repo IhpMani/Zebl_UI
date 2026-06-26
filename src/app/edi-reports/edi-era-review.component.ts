@@ -548,6 +548,35 @@ export class EdiEraReviewComponent implements OnInit {
     return this.formatCasTotals(totals);
   }
 
+  claimRowCasParts(ws: ClaimWorkstation): string[] | null {
+    const totals =
+      ws.context?.allCasTotals ??
+      ws.primaryLine.casTotals ??
+      ({
+        co: ws.primaryLine.coAmount,
+        pr: ws.primaryLine.prAmount,
+        oa: ws.primaryLine.oaAmount,
+        pi: ws.primaryLine.piAmount
+      } as Era835ReviewCasTotalsDto);
+    if (!totals) return null;
+    const parts: string[] = [];
+    if (totals.co) parts.push(`CO ${this.formatMoney(totals.co)}`);
+    if (totals.pr) parts.push(`PR ${this.formatMoney(totals.pr)}`);
+    if (totals.oa) parts.push(`OA ${this.formatMoney(totals.oa)}`);
+    if (totals.pi) parts.push(`PI ${this.formatMoney(totals.pi)}`);
+    return parts.length ? parts : null;
+  }
+
+  internalClaimStatusLabel(ws: ClaimWorkstation): string | null {
+    const status = ws.context?.internalClaimStatus || ws.primaryLine.internalClaimStatus;
+    return status?.trim() ? status : null;
+  }
+
+  matchStrategyLabel(ws: ClaimWorkstation): string | null {
+    const strategy = ws.context?.matchingStrategy || ws.primaryLine.matching?.matchingStrategy;
+    return strategy?.trim() ? strategy : null;
+  }
+
   autoMatchHelp(row: Era835ReviewLineRowDto): string {
     const strategy = row.matching?.matchingStrategy || row.matchingConfidence || '—';
     const parts = [
