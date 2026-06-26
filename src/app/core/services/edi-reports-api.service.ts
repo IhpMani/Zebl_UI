@@ -180,6 +180,8 @@ export interface Era835ReviewClaimDisbursementDto {
   insuranceCreditDisposition?: string;
   patientCreditDisposition?: string;
   manualClaimId?: number | null;
+  /** User-selected internal service line; bypasses automatic CPT matching on apply. */
+  authoritativeServiceLineId?: number | null;
 }
 
 export interface Era835ReviewDisbursementAllocationDto {

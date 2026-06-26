@@ -837,11 +837,16 @@ export class EdiEraReviewComponent implements OnInit {
         const draft = this.getManualMatchDraft(ctx.claimExternalId);
         const manualParsed = Number.parseInt(draft.claimId, 10);
         const manualClaimId = Number.isFinite(manualParsed) && manualParsed > 0 ? manualParsed : undefined;
+        const appliedLines = (ctx.disbursementPlan?.lines ?? []).filter((line) => this.getDisbursementRow(ctx, line).apply);
+        const authoritativeServiceLineId = appliedLines.length > 0
+          ? appliedLines[0].serviceLineId
+          : ctx.disbursementPlan?.lines?.find((l) => l.isAutoMatch)?.serviceLineId;
         return {
           claimExternalId: ctx.claimExternalId,
           insuranceCreditDisposition: disp.insurance,
           patientCreditDisposition: disp.patient,
           manualClaimId,
+          authoritativeServiceLineId,
           allocations: (ctx.disbursementPlan?.lines ?? []).map((line) => {
             const row = this.getDisbursementRow(ctx, line);
             return {
