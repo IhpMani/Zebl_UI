@@ -226,13 +226,73 @@
   margin: 0;
 }
 
-.field-grid--payer {
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
+.field-grid--payer-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.field--payer-name {
-  grid-column: 1 / -1;
+.field-grid--insured-dates {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 4px;
+}
+
+.group-panel .panel-title {
+  margin-top: 0;
+}
+
+.sort-header {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sort-header--right {
+  width: 100%;
+  text-align: right;
+}
+
+.sort-indicator {
+  font-size: 9px;
+}
+
+.col-description {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.benefits-table th.col-amount,
+.benefits-table td.col-amount {
+  text-align: right;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  background: var(--ps-card, #fff);
+  border: 1px solid var(--ps-border, #c5cdd8);
+  color: var(--ps-text, #1a2332);
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-secondary:hover {
+  background: var(--ps-bg, #f4f6f9);
+}
+
+.modal-footer {
+  align-items: center;
 }
 
 .field-grid--insured {
@@ -517,7 +577,7 @@
 
 .modal-footer {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 6px 12px 10px;
@@ -550,11 +610,38 @@
 }
 
 @media (max-width: 720px) {
-  .field-grid--payer {
-    grid-template-columns: 1fr 1fr;
+  .field-grid--payer-row {
+    grid-template-columns: 1fr;
   }
 
   .field-grid--insured {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  .eligibility-dialog::backdrop {
+    display: none;
+  }
+
+  .close-btn,
+  .diagnostics-toggle,
+  .footer-actions,
+  .panel--diagnostics {
+    display: none !important;
+  }
+
+  .eligibility-window {
+    max-height: none;
+    box-shadow: none;
+  }
+
+  .eligibility-body {
+    overflow: visible;
+  }
+
+  .benefits-table-wrap {
+    max-height: none;
+    overflow: visible;
   }
 }

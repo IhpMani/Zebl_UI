@@ -153,8 +153,45 @@ describe('eligibility-response.mapper', () => {
       formatDate
     );
     expect(vm!.eligibilitySummary.displayPlanName).toBe('NJ WELLPOINT FULL DUAL ADVANTAGE (HMO D-SNP)');
+    expect(vm!.planType).toBe('NJ WELLPOINT FULL DUAL ADVANTAGE (HMO D-SNP)');
     expect(vm!.eligibilitySummary.coverageDates).toBe('01/01/2026 - 12/31/2026');
     expect(vm!.hasPresentation).toBe(true);
     expect(vm!.benefitCards.length).toBe(1);
+  });
+
+  it('maps corrupt service types to general coverage and simplifies active descriptions', () => {
+    const rows = mapBenefitRows([
+      {
+        serviceType: 'xyz}abc',
+        benefit: '1',
+        amount: '',
+        description: 'Individual · Preferred Provider Organization (PPO) · Medicare'
+      }
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].serviceType).toBe('General Coverage');
+    expect(rows[0].coverage).toBe('Active Coverage');
+    expect(rows[0].description).toContain('Status: Active Coverage - Medicare PPO');
+  });
+
+  it('ignores garbage plan names from quality metrics', () => {
+    const vm = buildEligibilityResponseViewModel(
+      {
+        status: 'Active',
+        inquiryStatus: 'Completed',
+        planName: 'NONADHERENT-DAEMY25-HIGH-RISK MEDICATIONS',
+        presentation: {
+          summary: {
+            coverageStatus: 'Active',
+            displayPlanName: 'NONADHERENT-DAEMY25-HIGH-RISK MEDICATIONS',
+            insuranceType: 'Commercial'
+          }
+        }
+      },
+      formatDate
+    );
+
+    expect(vm!.planType).toBe('Commercial');
   });
 });

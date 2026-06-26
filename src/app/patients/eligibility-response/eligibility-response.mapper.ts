@@ -254,9 +254,10 @@ export function buildEligibilityResponseViewModel(
     coverageRaw = 'checking';
   }
 
-  const benefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapBenefitRows(payload.benefits ?? []);
   const structured = payload.structured271 ?? null;
   const presentation = payload.presentation ?? null;
+  const benefitRows =
+    isLoading || isInFlightLifecycle(lifecycle) ? [] : mapAllBenefitGridRows(payload, structured);
   const structuredBenefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapStructuredBenefitRows(structured);
   const eligibilitySummary = mapEligibilitySummary(presentation, structured, payload, formatDate);
   const financialSummary = mapFinancialSummary(presentation);
@@ -265,6 +266,7 @@ export function buildEligibilityResponseViewModel(
   const additionalNotes = presentation?.additionalNotes ?? [];
   const pcp = presentation?.primaryCareProvider ?? structured?.primaryCareProvider ?? null;
   const hasPresentation = !!presentation && (!!benefitCards.length || !!presentation.summary?.displayPlanName);
+  const planType = resolveEzClaimPlanName(eligibilitySummary, structured, payload);
 
   if (!isLoading && !isInFlightLifecycle(lifecycle) && lifecycle === 'completed' && !hasPresentation) {
     const derived = deriveCoverageFromBenefitRows(benefitRows, coverageRaw);
@@ -330,7 +332,7 @@ export function buildEligibilityResponseViewModel(
     operationalSummary,
     insuredLine,
     payerName: displayOrDash(presentation?.summary?.payerName ?? payload.payerName),
-    planType: displayOrDash(eligibilitySummary.displayPlanName || eligibilitySummary.planName || sanitizePlanName(payload.planName)),
+    planType: displayOrDash(planType),
     planDetails: displayOrDash(payload.planDetails),
     subscriberName: displayOrDash(payload.subscriberName),
     patientName: displayOrDash(payload.patientName),
@@ -343,7 +345,7 @@ export function buildEligibilityResponseViewModel(
     providerDisplay,
     controlNumber: displayOrDash(payload.controlNumber),
     benefitRows,
-    hasBenefits: benefitRows.length > 0 || structuredBenefitRows.length > 0 || benefitCards.length > 0,
+    hasBenefits: benefitRows.length > 0,
     hasStructuredBenefits: structuredBenefitRows.length > 0,
     hasPresentation,
     eligibilitySummary,
@@ -428,7 +430,7 @@ export function mapBenefitRows(benefits: EligibilityBenefitRowPayload[]): Eligib
 
   for (const b of benefits) {
     const row = mapSingleBenefitRow(b);
-    if (!row) continue;
+    if (!row || shouldSuppressBenefitGridRow(row)) continue;
     const key = `${row.serviceType}|${row.coverage}|${row.amount}|${row.description}`.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -436,6 +438,127 @@ export function mapBenefitRows(benefits: EligibilityBenefitRowPayload[]): Eligib
   }
 
   return rows.sort((a, b) => a.serviceType.localeCompare(b.serviceType));
+}
+
+function mapAllBenefitGridRows(
+  payload: EligibilityResponsePayload,
+  structured: EligibilityStructured271Dto | null
+): EligibilityBenefitGridRow[] {
+  const apiRows = mapBenefitRows(payload.benefits ?? []);
+  if (apiRows.length > 0) {
+    return apiRows;
+  }
+
+  return mapStructuredBenefitsToGridRows(structured);
+}
+
+function mapStructuredBenefitsToGridRows(structured: EligibilityStructured271Dto | null): EligibilityBenefitGridRow[] {
+  if (!structured?.benefits?.length) return [];
+
+  const rows: EligibilityBenefitGridRow[] = [];
+  const seen = new Set<string>();
+
+  for (const benefit of structured.benefits) {
+    for (const entry of expandStructuredBenefitEntries(benefit)) {
+      const row = mapStructuredBenefitToGridRow(entry);
+      if (!row || shouldSuppressBenefitGridRow(row)) continue;
+      const key = `${row.serviceType}|${row.coverage}|${row.amount}|${row.description}`.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(row);
+    }
+  }
+
+  return rows.sort((a, b) => a.serviceType.localeCompare(b.serviceType));
+}
+
+function expandStructuredBenefitEntries(benefit: BenefitEntryDto): BenefitEntryDto[] {
+  const raw = (benefit.serviceTypeCode ?? benefit.serviceType ?? '').trim();
+  if (!isCorruptServiceType(raw)) {
+    return [benefit];
+  }
+
+  const tokens = splitServiceTypeTokens(raw);
+  if (tokens.length <= 1) {
+    return [benefit];
+  }
+
+  return tokens.map(token => ({
+    ...benefit,
+    serviceTypeCode: token,
+    serviceType: lookupServiceTypeCode(token) ?? undefined
+  }));
+}
+
+function mapStructuredBenefitToGridRow(benefit: BenefitEntryDto): EligibilityBenefitGridRow | null {
+  const benefitCode = (benefit.statusCode ?? benefit.status ?? '').trim();
+  const serviceType = normalizeGridServiceType(resolveStructuredServiceType(benefit));
+  const coverage = resolveBenefitCoverageLabel(benefitCode, benefit.statusCode ?? '');
+  const coverageKind = resolveCoverageKindFromBenefit(benefit.statusCode ?? benefitCode, benefit.serviceTypeCode ?? '');
+  const amount = resolveStructuredBenefitAmount(benefit);
+  const description = resolveStructuredBenefitDescription(benefit, benefitCode);
+
+  if (!serviceType && coverage === '—' && amount === '—' && description === '—') {
+    return null;
+  }
+
+  return {
+    serviceType,
+    coverage,
+    amount,
+    description,
+    coverageKind
+  };
+}
+
+function resolveStructuredBenefitAmount(benefit: BenefitEntryDto): string {
+  if (benefit.copay != null) return formatNullableCurrency(benefit.copay);
+  if (benefit.coinsurance != null) {
+    const value = benefit.coinsurance <= 1 ? benefit.coinsurance * 100 : benefit.coinsurance;
+    return `${value}%`;
+  }
+  if (benefit.deductible != null) return formatNullableCurrency(benefit.deductible);
+  if (benefit.outOfPocket != null) return formatNullableCurrency(benefit.outOfPocket);
+  return '—';
+}
+
+function resolveStructuredBenefitDescription(benefit: BenefitEntryDto, benefitCode: string): string {
+  const parts: string[] = [];
+  if (benefit.coverageLevel?.trim()) parts.push(benefit.coverageLevel.trim());
+  if (benefit.network?.trim()) parts.push(benefit.network.trim());
+  if (benefit.timePeriod?.trim()) parts.push(benefit.timePeriod.trim());
+  if (benefit.placeOfService?.trim()) parts.push(benefit.placeOfService.trim());
+  if (benefit.insuranceType?.trim()) parts.push(benefit.insuranceType.trim());
+  if (benefit.planDescription?.trim()) parts.push(benefit.planDescription.trim());
+  parts.push(...(benefit.messages ?? []).map(message => message.trim()).filter(Boolean));
+
+  const joined = parts.join(' · ');
+  return resolveBenefitDescription(benefitCode, joined, benefit.insuranceType ?? undefined);
+}
+
+function normalizeGridServiceType(serviceType: string): string {
+  const trimmed = (serviceType ?? '').trim();
+  if (!trimmed || trimmed === '—' || /^unknown$/i.test(trimmed) || isCorruptServiceType(trimmed)) {
+    return 'General Coverage';
+  }
+  return trimmed;
+}
+
+function shouldSuppressBenefitGridRow(row: EligibilityBenefitGridRow): boolean {
+  const hasFinancial = !!row.amount && row.amount !== '—';
+  if (hasFinancial) return false;
+
+  const haystack = `${row.serviceType} ${row.coverage} ${row.description}`.toLowerCase();
+  const noisePatterns = [
+    'primary care provider',
+    'coverage basis',
+    'nonadherent',
+    'quality metric',
+    'other source of data',
+    'contact following entity'
+  ];
+
+  return noisePatterns.some(pattern => haystack.includes(pattern));
 }
 
 function mapSingleBenefitRow(b: EligibilityBenefitRowPayload): EligibilityBenefitGridRow | null {
@@ -458,7 +581,7 @@ function mapSingleBenefitRow(b: EligibilityBenefitRowPayload): EligibilityBenefi
   }
 
   return {
-    serviceType: serviceType || 'General',
+    serviceType: normalizeGridServiceType(serviceType),
     coverage: coverage || '—',
     amount: amount || '—',
     description: friendlyDescription || '—',
@@ -477,7 +600,7 @@ function resolveServiceTypeLabel(
       const mapped = lookupServiceTypeCode(token);
       if (mapped) return mapped;
     }
-    return 'Unknown';
+    return 'General Coverage';
   }
 
   const code = rawService.toUpperCase();
@@ -496,7 +619,7 @@ function resolveServiceTypeLabel(
     if (fromDesc) return fromDesc;
   }
 
-  return 'Unknown';
+  return 'General Coverage';
 }
 
 function isCorruptServiceType(value: string | null | undefined): boolean {
@@ -557,7 +680,7 @@ function resolveStructuredServiceType(benefit: BenefitEntryDto): string {
       const mapped = lookupServiceTypeCode(token);
       if (mapped) return mapped;
     }
-    return 'Unknown';
+    return 'General Coverage';
   }
 
   const mapped = lookupServiceTypeCode(rawCode.toUpperCase());
@@ -568,7 +691,7 @@ function resolveStructuredServiceType(benefit: BenefitEntryDto): string {
     return label;
   }
 
-  return 'Unknown';
+  return 'General Coverage';
 }
 
 function mapBenefitCards(presentation: EligibilityPresentationDto | null): EligibilityBenefitCardDto[] {
@@ -611,10 +734,13 @@ function mapEligibilitySummary(
       formatDate(structuredSummary?.eligibilityEndDate ?? payload.eligibilityEndDate)
     );
 
-  const displayPlanName =
-    summary?.displayPlanName ||
-    sanitizePlanName(structuredSummary?.planName ?? payload.planName) ||
-    '';
+  const displayPlanName = displayOrDash(
+    sanitizePlanName(
+      summary?.displayPlanName ||
+        structuredSummary?.planName ||
+        payload.planName
+    ) ?? ''
+  );
 
   return {
     coverageStatus: displayOrDash(summary?.coverageStatus ?? structuredSummary?.coverageStatus ?? payload.status),
@@ -722,19 +848,180 @@ export function formatVendorLine(vendor: VendorContactDto): string {
 }
 
 function resolveBenefitCoverageLabel(benefitCode: string, rawService: string): string {
-  const code = (benefitCode || rawService).trim().toUpperCase();
-  if (code === '1' || code === 'A' || code === 'ACTIVE') return 'Active';
-  if (code === '6' || code === 'I' || code === 'INACTIVE') return 'Inactive';
-  if (code === '2' || code === '3' || code === '4' || code === '5') return 'Active';
-  if (code === '7' || code === '8') return 'Inactive';
-  if (BENEFIT_CODE_LABELS[code]) return BENEFIT_CODE_LABELS[code];
+  const code = (benefitCode || rawService).trim();
+  if (!code) return '—';
+
+  const upper = code.toUpperCase();
+  if (BENEFIT_CODE_LABELS[upper]) return BENEFIT_CODE_LABELS[upper];
+
+  if (code.length > 1) {
+    const normalized = code.toLowerCase();
+    if (normalized.includes('active coverage')) return 'Active Coverage';
+    if (normalized.includes('co-payment') || normalized.includes('copay')) return 'Co-Payment';
+    if (normalized.includes('co-insurance') || normalized.includes('coinsurance')) return 'Co-Insurance';
+    if (normalized.includes('deductible')) return 'Deductible';
+    if (normalized.includes('out of pocket')) return 'Out of Pocket (Stop Loss)';
+    if (normalized.includes('limitation')) return 'Limitations';
+    return code;
+  }
+
+  if (upper === '1' || upper === '2' || upper === '3' || upper === '4' || upper === '5') return 'Active Coverage';
+  if (upper === '6' || upper === '7' || upper === '8') return 'Inactive';
   return benefitCode ? titleCaseWords(benefitCode) : '—';
 }
 
-function resolveBenefitDescription(benefitCode: string, description: string): string {
-  if (description) return titleCaseWords(description);
+function resolveBenefitDescription(
+  benefitCode: string,
+  description: string,
+  insuranceType?: string
+): string {
   const code = benefitCode.trim().toUpperCase();
-  return BENEFIT_CODE_LABELS[code] ?? (benefitCode ? titleCaseWords(benefitCode) : '');
+  const isActive =
+    code === '1' ||
+    code === '2' ||
+    code === '3' ||
+    code === '4' ||
+    code === '5' ||
+    benefitCode.toLowerCase().includes('active coverage');
+
+  if (isActive) {
+    return simplifyActiveCoverageDescription(description, insuranceType);
+  }
+
+  if (description) {
+    return description
+      .split('·')
+      .map(part => part.trim())
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  const mapped = BENEFIT_CODE_LABELS[code];
+  return mapped ?? (benefitCode ? titleCaseWords(benefitCode) : '—');
+}
+
+function simplifyActiveCoverageDescription(description: string, insuranceType?: string): string {
+  const parts = description
+    .split('·')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .filter(part => !isAuthorizationNoise(part));
+
+  const haystack = [description, insuranceType ?? '', ...parts].join(' ').toLowerCase();
+  const qualifiers: string[] = [];
+
+  if (haystack.includes('medicaid')) qualifiers.push('Medicaid');
+  if (haystack.includes('medicare')) qualifiers.push('Medicare');
+  if (haystack.includes('commercial')) qualifiers.push('Commercial');
+  if (haystack.includes('hmo')) qualifiers.push('HMO');
+  if (haystack.includes('ppo')) qualifiers.push('PPO');
+  if (haystack.includes('pos')) qualifiers.push('POS');
+
+  const uniqueQualifiers = [...new Set(qualifiers)];
+  if (uniqueQualifiers.length === 0) {
+    const compact = parts
+      .filter(part => !/^individual$/i.test(part))
+      .slice(0, 2)
+      .join(' ');
+    return compact ? `Status: Active Coverage - ${compact}` : 'Status: Active Coverage';
+  }
+
+  return `Status: Active Coverage - ${uniqueQualifiers.join(' ')}`;
+}
+
+function isAuthorizationNoise(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes('authorization') ||
+    lower.includes('referral') ||
+    lower.includes('pcp to submit') ||
+    lower.includes('prior authorization')
+  );
+}
+
+function resolveEzClaimPlanName(
+  eligibilitySummary: EligibilityResponseViewModel['eligibilitySummary'],
+  structured: EligibilityStructured271Dto | null,
+  payload: EligibilityResponsePayload
+): string {
+  const candidates = [
+    eligibilitySummary.displayPlanName,
+    eligibilitySummary.planName,
+    payload.planName,
+    findPlanDescriptionCandidate(structured),
+    eligibilitySummary.groupName,
+    eligibilitySummary.insuranceType,
+    structured?.summary?.insuranceType,
+    payload.planDetails
+  ];
+
+  for (const candidate of candidates) {
+    if (isMissingDisplayValue(candidate)) continue;
+    const sanitized = sanitizePlanName(candidate);
+    if (sanitized) return sanitized;
+  }
+
+  return '';
+}
+
+function findPlanDescriptionCandidate(structured: EligibilityStructured271Dto | null): string | null {
+  if (!structured?.benefits?.length) return null;
+
+  for (const benefit of structured.benefits) {
+    const description = benefit.planDescription?.trim();
+    if (!description || isGarbagePlanName(description)) continue;
+    if (containsRecognizedPlanKeyword(description)) return description;
+  }
+
+  const groupName = structured.summary?.groupName?.trim();
+  if (groupName && looksLikeNamedPlan(groupName)) {
+    return groupName;
+  }
+
+  return null;
+}
+
+function containsRecognizedPlanKeyword(text: string): boolean {
+  const upper = text.toUpperCase();
+  return (
+    upper.includes('MEDICAID') ||
+    upper.includes('COMMERCIAL') ||
+    upper.includes('PPO') ||
+    upper.includes('HMO') ||
+    upper.includes('MEDICARE')
+  );
+}
+
+function looksLikeNamedPlan(text: string): boolean {
+  if (isGarbagePlanName(text)) return false;
+  return text.length > 8 && /[A-Z]/i.test(text) && !/^\d{4,7}-\d{2}/.test(text);
+}
+
+function isGarbagePlanName(text: string | null | undefined): boolean {
+  const value = (text ?? '').trim();
+  if (!value) return true;
+
+  const upper = value.toUpperCase();
+  const blockedTokens = [
+    'NONADHERENT',
+    'DAEMY',
+    'CDCMY',
+    'COAMY',
+    'EEDMY',
+    'SPDMY',
+    'GSDMY',
+    'KEDMY',
+    'OSWMY',
+    'LBPMY',
+    'HIGH RISK',
+    'A1C',
+    'STATIN',
+    'SCREENING',
+    'QUALITY',
+    'COMPLIANCE'
+  ];
+
+  return blockedTokens.some(token => upper.includes(token));
 }
 
 function resolveCoverageKind(
@@ -1081,6 +1368,11 @@ function displayOrDash(value: string | null | undefined): string {
   return v ? v : '—';
 }
 
+function isMissingDisplayValue(value: string | null | undefined): boolean {
+  const v = value?.trim();
+  return !v || v === '—';
+}
+
 function isMisplacedEb01Row(benefitCode: string, rawService: string, description: string): boolean {
   const code = benefitCode.toUpperCase();
   const svc = rawService.toUpperCase();
@@ -1097,6 +1389,7 @@ function sanitizePlanName(planName: string | null | undefined): string | null {
   const name = (planName ?? '').trim();
   if (!name) return null;
   if (/^active\s+coverage$/i.test(name)) return null;
+  if (isGarbagePlanName(name)) return null;
   if (/^\d{4,7}-\d{2}([A-Z]{2}\d+)?$/i.test(name)) return null;
   if (/^[\d\-A-Z]+$/i.test(name) && /\d{4,}-\d{2}/.test(name) && name.length <= 20) return null;
   return name;

@@ -10,7 +10,7 @@ import {
   ViewChild
 } from '@angular/core';
 import { EligibilityApiService } from '../../core/services/eligibility-api.service';
-import { EligibilityResponsePayload, EligibilityResponseViewModel } from './eligibility-response.models';
+import { EligibilityResponsePayload, EligibilityResponseViewModel, EligibilityBenefitGridRow } from './eligibility-response.models';
 import { buildEligibilityResponseViewModel, formatPcpAddressLine } from './eligibility-response.mapper';
 import { PrimaryCareProviderDto } from './eligibility-response.models';
 
@@ -26,6 +26,9 @@ export class EligibilityResponseComponent implements OnChanges {
   @ViewChild('dialogEl') dialogEl?: ElementRef<HTMLDialogElement>;
 
   view: EligibilityResponseViewModel | null = null;
+  sortedBenefitRows: EligibilityBenefitGridRow[] = [];
+  benefitSortColumn: 'serviceType' | 'coverage' | 'amount' | 'description' = 'serviceType';
+  benefitSortDirection: 'asc' | 'desc' = 'asc';
   diagnosticsExpanded = false;
   loadingRawPayloads = false;
   diagnosticsLoaded = false;
@@ -124,9 +127,56 @@ export class EligibilityResponseComponent implements OnChanges {
           }
         : this.response;
     this.view = buildEligibilityResponseViewModel(payload, v => this.formatDate(v));
+    this.resetBenefitSort();
   }
 
-  formatDate(value: unknown): string {
+  sortBenefits(column: 'serviceType' | 'coverage' | 'amount' | 'description'): void {
+    if (this.benefitSortColumn === column) {
+      this.benefitSortDirection = this.benefitSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.benefitSortColumn = column;
+      this.benefitSortDirection = 'asc';
+    }
+    this.applyBenefitSort();
+  }
+
+  sortIndicator(column: 'serviceType' | 'coverage' | 'amount' | 'description'): string {
+    if (this.benefitSortColumn !== column) return '';
+    return this.benefitSortDirection === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  print(): void {
+    window.print();
+  }
+
+  private resetBenefitSort(): void {
+    this.benefitSortColumn = 'serviceType';
+    this.benefitSortDirection = 'asc';
+    this.applyBenefitSort();
+  }
+
+  private applyBenefitSort(): void {
+    const rows = [...(this.view?.benefitRows ?? [])];
+    const direction = this.benefitSortDirection === 'asc' ? 1 : -1;
+    const column = this.benefitSortColumn;
+
+    rows.sort((a, b) => {
+      const left = (a[column] ?? '').toString();
+      const right = (b[column] ?? '').toString();
+      if (column === 'amount') {
+        const leftNum = parseAmount(left);
+        const rightNum = parseAmount(right);
+        if (leftNum != null && rightNum != null) {
+          return (leftNum - rightNum) * direction;
+        }
+      }
+      return left.localeCompare(right, undefined, { sensitivity: 'base' }) * direction;
+    });
+
+    this.sortedBenefitRows = rows;
+  }
+
+  private formatDate(value: unknown): string {
     if (!value) return '';
 
     const str = String(value);
@@ -158,6 +208,7 @@ export class EligibilityResponseComponent implements OnChanges {
     if (dialog?.open) dialog.close();
     this.response = null;
     this.view = null;
+    this.sortedBenefitRows = [];
     this.closed.emit();
   }
 
@@ -174,4 +225,11 @@ export class EligibilityResponseComponent implements OnChanges {
       dialog.close();
     }
   }
+}
+
+function parseAmount(value: string): number | null {
+  const digits = value.replace(/[^0-9.\-]/g, '');
+  if (!digits) return null;
+  const parsed = Number(digits);
+  return Number.isFinite(parsed) ? parsed : null;
 }
