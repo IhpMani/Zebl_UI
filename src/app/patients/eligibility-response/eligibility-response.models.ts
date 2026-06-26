@@ -74,6 +74,7 @@ export interface BenefitEntryDto {
   statusCode?: string | null;
   network?: string | null;
   insuranceType?: string | null;
+  coverageLevel?: string | null;
   timePeriod?: string | null;
   copay?: number | null;
   coinsurance?: number | null;

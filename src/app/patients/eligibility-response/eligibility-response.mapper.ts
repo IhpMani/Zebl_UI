@@ -257,7 +257,9 @@ export function buildEligibilityResponseViewModel(
   const structured = payload.structured271 ?? null;
   const presentation = payload.presentation ?? null;
   const benefitRows =
-    isLoading || isInFlightLifecycle(lifecycle) ? [] : mapAllBenefitGridRows(payload, structured);
+    isLoading || isInFlightLifecycle(lifecycle)
+      ? []
+      : mapAllBenefitGridRows(payload, structured, presentation);
   const structuredBenefitRows = isLoading || isInFlightLifecycle(lifecycle) ? [] : mapStructuredBenefitRows(structured);
   const eligibilitySummary = mapEligibilitySummary(presentation, structured, payload, formatDate);
   const financialSummary = mapFinancialSummary(presentation);
@@ -442,14 +444,68 @@ export function mapBenefitRows(benefits: EligibilityBenefitRowPayload[]): Eligib
 
 function mapAllBenefitGridRows(
   payload: EligibilityResponsePayload,
-  structured: EligibilityStructured271Dto | null
+  structured: EligibilityStructured271Dto | null,
+  presentation: EligibilityPresentationDto | null
 ): EligibilityBenefitGridRow[] {
   const apiRows = mapBenefitRows(payload.benefits ?? []);
   if (apiRows.length > 0) {
     return apiRows;
   }
 
-  return mapStructuredBenefitsToGridRows(structured);
+  const structuredRows = mapStructuredBenefitsToGridRows(structured);
+  if (structuredRows.length > 0) {
+    return structuredRows;
+  }
+
+  return mapPresentationCardsToGridRows(presentation);
+}
+
+function mapPresentationCardsToGridRows(
+  presentation: EligibilityPresentationDto | null
+): EligibilityBenefitGridRow[] {
+  if (!presentation?.benefitCards?.length) return [];
+
+  const rows: EligibilityBenefitGridRow[] = [];
+  const seen = new Set<string>();
+
+  for (const card of presentation.benefitCards) {
+    const amount =
+      card.lines
+        ?.flatMap(line => line.values ?? [])
+        .map(value => value.trim())
+        .find(value => !!value && value !== '—') ?? '—';
+
+    const descriptionParts = [
+      card.status ? `Status: ${card.status}` : '',
+      ...(card.notes ?? []),
+      ...(card.bulletItems ?? [])
+    ].filter(Boolean);
+
+    const row: EligibilityBenefitGridRow = {
+      serviceType: normalizeGridServiceType(card.title),
+      coverage: card.status ?? '—',
+      amount: amount || '—',
+      description: descriptionParts.join(' · ') || '—',
+      coverageKind: resolveCoverageKindFromBenefitStatus(card.status)
+    };
+
+    if (shouldSuppressBenefitGridRow(row)) continue;
+
+    const key = `${row.serviceType}|${row.coverage}|${row.amount}|${row.description}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
+
+  return rows.sort((a, b) => a.serviceType.localeCompare(b.serviceType));
+}
+
+function resolveCoverageKindFromBenefitStatus(status: string | null | undefined): CoverageBadgeKind {
+  const text = (status ?? '').toLowerCase();
+  if (text.includes('active')) return 'active';
+  if (text.includes('inactive')) return 'inactive';
+  if (text.includes('reject') || text.includes('denied')) return 'error';
+  return 'partial';
 }
 
 function mapStructuredBenefitsToGridRows(structured: EligibilityStructured271Dto | null): EligibilityBenefitGridRow[] {

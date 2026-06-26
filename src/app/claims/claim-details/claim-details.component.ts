@@ -185,9 +185,6 @@ export class ClaimDetailsComponent implements OnInit, OnDestroy, AfterViewInit {
   submittingClaim = false;
   submitError: string | null = null;
   submitSuccess: string | null = null;
-  submittingClaim = false;
-  submitError: string | null = null;
-  submitSuccess: string | null = null;
 
   /** Responsible party payer options (from claim insureds). */
   primaryPayerId: number | null = null;
