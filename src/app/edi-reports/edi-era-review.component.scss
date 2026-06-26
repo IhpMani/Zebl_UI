@@ -107,6 +107,71 @@
   margin-bottom: 1.25rem;
 }
 
+.era-workstation {
+  min-width: 52rem;
+  table-layout: fixed;
+}
+
+.era-workstation .col-expand {
+  width: 2rem;
+}
+
+.era-workstation .col-status {
+  width: 6.5rem;
+}
+
+.era-workstation .col-clp-id {
+  width: 11rem;
+}
+
+.era-workstation .col-matched {
+  width: 7.5rem;
+}
+
+.era-workstation .col-patient {
+  width: 9rem;
+}
+
+.era-workstation .col-balance,
+.era-workstation .col-paid {
+  width: 5.5rem;
+}
+
+.era-workstation .col-adj {
+  width: auto;
+}
+
+.era-clp-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.era-adj-summary {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.era-row-meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: #6a737d;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.era-row-meta--warn {
+  color: #856404;
+}
+
 .era-grid {
   width: 100%;
   border-collapse: collapse;
@@ -116,7 +181,7 @@
 .era-grid th,
 .era-grid td {
   border-bottom: 1px solid #eef0f3;
-  padding: 0.35rem 0.45rem;
+  padding: 0.45rem 0.55rem;
   text-align: left;
   vertical-align: top;
 }
@@ -191,7 +256,7 @@
 }
 
 .era-claim-cell {
-  white-space: nowrap;
+  white-space: normal;
 }
 
 a.era-claim-link {
@@ -759,11 +824,6 @@ a.era-claim-link:hover {
   gap: 0.25rem;
   font-size: 0.82rem;
   min-width: 160px;
-}
-
-.era-strategy {
-  max-width: 140px;
-  word-break: break-word;
 }
 
 @media (max-width: 768px) {

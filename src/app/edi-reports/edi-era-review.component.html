@@ -148,20 +148,13 @@
       <thead class="era-grid__head--sticky">
         <tr>
           <th class="col-expand"></th>
-          <th>ERA status</th>
-          <th>Claim #</th>
-          <th>Invoice #</th>
-          <th>Internal status</th>
-          <th>Patient</th>
-          <th>Claim balance</th>
-          <th>835 CLP paid</th>
-          <th>CO</th>
-          <th>PR</th>
-          <th>OA</th>
-          <th>PI</th>
-          <th>Match strategy</th>
-          <th>Confidence</th>
-          <th>Applied at</th>
+          <th class="col-status">Status</th>
+          <th class="col-clp-id">835 claim ID</th>
+          <th class="col-matched">Matched claim</th>
+          <th class="col-patient">Patient</th>
+          <th class="num col-balance">Balance</th>
+          <th class="num col-paid">Paid</th>
+          <th class="col-adj">Adjustments</th>
         </tr>
       </thead>
       <tbody>
@@ -183,40 +176,32 @@
                 {{ isClaimExpanded(ws.claimExternalId) ? '▼' : '▶' }}
               </button>
             </td>
-            <td><span [class]="statusClass(ws.primaryLine)">{{ ws.primaryLine.status }}</span></td>
-            <td class="era-claim-cell" (click)="$event.stopPropagation()">
+            <td class="col-status">
+              <span [class]="statusClass(ws.primaryLine)">{{ ws.primaryLine.status }}</span>
+              <span class="era-row-meta" *ngIf="ws.primaryLine.appliedTimestampUtc">{{ formatDate(ws.primaryLine.appliedTimestampUtc) }}</span>
+            </td>
+            <td class="era-clp-id" [title]="ws.claimExternalId">{{ ws.claimExternalId }}</td>
+            <td class="era-claim-cell col-matched" (click)="$event.stopPropagation()">
               <ng-container *ngIf="ws.primaryLine.matchedClaimId as cid; else noMatchClaim">
                 <a class="era-claim-link" [routerLink]="['/claims', cid]" [href]="claimHref(cid)" (click)="onClaimNavClick($event)">{{ cid }}</a>
-                <span class="muted"> ({{ ws.claimExternalId }})</span>
+                <span class="era-row-meta" *ngIf="ws.primaryLine.claimInvoiceNumber as inv">Inv {{ inv }}</span>
+                <span class="era-row-meta" *ngIf="ws.context?.internalClaimStatus || ws.primaryLine.internalClaimStatus as st">{{ st }}</span>
               </ng-container>
               <ng-template #noMatchClaim>
                 <span class="era-claim-link--disabled" title="No matched claim">—</span>
-                <span class="muted"> ({{ ws.claimExternalId }})</span>
+                <span class="era-row-meta era-row-meta--warn" *ngIf="ws.context?.matchingStrategy || ws.primaryLine.matching.matchingStrategy as strat">{{ strat }}</span>
               </ng-template>
             </td>
-            <td class="era-claim-cell" (click)="$event.stopPropagation()">
-              <ng-container *ngIf="ws.primaryLine.matchedClaimId as cidInv; else noMatchInv">
-                <a class="era-claim-link" [routerLink]="['/claims', cidInv]" [href]="claimHref(cidInv)" (click)="onClaimNavClick($event)">{{ ws.primaryLine.claimInvoiceNumber || '—' }}</a>
-              </ng-container>
-              <ng-template #noMatchInv>
-                <span class="era-claim-link--disabled">{{ ws.primaryLine.claimInvoiceNumber || '—' }}</span>
-              </ng-template>
+            <td class="col-patient">
+              {{ ws.context?.patientName || ws.primaryLine.patientName || '—' }}
             </td>
-            <td>{{ ws.context?.internalClaimStatus || ws.primaryLine.internalClaimStatus || '—' }}</td>
-            <td>{{ ws.context?.patientName || ws.primaryLine.patientName || '—' }}</td>
-            <td class="num">{{ formatMoney(ws.context?.claimBalance ?? ws.primaryLine.claimBalance) }}</td>
-            <td class="num">{{ formatMoney(ws.context?.claimPayment835 ?? ws.primaryLine.paidAmount) }}</td>
-            <td class="num">{{ formatMoney(ws.context?.allCasTotals?.co ?? ws.primaryLine.casTotals?.co ?? ws.primaryLine.coAmount) }}</td>
-            <td class="num">{{ formatMoney(ws.context?.allCasTotals?.pr ?? ws.primaryLine.casTotals?.pr ?? ws.primaryLine.prAmount) }}</td>
-            <td class="num">{{ formatMoney(ws.context?.allCasTotals?.oa ?? ws.primaryLine.casTotals?.oa ?? ws.primaryLine.oaAmount) }}</td>
-            <td class="num">{{ formatMoney(ws.context?.allCasTotals?.pi ?? ws.primaryLine.casTotals?.pi ?? ws.primaryLine.piAmount) }}</td>
-            <td class="era-strategy">{{ ws.context?.matchingStrategy || ws.primaryLine.matching.matchingStrategy || '—' }}</td>
-            <td>{{ confidenceLabel(ws.primaryLine) }}</td>
-            <td>{{ formatDate(ws.primaryLine.appliedTimestampUtc) }}</td>
+            <td class="num col-balance">{{ formatMoney(ws.context?.claimBalance ?? ws.primaryLine.claimBalance) }}</td>
+            <td class="num col-paid">{{ formatMoney(ws.context?.claimPayment835 ?? ws.primaryLine.paidAmount) }}</td>
+            <td class="era-adj-summary col-adj">{{ claimRowCasTotals(ws) }}</td>
           </tr>
 
           <tr *ngIf="isClaimExpanded(ws.claimExternalId)" class="era-grid__expand era-workstation__expand">
-            <td colspan="15">
+            <td colspan="8">
               <div class="era-expand" *ngIf="ws.context as ctx; else noCtx">
                 <div class="era-expand__cards">
                   <section class="era-card">

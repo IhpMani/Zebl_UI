@@ -535,6 +535,19 @@ export class EdiEraReviewComponent implements OnInit {
     return parts.length ? parts.join(' · ') : '—';
   }
 
+  claimRowCasTotals(ws: ClaimWorkstation): string {
+    const totals =
+      ws.context?.allCasTotals ??
+      ws.primaryLine.casTotals ??
+      ({
+        co: ws.primaryLine.coAmount,
+        pr: ws.primaryLine.prAmount,
+        oa: ws.primaryLine.oaAmount,
+        pi: ws.primaryLine.piAmount
+      } as Era835ReviewCasTotalsDto);
+    return this.formatCasTotals(totals);
+  }
+
   autoMatchHelp(row: Era835ReviewLineRowDto): string {
     const strategy = row.matching?.matchingStrategy || row.matchingConfidence || '—';
     const parts = [
