@@ -345,6 +345,7 @@ export interface EdiReportDto {
   fileSize: number;
   correlationId?: string;
   isDuplicate?: boolean;
+  canDelete?: boolean;
 }
 
 export interface Era835ManualMatchRequestDto {

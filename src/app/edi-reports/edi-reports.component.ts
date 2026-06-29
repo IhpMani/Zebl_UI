@@ -142,6 +142,14 @@ export class EdiReportsComponent implements OnInit {
     return this.reports.find(r => r.id === id) || null;
   }
 
+  get hasDeletableChecked(): boolean {
+    if (this.checkedIds.size === 0) return false;
+    return Array.from(this.checkedIds).every(id => {
+      const r = this.reports.find(x => x.id === id);
+      return r == null || r.canDelete !== false;
+    });
+  }
+
   get isAllChecked(): boolean {
     const list = this.filteredReports;
     return list.length > 0 && list.every(r => this.checkedIds.has(r.id));
@@ -216,13 +224,18 @@ export class EdiReportsComponent implements OnInit {
 
   deleteChecked(): void {
     if (this.checkedIds.size === 0) return;
-    if (!confirm(`Permanently delete ${this.checkedIds.size} selected report(s)? This cannot be undone.`)) return;
     const ids = Array.from(this.checkedIds);
+    const blocked = ids.filter(id => this.reports.find(r => r.id === id)?.canDelete === false);
+    if (blocked.length > 0) {
+      this.error = 'Applied ERA reports cannot be deleted. Reverse the ERA posting first.';
+      return;
+    }
+    if (!confirm(`Permanently delete ${ids.length} selected report(s)? This cannot be undone.`)) return;
     let done = 0;
     ids.forEach(id => {
       this.ediApi.delete(id).subscribe({
         next: () => { done++; if (done === ids.length) { this.checkedIds.clear(); this.loadReports(); } },
-        error: (err) => this.error = err?.error?.error || err?.message || 'Delete failed'
+        error: (err) => this.error = err?.error?.message || err?.error?.error || err?.message || 'Delete failed'
       });
     });
   }
@@ -403,10 +416,14 @@ export class EdiReportsComponent implements OnInit {
   }
 
   deleteReport(r: EdiReportDto): void {
+    if (r.canDelete === false) {
+      this.error = 'Applied ERA reports cannot be deleted. Reverse the ERA posting first.';
+      return;
+    }
     if (!confirm(`Permanently delete "${r.fileName}"? This cannot be undone.`)) return;
     this.ediApi.delete(r.id).subscribe({
       next: () => this.loadReports(),
-      error: (err) => this.error = err?.error?.error || err?.message || 'Delete failed'
+      error: (err) => this.error = err?.error?.message || err?.error?.error || err?.message || 'Delete failed'
     });
   }
 

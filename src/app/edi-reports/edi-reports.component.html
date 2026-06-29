@@ -130,7 +130,7 @@
       <div class="group">
         <div class="sidebar-label">Apply to Checked</div>
         <button type="button" class="btn btn-warning btn-sidebar btn-dropdown" (click)="archiveChecked()" [disabled]="checkedIds.size === 0">Archive</button>
-        <button type="button" class="btn btn-delete btn-sidebar btn-danger" (click)="deleteChecked()" [disabled]="checkedIds.size === 0">Delete</button>
+        <button type="button" class="btn btn-delete btn-sidebar btn-danger" (click)="deleteChecked()" [disabled]="checkedIds.size === 0 || !hasDeletableChecked">Delete</button>
         <button type="button" class="btn btn-secondary btn-sidebar" (click)="close()">Close</button>
       </div>
     </aside>
